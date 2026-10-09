@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -333,16 +332,14 @@ class _AuthDialogState extends State<AuthDialog> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (!kReleaseMode) ...[
-                        IconButton(
-                          icon: const Icon(Icons.wifi_tethering, size: 18, color: Color(0xFF6C5CE7)),
-                          tooltip: _dialogIsArabic ? 'إعدادات الخادم' : 'Server IP Settings',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          onPressed: _showServerSettingsDialog,
-                        ),
-                        const SizedBox(width: 6),
-                      ],
+                      IconButton(
+                        icon: const Icon(Icons.wifi_tethering, size: 18, color: Color(0xFF6C5CE7)),
+                        tooltip: _dialogIsArabic ? 'إعدادات الخادم' : 'Server IP Settings',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: _showServerSettingsDialog,
+                      ),
+                      const SizedBox(width: 6),
                       if (!widget.isFullScreen)
                         IconButton(
                           icon: const Icon(Icons.close, size: 20, color: Colors.black45),
@@ -1320,18 +1317,20 @@ class _AuthDialogState extends State<AuthDialog> {
                   runSpacing: 4,
                   children: [
                     ActionChip(
+                      avatar: const Icon(Icons.bolt, size: 12, color: Color(0xFF6C5CE7)),
+                      label: const Text('Tunnel (Live)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      backgroundColor: const Color(0xFFEEF2FF),
+                      onPressed: () => setDlgState(() => srvCtrl.text = 'https://next-successfully-world-clearing.trycloudflare.com'),
+                    ),
+                    ActionChip(
                       avatar: const Icon(Icons.cloud_done, size: 12, color: Color(0xFF10B981)),
-                      label: const Text('Cloud (HTTPS)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      label: const Text('Production', style: TextStyle(fontSize: 10)),
                       backgroundColor: const Color(0xFFECFDF5),
-                      onPressed: () => setDlgState(() => srvCtrl.text = 'https://slot-cooperative-lou-oclc.trycloudflare.com'),
+                      onPressed: () => setDlgState(() => srvCtrl.text = 'https://api.jisr.ae'),
                     ),
                     ActionChip(
                       label: const Text('Wi-Fi (192.168.1.17)', style: TextStyle(fontSize: 10)),
                       onPressed: () => setDlgState(() => srvCtrl.text = 'http://192.168.1.17:8000'),
-                    ),
-                    ActionChip(
-                      label: const Text('Localhost:8000', style: TextStyle(fontSize: 10)),
-                      onPressed: () => setDlgState(() => srvCtrl.text = 'http://localhost:8000'),
                     ),
                     ActionChip(
                       label: const Text('Emulator (10.0.2.2)', style: TextStyle(fontSize: 10)),

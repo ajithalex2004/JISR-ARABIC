@@ -43,28 +43,29 @@ class AuthService {
         client = client ?? http.Client();
 
   Future<void> setCustomServer(String url) async {
-    if (kReleaseMode) {
-      throw const AuthException('Custom server configuration is disabled in production release builds.');
-    }
     final clean = url.trim().replaceAll(RegExp(r'/+$'), '');
+    if (clean.isEmpty) {
+      await storage.delete(key: _serverKey);
+      activeApiBase = resolveInitialApiBase();
+      return;
+    }
+    if (kReleaseMode && !clean.startsWith('https://')) {
+      throw const AuthException('In release mode, server URLs must use secure HTTPS (e.g. https://...).');
+    }
     activeApiBase = clean;
     await storage.write(key: _serverKey, value: clean);
   }
 
   Future<String> getServerUrl() async {
-    if (kReleaseMode) {
-      activeApiBase = resolveInitialApiBase();
-      return activeApiBase;
-    }
     final savedServer = await storage.read(key: _serverKey);
     if (savedServer != null && savedServer.trim().isNotEmpty) {
-      if (savedServer.contains('10.0.2.2')) {
-        await storage.delete(key: _serverKey);
-        activeApiBase = fallbackLanHost;
-      } else {
-        activeApiBase = savedServer.trim();
+      final clean = savedServer.trim();
+      if (!kReleaseMode || clean.startsWith('https://')) {
+        activeApiBase = clean;
+        return activeApiBase;
       }
     }
+    activeApiBase = resolveInitialApiBase();
     return activeApiBase;
   }
 

@@ -123,6 +123,12 @@ services:
       - task_artifacts:/app/tmp/task-artifacts
     networks:
       - jisr_net
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import os; os.kill(1, 0)'"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     logging:
       driver: "json-file"
       options:

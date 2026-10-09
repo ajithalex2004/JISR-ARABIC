@@ -1320,7 +1320,7 @@ class _AuthDialogState extends State<AuthDialog> {
                       avatar: const Icon(Icons.bolt, size: 12, color: Color(0xFF6C5CE7)),
                       label: const Text('Tunnel (Live)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                       backgroundColor: const Color(0xFFEEF2FF),
-                      onPressed: () => setDlgState(() => srvCtrl.text = 'https://next-successfully-world-clearing.trycloudflare.com'),
+                      onPressed: () => setDlgState(() => srvCtrl.text = 'https://walker-courier-reservations-william.trycloudflare.com'),
                     ),
                     ActionChip(
                       avatar: const Icon(Icons.cloud_done, size: 12, color: Color(0xFF10B981)),

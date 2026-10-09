@@ -18,7 +18,7 @@ class AuthService {
   static const _serverKey = 'fahim_custom_server_url';
 
   static const String productionApiBase = 'https://api.jisr.ae';
-  static const String liveTunnelHost = 'https://next-successfully-world-clearing.trycloudflare.com';
+  static const String liveTunnelHost = 'https://walker-courier-reservations-william.trycloudflare.com';
   static const String fallbackLanHost = 'http://192.168.1.17:8000';
   static const String emulatorHost = 'http://10.0.2.2:8000';
 

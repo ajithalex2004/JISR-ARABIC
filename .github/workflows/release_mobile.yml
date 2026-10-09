@@ -41,7 +41,7 @@ jobs:
   # ============================================================================
   release-android:
     name: Build & Sign Android Artifacts
-    if: ${{ github.event.inputs.target == 'all' || github.event.inputs.target == 'appbundle' || github.event.inputs.target == 'apk' || startsWith(github.ref, 'refs/tags/v') }}
+    if: github.event.inputs.target == 'all' || github.event.inputs.target == 'appbundle' || github.event.inputs.target == 'apk' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -66,15 +66,16 @@ jobs:
       - name: Configure Keystore from Secrets (If Available)
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'jisr_upload' }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
+          ALIAS="${KEY_ALIAS:-jisr_upload}"
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "Decoding release keystore..."
             echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
             cat <<EOF > android/key.properties
-          keyAlias=$KEY_ALIAS
+          keyAlias=$ALIAS
           keyPassword=$KEY_PASSWORD
           storeFile=upload-keystore.jks
           storePassword=$KEYSTORE_PASSWORD
@@ -94,25 +95,31 @@ jobs:
         run: flutter test
 
       - name: Build Google Play App Bundle (.aab)
-        if: ${{ github.event.inputs.target == 'all' || github.event.inputs.target == 'appbundle' || startsWith(github.ref, 'refs/tags/v') }}
+        if: github.event.inputs.target == 'all' || github.event.inputs.target == 'appbundle' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'push'
+        env:
+          API_BASE_INPUT: ${{ inputs.api_base }}
         run: |
+          API_BASE="${API_BASE_INPUT:-https://api.jisr.ae}"
           mkdir -p build/app/outputs/symbols
           flutter build appbundle --release \
-            --dart-define=FAHIM_API_BASE=${{ github.event.inputs.api_base || 'https://api.jisr.ae' }} \
+            --dart-define=FAHIM_API_BASE="$API_BASE" \
             --obfuscate \
             --split-debug-info=build/app/outputs/symbols
 
       - name: Build Standalone Testing APK (.apk)
-        if: ${{ github.event.inputs.target == 'all' || github.event.inputs.target == 'apk' || startsWith(github.ref, 'refs/tags/v') }}
+        if: github.event.inputs.target == 'all' || github.event.inputs.target == 'apk' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'push'
+        env:
+          API_BASE_INPUT: ${{ inputs.api_base }}
         run: |
+          API_BASE="${API_BASE_INPUT:-https://api.jisr.ae}"
           mkdir -p build/app/outputs/symbols
           flutter build apk --release \
-            --dart-define=FAHIM_API_BASE=${{ github.event.inputs.api_base || 'https://api.jisr.ae' }} \
+            --dart-define=FAHIM_API_BASE="$API_BASE" \
             --obfuscate \
             --split-debug-info=build/app/outputs/symbols
 
       - name: Upload Android App Bundle (.aab) Artifact
-        if: ${{ github.event.inputs.target == 'all' || github.event.inputs.target == 'appbundle' || startsWith(github.ref, 'refs/tags/v') }}
+        if: github.event.inputs.target == 'all' || github.event.inputs.target == 'appbundle' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: JISR-Android-AppBundle
@@ -120,7 +127,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Android APK (.apk) Artifact
-        if: ${{ github.event.inputs.target == 'all' || github.event.inputs.target == 'apk' || startsWith(github.ref, 'refs/tags/v') }}
+        if: github.event.inputs.target == 'all' || github.event.inputs.target == 'apk' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: JISR-Android-APK
@@ -135,7 +142,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Deploy to Google Play Internal Track (Optional)
-        if: ${{ github.event.inputs.deploy_to_play_store == 'true' && secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: inputs.deploy_to_play_store == true && secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -149,7 +156,7 @@ jobs:
   # ============================================================================
   release-ios:
     name: Build & Sign iOS IPA
-    if: ${{ github.event.inputs.target == 'all' || github.event.inputs.target == 'ios' || startsWith(github.ref, 'refs/tags/v') }}
+    if: github.event.inputs.target == 'all' || github.event.inputs.target == 'ios' || startsWith(github.ref, 'refs/tags/v')
     runs-on: macos-14
     defaults:
       run:
@@ -169,10 +176,13 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS App Archive
+        env:
+          API_BASE_INPUT: ${{ inputs.api_base }}
         run: |
+          API_BASE="${API_BASE_INPUT:-https://api.jisr.ae}"
           mkdir -p build/app/outputs/symbols
           flutter build ipa --release \
-            --dart-define=FAHIM_API_BASE=${{ github.event.inputs.api_base || 'https://api.jisr.ae' }} \
+            --dart-define=FAHIM_API_BASE="$API_BASE" \
             --obfuscate \
             --split-debug-info=build/app/outputs/symbols \
             --no-codesign

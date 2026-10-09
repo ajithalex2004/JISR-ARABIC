@@ -1,18 +1,16 @@
 name: JISR Arabic CD (Continuous Deployment)
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
     inputs:
       environment:
         description: "Target Deployment Environment"
         required: true
-        default: "production"
+        default: "staging"
         type: choice
         options:
-          - production
           - staging
+          - production
       run_migrations:
         description: "Run Database Migrations"
         required: true

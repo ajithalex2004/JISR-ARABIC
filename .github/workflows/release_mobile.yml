@@ -97,7 +97,7 @@ jobs:
       - name: Build Google Play App Bundle (.aab)
         if: github.event.inputs.target == 'all' || github.event.inputs.target == 'appbundle' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'push'
         env:
-          API_BASE_INPUT: ${{ inputs.api_base }}
+          API_BASE_INPUT: ${{ github.event.inputs.api_base }}
         run: |
           API_BASE="${API_BASE_INPUT:-https://api.jisr.ae}"
           mkdir -p build/app/outputs/symbols
@@ -109,7 +109,7 @@ jobs:
       - name: Build Standalone Testing APK (.apk)
         if: github.event.inputs.target == 'all' || github.event.inputs.target == 'apk' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'push'
         env:
-          API_BASE_INPUT: ${{ inputs.api_base }}
+          API_BASE_INPUT: ${{ github.event.inputs.api_base }}
         run: |
           API_BASE="${API_BASE_INPUT:-https://api.jisr.ae}"
           mkdir -p build/app/outputs/symbols
@@ -142,7 +142,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Deploy to Google Play Internal Track (Optional)
-        if: inputs.deploy_to_play_store == true && secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
+        if: github.event.inputs.deploy_to_play_store == true && secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -177,7 +177,7 @@ jobs:
 
       - name: Build iOS App Archive
         env:
-          API_BASE_INPUT: ${{ inputs.api_base }}
+          API_BASE_INPUT: ${{ github.event.inputs.api_base }}
         run: |
           API_BASE="${API_BASE_INPUT:-https://api.jisr.ae}"
           mkdir -p build/app/outputs/symbols

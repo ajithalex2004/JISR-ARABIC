@@ -1,0 +1,40 @@
+# ==============================================================================
+# JISR Arabic (فهيم) - Production Variable Overrides Example
+# Target: 10,000+ Students | 1,000 Concurrent Users (CCU)
+# ==============================================================================
+
+aws_region   = "me-central-1" # AWS UAE (Abu Dhabi / Dubai)
+environment  = "production"
+project_name = "jisr-arabic"
+
+# --- Domain & Networking ---
+domain_name   = "jisr.ae"
+api_subdomain = "api.jisr.ae"
+cdn_subdomain = "cdn.jisr.ae"
+vpc_cidr      = "10.0.0.0/16"
+
+# --- Compute Capacity (ECS Fargate) ---
+# High-Availability multi-AZ scaling for 1,000 CCU
+ecs_api_min_capacity = 2
+ecs_api_max_capacity = 6
+ecs_api_cpu          = 1024 # 1 vCPU per replica
+ecs_api_memory       = 2048 # 2 GB RAM per replica
+
+ecs_worker_min_capacity = 1
+ecs_worker_max_capacity = 3
+
+# --- Database & Connection Pooling ---
+db_name                  = "jisr_prod"
+db_username              = "jisr_admin"
+db_instance_class        = "db.r6g.xlarge" # 4 vCPU, 32 GB RAM (Multi-AZ)
+db_backup_retention_days = 35              # 35 Days continuous Point-In-Time Recovery
+
+# --- In-Memory Caching ---
+redis_node_type = "cache.m6g.large" # 2 vCPU, 6.38 GB RAM (Multi-AZ)
+
+# --- Security & Proxies ---
+cors_origins    = "https://jisr.ae,https://app.jisr.ae,https://admin.jisr.ae"
+trusted_proxies = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+
+# --- Availability Zones (Multi-AZ UAE me-central-1) ---
+availability_zones = ["me-central-1a", "me-central-1b", "me-central-1c"]

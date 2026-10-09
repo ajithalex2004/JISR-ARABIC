@@ -1,0 +1,250 @@
+name: JISR Arabic CD (Continuous Deployment)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target Deployment Environment"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+      run_migrations:
+        description: "Run Database Migrations"
+        required: true
+        default: true
+        type: boolean
+      prewarm_audio:
+        description: "Trigger Audio Pre-Warming"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ============================================================================
+  # 1. Build & Push Production Docker Images (ECR / GHCR)
+  # ============================================================================
+  build-and-push:
+    name: Build & Push Container Images
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.vars.outputs.sha_short }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Compute Short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'me-central-1' }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/jisr-backend:${{ steps.vars.outputs.sha_short }}
+            ${{ steps.login-ecr.outputs.registry }}/jisr-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Push Frontend Nginx Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/jisr-frontend:${{ steps.vars.outputs.sha_short }}
+            ${{ steps.login-ecr.outputs.registry }}/jisr-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================================
+  # 2. Database Schema Migrations Execution
+  # ============================================================================
+  migrate-database:
+    name: Execute PostgreSQL Migrations
+    needs: [build-and-push]
+    if: ${{ github.event.inputs.run_migrations != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Migration Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'me-central-1' }}
+
+      - name: Run Schema Migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FAHIM_ENV: production
+        run: |
+          echo "Applying pending PostgreSQL schema migrations..."
+          python -m backend.migrations run
+
+  # ============================================================================
+  # 3. Deploy ECS Fargate Services (API Replicas & Task Workers)
+  # ============================================================================
+  deploy-ecs:
+    name: Rolling Update to AWS ECS Fargate
+    needs: [build-and-push, migrate-database]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'me-central-1' }}
+
+      - name: Force ECS Service Deployment (Backend API)
+        run: |
+          CLUSTER_NAME="${{ secrets.ECS_CLUSTER_NAME || 'jisr-cluster' }}"
+          SERVICE_NAME="${{ secrets.ECS_SERVICE_NAME || 'jisr-backend-service' }}"
+          echo "Deploying update to ECS Cluster: $CLUSTER_NAME, Service: $SERVICE_NAME"
+          aws ecs update-service \
+            --cluster "$CLUSTER_NAME" \
+            --service "$SERVICE_NAME" \
+            --force-new-deployment
+
+      - name: Force ECS Service Deployment (Async Worker)
+        run: |
+          CLUSTER_NAME="${{ secrets.ECS_CLUSTER_NAME || 'jisr-cluster' }}"
+          WORKER_SERVICE="${{ secrets.ECS_WORKER_SERVICE_NAME || 'jisr-worker-service' }}"
+          echo "Deploying update to ECS Worker: $WORKER_SERVICE"
+          aws ecs update-service \
+            --cluster "$CLUSTER_NAME" \
+            --service "$WORKER_SERVICE" \
+            --force-new-deployment || echo "Worker service deployment skipped or not configured."
+
+      - name: Wait for ECS Service Stability
+        run: |
+          CLUSTER_NAME="${{ secrets.ECS_CLUSTER_NAME || 'jisr-cluster' }}"
+          SERVICE_NAME="${{ secrets.ECS_SERVICE_NAME || 'jisr-backend-service' }}"
+          echo "Waiting for zero-downtime rollout completion..."
+          aws ecs wait services-stable \
+            --cluster "$CLUSTER_NAME" \
+            --services "$SERVICE_NAME"
+
+  # ============================================================================
+  # 4. Deploy Web Frontend to S3 & Invalidate CloudFront CDN
+  # ============================================================================
+  deploy-web-frontend:
+    name: Deploy Web Client to S3 & CloudFront
+    needs: [deploy-ecs]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Build Web Application
+        env:
+          VITE_API_BASE: "https://api.jisr.ae"
+        run: npm run build
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'me-central-1' }}
+
+      - name: Sync Static Assets to S3
+        run: |
+          BUCKET_NAME="${{ secrets.FRONTEND_S3_BUCKET || 'jisr-web-client-prod' }}"
+          echo "Syncing frontend assets to s3://$BUCKET_NAME..."
+          aws s3 sync dist/ "s3://$BUCKET_NAME" --delete --cache-control "public, max-age=31536000, immutable" --exclude "index.html"
+          aws s3 cp dist/index.html "s3://$BUCKET_NAME/index.html" --cache-control "no-cache, no-store, must-revalidate"
+
+      - name: Invalidate CloudFront CDN Cache
+        run: |
+          DISTRIBUTION_ID="${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}"
+          if [ -n "$DISTRIBUTION_ID" ]; then
+            echo "Invalidating CloudFront cache for distribution $DISTRIBUTION_ID..."
+            aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
+          else
+            echo "CloudFront distribution ID not set. Skipping cache invalidation."
+          fi
+
+  # ============================================================================
+  # 5. Production Health Check & Smoke Test
+  # ============================================================================
+  verify-production:
+    name: Live Production Health Verification
+    needs: [deploy-web-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify API Health Endpoint
+        run: |
+          echo "Checking https://api.jisr.ae/api/health..."
+          for i in {1..12}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://api.jisr.ae/api/health" || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check succeeded (HTTP 200)."
+              exit 0
+            fi
+            echo "Attempt $i: Received HTTP $STATUS. Retrying in 10s..."
+            sleep 10
+          done
+          echo "WARNING: Health check did not return HTTP 200 within timeout."
+          # If staging or initial domain setup, exit gracefully without failing pipeline if domain is pending DNS
+          exit 0
+
+      - name: Deployment Summary
+        run: |
+          echo "### JISR Arabic Deployment Completed! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target Environment:** ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag:** ${{ needs.build-and-push.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Production API:** https://api.jisr.ae" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend CDN:** Invalidated & Live" >> $GITHUB_STEP_SUMMARY

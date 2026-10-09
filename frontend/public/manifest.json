@@ -1,0 +1,22 @@
+{
+  "name": "Fahim (فهيم) — Arabic Learning Companion",
+  "short_name": "Fahim",
+  "description": "Educational Arabic learning application for non-native learners in UAE schools (CBSE & Ministry of Education curriculum).",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfbfa",
+  "theme_color": "#064e3b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%23064e3b'/><text x='50%' y='68%' font-size='110' font-weight='bold' fill='%23fbbf24' text-anchor='middle'>ف</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%23064e3b'/><text x='50%' y='68%' font-size='300' font-weight='bold' fill='%23fbbf24' text-anchor='middle'>ف</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

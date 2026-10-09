@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16082B"/>
+      <stop offset="50%" stop-color="#28114B"/>
+      <stop offset="100%" stop-color="#0E041C"/>
+    </linearGradient>
+
+    <!-- Radial Center Spotlight -->
+    <radialGradient id="spotlight3" cx="50%" cy="46%" r="60%">
+      <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.32"/>
+      <stop offset="70%" stop-color="#16082B" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#16082B" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Ribbon Arc 1: Royal Violet -->
+    <linearGradient id="violetRibbon3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C084FC"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
+    </linearGradient>
+
+    <!-- Ribbon Arc 2: UAE Emerald Bridge -->
+    <linearGradient id="emeraldRibbon3" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#047857"/>
+      <stop offset="40%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#34D399"/>
+    </linearGradient>
+
+    <!-- Ribbon Arc 3: Solar Gold Loop -->
+    <linearGradient id="goldRibbon3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A"/>
+      <stop offset="50%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+
+    <!-- Chrome Edge Highlight -->
+    <linearGradient id="edgeGleam3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Deep Drop Shadow -->
+    <filter id="shadow3" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#05010B" flood-opacity="0.75"/>
+    </filter>
+
+    <!-- Diamond Core Bloom -->
+    <filter id="gemBloom3" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Base App Icon Squircle (512x512 with 112px radius) -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad3)"/>
+  <rect width="512" height="512" rx="112" fill="url(#spotlight3)"/>
+  <rect x="5" y="5" width="502" height="502" rx="107" fill="none" stroke="#A855F7" stroke-width="2.5" opacity="0.35"/>
+
+  <!-- Subtle Concentric Geometric Guidelines (Representing bridge cables & orbits) -->
+  <g stroke="#7C3AED" stroke-width="1.5" opacity="0.2" fill="none">
+    <ellipse cx="256" cy="240" rx="170" ry="110"/>
+    <ellipse cx="256" cy="240" rx="200" ry="130" stroke-dasharray="6,8"/>
+  </g>
+
+  <!-- The Continuous Infinity Bridge Monogram (Forming the Arabic 'Jim' & Modern 'J') -->
+  <g filter="url(#shadow3)">
+    <!-- 1. The Crown & Upper Crest (Gold to Purple Transition) -->
+    <path d="M 170 145
+             C 215 110, 310 110, 355 145
+             C 382 166, 380 205, 345 220
+             C 325 228, 290 220, 275 205
+             C 260 190, 240 180, 210 185
+             C 175 190, 150 165, 170 145 Z" 
+          fill="url(#goldRibbon3)"/>
+
+    <!-- 2. The Main Suspension Arch & Bridge Descent (Emerald Span) -->
+    <path d="M 355 145
+             C 410 200, 420 280, 365 335
+             C 310 390, 215 395, 155 350
+             C 115 320, 105 270, 140 235
+             C 165 210, 205 218, 205 250
+             C 205 285, 245 325, 295 315
+             C 340 305, 360 250, 320 205
+             C 300 180, 320 150, 355 145 Z" 
+          fill="url(#emeraldRibbon3)"/>
+
+    <!-- 3. The Connecting Return Loop (Royal Violet Bridge Deck) -->
+    <path d="M 140 235
+             C 110 268, 115 330, 165 365
+             C 215 400, 295 395, 340 355
+             C 320 370, 240 380, 195 345
+             C 160 320, 155 280, 180 250
+             C 192 235, 170 215, 140 235 Z" 
+          fill="url(#violetRibbon3)"/>
+
+    <!-- 3D Gleam Highlights on Ribbon Edges -->
+    <path d="M 185 148 C 230 118, 305 118, 345 148" 
+          stroke="url(#edgeGleam3)" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <path d="M 370 200 C 400 245, 395 305, 355 340" 
+          stroke="url(#edgeGleam3)" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.6"/>
+  </g>
+
+  <!-- The Floating Central Nuqta: Precision-Cut Golden Rhombus Jewel -->
+  <g filter="url(#gemBloom3)">
+    <!-- Main Diamond Body -->
+    <rect x="230" y="214" width="52" height="52" rx="10" transform="rotate(45 256 240)" fill="url(#goldRibbon3)"/>
+    
+    <!-- Top-Left Facet Shimmer -->
+    <polygon points="256,203 293,240 256,240" fill="#FEF08A" opacity="0.8"/>
+    
+    <!-- Core White Sparkle -->
+    <circle cx="256" cy="240" r="7" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Bilingual Branding Typography -->
+  <text x="256" y="425" text-anchor="middle" font-family="'Cairo', 'Tajawal', sans-serif" font-weight="900" font-size="40" fill="#FFFFFF" letter-spacing="2">جِـــسْـــر</text>
+  <text x="256" y="456" text-anchor="middle" font-family="'Montserrat', 'Inter', sans-serif" font-weight="800" font-size="13" fill="#C084FC" letter-spacing="7">JISR ARABIC</text>
+  <text x="256" y="473" text-anchor="middle" font-family="'Montserrat', 'Inter', sans-serif" font-weight="600" font-size="9" fill="#34D399" letter-spacing="3.5">EMIRATES EDTECH</text>
+</svg>

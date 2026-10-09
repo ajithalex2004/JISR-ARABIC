@@ -1,0 +1,195 @@
+name: JISR Arabic CI
+
+on:
+  push:
+    branches: [ main, master, staging ]
+  pull_request:
+    branches: [ main, master, staging ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================================
+  # 1. Backend CI (Python 3.13, Migrations, Offline SaaS Audit & Full Unit Suite)
+  # ============================================================================
+  backend-ci:
+    name: Backend Lint & Unit Tests
+    runs-on: ubuntu-latest
+    env:
+      FAHIM_ENV: development
+      FAHIM_EXPOSE_DEBUG_OTP: "1"
+      STORAGE_BACKEND: local
+      TASK_QUEUE_BACKEND: memory
+      PYTHONPATH: .
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install -r backend/requirements.txt
+
+      - name: Compile Backend Code (Bytecode & Syntax Check)
+        run: python -m compileall -q backend
+
+      - name: Verify Database Migrations Engine
+        run: python -m backend.migrations status
+
+      - name: Verify Audio Pre-Warming Engine
+        run: python -m backend.scripts.prewarm_audio --dry-run --limit 5
+
+      - name: Run Production SaaS Configuration Audit (Offline Validation)
+        run: python -m backend.scripts.verify_production_readiness --skip-network
+
+      - name: Run Enterprise Regression Test Suite (72 Tests across 10 Suites)
+        run: |
+          python -m unittest \
+            backend.tests.test_phase0_security \
+            backend.tests.test_phase1_trust \
+            backend.tests.test_phase2_reliability \
+            backend.tests.test_phase3_trust \
+            backend.tests.test_phase4_polish \
+            backend.tests.test_phase5_scalability \
+            backend.tests.test_storage_and_prewarming \
+            backend.tests.test_pillar_6_task_queue \
+            backend.tests.test_load_testing_harness \
+            backend.tests.test_saas_readiness
+
+  # ============================================================================
+  # 2. Frontend CI (Node 20, TypeScript Verification & Production Vite Build)
+  # ============================================================================
+  frontend-ci:
+    name: Frontend TypeScript & Vite Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Type Check Frontend (TypeScript)
+        run: npx tsc --noEmit
+
+      - name: Build Production Web Bundle (Vite)
+        run: npm run build
+
+      - name: Verify Production Dist Output
+        run: |
+          test -f dist/index.html || (echo "dist/index.html missing" && exit 1)
+          echo "Frontend dist built successfully."
+
+  # ============================================================================
+  # 3. Mobile CI (Flutter 3.38+ / Dart 3.10+, Static Analysis & Unit Tests)
+  # ============================================================================
+  mobile-ci:
+    name: Mobile Flutter Analysis & Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Install Flutter Dependencies
+        run: flutter pub get
+
+      - name: Run Static Code Analysis (Zero Warnings Enforced)
+        run: flutter analyze
+
+      - name: Run Mobile Test Suite (15 Tests)
+        run: flutter test
+
+  # ============================================================================
+  # 4. Infrastructure CI (Terraform Format & Syntax Validation)
+  # ============================================================================
+  terraform-ci:
+    name: Terraform IaC Format & Validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Check Terraform Formatting
+        run: terraform fmt -check -recursive
+
+      - name: Initialize Terraform (No Backend)
+        run: terraform init -backend=false
+
+      - name: Validate Terraform Syntax & References
+        run: terraform validate
+
+  # ============================================================================
+  # 5. Containerization CI (Multi-Stage Dockerfile Compilation Check)
+  # ============================================================================
+  docker-ci:
+    name: Docker Images Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Docker Image (Dry Run / No Push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          tags: jisr-backend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Frontend Docker Image (Dry Run / No Push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: false
+          tags: jisr-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

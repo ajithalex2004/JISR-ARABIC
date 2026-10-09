@@ -1,0 +1,275 @@
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 
+   Fahim (فهيم) Modern Design System:
+   - Friendly rounded aesthetic (rounded-xl, rounded-2xl, rounded-3xl)
+   - Primary Fahim Purple (#6C5CE7 / #5E35B1)
+   - Deep Royal Purple for Arabic Headings (#4A154B / #3B0764)
+   - Active Subject Green (#16A34A / #22C55E)
+   - Soft lavender/cloud background (#F8F9FE)
+   - Left-indicator border cards for learning modes
+*/
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fe;
+  color: #1e293b;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Arabic typography class */
+.font-arabic {
+  font-family: 'Noto Naskh Arabic', 'Cairo', 'Amiri', serif;
+  direction: rtl;
+  text-align: right;
+  line-height: 1.8;
+}
+
+/* Modern Fahim Brand Buttons */
+.btn-fahim-primary, .btn-faheem-primary {
+  background-color: #6c5ce7;
+  color: #ffffff;
+  border-radius: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 14px 0 rgba(108, 92, 231, 0.25);
+  border: none;
+}
+.btn-fahim-primary:hover:not(:disabled), .btn-faheem-primary:hover:not(:disabled) {
+  background-color: #5b47fb;
+  box-shadow: 0 6px 20px 0 rgba(108, 92, 231, 0.35);
+  transform: translateY(-1px);
+}
+.btn-fahim-primary:disabled, .btn-faheem-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-fahim-secondary, .btn-faheem-secondary {
+  background-color: #ffffff;
+  color: #4b5563;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.btn-faheem-secondary:hover:not(:disabled) {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+.btn-fahim-green, .btn-faheem-green {
+  background-color: #16a34a;
+  color: #ffffff;
+  border-radius: 9999px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+  border: none;
+}
+.btn-fahim-green:hover:not(:disabled), .btn-faheem-green:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+/* Fallback button compatibility aliases */
+.btn-primary {
+  background-color: #6c5ce7;
+  color: #ffffff;
+  border-radius: 1rem;
+  padding: 0.6rem 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: #5b47fb;
+  transform: translateY(-1px);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: #4b5563;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  padding: 0.6rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.btn-secondary:hover:not(:disabled) {
+  background-color: #f8f9fe;
+  color: #1e293b;
+}
+
+.btn-accent {
+  background-color: #16a34a;
+  color: #ffffff;
+  border-radius: 1rem;
+  padding: 0.6rem 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
+}
+.btn-accent:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+/* Fahim Modern Cards */
+.fahim-card, .faheem-card, .sharp-card {
+  background-color: #ffffff;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease-in-out;
+}
+
+.fahim-card:hover, .faheem-card:hover, .sharp-card:hover {
+  box-shadow: 0 6px 18px rgba(108, 92, 231, 0.07);
+}
+
+.sharp-card-focus {
+  background-color: #ffffff;
+  border-radius: 1.25rem;
+  border: 2px solid #6c5ce7;
+  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.15);
+}
+
+/* Learning Mode Card with Green Indicator Bar */
+.fahim-mode-card, .faheem-mode-card {
+  position: relative;
+  background-color: #ffffff;
+  border-radius: 1.25rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: visible;
+  cursor: pointer;
+}
+.fahim-mode-card::before, .faheem-mode-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 4.5px;
+  background-color: #16a34a;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+.fahim-mode-card:hover, .faheem-mode-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(108, 92, 231, 0.09);
+  border-color: #e2e8f0;
+}
+
+/* Gradient Hero for My Balance & Achievements */
+.fahim-balance-gradient, .faheem-balance-gradient {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
+  color: #ffffff;
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 24px -4px rgba(124, 58, 237, 0.35);
+}
+
+/* Modern Inputs with rounded edges */
+.sharp-input, .fahim-input, .faheem-input {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.875rem;
+  padding: 0.75rem 1rem;
+  background-color: #ffffff;
+  color: #0f172a;
+  outline: none;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+.sharp-input:focus, .fahim-input:focus, .faheem-input:focus {
+  border-color: #6c5ce7;
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
+}
+
+/* Pronunciation word target with keyboard/touch accessibility */
+.arabic-word-target {
+  cursor: pointer;
+  padding: 0.15rem 0.4rem;
+  margin: 0 0.15rem;
+  display: inline-block;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s ease;
+  border-bottom: 2px solid #cbd5e1;
+}
+.arabic-word-target:hover, .arabic-word-target:focus {
+  background-color: #ede9fe;
+  outline: none;
+  border-bottom-color: #6c5ce7;
+}
+.arabic-word-target.playing {
+  background-color: #fef08a;
+  border-bottom-color: #eab308;
+}
+
+/* Custom rounded scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f8f9fe;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+

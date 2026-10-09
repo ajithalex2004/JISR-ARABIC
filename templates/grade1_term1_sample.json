@@ -1,0 +1,2352 @@
+[
+  {
+    "lesson_id": "lesson_g1_t1_ch01",
+    "version": "1.0.0",
+    "title_ar": "الحروف الهجائية الأولى (أ - د)",
+    "title_en": "First Letters (Alif to Dal)",
+    "unit_title_ar": "الوحدة الدراسية",
+    "unit_title_en": "Curriculum Unit",
+    "grade": 1,
+    "term": 1,
+    "start_page": 6,
+    "pdf_start_page": 6,
+    "prep_check": {
+      "title_ar": "التهيئة والتحضير السريع",
+      "title_en": "Warm-up Prep Check",
+      "description_en": "Quick diagnostic baseline before entering the lesson.",
+      "questions": [
+        {
+          "question_ar": "ما هو المفهوم الأساسي في درس (الحروف الهجائية الأولى (أ - د))؟",
+          "options": [
+            "فهم المعنى العام والقيم التربوية",
+            "حفظ الكلمات دون قراءة",
+            "تجاهل التشكيل والحركات",
+            "الاستماع دون تركيز"
+          ],
+          "correct_index": 0
+        }
+      ]
+    },
+    "learning_paths": {
+      "foundation": {
+        "level": "المستوى التأسيسي",
+        "description": "التركيز على القراءة بالحركات والمفردات المباشرة."
+      },
+      "guided": {
+        "level": "المستوى المتوسط الموجه",
+        "description": "تحليل الجمل واستخراج الأفكار والعلاقات اللغوية."
+      },
+      "independent": {
+        "level": "المستوى المتقدم المستقل",
+        "description": "النقد البلاغي والتعبير الإبداعي المستقل."
+      }
+    },
+    "instruction_decoder": [
+      {
+        "term_ar": "اقْرَأْ وَفَسِّرْ",
+        "term_en": "Read and Interpret",
+        "meaning_ar": "قراءة النص بتمعن واستنتاج الدلالات العميقة."
+      },
+      {
+        "term_ar": "أَعْرِبْ مَا تَحْتَهُ خَطٌّ",
+        "term_en": "Parse the Underlined",
+        "meaning_ar": "تحديد الموقع الإعرابي والعلامة الإعرابية الصحيحة."
+      }
+    ],
+    "vocabulary_cards": [
+      {
+        "id": "vocab_01",
+        "word_ar": "الرِّيَادَةُ",
+        "word_en": "Leadership & Excellence",
+        "meaning_ar": "السَّبْقُ وَالتَّقَدُّمُ فِي المَيَادِينِ الإِيجَابِيَّةِ.",
+        "meaning_en": "Leading the way and achieving pioneer status.",
+        "example_sentence_ar": "تَسْعَى دَوْلَةُ الإِمَارَاتِ دَائِمًا نَحْوَ الرِّيَادَةِ فِي كُلِّ المَجَالَاتِ.",
+        "example_sentence_en": "The UAE always strives for leadership in all domains."
+      },
+      {
+        "id": "vocab_02",
+        "word_ar": "التَّعَاوُنُ",
+        "word_en": "Collaboration",
+        "meaning_ar": "المُشَارَكَةُ الإِيجَابِيَّةُ وَمُسَاعَدَةُ الآخَرِينَ لِتَحْقِيقِ النَّجَاحِ.",
+        "meaning_en": "Working together positively to achieve success.",
+        "example_sentence_ar": "التَّعَاوُنُ بَيْنَ أَعْضَاءِ الفَرِيقِ يُحَقِّقُ الإِنْجَازَ الكَبِيرَ.",
+        "example_sentence_en": "Collaboration between teammates produces great achievement."
+      },
+      {
+        "id": "vocab_03",
+        "word_ar": "الابْتِكَارُ",
+        "word_en": "Innovation",
+        "meaning_ar": "إِبْدَاعُ أَفْكَارٍ جَدِيدَةٍ وَحُلُولٍ نَافِعَةٍ لِلْمُجْتَمَعِ.",
+        "meaning_en": "Creating novel ideas and beneficial solutions.",
+        "example_sentence_ar": "يُعْتَبَرُ الِابْتِكَارُ عِمَادَ المُسْتَقْبَلِ وَرُؤْيَةَ الأَجْيَالِ.",
+        "example_sentence_en": "Innovation is the pillar of the future."
+      },
+      {
+        "id": "vocab_04",
+        "word_ar": "الأَصَالَةُ",
+        "word_en": "Authenticity",
+        "meaning_ar": "التَّمَسُّكُ بِالتُّرَاثِ العَرِيقِ وَالقِيَمِ الأَخْلَاقِيَّةِ الرَّفِيعَةِ.",
+        "meaning_en": "Adhering to venerable heritage and noble values.",
+        "example_sentence_ar": "تَجْمَعُ بِلَادِي بَيْنَ الأَصَالَةِ وَالمُعَاصَرَةِ.",
+        "example_sentence_en": "My country combines authenticity with modernity."
+      }
+    ],
+    "grammar_lab": {
+      "title_ar": "المختبر النحوي: أسرار التركيب والإعراب في درس (الحروف الهجائية الأولى (أ - د))",
+      "title_en": "Grammar Lab: Sentence Structure in First Letters (Alif to Dal)",
+      "sections": [
+        {
+          "rule_name_ar": "أركان الجملة ودلالاتها الإعرابية",
+          "explanation_ar": "تتكون الجملة في لغتنا العربية الجميلة من أركان أساسية تضبط المعنى، كالمبتدأ والخبر في الجملة الاسمية، والفعل والفاعل والمفعول به في الجملة الفعلية.",
+          "explanation_en": "Arabic sentences are structured around core components: Subject & Predicate in nominal sentences, and Verb, Doer & Object in verbal sentences.",
+          "examples": [
+            {
+              "sentence_ar": "يَقْرَأُ الطَّالِبُ النَّصَّ بِإِتْقَانٍ.",
+              "sentence_en": "The student reads the text with mastery."
+            },
+            {
+              "sentence_ar": "العِلْمُ نُورٌ يُضِيءُ دُرُوبَ الحَيَاةِ.",
+              "sentence_en": "Knowledge is a light that illuminates paths of life."
+            }
+          ]
+        }
+      ]
+    },
+    "sentence_builder": {
+      "title_ar": "بناء الجمل والتراكيب الصحيحة",
+      "title_en": "Sentence Construction Studio",
+      "challenges": [
+        {
+          "jumbled_words": [
+            "الإِمَارَاتِ",
+            "فِي",
+            "يَتَمَيَّزُ",
+            "التَّعْلِيمُ",
+            "بِالجَوْدَةِ"
+          ],
+          "correct_sentence_ar": "يَتَمَيَّزُ التَّعْلِيمُ فِي الإِمَارَاتِ بِالجَوْدَةِ.",
+          "english_translation": "Education in the UAE is characterized by high quality."
+        }
+      ]
+    },
+    "listen_speak_studio": {
+      "title_ar": "استوديو الاستماع والنطق النموذجي: الحروف الهجائية الأولى (أ - د)",
+      "title_en": "Listen & Speak Studio: First Letters (Alif to Dal)",
+      "passage_ar": "يُعَدُّ دَرْسُ (الحروف الهجائية الأولى (أ - د)) مِنْ دُرُوسِ المِنْهَاجِ الوِزَارِيِّ المُعْتَمَدِ فِي دَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ. يَتَعَلَّمُ الطَّالِبُ مِنْ خِلَالِهِ قِيَمَ المَعْرِفَةِ، وَفَصَاحَةَ اللِّسَانِ، وَحُبَّ التَّعَلُّمِ، مُعْتَزًّا بِهُوِيَّتِهِ وَلُغَتِهِ العَرَبِيَّةِ الأَصِيلَةِ.",
+      "passage_en": "The lesson 'First Letters (Alif to Dal)' is an integral chapter of the UAE Ministry of Education Arabic curriculum. Students learn core values of knowledge, eloquent articulation, and love of discovery while taking pride in their authentic Arabic identity.",
+      "audio_scripts": [
+        {
+          "text_ar": "الحروف الهجائية الأولى (أ - د)",
+          "phonetic_hint": "Pronounce with crisp modern standard Arabic tashkeel"
+        },
+        {
+          "text_ar": "العِلْمُ وَالمَعْرِفَةُ أَسَاسُ التَّقَدُّمِ وَالنَّجَاحِ.",
+          "phonetic_hint": "Al-ilmu wal-ma'rifatu asaasu at-taqaddumi wan-najaah."
+        },
+        {
+          "text_ar": "نَفْتَخِرُ بِلُغَتِنَا العَرَبِيَّةِ الجَمِيلَةِ دَائِمًا.",
+          "phonetic_hint": "Naftakhiru bi-lughatinaa al-arabiyyati al-jameelah daa'iman."
+        }
+      ]
+    },
+    "practice_activities": [
+      {
+        "id": "act_01",
+        "question_ar": "مَا الفِكْرَةُ الرَّئِيسَةُ الَّتِي يُؤَكِّدُ عَلَيْهَا دَرْسُ (الحروف الهجائية الأولى (أ - د))؟",
+        "question_en": "What is the main idea emphasized in 'First Letters (Alif to Dal)'?",
+        "options": [
+          "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+          "الانشغال بالألعاب دون إنجاز الواجبات",
+          "إهمال القراءة والمطالعة المستمرة",
+          "الابتعاد عن العمل الجماعي والتطوعي"
+        ],
+        "correct_option": "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+        "explanation_ar": "يؤكد المنهاج الوزاري على الدمج بين إتقان اللغة واكتساب القيم السلوكية والوطنية النبيلة."
+      },
+      {
+        "id": "act_02",
+        "question_ar": "مَا هُوَ إِعْرَابُ كَلِمَةِ (الطَّالِبُ) فِي: (يَقْرَأُ الطَّالِبُ النَّصَّ)؟",
+        "question_en": "What is the grammatical case of 'al-talibu' in 'yaqra'u al-talibu an-nassa'?",
+        "options": [
+          "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+          "مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ",
+          "مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ",
+          "اسْمٌ مَجْرُورٌ بِالكَسْرَةِ"
+        ],
+        "correct_option": "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+        "explanation_ar": "الطالب هو من قام بفعل القراءة، فهو فاعل مرفوع بالضمة الظاهرة على آخره."
+      }
+    ],
+    "speaking_mission": {
+      "title_ar": "مهمة التحدث الصوتي: عبر بطلاقة",
+      "title_en": "Speaking Mission: Express Fluently",
+      "scenario_en": "Record a 30-second speech explaining why First Letters (Alif to Dal) is important in daily life.",
+      "prompts_ar": [
+        "تَحَدَّثْ عَنْ فَائِدَةِ هَذَا المَوْضُوعِ فِي حَيَاتِكَ اليَوْمِيَّةِ."
+      ],
+      "prompts_en": [
+        "Explain the real-world value of this topic."
+      ],
+      "recording_task_en": "Press the microphone to record your verbal response."
+    },
+    "parent_companion": {
+      "title_ar": "دليل ولي الأمر للمتابعة المنزلية",
+      "title_en": "Parent Companion Guide",
+      "summary_en": "Supports parents in discussing First Letters (Alif to Dal) with their child.",
+      "dinner_table_prompts": [
+        "اسأل طفلك: ما هي أجمل فكرة لفتت انتباهك في درس الحروف الهجائية الأولى (أ - د) اليوم؟"
+      ],
+      "home_practice_checklist": [
+        "مراجعة بطاقات المفردات",
+        "الاستماع للنطق السليم عبر التطبيق"
+      ]
+    },
+    "tutor_handover": {
+      "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
+      "title_en": "Tutor Handover Notes",
+      "learner_focus": "Mastery of vocabulary, pronunciation, and grammatical structure for First Letters (Alif to Dal).",
+      "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+      "rubric_categories": [
+        "الفهم والاستيعاب",
+        "صحة النطق والضبط بالشكل",
+        "التعبير الشفهي والكتابي"
+      ]
+    },
+    "exam_practice": {
+      "title_ar": "محاكاة الامتحان الوزاري",
+      "title_en": "MoE Exam Practice Simulation",
+      "total_marks": 20,
+      "objective_questions": [
+        {
+          "q_text_ar": "اختر المعنى الدقيق للسياق في درس (الحروف الهجائية الأولى (أ - د)):",
+          "answer_key": "المعنى الصحيح المعتمد في المعجم المدرسي"
+        }
+      ],
+      "writing_task": "اكتب ثلاث جمل مفيدة توظف فيها المفردات الجديدة التي تعلمتها."
+    },
+    "spaced_recall": {
+      "title_ar": "التكرار المتباعد والتثبيت طويل الأمد",
+      "title_en": "Spaced Recall Review",
+      "linked_concepts": [
+        "الحروف الهجائية الأولى (أ - د)",
+        "القواعد النحوية الأساسية",
+        "المفردات والتراكيب"
+      ]
+    }
+  },
+  {
+    "lesson_id": "lesson_g1_t1_ch02",
+    "version": "1.0.0",
+    "title_ar": "صفي الجميل",
+    "title_en": "My Beautiful Classroom",
+    "unit_title_ar": "الوحدة الدراسية",
+    "unit_title_en": "Curriculum Unit",
+    "grade": 1,
+    "term": 1,
+    "start_page": 16,
+    "pdf_start_page": 16,
+    "prep_check": {
+      "title_ar": "التهيئة والتحضير السريع",
+      "title_en": "Warm-up Prep Check",
+      "description_en": "Quick diagnostic baseline before entering the lesson.",
+      "questions": [
+        {
+          "question_ar": "ما هو المفهوم الأساسي في درس (صفي الجميل)؟",
+          "options": [
+            "فهم المعنى العام والقيم التربوية",
+            "حفظ الكلمات دون قراءة",
+            "تجاهل التشكيل والحركات",
+            "الاستماع دون تركيز"
+          ],
+          "correct_index": 0
+        }
+      ]
+    },
+    "learning_paths": {
+      "foundation": {
+        "level": "المستوى التأسيسي",
+        "description": "التركيز على القراءة بالحركات والمفردات المباشرة."
+      },
+      "guided": {
+        "level": "المستوى المتوسط الموجه",
+        "description": "تحليل الجمل واستخراج الأفكار والعلاقات اللغوية."
+      },
+      "independent": {
+        "level": "المستوى المتقدم المستقل",
+        "description": "النقد البلاغي والتعبير الإبداعي المستقل."
+      }
+    },
+    "instruction_decoder": [
+      {
+        "term_ar": "اقْرَأْ وَفَسِّرْ",
+        "term_en": "Read and Interpret",
+        "meaning_ar": "قراءة النص بتمعن واستنتاج الدلالات العميقة."
+      },
+      {
+        "term_ar": "أَعْرِبْ مَا تَحْتَهُ خَطٌّ",
+        "term_en": "Parse the Underlined",
+        "meaning_ar": "تحديد الموقع الإعرابي والعلامة الإعرابية الصحيحة."
+      }
+    ],
+    "vocabulary_cards": [
+      {
+        "id": "vocab_01",
+        "word_ar": "الرِّيَادَةُ",
+        "word_en": "Leadership & Excellence",
+        "meaning_ar": "السَّبْقُ وَالتَّقَدُّمُ فِي المَيَادِينِ الإِيجَابِيَّةِ.",
+        "meaning_en": "Leading the way and achieving pioneer status.",
+        "example_sentence_ar": "تَسْعَى دَوْلَةُ الإِمَارَاتِ دَائِمًا نَحْوَ الرِّيَادَةِ فِي كُلِّ المَجَالَاتِ.",
+        "example_sentence_en": "The UAE always strives for leadership in all domains."
+      },
+      {
+        "id": "vocab_02",
+        "word_ar": "التَّعَاوُنُ",
+        "word_en": "Collaboration",
+        "meaning_ar": "المُشَارَكَةُ الإِيجَابِيَّةُ وَمُسَاعَدَةُ الآخَرِينَ لِتَحْقِيقِ النَّجَاحِ.",
+        "meaning_en": "Working together positively to achieve success.",
+        "example_sentence_ar": "التَّعَاوُنُ بَيْنَ أَعْضَاءِ الفَرِيقِ يُحَقِّقُ الإِنْجَازَ الكَبِيرَ.",
+        "example_sentence_en": "Collaboration between teammates produces great achievement."
+      },
+      {
+        "id": "vocab_03",
+        "word_ar": "الابْتِكَارُ",
+        "word_en": "Innovation",
+        "meaning_ar": "إِبْدَاعُ أَفْكَارٍ جَدِيدَةٍ وَحُلُولٍ نَافِعَةٍ لِلْمُجْتَمَعِ.",
+        "meaning_en": "Creating novel ideas and beneficial solutions.",
+        "example_sentence_ar": "يُعْتَبَرُ الِابْتِكَارُ عِمَادَ المُسْتَقْبَلِ وَرُؤْيَةَ الأَجْيَالِ.",
+        "example_sentence_en": "Innovation is the pillar of the future."
+      },
+      {
+        "id": "vocab_04",
+        "word_ar": "الأَصَالَةُ",
+        "word_en": "Authenticity",
+        "meaning_ar": "التَّمَسُّكُ بِالتُّرَاثِ العَرِيقِ وَالقِيَمِ الأَخْلَاقِيَّةِ الرَّفِيعَةِ.",
+        "meaning_en": "Adhering to venerable heritage and noble values.",
+        "example_sentence_ar": "تَجْمَعُ بِلَادِي بَيْنَ الأَصَالَةِ وَالمُعَاصَرَةِ.",
+        "example_sentence_en": "My country combines authenticity with modernity."
+      }
+    ],
+    "grammar_lab": {
+      "title_ar": "المختبر النحوي: أسرار التركيب والإعراب في درس (صفي الجميل)",
+      "title_en": "Grammar Lab: Sentence Structure in My Beautiful Classroom",
+      "sections": [
+        {
+          "rule_name_ar": "أركان الجملة ودلالاتها الإعرابية",
+          "explanation_ar": "تتكون الجملة في لغتنا العربية الجميلة من أركان أساسية تضبط المعنى، كالمبتدأ والخبر في الجملة الاسمية، والفعل والفاعل والمفعول به في الجملة الفعلية.",
+          "explanation_en": "Arabic sentences are structured around core components: Subject & Predicate in nominal sentences, and Verb, Doer & Object in verbal sentences.",
+          "examples": [
+            {
+              "sentence_ar": "يَقْرَأُ الطَّالِبُ النَّصَّ بِإِتْقَانٍ.",
+              "sentence_en": "The student reads the text with mastery."
+            },
+            {
+              "sentence_ar": "العِلْمُ نُورٌ يُضِيءُ دُرُوبَ الحَيَاةِ.",
+              "sentence_en": "Knowledge is a light that illuminates paths of life."
+            }
+          ]
+        }
+      ]
+    },
+    "sentence_builder": {
+      "title_ar": "بناء الجمل والتراكيب الصحيحة",
+      "title_en": "Sentence Construction Studio",
+      "challenges": [
+        {
+          "jumbled_words": [
+            "الإِمَارَاتِ",
+            "فِي",
+            "يَتَمَيَّزُ",
+            "التَّعْلِيمُ",
+            "بِالجَوْدَةِ"
+          ],
+          "correct_sentence_ar": "يَتَمَيَّزُ التَّعْلِيمُ فِي الإِمَارَاتِ بِالجَوْدَةِ.",
+          "english_translation": "Education in the UAE is characterized by high quality."
+        }
+      ]
+    },
+    "listen_speak_studio": {
+      "title_ar": "استوديو الاستماع والنطق النموذجي: صفي الجميل",
+      "title_en": "Listen & Speak Studio: My Beautiful Classroom",
+      "passage_ar": "يُعَدُّ دَرْسُ (صفي الجميل) مِنْ دُرُوسِ المِنْهَاجِ الوِزَارِيِّ المُعْتَمَدِ فِي دَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ. يَتَعَلَّمُ الطَّالِبُ مِنْ خِلَالِهِ قِيَمَ المَعْرِفَةِ، وَفَصَاحَةَ اللِّسَانِ، وَحُبَّ التَّعَلُّمِ، مُعْتَزًّا بِهُوِيَّتِهِ وَلُغَتِهِ العَرَبِيَّةِ الأَصِيلَةِ.",
+      "passage_en": "The lesson 'My Beautiful Classroom' is an integral chapter of the UAE Ministry of Education Arabic curriculum. Students learn core values of knowledge, eloquent articulation, and love of discovery while taking pride in their authentic Arabic identity.",
+      "audio_scripts": [
+        {
+          "text_ar": "صفي الجميل",
+          "phonetic_hint": "Pronounce with crisp modern standard Arabic tashkeel"
+        },
+        {
+          "text_ar": "العِلْمُ وَالمَعْرِفَةُ أَسَاسُ التَّقَدُّمِ وَالنَّجَاحِ.",
+          "phonetic_hint": "Al-ilmu wal-ma'rifatu asaasu at-taqaddumi wan-najaah."
+        },
+        {
+          "text_ar": "نَفْتَخِرُ بِلُغَتِنَا العَرَبِيَّةِ الجَمِيلَةِ دَائِمًا.",
+          "phonetic_hint": "Naftakhiru bi-lughatinaa al-arabiyyati al-jameelah daa'iman."
+        }
+      ]
+    },
+    "practice_activities": [
+      {
+        "id": "act_01",
+        "question_ar": "مَا الفِكْرَةُ الرَّئِيسَةُ الَّتِي يُؤَكِّدُ عَلَيْهَا دَرْسُ (صفي الجميل)؟",
+        "question_en": "What is the main idea emphasized in 'My Beautiful Classroom'?",
+        "options": [
+          "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+          "الانشغال بالألعاب دون إنجاز الواجبات",
+          "إهمال القراءة والمطالعة المستمرة",
+          "الابتعاد عن العمل الجماعي والتطوعي"
+        ],
+        "correct_option": "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+        "explanation_ar": "يؤكد المنهاج الوزاري على الدمج بين إتقان اللغة واكتساب القيم السلوكية والوطنية النبيلة."
+      },
+      {
+        "id": "act_02",
+        "question_ar": "مَا هُوَ إِعْرَابُ كَلِمَةِ (الطَّالِبُ) فِي: (يَقْرَأُ الطَّالِبُ النَّصَّ)؟",
+        "question_en": "What is the grammatical case of 'al-talibu' in 'yaqra'u al-talibu an-nassa'?",
+        "options": [
+          "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+          "مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ",
+          "مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ",
+          "اسْمٌ مَجْرُورٌ بِالكَسْرَةِ"
+        ],
+        "correct_option": "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+        "explanation_ar": "الطالب هو من قام بفعل القراءة، فهو فاعل مرفوع بالضمة الظاهرة على آخره."
+      }
+    ],
+    "speaking_mission": {
+      "title_ar": "مهمة التحدث الصوتي: عبر بطلاقة",
+      "title_en": "Speaking Mission: Express Fluently",
+      "scenario_en": "Record a 30-second speech explaining why My Beautiful Classroom is important in daily life.",
+      "prompts_ar": [
+        "تَحَدَّثْ عَنْ فَائِدَةِ هَذَا المَوْضُوعِ فِي حَيَاتِكَ اليَوْمِيَّةِ."
+      ],
+      "prompts_en": [
+        "Explain the real-world value of this topic."
+      ],
+      "recording_task_en": "Press the microphone to record your verbal response."
+    },
+    "parent_companion": {
+      "title_ar": "دليل ولي الأمر للمتابعة المنزلية",
+      "title_en": "Parent Companion Guide",
+      "summary_en": "Supports parents in discussing My Beautiful Classroom with their child.",
+      "dinner_table_prompts": [
+        "اسأل طفلك: ما هي أجمل فكرة لفتت انتباهك في درس صفي الجميل اليوم؟"
+      ],
+      "home_practice_checklist": [
+        "مراجعة بطاقات المفردات",
+        "الاستماع للنطق السليم عبر التطبيق"
+      ]
+    },
+    "tutor_handover": {
+      "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
+      "title_en": "Tutor Handover Notes",
+      "learner_focus": "Mastery of vocabulary, pronunciation, and grammatical structure for My Beautiful Classroom.",
+      "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+      "rubric_categories": [
+        "الفهم والاستيعاب",
+        "صحة النطق والضبط بالشكل",
+        "التعبير الشفهي والكتابي"
+      ]
+    },
+    "exam_practice": {
+      "title_ar": "محاكاة الامتحان الوزاري",
+      "title_en": "MoE Exam Practice Simulation",
+      "total_marks": 20,
+      "objective_questions": [
+        {
+          "q_text_ar": "اختر المعنى الدقيق للسياق في درس (صفي الجميل):",
+          "answer_key": "المعنى الصحيح المعتمد في المعجم المدرسي"
+        }
+      ],
+      "writing_task": "اكتب ثلاث جمل مفيدة توظف فيها المفردات الجديدة التي تعلمتها."
+    },
+    "spaced_recall": {
+      "title_ar": "التكرار المتباعد والتثبيت طويل الأمد",
+      "title_en": "Spaced Recall Review",
+      "linked_concepts": [
+        "صفي الجميل",
+        "القواعد النحوية الأساسية",
+        "المفردات والتراكيب"
+      ]
+    }
+  },
+  {
+    "lesson_id": "lesson_g1_t1_ch03",
+    "version": "1.0.0",
+    "title_ar": "أسرتي الحبيبة",
+    "title_en": "My Beloved Family",
+    "unit_title_ar": "الوحدة الدراسية",
+    "unit_title_en": "Curriculum Unit",
+    "grade": 1,
+    "term": 1,
+    "start_page": 26,
+    "pdf_start_page": 26,
+    "prep_check": {
+      "title_ar": "التهيئة والتحضير السريع",
+      "title_en": "Warm-up Prep Check",
+      "description_en": "Quick diagnostic baseline before entering the lesson.",
+      "questions": [
+        {
+          "question_ar": "ما هو المفهوم الأساسي في درس (أسرتي الحبيبة)؟",
+          "options": [
+            "فهم المعنى العام والقيم التربوية",
+            "حفظ الكلمات دون قراءة",
+            "تجاهل التشكيل والحركات",
+            "الاستماع دون تركيز"
+          ],
+          "correct_index": 0
+        }
+      ]
+    },
+    "learning_paths": {
+      "foundation": {
+        "level": "المستوى التأسيسي",
+        "description": "التركيز على القراءة بالحركات والمفردات المباشرة."
+      },
+      "guided": {
+        "level": "المستوى المتوسط الموجه",
+        "description": "تحليل الجمل واستخراج الأفكار والعلاقات اللغوية."
+      },
+      "independent": {
+        "level": "المستوى المتقدم المستقل",
+        "description": "النقد البلاغي والتعبير الإبداعي المستقل."
+      }
+    },
+    "instruction_decoder": [
+      {
+        "term_ar": "اقْرَأْ وَفَسِّرْ",
+        "term_en": "Read and Interpret",
+        "meaning_ar": "قراءة النص بتمعن واستنتاج الدلالات العميقة."
+      },
+      {
+        "term_ar": "أَعْرِبْ مَا تَحْتَهُ خَطٌّ",
+        "term_en": "Parse the Underlined",
+        "meaning_ar": "تحديد الموقع الإعرابي والعلامة الإعرابية الصحيحة."
+      }
+    ],
+    "vocabulary_cards": [
+      {
+        "id": "vocab_01",
+        "word_ar": "الرِّيَادَةُ",
+        "word_en": "Leadership & Excellence",
+        "meaning_ar": "السَّبْقُ وَالتَّقَدُّمُ فِي المَيَادِينِ الإِيجَابِيَّةِ.",
+        "meaning_en": "Leading the way and achieving pioneer status.",
+        "example_sentence_ar": "تَسْعَى دَوْلَةُ الإِمَارَاتِ دَائِمًا نَحْوَ الرِّيَادَةِ فِي كُلِّ المَجَالَاتِ.",
+        "example_sentence_en": "The UAE always strives for leadership in all domains."
+      },
+      {
+        "id": "vocab_02",
+        "word_ar": "التَّعَاوُنُ",
+        "word_en": "Collaboration",
+        "meaning_ar": "المُشَارَكَةُ الإِيجَابِيَّةُ وَمُسَاعَدَةُ الآخَرِينَ لِتَحْقِيقِ النَّجَاحِ.",
+        "meaning_en": "Working together positively to achieve success.",
+        "example_sentence_ar": "التَّعَاوُنُ بَيْنَ أَعْضَاءِ الفَرِيقِ يُحَقِّقُ الإِنْجَازَ الكَبِيرَ.",
+        "example_sentence_en": "Collaboration between teammates produces great achievement."
+      },
+      {
+        "id": "vocab_03",
+        "word_ar": "الابْتِكَارُ",
+        "word_en": "Innovation",
+        "meaning_ar": "إِبْدَاعُ أَفْكَارٍ جَدِيدَةٍ وَحُلُولٍ نَافِعَةٍ لِلْمُجْتَمَعِ.",
+        "meaning_en": "Creating novel ideas and beneficial solutions.",
+        "example_sentence_ar": "يُعْتَبَرُ الِابْتِكَارُ عِمَادَ المُسْتَقْبَلِ وَرُؤْيَةَ الأَجْيَالِ.",
+        "example_sentence_en": "Innovation is the pillar of the future."
+      },
+      {
+        "id": "vocab_04",
+        "word_ar": "الأَصَالَةُ",
+        "word_en": "Authenticity",
+        "meaning_ar": "التَّمَسُّكُ بِالتُّرَاثِ العَرِيقِ وَالقِيَمِ الأَخْلَاقِيَّةِ الرَّفِيعَةِ.",
+        "meaning_en": "Adhering to venerable heritage and noble values.",
+        "example_sentence_ar": "تَجْمَعُ بِلَادِي بَيْنَ الأَصَالَةِ وَالمُعَاصَرَةِ.",
+        "example_sentence_en": "My country combines authenticity with modernity."
+      }
+    ],
+    "grammar_lab": {
+      "title_ar": "المختبر النحوي: أسرار التركيب والإعراب في درس (أسرتي الحبيبة)",
+      "title_en": "Grammar Lab: Sentence Structure in My Beloved Family",
+      "sections": [
+        {
+          "rule_name_ar": "أركان الجملة ودلالاتها الإعرابية",
+          "explanation_ar": "تتكون الجملة في لغتنا العربية الجميلة من أركان أساسية تضبط المعنى، كالمبتدأ والخبر في الجملة الاسمية، والفعل والفاعل والمفعول به في الجملة الفعلية.",
+          "explanation_en": "Arabic sentences are structured around core components: Subject & Predicate in nominal sentences, and Verb, Doer & Object in verbal sentences.",
+          "examples": [
+            {
+              "sentence_ar": "يَقْرَأُ الطَّالِبُ النَّصَّ بِإِتْقَانٍ.",
+              "sentence_en": "The student reads the text with mastery."
+            },
+            {
+              "sentence_ar": "العِلْمُ نُورٌ يُضِيءُ دُرُوبَ الحَيَاةِ.",
+              "sentence_en": "Knowledge is a light that illuminates paths of life."
+            }
+          ]
+        }
+      ]
+    },
+    "sentence_builder": {
+      "title_ar": "بناء الجمل والتراكيب الصحيحة",
+      "title_en": "Sentence Construction Studio",
+      "challenges": [
+        {
+          "jumbled_words": [
+            "الإِمَارَاتِ",
+            "فِي",
+            "يَتَمَيَّزُ",
+            "التَّعْلِيمُ",
+            "بِالجَوْدَةِ"
+          ],
+          "correct_sentence_ar": "يَتَمَيَّزُ التَّعْلِيمُ فِي الإِمَارَاتِ بِالجَوْدَةِ.",
+          "english_translation": "Education in the UAE is characterized by high quality."
+        }
+      ]
+    },
+    "listen_speak_studio": {
+      "title_ar": "استوديو الاستماع والنطق النموذجي: أسرتي الحبيبة",
+      "title_en": "Listen & Speak Studio: My Beloved Family",
+      "passage_ar": "يُعَدُّ دَرْسُ (أسرتي الحبيبة) مِنْ دُرُوسِ المِنْهَاجِ الوِزَارِيِّ المُعْتَمَدِ فِي دَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ. يَتَعَلَّمُ الطَّالِبُ مِنْ خِلَالِهِ قِيَمَ المَعْرِفَةِ، وَفَصَاحَةَ اللِّسَانِ، وَحُبَّ التَّعَلُّمِ، مُعْتَزًّا بِهُوِيَّتِهِ وَلُغَتِهِ العَرَبِيَّةِ الأَصِيلَةِ.",
+      "passage_en": "The lesson 'My Beloved Family' is an integral chapter of the UAE Ministry of Education Arabic curriculum. Students learn core values of knowledge, eloquent articulation, and love of discovery while taking pride in their authentic Arabic identity.",
+      "audio_scripts": [
+        {
+          "text_ar": "أسرتي الحبيبة",
+          "phonetic_hint": "Pronounce with crisp modern standard Arabic tashkeel"
+        },
+        {
+          "text_ar": "العِلْمُ وَالمَعْرِفَةُ أَسَاسُ التَّقَدُّمِ وَالنَّجَاحِ.",
+          "phonetic_hint": "Al-ilmu wal-ma'rifatu asaasu at-taqaddumi wan-najaah."
+        },
+        {
+          "text_ar": "نَفْتَخِرُ بِلُغَتِنَا العَرَبِيَّةِ الجَمِيلَةِ دَائِمًا.",
+          "phonetic_hint": "Naftakhiru bi-lughatinaa al-arabiyyati al-jameelah daa'iman."
+        }
+      ]
+    },
+    "practice_activities": [
+      {
+        "id": "act_01",
+        "question_ar": "مَا الفِكْرَةُ الرَّئِيسَةُ الَّتِي يُؤَكِّدُ عَلَيْهَا دَرْسُ (أسرتي الحبيبة)؟",
+        "question_en": "What is the main idea emphasized in 'My Beloved Family'?",
+        "options": [
+          "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+          "الانشغال بالألعاب دون إنجاز الواجبات",
+          "إهمال القراءة والمطالعة المستمرة",
+          "الابتعاد عن العمل الجماعي والتطوعي"
+        ],
+        "correct_option": "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+        "explanation_ar": "يؤكد المنهاج الوزاري على الدمج بين إتقان اللغة واكتساب القيم السلوكية والوطنية النبيلة."
+      },
+      {
+        "id": "act_02",
+        "question_ar": "مَا هُوَ إِعْرَابُ كَلِمَةِ (الطَّالِبُ) فِي: (يَقْرَأُ الطَّالِبُ النَّصَّ)؟",
+        "question_en": "What is the grammatical case of 'al-talibu' in 'yaqra'u al-talibu an-nassa'?",
+        "options": [
+          "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+          "مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ",
+          "مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ",
+          "اسْمٌ مَجْرُورٌ بِالكَسْرَةِ"
+        ],
+        "correct_option": "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+        "explanation_ar": "الطالب هو من قام بفعل القراءة، فهو فاعل مرفوع بالضمة الظاهرة على آخره."
+      }
+    ],
+    "speaking_mission": {
+      "title_ar": "مهمة التحدث الصوتي: عبر بطلاقة",
+      "title_en": "Speaking Mission: Express Fluently",
+      "scenario_en": "Record a 30-second speech explaining why My Beloved Family is important in daily life.",
+      "prompts_ar": [
+        "تَحَدَّثْ عَنْ فَائِدَةِ هَذَا المَوْضُوعِ فِي حَيَاتِكَ اليَوْمِيَّةِ."
+      ],
+      "prompts_en": [
+        "Explain the real-world value of this topic."
+      ],
+      "recording_task_en": "Press the microphone to record your verbal response."
+    },
+    "parent_companion": {
+      "title_ar": "دليل ولي الأمر للمتابعة المنزلية",
+      "title_en": "Parent Companion Guide",
+      "summary_en": "Supports parents in discussing My Beloved Family with their child.",
+      "dinner_table_prompts": [
+        "اسأل طفلك: ما هي أجمل فكرة لفتت انتباهك في درس أسرتي الحبيبة اليوم؟"
+      ],
+      "home_practice_checklist": [
+        "مراجعة بطاقات المفردات",
+        "الاستماع للنطق السليم عبر التطبيق"
+      ]
+    },
+    "tutor_handover": {
+      "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
+      "title_en": "Tutor Handover Notes",
+      "learner_focus": "Mastery of vocabulary, pronunciation, and grammatical structure for My Beloved Family.",
+      "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+      "rubric_categories": [
+        "الفهم والاستيعاب",
+        "صحة النطق والضبط بالشكل",
+        "التعبير الشفهي والكتابي"
+      ]
+    },
+    "exam_practice": {
+      "title_ar": "محاكاة الامتحان الوزاري",
+      "title_en": "MoE Exam Practice Simulation",
+      "total_marks": 20,
+      "objective_questions": [
+        {
+          "q_text_ar": "اختر المعنى الدقيق للسياق في درس (أسرتي الحبيبة):",
+          "answer_key": "المعنى الصحيح المعتمد في المعجم المدرسي"
+        }
+      ],
+      "writing_task": "اكتب ثلاث جمل مفيدة توظف فيها المفردات الجديدة التي تعلمتها."
+    },
+    "spaced_recall": {
+      "title_ar": "التكرار المتباعد والتثبيت طويل الأمد",
+      "title_en": "Spaced Recall Review",
+      "linked_concepts": [
+        "أسرتي الحبيبة",
+        "القواعد النحوية الأساسية",
+        "المفردات والتراكيب"
+      ]
+    }
+  },
+  {
+    "lesson_id": "lesson_g1_t1_ch04",
+    "version": "1.0.0",
+    "title_ar": "ألعابي وهواياتي",
+    "title_en": "My Toys and Hobbies",
+    "unit_title_ar": "الوحدة الدراسية",
+    "unit_title_en": "Curriculum Unit",
+    "grade": 1,
+    "term": 1,
+    "start_page": 36,
+    "pdf_start_page": 36,
+    "prep_check": {
+      "title_ar": "التهيئة والتحضير السريع",
+      "title_en": "Warm-up Prep Check",
+      "description_en": "Quick diagnostic baseline before entering the lesson.",
+      "questions": [
+        {
+          "question_ar": "ما هو المفهوم الأساسي في درس (ألعابي وهواياتي)؟",
+          "options": [
+            "فهم المعنى العام والقيم التربوية",
+            "حفظ الكلمات دون قراءة",
+            "تجاهل التشكيل والحركات",
+            "الاستماع دون تركيز"
+          ],
+          "correct_index": 0
+        }
+      ]
+    },
+    "learning_paths": {
+      "foundation": {
+        "level": "المستوى التأسيسي",
+        "description": "التركيز على القراءة بالحركات والمفردات المباشرة."
+      },
+      "guided": {
+        "level": "المستوى المتوسط الموجه",
+        "description": "تحليل الجمل واستخراج الأفكار والعلاقات اللغوية."
+      },
+      "independent": {
+        "level": "المستوى المتقدم المستقل",
+        "description": "النقد البلاغي والتعبير الإبداعي المستقل."
+      }
+    },
+    "instruction_decoder": [
+      {
+        "term_ar": "اقْرَأْ وَفَسِّرْ",
+        "term_en": "Read and Interpret",
+        "meaning_ar": "قراءة النص بتمعن واستنتاج الدلالات العميقة."
+      },
+      {
+        "term_ar": "أَعْرِبْ مَا تَحْتَهُ خَطٌّ",
+        "term_en": "Parse the Underlined",
+        "meaning_ar": "تحديد الموقع الإعرابي والعلامة الإعرابية الصحيحة."
+      }
+    ],
+    "vocabulary_cards": [
+      {
+        "id": "vocab_01",
+        "word_ar": "الرِّيَادَةُ",
+        "word_en": "Leadership & Excellence",
+        "meaning_ar": "السَّبْقُ وَالتَّقَدُّمُ فِي المَيَادِينِ الإِيجَابِيَّةِ.",
+        "meaning_en": "Leading the way and achieving pioneer status.",
+        "example_sentence_ar": "تَسْعَى دَوْلَةُ الإِمَارَاتِ دَائِمًا نَحْوَ الرِّيَادَةِ فِي كُلِّ المَجَالَاتِ.",
+        "example_sentence_en": "The UAE always strives for leadership in all domains."
+      },
+      {
+        "id": "vocab_02",
+        "word_ar": "التَّعَاوُنُ",
+        "word_en": "Collaboration",
+        "meaning_ar": "المُشَارَكَةُ الإِيجَابِيَّةُ وَمُسَاعَدَةُ الآخَرِينَ لِتَحْقِيقِ النَّجَاحِ.",
+        "meaning_en": "Working together positively to achieve success.",
+        "example_sentence_ar": "التَّعَاوُنُ بَيْنَ أَعْضَاءِ الفَرِيقِ يُحَقِّقُ الإِنْجَازَ الكَبِيرَ.",
+        "example_sentence_en": "Collaboration between teammates produces great achievement."
+      },
+      {
+        "id": "vocab_03",
+        "word_ar": "الابْتِكَارُ",
+        "word_en": "Innovation",
+        "meaning_ar": "إِبْدَاعُ أَفْكَارٍ جَدِيدَةٍ وَحُلُولٍ نَافِعَةٍ لِلْمُجْتَمَعِ.",
+        "meaning_en": "Creating novel ideas and beneficial solutions.",
+        "example_sentence_ar": "يُعْتَبَرُ الِابْتِكَارُ عِمَادَ المُسْتَقْبَلِ وَرُؤْيَةَ الأَجْيَالِ.",
+        "example_sentence_en": "Innovation is the pillar of the future."
+      },
+      {
+        "id": "vocab_04",
+        "word_ar": "الأَصَالَةُ",
+        "word_en": "Authenticity",
+        "meaning_ar": "التَّمَسُّكُ بِالتُّرَاثِ العَرِيقِ وَالقِيَمِ الأَخْلَاقِيَّةِ الرَّفِيعَةِ.",
+        "meaning_en": "Adhering to venerable heritage and noble values.",
+        "example_sentence_ar": "تَجْمَعُ بِلَادِي بَيْنَ الأَصَالَةِ وَالمُعَاصَرَةِ.",
+        "example_sentence_en": "My country combines authenticity with modernity."
+      }
+    ],
+    "grammar_lab": {
+      "title_ar": "المختبر النحوي: أسرار التركيب والإعراب في درس (ألعابي وهواياتي)",
+      "title_en": "Grammar Lab: Sentence Structure in My Toys and Hobbies",
+      "sections": [
+        {
+          "rule_name_ar": "أركان الجملة ودلالاتها الإعرابية",
+          "explanation_ar": "تتكون الجملة في لغتنا العربية الجميلة من أركان أساسية تضبط المعنى، كالمبتدأ والخبر في الجملة الاسمية، والفعل والفاعل والمفعول به في الجملة الفعلية.",
+          "explanation_en": "Arabic sentences are structured around core components: Subject & Predicate in nominal sentences, and Verb, Doer & Object in verbal sentences.",
+          "examples": [
+            {
+              "sentence_ar": "يَقْرَأُ الطَّالِبُ النَّصَّ بِإِتْقَانٍ.",
+              "sentence_en": "The student reads the text with mastery."
+            },
+            {
+              "sentence_ar": "العِلْمُ نُورٌ يُضِيءُ دُرُوبَ الحَيَاةِ.",
+              "sentence_en": "Knowledge is a light that illuminates paths of life."
+            }
+          ]
+        }
+      ]
+    },
+    "sentence_builder": {
+      "title_ar": "بناء الجمل والتراكيب الصحيحة",
+      "title_en": "Sentence Construction Studio",
+      "challenges": [
+        {
+          "jumbled_words": [
+            "الإِمَارَاتِ",
+            "فِي",
+            "يَتَمَيَّزُ",
+            "التَّعْلِيمُ",
+            "بِالجَوْدَةِ"
+          ],
+          "correct_sentence_ar": "يَتَمَيَّزُ التَّعْلِيمُ فِي الإِمَارَاتِ بِالجَوْدَةِ.",
+          "english_translation": "Education in the UAE is characterized by high quality."
+        }
+      ]
+    },
+    "listen_speak_studio": {
+      "title_ar": "استوديو الاستماع والنطق النموذجي: ألعابي وهواياتي",
+      "title_en": "Listen & Speak Studio: My Toys and Hobbies",
+      "passage_ar": "يُعَدُّ دَرْسُ (ألعابي وهواياتي) مِنْ دُرُوسِ المِنْهَاجِ الوِزَارِيِّ المُعْتَمَدِ فِي دَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ. يَتَعَلَّمُ الطَّالِبُ مِنْ خِلَالِهِ قِيَمَ المَعْرِفَةِ، وَفَصَاحَةَ اللِّسَانِ، وَحُبَّ التَّعَلُّمِ، مُعْتَزًّا بِهُوِيَّتِهِ وَلُغَتِهِ العَرَبِيَّةِ الأَصِيلَةِ.",
+      "passage_en": "The lesson 'My Toys and Hobbies' is an integral chapter of the UAE Ministry of Education Arabic curriculum. Students learn core values of knowledge, eloquent articulation, and love of discovery while taking pride in their authentic Arabic identity.",
+      "audio_scripts": [
+        {
+          "text_ar": "ألعابي وهواياتي",
+          "phonetic_hint": "Pronounce with crisp modern standard Arabic tashkeel"
+        },
+        {
+          "text_ar": "العِلْمُ وَالمَعْرِفَةُ أَسَاسُ التَّقَدُّمِ وَالنَّجَاحِ.",
+          "phonetic_hint": "Al-ilmu wal-ma'rifatu asaasu at-taqaddumi wan-najaah."
+        },
+        {
+          "text_ar": "نَفْتَخِرُ بِلُغَتِنَا العَرَبِيَّةِ الجَمِيلَةِ دَائِمًا.",
+          "phonetic_hint": "Naftakhiru bi-lughatinaa al-arabiyyati al-jameelah daa'iman."
+        }
+      ]
+    },
+    "practice_activities": [
+      {
+        "id": "act_01",
+        "question_ar": "مَا الفِكْرَةُ الرَّئِيسَةُ الَّتِي يُؤَكِّدُ عَلَيْهَا دَرْسُ (ألعابي وهواياتي)؟",
+        "question_en": "What is the main idea emphasized in 'My Toys and Hobbies'?",
+        "options": [
+          "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+          "الانشغال بالألعاب دون إنجاز الواجبات",
+          "إهمال القراءة والمطالعة المستمرة",
+          "الابتعاد عن العمل الجماعي والتطوعي"
+        ],
+        "correct_option": "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+        "explanation_ar": "يؤكد المنهاج الوزاري على الدمج بين إتقان اللغة واكتساب القيم السلوكية والوطنية النبيلة."
+      },
+      {
+        "id": "act_02",
+        "question_ar": "مَا هُوَ إِعْرَابُ كَلِمَةِ (الطَّالِبُ) فِي: (يَقْرَأُ الطَّالِبُ النَّصَّ)؟",
+        "question_en": "What is the grammatical case of 'al-talibu' in 'yaqra'u al-talibu an-nassa'?",
+        "options": [
+          "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+          "مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ",
+          "مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ",
+          "اسْمٌ مَجْرُورٌ بِالكَسْرَةِ"
+        ],
+        "correct_option": "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+        "explanation_ar": "الطالب هو من قام بفعل القراءة، فهو فاعل مرفوع بالضمة الظاهرة على آخره."
+      }
+    ],
+    "speaking_mission": {
+      "title_ar": "مهمة التحدث الصوتي: عبر بطلاقة",
+      "title_en": "Speaking Mission: Express Fluently",
+      "scenario_en": "Record a 30-second speech explaining why My Toys and Hobbies is important in daily life.",
+      "prompts_ar": [
+        "تَحَدَّثْ عَنْ فَائِدَةِ هَذَا المَوْضُوعِ فِي حَيَاتِكَ اليَوْمِيَّةِ."
+      ],
+      "prompts_en": [
+        "Explain the real-world value of this topic."
+      ],
+      "recording_task_en": "Press the microphone to record your verbal response."
+    },
+    "parent_companion": {
+      "title_ar": "دليل ولي الأمر للمتابعة المنزلية",
+      "title_en": "Parent Companion Guide",
+      "summary_en": "Supports parents in discussing My Toys and Hobbies with their child.",
+      "dinner_table_prompts": [
+        "اسأل طفلك: ما هي أجمل فكرة لفتت انتباهك في درس ألعابي وهواياتي اليوم؟"
+      ],
+      "home_practice_checklist": [
+        "مراجعة بطاقات المفردات",
+        "الاستماع للنطق السليم عبر التطبيق"
+      ]
+    },
+    "tutor_handover": {
+      "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
+      "title_en": "Tutor Handover Notes",
+      "learner_focus": "Mastery of vocabulary, pronunciation, and grammatical structure for My Toys and Hobbies.",
+      "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+      "rubric_categories": [
+        "الفهم والاستيعاب",
+        "صحة النطق والضبط بالشكل",
+        "التعبير الشفهي والكتابي"
+      ]
+    },
+    "exam_practice": {
+      "title_ar": "محاكاة الامتحان الوزاري",
+      "title_en": "MoE Exam Practice Simulation",
+      "total_marks": 20,
+      "objective_questions": [
+        {
+          "q_text_ar": "اختر المعنى الدقيق للسياق في درس (ألعابي وهواياتي):",
+          "answer_key": "المعنى الصحيح المعتمد في المعجم المدرسي"
+        }
+      ],
+      "writing_task": "اكتب ثلاث جمل مفيدة توظف فيها المفردات الجديدة التي تعلمتها."
+    },
+    "spaced_recall": {
+      "title_ar": "التكرار المتباعد والتثبيت طويل الأمد",
+      "title_en": "Spaced Recall Review",
+      "linked_concepts": [
+        "ألعابي وهواياتي",
+        "القواعد النحوية الأساسية",
+        "المفردات والتراكيب"
+      ]
+    }
+  },
+  {
+    "lesson_id": "lesson_g1_t1_ch05",
+    "version": "1.0.0",
+    "title_ar": "حديقة الحيوان",
+    "title_en": "At the Zoo",
+    "unit_title_ar": "الوحدة الدراسية",
+    "unit_title_en": "Curriculum Unit",
+    "grade": 1,
+    "term": 1,
+    "start_page": 46,
+    "pdf_start_page": 46,
+    "prep_check": {
+      "title_ar": "التهيئة والتحضير السريع",
+      "title_en": "Warm-up Prep Check",
+      "description_en": "Quick diagnostic baseline before entering the lesson.",
+      "questions": [
+        {
+          "question_ar": "ما هو المفهوم الأساسي في درس (حديقة الحيوان)؟",
+          "options": [
+            "فهم المعنى العام والقيم التربوية",
+            "حفظ الكلمات دون قراءة",
+            "تجاهل التشكيل والحركات",
+            "الاستماع دون تركيز"
+          ],
+          "correct_index": 0
+        }
+      ]
+    },
+    "learning_paths": {
+      "foundation": {
+        "level": "المستوى التأسيسي",
+        "description": "التركيز على القراءة بالحركات والمفردات المباشرة."
+      },
+      "guided": {
+        "level": "المستوى المتوسط الموجه",
+        "description": "تحليل الجمل واستخراج الأفكار والعلاقات اللغوية."
+      },
+      "independent": {
+        "level": "المستوى المتقدم المستقل",
+        "description": "النقد البلاغي والتعبير الإبداعي المستقل."
+      }
+    },
+    "instruction_decoder": [
+      {
+        "term_ar": "اقْرَأْ وَفَسِّرْ",
+        "term_en": "Read and Interpret",
+        "meaning_ar": "قراءة النص بتمعن واستنتاج الدلالات العميقة."
+      },
+      {
+        "term_ar": "أَعْرِبْ مَا تَحْتَهُ خَطٌّ",
+        "term_en": "Parse the Underlined",
+        "meaning_ar": "تحديد الموقع الإعرابي والعلامة الإعرابية الصحيحة."
+      }
+    ],
+    "vocabulary_cards": [
+      {
+        "id": "vocab_01",
+        "word_ar": "الرِّيَادَةُ",
+        "word_en": "Leadership & Excellence",
+        "meaning_ar": "السَّبْقُ وَالتَّقَدُّمُ فِي المَيَادِينِ الإِيجَابِيَّةِ.",
+        "meaning_en": "Leading the way and achieving pioneer status.",
+        "example_sentence_ar": "تَسْعَى دَوْلَةُ الإِمَارَاتِ دَائِمًا نَحْوَ الرِّيَادَةِ فِي كُلِّ المَجَالَاتِ.",
+        "example_sentence_en": "The UAE always strives for leadership in all domains."
+      },
+      {
+        "id": "vocab_02",
+        "word_ar": "التَّعَاوُنُ",
+        "word_en": "Collaboration",
+        "meaning_ar": "المُشَارَكَةُ الإِيجَابِيَّةُ وَمُسَاعَدَةُ الآخَرِينَ لِتَحْقِيقِ النَّجَاحِ.",
+        "meaning_en": "Working together positively to achieve success.",
+        "example_sentence_ar": "التَّعَاوُنُ بَيْنَ أَعْضَاءِ الفَرِيقِ يُحَقِّقُ الإِنْجَازَ الكَبِيرَ.",
+        "example_sentence_en": "Collaboration between teammates produces great achievement."
+      },
+      {
+        "id": "vocab_03",
+        "word_ar": "الابْتِكَارُ",
+        "word_en": "Innovation",
+        "meaning_ar": "إِبْدَاعُ أَفْكَارٍ جَدِيدَةٍ وَحُلُولٍ نَافِعَةٍ لِلْمُجْتَمَعِ.",
+        "meaning_en": "Creating novel ideas and beneficial solutions.",
+        "example_sentence_ar": "يُعْتَبَرُ الِابْتِكَارُ عِمَادَ المُسْتَقْبَلِ وَرُؤْيَةَ الأَجْيَالِ.",
+        "example_sentence_en": "Innovation is the pillar of the future."
+      },
+      {
+        "id": "vocab_04",
+        "word_ar": "الأَصَالَةُ",
+        "word_en": "Authenticity",
+        "meaning_ar": "التَّمَسُّكُ بِالتُّرَاثِ العَرِيقِ وَالقِيَمِ الأَخْلَاقِيَّةِ الرَّفِيعَةِ.",
+        "meaning_en": "Adhering to venerable heritage and noble values.",
+        "example_sentence_ar": "تَجْمَعُ بِلَادِي بَيْنَ الأَصَالَةِ وَالمُعَاصَرَةِ.",
+        "example_sentence_en": "My country combines authenticity with modernity."
+      }
+    ],
+    "grammar_lab": {
+      "title_ar": "المختبر النحوي: أسرار التركيب والإعراب في درس (حديقة الحيوان)",
+      "title_en": "Grammar Lab: Sentence Structure in At the Zoo",
+      "sections": [
+        {
+          "rule_name_ar": "أركان الجملة ودلالاتها الإعرابية",
+          "explanation_ar": "تتكون الجملة في لغتنا العربية الجميلة من أركان أساسية تضبط المعنى، كالمبتدأ والخبر في الجملة الاسمية، والفعل والفاعل والمفعول به في الجملة الفعلية.",
+          "explanation_en": "Arabic sentences are structured around core components: Subject & Predicate in nominal sentences, and Verb, Doer & Object in verbal sentences.",
+          "examples": [
+            {
+              "sentence_ar": "يَقْرَأُ الطَّالِبُ النَّصَّ بِإِتْقَانٍ.",
+              "sentence_en": "The student reads the text with mastery."
+            },
+            {
+              "sentence_ar": "العِلْمُ نُورٌ يُضِيءُ دُرُوبَ الحَيَاةِ.",
+              "sentence_en": "Knowledge is a light that illuminates paths of life."
+            }
+          ]
+        }
+      ]
+    },
+    "sentence_builder": {
+      "title_ar": "بناء الجمل والتراكيب الصحيحة",
+      "title_en": "Sentence Construction Studio",
+      "challenges": [
+        {
+          "jumbled_words": [
+            "الإِمَارَاتِ",
+            "فِي",
+            "يَتَمَيَّزُ",
+            "التَّعْلِيمُ",
+            "بِالجَوْدَةِ"
+          ],
+          "correct_sentence_ar": "يَتَمَيَّزُ التَّعْلِيمُ فِي الإِمَارَاتِ بِالجَوْدَةِ.",
+          "english_translation": "Education in the UAE is characterized by high quality."
+        }
+      ]
+    },
+    "listen_speak_studio": {
+      "title_ar": "استوديو الاستماع والنطق النموذجي: حديقة الحيوان",
+      "title_en": "Listen & Speak Studio: At the Zoo",
+      "passage_ar": "يُعَدُّ دَرْسُ (حديقة الحيوان) مِنْ دُرُوسِ المِنْهَاجِ الوِزَارِيِّ المُعْتَمَدِ فِي دَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ. يَتَعَلَّمُ الطَّالِبُ مِنْ خِلَالِهِ قِيَمَ المَعْرِفَةِ، وَفَصَاحَةَ اللِّسَانِ، وَحُبَّ التَّعَلُّمِ، مُعْتَزًّا بِهُوِيَّتِهِ وَلُغَتِهِ العَرَبِيَّةِ الأَصِيلَةِ.",
+      "passage_en": "The lesson 'At the Zoo' is an integral chapter of the UAE Ministry of Education Arabic curriculum. Students learn core values of knowledge, eloquent articulation, and love of discovery while taking pride in their authentic Arabic identity.",
+      "audio_scripts": [
+        {
+          "text_ar": "حديقة الحيوان",
+          "phonetic_hint": "Pronounce with crisp modern standard Arabic tashkeel"
+        },
+        {
+          "text_ar": "العِلْمُ وَالمَعْرِفَةُ أَسَاسُ التَّقَدُّمِ وَالنَّجَاحِ.",
+          "phonetic_hint": "Al-ilmu wal-ma'rifatu asaasu at-taqaddumi wan-najaah."
+        },
+        {
+          "text_ar": "نَفْتَخِرُ بِلُغَتِنَا العَرَبِيَّةِ الجَمِيلَةِ دَائِمًا.",
+          "phonetic_hint": "Naftakhiru bi-lughatinaa al-arabiyyati al-jameelah daa'iman."
+        }
+      ]
+    },
+    "practice_activities": [
+      {
+        "id": "act_01",
+        "question_ar": "مَا الفِكْرَةُ الرَّئِيسَةُ الَّتِي يُؤَكِّدُ عَلَيْهَا دَرْسُ (حديقة الحيوان)؟",
+        "question_en": "What is the main idea emphasized in 'At the Zoo'?",
+        "options": [
+          "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+          "الانشغال بالألعاب دون إنجاز الواجبات",
+          "إهمال القراءة والمطالعة المستمرة",
+          "الابتعاد عن العمل الجماعي والتطوعي"
+        ],
+        "correct_option": "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+        "explanation_ar": "يؤكد المنهاج الوزاري على الدمج بين إتقان اللغة واكتساب القيم السلوكية والوطنية النبيلة."
+      },
+      {
+        "id": "act_02",
+        "question_ar": "مَا هُوَ إِعْرَابُ كَلِمَةِ (الطَّالِبُ) فِي: (يَقْرَأُ الطَّالِبُ النَّصَّ)؟",
+        "question_en": "What is the grammatical case of 'al-talibu' in 'yaqra'u al-talibu an-nassa'?",
+        "options": [
+          "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+          "مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ",
+          "مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ",
+          "اسْمٌ مَجْرُورٌ بِالكَسْرَةِ"
+        ],
+        "correct_option": "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+        "explanation_ar": "الطالب هو من قام بفعل القراءة، فهو فاعل مرفوع بالضمة الظاهرة على آخره."
+      }
+    ],
+    "speaking_mission": {
+      "title_ar": "مهمة التحدث الصوتي: عبر بطلاقة",
+      "title_en": "Speaking Mission: Express Fluently",
+      "scenario_en": "Record a 30-second speech explaining why At the Zoo is important in daily life.",
+      "prompts_ar": [
+        "تَحَدَّثْ عَنْ فَائِدَةِ هَذَا المَوْضُوعِ فِي حَيَاتِكَ اليَوْمِيَّةِ."
+      ],
+      "prompts_en": [
+        "Explain the real-world value of this topic."
+      ],
+      "recording_task_en": "Press the microphone to record your verbal response."
+    },
+    "parent_companion": {
+      "title_ar": "دليل ولي الأمر للمتابعة المنزلية",
+      "title_en": "Parent Companion Guide",
+      "summary_en": "Supports parents in discussing At the Zoo with their child.",
+      "dinner_table_prompts": [
+        "اسأل طفلك: ما هي أجمل فكرة لفتت انتباهك في درس حديقة الحيوان اليوم؟"
+      ],
+      "home_practice_checklist": [
+        "مراجعة بطاقات المفردات",
+        "الاستماع للنطق السليم عبر التطبيق"
+      ]
+    },
+    "tutor_handover": {
+      "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
+      "title_en": "Tutor Handover Notes",
+      "learner_focus": "Mastery of vocabulary, pronunciation, and grammatical structure for At the Zoo.",
+      "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+      "rubric_categories": [
+        "الفهم والاستيعاب",
+        "صحة النطق والضبط بالشكل",
+        "التعبير الشفهي والكتابي"
+      ]
+    },
+    "exam_practice": {
+      "title_ar": "محاكاة الامتحان الوزاري",
+      "title_en": "MoE Exam Practice Simulation",
+      "total_marks": 20,
+      "objective_questions": [
+        {
+          "q_text_ar": "اختر المعنى الدقيق للسياق في درس (حديقة الحيوان):",
+          "answer_key": "المعنى الصحيح المعتمد في المعجم المدرسي"
+        }
+      ],
+      "writing_task": "اكتب ثلاث جمل مفيدة توظف فيها المفردات الجديدة التي تعلمتها."
+    },
+    "spaced_recall": {
+      "title_ar": "التكرار المتباعد والتثبيت طويل الأمد",
+      "title_en": "Spaced Recall Review",
+      "linked_concepts": [
+        "حديقة الحيوان",
+        "القواعد النحوية الأساسية",
+        "المفردات والتراكيب"
+      ]
+    }
+  },
+  {
+    "lesson_id": "lesson_g1_t1_ch06",
+    "version": "1.0.0",
+    "title_ar": "علم بلادي الإمارات",
+    "title_en": "UAE National Flag",
+    "unit_title_ar": "الوحدة الدراسية",
+    "unit_title_en": "Curriculum Unit",
+    "grade": 1,
+    "term": 1,
+    "start_page": 56,
+    "pdf_start_page": 56,
+    "prep_check": {
+      "title_ar": "التهيئة والتحضير السريع",
+      "title_en": "Warm-up Prep Check",
+      "description_en": "Quick diagnostic baseline before entering the lesson.",
+      "questions": [
+        {
+          "question_ar": "ما هو المفهوم الأساسي في درس (علم بلادي الإمارات)؟",
+          "options": [
+            "فهم المعنى العام والقيم التربوية",
+            "حفظ الكلمات دون قراءة",
+            "تجاهل التشكيل والحركات",
+            "الاستماع دون تركيز"
+          ],
+          "correct_index": 0
+        }
+      ]
+    },
+    "learning_paths": {
+      "foundation": {
+        "level": "المستوى التأسيسي",
+        "description": "التركيز على القراءة بالحركات والمفردات المباشرة."
+      },
+      "guided": {
+        "level": "المستوى المتوسط الموجه",
+        "description": "تحليل الجمل واستخراج الأفكار والعلاقات اللغوية."
+      },
+      "independent": {
+        "level": "المستوى المتقدم المستقل",
+        "description": "النقد البلاغي والتعبير الإبداعي المستقل."
+      }
+    },
+    "instruction_decoder": [
+      {
+        "term_ar": "اقْرَأْ وَفَسِّرْ",
+        "term_en": "Read and Interpret",
+        "meaning_ar": "قراءة النص بتمعن واستنتاج الدلالات العميقة."
+      },
+      {
+        "term_ar": "أَعْرِبْ مَا تَحْتَهُ خَطٌّ",
+        "term_en": "Parse the Underlined",
+        "meaning_ar": "تحديد الموقع الإعرابي والعلامة الإعرابية الصحيحة."
+      }
+    ],
+    "vocabulary_cards": [
+      {
+        "id": "vocab_01",
+        "word_ar": "الرِّيَادَةُ",
+        "word_en": "Leadership & Excellence",
+        "meaning_ar": "السَّبْقُ وَالتَّقَدُّمُ فِي المَيَادِينِ الإِيجَابِيَّةِ.",
+        "meaning_en": "Leading the way and achieving pioneer status.",
+        "example_sentence_ar": "تَسْعَى دَوْلَةُ الإِمَارَاتِ دَائِمًا نَحْوَ الرِّيَادَةِ فِي كُلِّ المَجَالَاتِ.",
+        "example_sentence_en": "The UAE always strives for leadership in all domains."
+      },
+      {
+        "id": "vocab_02",
+        "word_ar": "التَّعَاوُنُ",
+        "word_en": "Collaboration",
+        "meaning_ar": "المُشَارَكَةُ الإِيجَابِيَّةُ وَمُسَاعَدَةُ الآخَرِينَ لِتَحْقِيقِ النَّجَاحِ.",
+        "meaning_en": "Working together positively to achieve success.",
+        "example_sentence_ar": "التَّعَاوُنُ بَيْنَ أَعْضَاءِ الفَرِيقِ يُحَقِّقُ الإِنْجَازَ الكَبِيرَ.",
+        "example_sentence_en": "Collaboration between teammates produces great achievement."
+      },
+      {
+        "id": "vocab_03",
+        "word_ar": "الابْتِكَارُ",
+        "word_en": "Innovation",
+        "meaning_ar": "إِبْدَاعُ أَفْكَارٍ جَدِيدَةٍ وَحُلُولٍ نَافِعَةٍ لِلْمُجْتَمَعِ.",
+        "meaning_en": "Creating novel ideas and beneficial solutions.",
+        "example_sentence_ar": "يُعْتَبَرُ الِابْتِكَارُ عِمَادَ المُسْتَقْبَلِ وَرُؤْيَةَ الأَجْيَالِ.",
+        "example_sentence_en": "Innovation is the pillar of the future."
+      },
+      {
+        "id": "vocab_04",
+        "word_ar": "الأَصَالَةُ",
+        "word_en": "Authenticity",
+        "meaning_ar": "التَّمَسُّكُ بِالتُّرَاثِ العَرِيقِ وَالقِيَمِ الأَخْلَاقِيَّةِ الرَّفِيعَةِ.",
+        "meaning_en": "Adhering to venerable heritage and noble values.",
+        "example_sentence_ar": "تَجْمَعُ بِلَادِي بَيْنَ الأَصَالَةِ وَالمُعَاصَرَةِ.",
+        "example_sentence_en": "My country combines authenticity with modernity."
+      }
+    ],
+    "grammar_lab": {
+      "title_ar": "المختبر النحوي: أسرار التركيب والإعراب في درس (علم بلادي الإمارات)",
+      "title_en": "Grammar Lab: Sentence Structure in UAE National Flag",
+      "sections": [
+        {
+          "rule_name_ar": "أركان الجملة ودلالاتها الإعرابية",
+          "explanation_ar": "تتكون الجملة في لغتنا العربية الجميلة من أركان أساسية تضبط المعنى، كالمبتدأ والخبر في الجملة الاسمية، والفعل والفاعل والمفعول به في الجملة الفعلية.",
+          "explanation_en": "Arabic sentences are structured around core components: Subject & Predicate in nominal sentences, and Verb, Doer & Object in verbal sentences.",
+          "examples": [
+            {
+              "sentence_ar": "يَقْرَأُ الطَّالِبُ النَّصَّ بِإِتْقَانٍ.",
+              "sentence_en": "The student reads the text with mastery."
+            },
+            {
+              "sentence_ar": "العِلْمُ نُورٌ يُضِيءُ دُرُوبَ الحَيَاةِ.",
+              "sentence_en": "Knowledge is a light that illuminates paths of life."
+            }
+          ]
+        }
+      ]
+    },
+    "sentence_builder": {
+      "title_ar": "بناء الجمل والتراكيب الصحيحة",
+      "title_en": "Sentence Construction Studio",
+      "challenges": [
+        {
+          "jumbled_words": [
+            "الإِمَارَاتِ",
+            "فِي",
+            "يَتَمَيَّزُ",
+            "التَّعْلِيمُ",
+            "بِالجَوْدَةِ"
+          ],
+          "correct_sentence_ar": "يَتَمَيَّزُ التَّعْلِيمُ فِي الإِمَارَاتِ بِالجَوْدَةِ.",
+          "english_translation": "Education in the UAE is characterized by high quality."
+        }
+      ]
+    },
+    "listen_speak_studio": {
+      "title_ar": "استوديو الاستماع والنطق النموذجي: علم بلادي الإمارات",
+      "title_en": "Listen & Speak Studio: UAE National Flag",
+      "passage_ar": "يُعَدُّ دَرْسُ (علم بلادي الإمارات) مِنْ دُرُوسِ المِنْهَاجِ الوِزَارِيِّ المُعْتَمَدِ فِي دَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ. يَتَعَلَّمُ الطَّالِبُ مِنْ خِلَالِهِ قِيَمَ المَعْرِفَةِ، وَفَصَاحَةَ اللِّسَانِ، وَحُبَّ التَّعَلُّمِ، مُعْتَزًّا بِهُوِيَّتِهِ وَلُغَتِهِ العَرَبِيَّةِ الأَصِيلَةِ.",
+      "passage_en": "The lesson 'UAE National Flag' is an integral chapter of the UAE Ministry of Education Arabic curriculum. Students learn core values of knowledge, eloquent articulation, and love of discovery while taking pride in their authentic Arabic identity.",
+      "audio_scripts": [
+        {
+          "text_ar": "علم بلادي الإمارات",
+          "phonetic_hint": "Pronounce with crisp modern standard Arabic tashkeel"
+        },
+        {
+          "text_ar": "العِلْمُ وَالمَعْرِفَةُ أَسَاسُ التَّقَدُّمِ وَالنَّجَاحِ.",
+          "phonetic_hint": "Al-ilmu wal-ma'rifatu asaasu at-taqaddumi wan-najaah."
+        },
+        {
+          "text_ar": "نَفْتَخِرُ بِلُغَتِنَا العَرَبِيَّةِ الجَمِيلَةِ دَائِمًا.",
+          "phonetic_hint": "Naftakhiru bi-lughatinaa al-arabiyyati al-jameelah daa'iman."
+        }
+      ]
+    },
+    "practice_activities": [
+      {
+        "id": "act_01",
+        "question_ar": "مَا الفِكْرَةُ الرَّئِيسَةُ الَّتِي يُؤَكِّدُ عَلَيْهَا دَرْسُ (علم بلادي الإمارات)؟",
+        "question_en": "What is the main idea emphasized in 'UAE National Flag'?",
+        "options": [
+          "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+          "الانشغال بالألعاب دون إنجاز الواجبات",
+          "إهمال القراءة والمطالعة المستمرة",
+          "الابتعاد عن العمل الجماعي والتطوعي"
+        ],
+        "correct_option": "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+        "explanation_ar": "يؤكد المنهاج الوزاري على الدمج بين إتقان اللغة واكتساب القيم السلوكية والوطنية النبيلة."
+      },
+      {
+        "id": "act_02",
+        "question_ar": "مَا هُوَ إِعْرَابُ كَلِمَةِ (الطَّالِبُ) فِي: (يَقْرَأُ الطَّالِبُ النَّصَّ)؟",
+        "question_en": "What is the grammatical case of 'al-talibu' in 'yaqra'u al-talibu an-nassa'?",
+        "options": [
+          "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+          "مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ",
+          "مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ",
+          "اسْمٌ مَجْرُورٌ بِالكَسْرَةِ"
+        ],
+        "correct_option": "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+        "explanation_ar": "الطالب هو من قام بفعل القراءة، فهو فاعل مرفوع بالضمة الظاهرة على آخره."
+      }
+    ],
+    "speaking_mission": {
+      "title_ar": "مهمة التحدث الصوتي: عبر بطلاقة",
+      "title_en": "Speaking Mission: Express Fluently",
+      "scenario_en": "Record a 30-second speech explaining why UAE National Flag is important in daily life.",
+      "prompts_ar": [
+        "تَحَدَّثْ عَنْ فَائِدَةِ هَذَا المَوْضُوعِ فِي حَيَاتِكَ اليَوْمِيَّةِ."
+      ],
+      "prompts_en": [
+        "Explain the real-world value of this topic."
+      ],
+      "recording_task_en": "Press the microphone to record your verbal response."
+    },
+    "parent_companion": {
+      "title_ar": "دليل ولي الأمر للمتابعة المنزلية",
+      "title_en": "Parent Companion Guide",
+      "summary_en": "Supports parents in discussing UAE National Flag with their child.",
+      "dinner_table_prompts": [
+        "اسأل طفلك: ما هي أجمل فكرة لفتت انتباهك في درس علم بلادي الإمارات اليوم؟"
+      ],
+      "home_practice_checklist": [
+        "مراجعة بطاقات المفردات",
+        "الاستماع للنطق السليم عبر التطبيق"
+      ]
+    },
+    "tutor_handover": {
+      "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
+      "title_en": "Tutor Handover Notes",
+      "learner_focus": "Mastery of vocabulary, pronunciation, and grammatical structure for UAE National Flag.",
+      "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+      "rubric_categories": [
+        "الفهم والاستيعاب",
+        "صحة النطق والضبط بالشكل",
+        "التعبير الشفهي والكتابي"
+      ]
+    },
+    "exam_practice": {
+      "title_ar": "محاكاة الامتحان الوزاري",
+      "title_en": "MoE Exam Practice Simulation",
+      "total_marks": 20,
+      "objective_questions": [
+        {
+          "q_text_ar": "اختر المعنى الدقيق للسياق في درس (علم بلادي الإمارات):",
+          "answer_key": "المعنى الصحيح المعتمد في المعجم المدرسي"
+        }
+      ],
+      "writing_task": "اكتب ثلاث جمل مفيدة توظف فيها المفردات الجديدة التي تعلمتها."
+    },
+    "spaced_recall": {
+      "title_ar": "التكرار المتباعد والتثبيت طويل الأمد",
+      "title_en": "Spaced Recall Review",
+      "linked_concepts": [
+        "علم بلادي الإمارات",
+        "القواعد النحوية الأساسية",
+        "المفردات والتراكيب"
+      ]
+    }
+  },
+  {
+    "lesson_id": "lesson_g1_t1_ch07",
+    "version": "1.0.0",
+    "title_ar": "يوم الشهيد والوفاء",
+    "title_en": "Commemoration Day",
+    "unit_title_ar": "الوحدة الدراسية",
+    "unit_title_en": "Curriculum Unit",
+    "grade": 1,
+    "term": 1,
+    "start_page": 66,
+    "pdf_start_page": 66,
+    "prep_check": {
+      "title_ar": "التهيئة والتحضير السريع",
+      "title_en": "Warm-up Prep Check",
+      "description_en": "Quick diagnostic baseline before entering the lesson.",
+      "questions": [
+        {
+          "question_ar": "ما هو المفهوم الأساسي في درس (يوم الشهيد والوفاء)؟",
+          "options": [
+            "فهم المعنى العام والقيم التربوية",
+            "حفظ الكلمات دون قراءة",
+            "تجاهل التشكيل والحركات",
+            "الاستماع دون تركيز"
+          ],
+          "correct_index": 0
+        }
+      ]
+    },
+    "learning_paths": {
+      "foundation": {
+        "level": "المستوى التأسيسي",
+        "description": "التركيز على القراءة بالحركات والمفردات المباشرة."
+      },
+      "guided": {
+        "level": "المستوى المتوسط الموجه",
+        "description": "تحليل الجمل واستخراج الأفكار والعلاقات اللغوية."
+      },
+      "independent": {
+        "level": "المستوى المتقدم المستقل",
+        "description": "النقد البلاغي والتعبير الإبداعي المستقل."
+      }
+    },
+    "instruction_decoder": [
+      {
+        "term_ar": "اقْرَأْ وَفَسِّرْ",
+        "term_en": "Read and Interpret",
+        "meaning_ar": "قراءة النص بتمعن واستنتاج الدلالات العميقة."
+      },
+      {
+        "term_ar": "أَعْرِبْ مَا تَحْتَهُ خَطٌّ",
+        "term_en": "Parse the Underlined",
+        "meaning_ar": "تحديد الموقع الإعرابي والعلامة الإعرابية الصحيحة."
+      }
+    ],
+    "vocabulary_cards": [
+      {
+        "id": "vocab_01",
+        "word_ar": "الرِّيَادَةُ",
+        "word_en": "Leadership & Excellence",
+        "meaning_ar": "السَّبْقُ وَالتَّقَدُّمُ فِي المَيَادِينِ الإِيجَابِيَّةِ.",
+        "meaning_en": "Leading the way and achieving pioneer status.",
+        "example_sentence_ar": "تَسْعَى دَوْلَةُ الإِمَارَاتِ دَائِمًا نَحْوَ الرِّيَادَةِ فِي كُلِّ المَجَالَاتِ.",
+        "example_sentence_en": "The UAE always strives for leadership in all domains."
+      },
+      {
+        "id": "vocab_02",
+        "word_ar": "التَّعَاوُنُ",
+        "word_en": "Collaboration",
+        "meaning_ar": "المُشَارَكَةُ الإِيجَابِيَّةُ وَمُسَاعَدَةُ الآخَرِينَ لِتَحْقِيقِ النَّجَاحِ.",
+        "meaning_en": "Working together positively to achieve success.",
+        "example_sentence_ar": "التَّعَاوُنُ بَيْنَ أَعْضَاءِ الفَرِيقِ يُحَقِّقُ الإِنْجَازَ الكَبِيرَ.",
+        "example_sentence_en": "Collaboration between teammates produces great achievement."
+      },
+      {
+        "id": "vocab_03",
+        "word_ar": "الابْتِكَارُ",
+        "word_en": "Innovation",
+        "meaning_ar": "إِبْدَاعُ أَفْكَارٍ جَدِيدَةٍ وَحُلُولٍ نَافِعَةٍ لِلْمُجْتَمَعِ.",
+        "meaning_en": "Creating novel ideas and beneficial solutions.",
+        "example_sentence_ar": "يُعْتَبَرُ الِابْتِكَارُ عِمَادَ المُسْتَقْبَلِ وَرُؤْيَةَ الأَجْيَالِ.",
+        "example_sentence_en": "Innovation is the pillar of the future."
+      },
+      {
+        "id": "vocab_04",
+        "word_ar": "الأَصَالَةُ",
+        "word_en": "Authenticity",
+        "meaning_ar": "التَّمَسُّكُ بِالتُّرَاثِ العَرِيقِ وَالقِيَمِ الأَخْلَاقِيَّةِ الرَّفِيعَةِ.",
+        "meaning_en": "Adhering to venerable heritage and noble values.",
+        "example_sentence_ar": "تَجْمَعُ بِلَادِي بَيْنَ الأَصَالَةِ وَالمُعَاصَرَةِ.",
+        "example_sentence_en": "My country combines authenticity with modernity."
+      }
+    ],
+    "grammar_lab": {
+      "title_ar": "المختبر النحوي: أسرار التركيب والإعراب في درس (يوم الشهيد والوفاء)",
+      "title_en": "Grammar Lab: Sentence Structure in Commemoration Day",
+      "sections": [
+        {
+          "rule_name_ar": "أركان الجملة ودلالاتها الإعرابية",
+          "explanation_ar": "تتكون الجملة في لغتنا العربية الجميلة من أركان أساسية تضبط المعنى، كالمبتدأ والخبر في الجملة الاسمية، والفعل والفاعل والمفعول به في الجملة الفعلية.",
+          "explanation_en": "Arabic sentences are structured around core components: Subject & Predicate in nominal sentences, and Verb, Doer & Object in verbal sentences.",
+          "examples": [
+            {
+              "sentence_ar": "يَقْرَأُ الطَّالِبُ النَّصَّ بِإِتْقَانٍ.",
+              "sentence_en": "The student reads the text with mastery."
+            },
+            {
+              "sentence_ar": "العِلْمُ نُورٌ يُضِيءُ دُرُوبَ الحَيَاةِ.",
+              "sentence_en": "Knowledge is a light that illuminates paths of life."
+            }
+          ]
+        }
+      ]
+    },
+    "sentence_builder": {
+      "title_ar": "بناء الجمل والتراكيب الصحيحة",
+      "title_en": "Sentence Construction Studio",
+      "challenges": [
+        {
+          "jumbled_words": [
+            "الإِمَارَاتِ",
+            "فِي",
+            "يَتَمَيَّزُ",
+            "التَّعْلِيمُ",
+            "بِالجَوْدَةِ"
+          ],
+          "correct_sentence_ar": "يَتَمَيَّزُ التَّعْلِيمُ فِي الإِمَارَاتِ بِالجَوْدَةِ.",
+          "english_translation": "Education in the UAE is characterized by high quality."
+        }
+      ]
+    },
+    "listen_speak_studio": {
+      "title_ar": "استوديو الاستماع والنطق النموذجي: يوم الشهيد والوفاء",
+      "title_en": "Listen & Speak Studio: Commemoration Day",
+      "passage_ar": "يُعَدُّ دَرْسُ (يوم الشهيد والوفاء) مِنْ دُرُوسِ المِنْهَاجِ الوِزَارِيِّ المُعْتَمَدِ فِي دَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ. يَتَعَلَّمُ الطَّالِبُ مِنْ خِلَالِهِ قِيَمَ المَعْرِفَةِ، وَفَصَاحَةَ اللِّسَانِ، وَحُبَّ التَّعَلُّمِ، مُعْتَزًّا بِهُوِيَّتِهِ وَلُغَتِهِ العَرَبِيَّةِ الأَصِيلَةِ.",
+      "passage_en": "The lesson 'Commemoration Day' is an integral chapter of the UAE Ministry of Education Arabic curriculum. Students learn core values of knowledge, eloquent articulation, and love of discovery while taking pride in their authentic Arabic identity.",
+      "audio_scripts": [
+        {
+          "text_ar": "يوم الشهيد والوفاء",
+          "phonetic_hint": "Pronounce with crisp modern standard Arabic tashkeel"
+        },
+        {
+          "text_ar": "العِلْمُ وَالمَعْرِفَةُ أَسَاسُ التَّقَدُّمِ وَالنَّجَاحِ.",
+          "phonetic_hint": "Al-ilmu wal-ma'rifatu asaasu at-taqaddumi wan-najaah."
+        },
+        {
+          "text_ar": "نَفْتَخِرُ بِلُغَتِنَا العَرَبِيَّةِ الجَمِيلَةِ دَائِمًا.",
+          "phonetic_hint": "Naftakhiru bi-lughatinaa al-arabiyyati al-jameelah daa'iman."
+        }
+      ]
+    },
+    "practice_activities": [
+      {
+        "id": "act_01",
+        "question_ar": "مَا الفِكْرَةُ الرَّئِيسَةُ الَّتِي يُؤَكِّدُ عَلَيْهَا دَرْسُ (يوم الشهيد والوفاء)؟",
+        "question_en": "What is the main idea emphasized in 'Commemoration Day'?",
+        "options": [
+          "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+          "الانشغال بالألعاب دون إنجاز الواجبات",
+          "إهمال القراءة والمطالعة المستمرة",
+          "الابتعاد عن العمل الجماعي والتطوعي"
+        ],
+        "correct_option": "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+        "explanation_ar": "يؤكد المنهاج الوزاري على الدمج بين إتقان اللغة واكتساب القيم السلوكية والوطنية النبيلة."
+      },
+      {
+        "id": "act_02",
+        "question_ar": "مَا هُوَ إِعْرَابُ كَلِمَةِ (الطَّالِبُ) فِي: (يَقْرَأُ الطَّالِبُ النَّصَّ)؟",
+        "question_en": "What is the grammatical case of 'al-talibu' in 'yaqra'u al-talibu an-nassa'?",
+        "options": [
+          "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+          "مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ",
+          "مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ",
+          "اسْمٌ مَجْرُورٌ بِالكَسْرَةِ"
+        ],
+        "correct_option": "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+        "explanation_ar": "الطالب هو من قام بفعل القراءة، فهو فاعل مرفوع بالضمة الظاهرة على آخره."
+      }
+    ],
+    "speaking_mission": {
+      "title_ar": "مهمة التحدث الصوتي: عبر بطلاقة",
+      "title_en": "Speaking Mission: Express Fluently",
+      "scenario_en": "Record a 30-second speech explaining why Commemoration Day is important in daily life.",
+      "prompts_ar": [
+        "تَحَدَّثْ عَنْ فَائِدَةِ هَذَا المَوْضُوعِ فِي حَيَاتِكَ اليَوْمِيَّةِ."
+      ],
+      "prompts_en": [
+        "Explain the real-world value of this topic."
+      ],
+      "recording_task_en": "Press the microphone to record your verbal response."
+    },
+    "parent_companion": {
+      "title_ar": "دليل ولي الأمر للمتابعة المنزلية",
+      "title_en": "Parent Companion Guide",
+      "summary_en": "Supports parents in discussing Commemoration Day with their child.",
+      "dinner_table_prompts": [
+        "اسأل طفلك: ما هي أجمل فكرة لفتت انتباهك في درس يوم الشهيد والوفاء اليوم؟"
+      ],
+      "home_practice_checklist": [
+        "مراجعة بطاقات المفردات",
+        "الاستماع للنطق السليم عبر التطبيق"
+      ]
+    },
+    "tutor_handover": {
+      "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
+      "title_en": "Tutor Handover Notes",
+      "learner_focus": "Mastery of vocabulary, pronunciation, and grammatical structure for Commemoration Day.",
+      "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+      "rubric_categories": [
+        "الفهم والاستيعاب",
+        "صحة النطق والضبط بالشكل",
+        "التعبير الشفهي والكتابي"
+      ]
+    },
+    "exam_practice": {
+      "title_ar": "محاكاة الامتحان الوزاري",
+      "title_en": "MoE Exam Practice Simulation",
+      "total_marks": 20,
+      "objective_questions": [
+        {
+          "q_text_ar": "اختر المعنى الدقيق للسياق في درس (يوم الشهيد والوفاء):",
+          "answer_key": "المعنى الصحيح المعتمد في المعجم المدرسي"
+        }
+      ],
+      "writing_task": "اكتب ثلاث جمل مفيدة توظف فيها المفردات الجديدة التي تعلمتها."
+    },
+    "spaced_recall": {
+      "title_ar": "التكرار المتباعد والتثبيت طويل الأمد",
+      "title_en": "Spaced Recall Review",
+      "linked_concepts": [
+        "يوم الشهيد والوفاء",
+        "القواعد النحوية الأساسية",
+        "المفردات والتراكيب"
+      ]
+    }
+  },
+  {
+    "lesson_id": "lesson_g1_t1_ch08",
+    "version": "1.0.0",
+    "title_ar": "النخلة المباركة",
+    "title_en": "The Blessed Date Palm",
+    "unit_title_ar": "الوحدة الدراسية",
+    "unit_title_en": "Curriculum Unit",
+    "grade": 1,
+    "term": 1,
+    "start_page": 76,
+    "pdf_start_page": 76,
+    "prep_check": {
+      "title_ar": "التهيئة والتحضير السريع",
+      "title_en": "Warm-up Prep Check",
+      "description_en": "Quick diagnostic baseline before entering the lesson.",
+      "questions": [
+        {
+          "question_ar": "ما هو المفهوم الأساسي في درس (النخلة المباركة)؟",
+          "options": [
+            "فهم المعنى العام والقيم التربوية",
+            "حفظ الكلمات دون قراءة",
+            "تجاهل التشكيل والحركات",
+            "الاستماع دون تركيز"
+          ],
+          "correct_index": 0
+        }
+      ]
+    },
+    "learning_paths": {
+      "foundation": {
+        "level": "المستوى التأسيسي",
+        "description": "التركيز على القراءة بالحركات والمفردات المباشرة."
+      },
+      "guided": {
+        "level": "المستوى المتوسط الموجه",
+        "description": "تحليل الجمل واستخراج الأفكار والعلاقات اللغوية."
+      },
+      "independent": {
+        "level": "المستوى المتقدم المستقل",
+        "description": "النقد البلاغي والتعبير الإبداعي المستقل."
+      }
+    },
+    "instruction_decoder": [
+      {
+        "term_ar": "اقْرَأْ وَفَسِّرْ",
+        "term_en": "Read and Interpret",
+        "meaning_ar": "قراءة النص بتمعن واستنتاج الدلالات العميقة."
+      },
+      {
+        "term_ar": "أَعْرِبْ مَا تَحْتَهُ خَطٌّ",
+        "term_en": "Parse the Underlined",
+        "meaning_ar": "تحديد الموقع الإعرابي والعلامة الإعرابية الصحيحة."
+      }
+    ],
+    "vocabulary_cards": [
+      {
+        "id": "vocab_01",
+        "word_ar": "الرِّيَادَةُ",
+        "word_en": "Leadership & Excellence",
+        "meaning_ar": "السَّبْقُ وَالتَّقَدُّمُ فِي المَيَادِينِ الإِيجَابِيَّةِ.",
+        "meaning_en": "Leading the way and achieving pioneer status.",
+        "example_sentence_ar": "تَسْعَى دَوْلَةُ الإِمَارَاتِ دَائِمًا نَحْوَ الرِّيَادَةِ فِي كُلِّ المَجَالَاتِ.",
+        "example_sentence_en": "The UAE always strives for leadership in all domains."
+      },
+      {
+        "id": "vocab_02",
+        "word_ar": "التَّعَاوُنُ",
+        "word_en": "Collaboration",
+        "meaning_ar": "المُشَارَكَةُ الإِيجَابِيَّةُ وَمُسَاعَدَةُ الآخَرِينَ لِتَحْقِيقِ النَّجَاحِ.",
+        "meaning_en": "Working together positively to achieve success.",
+        "example_sentence_ar": "التَّعَاوُنُ بَيْنَ أَعْضَاءِ الفَرِيقِ يُحَقِّقُ الإِنْجَازَ الكَبِيرَ.",
+        "example_sentence_en": "Collaboration between teammates produces great achievement."
+      },
+      {
+        "id": "vocab_03",
+        "word_ar": "الابْتِكَارُ",
+        "word_en": "Innovation",
+        "meaning_ar": "إِبْدَاعُ أَفْكَارٍ جَدِيدَةٍ وَحُلُولٍ نَافِعَةٍ لِلْمُجْتَمَعِ.",
+        "meaning_en": "Creating novel ideas and beneficial solutions.",
+        "example_sentence_ar": "يُعْتَبَرُ الِابْتِكَارُ عِمَادَ المُسْتَقْبَلِ وَرُؤْيَةَ الأَجْيَالِ.",
+        "example_sentence_en": "Innovation is the pillar of the future."
+      },
+      {
+        "id": "vocab_04",
+        "word_ar": "الأَصَالَةُ",
+        "word_en": "Authenticity",
+        "meaning_ar": "التَّمَسُّكُ بِالتُّرَاثِ العَرِيقِ وَالقِيَمِ الأَخْلَاقِيَّةِ الرَّفِيعَةِ.",
+        "meaning_en": "Adhering to venerable heritage and noble values.",
+        "example_sentence_ar": "تَجْمَعُ بِلَادِي بَيْنَ الأَصَالَةِ وَالمُعَاصَرَةِ.",
+        "example_sentence_en": "My country combines authenticity with modernity."
+      }
+    ],
+    "grammar_lab": {
+      "title_ar": "المختبر النحوي: أسرار التركيب والإعراب في درس (النخلة المباركة)",
+      "title_en": "Grammar Lab: Sentence Structure in The Blessed Date Palm",
+      "sections": [
+        {
+          "rule_name_ar": "أركان الجملة ودلالاتها الإعرابية",
+          "explanation_ar": "تتكون الجملة في لغتنا العربية الجميلة من أركان أساسية تضبط المعنى، كالمبتدأ والخبر في الجملة الاسمية، والفعل والفاعل والمفعول به في الجملة الفعلية.",
+          "explanation_en": "Arabic sentences are structured around core components: Subject & Predicate in nominal sentences, and Verb, Doer & Object in verbal sentences.",
+          "examples": [
+            {
+              "sentence_ar": "يَقْرَأُ الطَّالِبُ النَّصَّ بِإِتْقَانٍ.",
+              "sentence_en": "The student reads the text with mastery."
+            },
+            {
+              "sentence_ar": "العِلْمُ نُورٌ يُضِيءُ دُرُوبَ الحَيَاةِ.",
+              "sentence_en": "Knowledge is a light that illuminates paths of life."
+            }
+          ]
+        }
+      ]
+    },
+    "sentence_builder": {
+      "title_ar": "بناء الجمل والتراكيب الصحيحة",
+      "title_en": "Sentence Construction Studio",
+      "challenges": [
+        {
+          "jumbled_words": [
+            "الإِمَارَاتِ",
+            "فِي",
+            "يَتَمَيَّزُ",
+            "التَّعْلِيمُ",
+            "بِالجَوْدَةِ"
+          ],
+          "correct_sentence_ar": "يَتَمَيَّزُ التَّعْلِيمُ فِي الإِمَارَاتِ بِالجَوْدَةِ.",
+          "english_translation": "Education in the UAE is characterized by high quality."
+        }
+      ]
+    },
+    "listen_speak_studio": {
+      "title_ar": "استوديو الاستماع والنطق النموذجي: النخلة المباركة",
+      "title_en": "Listen & Speak Studio: The Blessed Date Palm",
+      "passage_ar": "يُعَدُّ دَرْسُ (النخلة المباركة) مِنْ دُرُوسِ المِنْهَاجِ الوِزَارِيِّ المُعْتَمَدِ فِي دَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ. يَتَعَلَّمُ الطَّالِبُ مِنْ خِلَالِهِ قِيَمَ المَعْرِفَةِ، وَفَصَاحَةَ اللِّسَانِ، وَحُبَّ التَّعَلُّمِ، مُعْتَزًّا بِهُوِيَّتِهِ وَلُغَتِهِ العَرَبِيَّةِ الأَصِيلَةِ.",
+      "passage_en": "The lesson 'The Blessed Date Palm' is an integral chapter of the UAE Ministry of Education Arabic curriculum. Students learn core values of knowledge, eloquent articulation, and love of discovery while taking pride in their authentic Arabic identity.",
+      "audio_scripts": [
+        {
+          "text_ar": "النخلة المباركة",
+          "phonetic_hint": "Pronounce with crisp modern standard Arabic tashkeel"
+        },
+        {
+          "text_ar": "العِلْمُ وَالمَعْرِفَةُ أَسَاسُ التَّقَدُّمِ وَالنَّجَاحِ.",
+          "phonetic_hint": "Al-ilmu wal-ma'rifatu asaasu at-taqaddumi wan-najaah."
+        },
+        {
+          "text_ar": "نَفْتَخِرُ بِلُغَتِنَا العَرَبِيَّةِ الجَمِيلَةِ دَائِمًا.",
+          "phonetic_hint": "Naftakhiru bi-lughatinaa al-arabiyyati al-jameelah daa'iman."
+        }
+      ]
+    },
+    "practice_activities": [
+      {
+        "id": "act_01",
+        "question_ar": "مَا الفِكْرَةُ الرَّئِيسَةُ الَّتِي يُؤَكِّدُ عَلَيْهَا دَرْسُ (النخلة المباركة)؟",
+        "question_en": "What is the main idea emphasized in 'The Blessed Date Palm'?",
+        "options": [
+          "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+          "الانشغال بالألعاب دون إنجاز الواجبات",
+          "إهمال القراءة والمطالعة المستمرة",
+          "الابتعاد عن العمل الجماعي والتطوعي"
+        ],
+        "correct_option": "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+        "explanation_ar": "يؤكد المنهاج الوزاري على الدمج بين إتقان اللغة واكتساب القيم السلوكية والوطنية النبيلة."
+      },
+      {
+        "id": "act_02",
+        "question_ar": "مَا هُوَ إِعْرَابُ كَلِمَةِ (الطَّالِبُ) فِي: (يَقْرَأُ الطَّالِبُ النَّصَّ)؟",
+        "question_en": "What is the grammatical case of 'al-talibu' in 'yaqra'u al-talibu an-nassa'?",
+        "options": [
+          "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+          "مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ",
+          "مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ",
+          "اسْمٌ مَجْرُورٌ بِالكَسْرَةِ"
+        ],
+        "correct_option": "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+        "explanation_ar": "الطالب هو من قام بفعل القراءة، فهو فاعل مرفوع بالضمة الظاهرة على آخره."
+      }
+    ],
+    "speaking_mission": {
+      "title_ar": "مهمة التحدث الصوتي: عبر بطلاقة",
+      "title_en": "Speaking Mission: Express Fluently",
+      "scenario_en": "Record a 30-second speech explaining why The Blessed Date Palm is important in daily life.",
+      "prompts_ar": [
+        "تَحَدَّثْ عَنْ فَائِدَةِ هَذَا المَوْضُوعِ فِي حَيَاتِكَ اليَوْمِيَّةِ."
+      ],
+      "prompts_en": [
+        "Explain the real-world value of this topic."
+      ],
+      "recording_task_en": "Press the microphone to record your verbal response."
+    },
+    "parent_companion": {
+      "title_ar": "دليل ولي الأمر للمتابعة المنزلية",
+      "title_en": "Parent Companion Guide",
+      "summary_en": "Supports parents in discussing The Blessed Date Palm with their child.",
+      "dinner_table_prompts": [
+        "اسأل طفلك: ما هي أجمل فكرة لفتت انتباهك في درس النخلة المباركة اليوم؟"
+      ],
+      "home_practice_checklist": [
+        "مراجعة بطاقات المفردات",
+        "الاستماع للنطق السليم عبر التطبيق"
+      ]
+    },
+    "tutor_handover": {
+      "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
+      "title_en": "Tutor Handover Notes",
+      "learner_focus": "Mastery of vocabulary, pronunciation, and grammatical structure for The Blessed Date Palm.",
+      "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+      "rubric_categories": [
+        "الفهم والاستيعاب",
+        "صحة النطق والضبط بالشكل",
+        "التعبير الشفهي والكتابي"
+      ]
+    },
+    "exam_practice": {
+      "title_ar": "محاكاة الامتحان الوزاري",
+      "title_en": "MoE Exam Practice Simulation",
+      "total_marks": 20,
+      "objective_questions": [
+        {
+          "q_text_ar": "اختر المعنى الدقيق للسياق في درس (النخلة المباركة):",
+          "answer_key": "المعنى الصحيح المعتمد في المعجم المدرسي"
+        }
+      ],
+      "writing_task": "اكتب ثلاث جمل مفيدة توظف فيها المفردات الجديدة التي تعلمتها."
+    },
+    "spaced_recall": {
+      "title_ar": "التكرار المتباعد والتثبيت طويل الأمد",
+      "title_en": "Spaced Recall Review",
+      "linked_concepts": [
+        "النخلة المباركة",
+        "القواعد النحوية الأساسية",
+        "المفردات والتراكيب"
+      ]
+    }
+  },
+  {
+    "lesson_id": "lesson_g1_t1_ch09",
+    "version": "1.0.0",
+    "title_ar": "الصقر الإماراتي",
+    "title_en": "The Arabian Falcon",
+    "unit_title_ar": "الوحدة الدراسية",
+    "unit_title_en": "Curriculum Unit",
+    "grade": 1,
+    "term": 1,
+    "start_page": 86,
+    "pdf_start_page": 86,
+    "prep_check": {
+      "title_ar": "التهيئة والتحضير السريع",
+      "title_en": "Warm-up Prep Check",
+      "description_en": "Quick diagnostic baseline before entering the lesson.",
+      "questions": [
+        {
+          "question_ar": "ما هو المفهوم الأساسي في درس (الصقر الإماراتي)؟",
+          "options": [
+            "فهم المعنى العام والقيم التربوية",
+            "حفظ الكلمات دون قراءة",
+            "تجاهل التشكيل والحركات",
+            "الاستماع دون تركيز"
+          ],
+          "correct_index": 0
+        }
+      ]
+    },
+    "learning_paths": {
+      "foundation": {
+        "level": "المستوى التأسيسي",
+        "description": "التركيز على القراءة بالحركات والمفردات المباشرة."
+      },
+      "guided": {
+        "level": "المستوى المتوسط الموجه",
+        "description": "تحليل الجمل واستخراج الأفكار والعلاقات اللغوية."
+      },
+      "independent": {
+        "level": "المستوى المتقدم المستقل",
+        "description": "النقد البلاغي والتعبير الإبداعي المستقل."
+      }
+    },
+    "instruction_decoder": [
+      {
+        "term_ar": "اقْرَأْ وَفَسِّرْ",
+        "term_en": "Read and Interpret",
+        "meaning_ar": "قراءة النص بتمعن واستنتاج الدلالات العميقة."
+      },
+      {
+        "term_ar": "أَعْرِبْ مَا تَحْتَهُ خَطٌّ",
+        "term_en": "Parse the Underlined",
+        "meaning_ar": "تحديد الموقع الإعرابي والعلامة الإعرابية الصحيحة."
+      }
+    ],
+    "vocabulary_cards": [
+      {
+        "id": "vocab_01",
+        "word_ar": "الرِّيَادَةُ",
+        "word_en": "Leadership & Excellence",
+        "meaning_ar": "السَّبْقُ وَالتَّقَدُّمُ فِي المَيَادِينِ الإِيجَابِيَّةِ.",
+        "meaning_en": "Leading the way and achieving pioneer status.",
+        "example_sentence_ar": "تَسْعَى دَوْلَةُ الإِمَارَاتِ دَائِمًا نَحْوَ الرِّيَادَةِ فِي كُلِّ المَجَالَاتِ.",
+        "example_sentence_en": "The UAE always strives for leadership in all domains."
+      },
+      {
+        "id": "vocab_02",
+        "word_ar": "التَّعَاوُنُ",
+        "word_en": "Collaboration",
+        "meaning_ar": "المُشَارَكَةُ الإِيجَابِيَّةُ وَمُسَاعَدَةُ الآخَرِينَ لِتَحْقِيقِ النَّجَاحِ.",
+        "meaning_en": "Working together positively to achieve success.",
+        "example_sentence_ar": "التَّعَاوُنُ بَيْنَ أَعْضَاءِ الفَرِيقِ يُحَقِّقُ الإِنْجَازَ الكَبِيرَ.",
+        "example_sentence_en": "Collaboration between teammates produces great achievement."
+      },
+      {
+        "id": "vocab_03",
+        "word_ar": "الابْتِكَارُ",
+        "word_en": "Innovation",
+        "meaning_ar": "إِبْدَاعُ أَفْكَارٍ جَدِيدَةٍ وَحُلُولٍ نَافِعَةٍ لِلْمُجْتَمَعِ.",
+        "meaning_en": "Creating novel ideas and beneficial solutions.",
+        "example_sentence_ar": "يُعْتَبَرُ الِابْتِكَارُ عِمَادَ المُسْتَقْبَلِ وَرُؤْيَةَ الأَجْيَالِ.",
+        "example_sentence_en": "Innovation is the pillar of the future."
+      },
+      {
+        "id": "vocab_04",
+        "word_ar": "الأَصَالَةُ",
+        "word_en": "Authenticity",
+        "meaning_ar": "التَّمَسُّكُ بِالتُّرَاثِ العَرِيقِ وَالقِيَمِ الأَخْلَاقِيَّةِ الرَّفِيعَةِ.",
+        "meaning_en": "Adhering to venerable heritage and noble values.",
+        "example_sentence_ar": "تَجْمَعُ بِلَادِي بَيْنَ الأَصَالَةِ وَالمُعَاصَرَةِ.",
+        "example_sentence_en": "My country combines authenticity with modernity."
+      }
+    ],
+    "grammar_lab": {
+      "title_ar": "المختبر النحوي: أسرار التركيب والإعراب في درس (الصقر الإماراتي)",
+      "title_en": "Grammar Lab: Sentence Structure in The Arabian Falcon",
+      "sections": [
+        {
+          "rule_name_ar": "أركان الجملة ودلالاتها الإعرابية",
+          "explanation_ar": "تتكون الجملة في لغتنا العربية الجميلة من أركان أساسية تضبط المعنى، كالمبتدأ والخبر في الجملة الاسمية، والفعل والفاعل والمفعول به في الجملة الفعلية.",
+          "explanation_en": "Arabic sentences are structured around core components: Subject & Predicate in nominal sentences, and Verb, Doer & Object in verbal sentences.",
+          "examples": [
+            {
+              "sentence_ar": "يَقْرَأُ الطَّالِبُ النَّصَّ بِإِتْقَانٍ.",
+              "sentence_en": "The student reads the text with mastery."
+            },
+            {
+              "sentence_ar": "العِلْمُ نُورٌ يُضِيءُ دُرُوبَ الحَيَاةِ.",
+              "sentence_en": "Knowledge is a light that illuminates paths of life."
+            }
+          ]
+        }
+      ]
+    },
+    "sentence_builder": {
+      "title_ar": "بناء الجمل والتراكيب الصحيحة",
+      "title_en": "Sentence Construction Studio",
+      "challenges": [
+        {
+          "jumbled_words": [
+            "الإِمَارَاتِ",
+            "فِي",
+            "يَتَمَيَّزُ",
+            "التَّعْلِيمُ",
+            "بِالجَوْدَةِ"
+          ],
+          "correct_sentence_ar": "يَتَمَيَّزُ التَّعْلِيمُ فِي الإِمَارَاتِ بِالجَوْدَةِ.",
+          "english_translation": "Education in the UAE is characterized by high quality."
+        }
+      ]
+    },
+    "listen_speak_studio": {
+      "title_ar": "استوديو الاستماع والنطق النموذجي: الصقر الإماراتي",
+      "title_en": "Listen & Speak Studio: The Arabian Falcon",
+      "passage_ar": "يُعَدُّ دَرْسُ (الصقر الإماراتي) مِنْ دُرُوسِ المِنْهَاجِ الوِزَارِيِّ المُعْتَمَدِ فِي دَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ. يَتَعَلَّمُ الطَّالِبُ مِنْ خِلَالِهِ قِيَمَ المَعْرِفَةِ، وَفَصَاحَةَ اللِّسَانِ، وَحُبَّ التَّعَلُّمِ، مُعْتَزًّا بِهُوِيَّتِهِ وَلُغَتِهِ العَرَبِيَّةِ الأَصِيلَةِ.",
+      "passage_en": "The lesson 'The Arabian Falcon' is an integral chapter of the UAE Ministry of Education Arabic curriculum. Students learn core values of knowledge, eloquent articulation, and love of discovery while taking pride in their authentic Arabic identity.",
+      "audio_scripts": [
+        {
+          "text_ar": "الصقر الإماراتي",
+          "phonetic_hint": "Pronounce with crisp modern standard Arabic tashkeel"
+        },
+        {
+          "text_ar": "العِلْمُ وَالمَعْرِفَةُ أَسَاسُ التَّقَدُّمِ وَالنَّجَاحِ.",
+          "phonetic_hint": "Al-ilmu wal-ma'rifatu asaasu at-taqaddumi wan-najaah."
+        },
+        {
+          "text_ar": "نَفْتَخِرُ بِلُغَتِنَا العَرَبِيَّةِ الجَمِيلَةِ دَائِمًا.",
+          "phonetic_hint": "Naftakhiru bi-lughatinaa al-arabiyyati al-jameelah daa'iman."
+        }
+      ]
+    },
+    "practice_activities": [
+      {
+        "id": "act_01",
+        "question_ar": "مَا الفِكْرَةُ الرَّئِيسَةُ الَّتِي يُؤَكِّدُ عَلَيْهَا دَرْسُ (الصقر الإماراتي)؟",
+        "question_en": "What is the main idea emphasized in 'The Arabian Falcon'?",
+        "options": [
+          "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+          "الانشغال بالألعاب دون إنجاز الواجبات",
+          "إهمال القراءة والمطالعة المستمرة",
+          "الابتعاد عن العمل الجماعي والتطوعي"
+        ],
+        "correct_option": "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+        "explanation_ar": "يؤكد المنهاج الوزاري على الدمج بين إتقان اللغة واكتساب القيم السلوكية والوطنية النبيلة."
+      },
+      {
+        "id": "act_02",
+        "question_ar": "مَا هُوَ إِعْرَابُ كَلِمَةِ (الطَّالِبُ) فِي: (يَقْرَأُ الطَّالِبُ النَّصَّ)؟",
+        "question_en": "What is the grammatical case of 'al-talibu' in 'yaqra'u al-talibu an-nassa'?",
+        "options": [
+          "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+          "مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ",
+          "مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ",
+          "اسْمٌ مَجْرُورٌ بِالكَسْرَةِ"
+        ],
+        "correct_option": "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+        "explanation_ar": "الطالب هو من قام بفعل القراءة، فهو فاعل مرفوع بالضمة الظاهرة على آخره."
+      }
+    ],
+    "speaking_mission": {
+      "title_ar": "مهمة التحدث الصوتي: عبر بطلاقة",
+      "title_en": "Speaking Mission: Express Fluently",
+      "scenario_en": "Record a 30-second speech explaining why The Arabian Falcon is important in daily life.",
+      "prompts_ar": [
+        "تَحَدَّثْ عَنْ فَائِدَةِ هَذَا المَوْضُوعِ فِي حَيَاتِكَ اليَوْمِيَّةِ."
+      ],
+      "prompts_en": [
+        "Explain the real-world value of this topic."
+      ],
+      "recording_task_en": "Press the microphone to record your verbal response."
+    },
+    "parent_companion": {
+      "title_ar": "دليل ولي الأمر للمتابعة المنزلية",
+      "title_en": "Parent Companion Guide",
+      "summary_en": "Supports parents in discussing The Arabian Falcon with their child.",
+      "dinner_table_prompts": [
+        "اسأل طفلك: ما هي أجمل فكرة لفتت انتباهك في درس الصقر الإماراتي اليوم؟"
+      ],
+      "home_practice_checklist": [
+        "مراجعة بطاقات المفردات",
+        "الاستماع للنطق السليم عبر التطبيق"
+      ]
+    },
+    "tutor_handover": {
+      "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
+      "title_en": "Tutor Handover Notes",
+      "learner_focus": "Mastery of vocabulary, pronunciation, and grammatical structure for The Arabian Falcon.",
+      "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+      "rubric_categories": [
+        "الفهم والاستيعاب",
+        "صحة النطق والضبط بالشكل",
+        "التعبير الشفهي والكتابي"
+      ]
+    },
+    "exam_practice": {
+      "title_ar": "محاكاة الامتحان الوزاري",
+      "title_en": "MoE Exam Practice Simulation",
+      "total_marks": 20,
+      "objective_questions": [
+        {
+          "q_text_ar": "اختر المعنى الدقيق للسياق في درس (الصقر الإماراتي):",
+          "answer_key": "المعنى الصحيح المعتمد في المعجم المدرسي"
+        }
+      ],
+      "writing_task": "اكتب ثلاث جمل مفيدة توظف فيها المفردات الجديدة التي تعلمتها."
+    },
+    "spaced_recall": {
+      "title_ar": "التكرار المتباعد والتثبيت طويل الأمد",
+      "title_en": "Spaced Recall Review",
+      "linked_concepts": [
+        "الصقر الإماراتي",
+        "القواعد النحوية الأساسية",
+        "المفردات والتراكيب"
+      ]
+    }
+  },
+  {
+    "lesson_id": "lesson_g1_t1_ch10",
+    "version": "1.0.0",
+    "title_ar": "شاطئ البحر",
+    "title_en": "The Seashore",
+    "unit_title_ar": "الوحدة الدراسية",
+    "unit_title_en": "Curriculum Unit",
+    "grade": 1,
+    "term": 1,
+    "start_page": 96,
+    "pdf_start_page": 96,
+    "prep_check": {
+      "title_ar": "التهيئة والتحضير السريع",
+      "title_en": "Warm-up Prep Check",
+      "description_en": "Quick diagnostic baseline before entering the lesson.",
+      "questions": [
+        {
+          "question_ar": "ما هو المفهوم الأساسي في درس (شاطئ البحر)؟",
+          "options": [
+            "فهم المعنى العام والقيم التربوية",
+            "حفظ الكلمات دون قراءة",
+            "تجاهل التشكيل والحركات",
+            "الاستماع دون تركيز"
+          ],
+          "correct_index": 0
+        }
+      ]
+    },
+    "learning_paths": {
+      "foundation": {
+        "level": "المستوى التأسيسي",
+        "description": "التركيز على القراءة بالحركات والمفردات المباشرة."
+      },
+      "guided": {
+        "level": "المستوى المتوسط الموجه",
+        "description": "تحليل الجمل واستخراج الأفكار والعلاقات اللغوية."
+      },
+      "independent": {
+        "level": "المستوى المتقدم المستقل",
+        "description": "النقد البلاغي والتعبير الإبداعي المستقل."
+      }
+    },
+    "instruction_decoder": [
+      {
+        "term_ar": "اقْرَأْ وَفَسِّرْ",
+        "term_en": "Read and Interpret",
+        "meaning_ar": "قراءة النص بتمعن واستنتاج الدلالات العميقة."
+      },
+      {
+        "term_ar": "أَعْرِبْ مَا تَحْتَهُ خَطٌّ",
+        "term_en": "Parse the Underlined",
+        "meaning_ar": "تحديد الموقع الإعرابي والعلامة الإعرابية الصحيحة."
+      }
+    ],
+    "vocabulary_cards": [
+      {
+        "id": "vocab_01",
+        "word_ar": "الرِّيَادَةُ",
+        "word_en": "Leadership & Excellence",
+        "meaning_ar": "السَّبْقُ وَالتَّقَدُّمُ فِي المَيَادِينِ الإِيجَابِيَّةِ.",
+        "meaning_en": "Leading the way and achieving pioneer status.",
+        "example_sentence_ar": "تَسْعَى دَوْلَةُ الإِمَارَاتِ دَائِمًا نَحْوَ الرِّيَادَةِ فِي كُلِّ المَجَالَاتِ.",
+        "example_sentence_en": "The UAE always strives for leadership in all domains."
+      },
+      {
+        "id": "vocab_02",
+        "word_ar": "التَّعَاوُنُ",
+        "word_en": "Collaboration",
+        "meaning_ar": "المُشَارَكَةُ الإِيجَابِيَّةُ وَمُسَاعَدَةُ الآخَرِينَ لِتَحْقِيقِ النَّجَاحِ.",
+        "meaning_en": "Working together positively to achieve success.",
+        "example_sentence_ar": "التَّعَاوُنُ بَيْنَ أَعْضَاءِ الفَرِيقِ يُحَقِّقُ الإِنْجَازَ الكَبِيرَ.",
+        "example_sentence_en": "Collaboration between teammates produces great achievement."
+      },
+      {
+        "id": "vocab_03",
+        "word_ar": "الابْتِكَارُ",
+        "word_en": "Innovation",
+        "meaning_ar": "إِبْدَاعُ أَفْكَارٍ جَدِيدَةٍ وَحُلُولٍ نَافِعَةٍ لِلْمُجْتَمَعِ.",
+        "meaning_en": "Creating novel ideas and beneficial solutions.",
+        "example_sentence_ar": "يُعْتَبَرُ الِابْتِكَارُ عِمَادَ المُسْتَقْبَلِ وَرُؤْيَةَ الأَجْيَالِ.",
+        "example_sentence_en": "Innovation is the pillar of the future."
+      },
+      {
+        "id": "vocab_04",
+        "word_ar": "الأَصَالَةُ",
+        "word_en": "Authenticity",
+        "meaning_ar": "التَّمَسُّكُ بِالتُّرَاثِ العَرِيقِ وَالقِيَمِ الأَخْلَاقِيَّةِ الرَّفِيعَةِ.",
+        "meaning_en": "Adhering to venerable heritage and noble values.",
+        "example_sentence_ar": "تَجْمَعُ بِلَادِي بَيْنَ الأَصَالَةِ وَالمُعَاصَرَةِ.",
+        "example_sentence_en": "My country combines authenticity with modernity."
+      }
+    ],
+    "grammar_lab": {
+      "title_ar": "المختبر النحوي: أسرار التركيب والإعراب في درس (شاطئ البحر)",
+      "title_en": "Grammar Lab: Sentence Structure in The Seashore",
+      "sections": [
+        {
+          "rule_name_ar": "أركان الجملة ودلالاتها الإعرابية",
+          "explanation_ar": "تتكون الجملة في لغتنا العربية الجميلة من أركان أساسية تضبط المعنى، كالمبتدأ والخبر في الجملة الاسمية، والفعل والفاعل والمفعول به في الجملة الفعلية.",
+          "explanation_en": "Arabic sentences are structured around core components: Subject & Predicate in nominal sentences, and Verb, Doer & Object in verbal sentences.",
+          "examples": [
+            {
+              "sentence_ar": "يَقْرَأُ الطَّالِبُ النَّصَّ بِإِتْقَانٍ.",
+              "sentence_en": "The student reads the text with mastery."
+            },
+            {
+              "sentence_ar": "العِلْمُ نُورٌ يُضِيءُ دُرُوبَ الحَيَاةِ.",
+              "sentence_en": "Knowledge is a light that illuminates paths of life."
+            }
+          ]
+        }
+      ]
+    },
+    "sentence_builder": {
+      "title_ar": "بناء الجمل والتراكيب الصحيحة",
+      "title_en": "Sentence Construction Studio",
+      "challenges": [
+        {
+          "jumbled_words": [
+            "الإِمَارَاتِ",
+            "فِي",
+            "يَتَمَيَّزُ",
+            "التَّعْلِيمُ",
+            "بِالجَوْدَةِ"
+          ],
+          "correct_sentence_ar": "يَتَمَيَّزُ التَّعْلِيمُ فِي الإِمَارَاتِ بِالجَوْدَةِ.",
+          "english_translation": "Education in the UAE is characterized by high quality."
+        }
+      ]
+    },
+    "listen_speak_studio": {
+      "title_ar": "استوديو الاستماع والنطق النموذجي: شاطئ البحر",
+      "title_en": "Listen & Speak Studio: The Seashore",
+      "passage_ar": "يُعَدُّ دَرْسُ (شاطئ البحر) مِنْ دُرُوسِ المِنْهَاجِ الوِزَارِيِّ المُعْتَمَدِ فِي دَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ. يَتَعَلَّمُ الطَّالِبُ مِنْ خِلَالِهِ قِيَمَ المَعْرِفَةِ، وَفَصَاحَةَ اللِّسَانِ، وَحُبَّ التَّعَلُّمِ، مُعْتَزًّا بِهُوِيَّتِهِ وَلُغَتِهِ العَرَبِيَّةِ الأَصِيلَةِ.",
+      "passage_en": "The lesson 'The Seashore' is an integral chapter of the UAE Ministry of Education Arabic curriculum. Students learn core values of knowledge, eloquent articulation, and love of discovery while taking pride in their authentic Arabic identity.",
+      "audio_scripts": [
+        {
+          "text_ar": "شاطئ البحر",
+          "phonetic_hint": "Pronounce with crisp modern standard Arabic tashkeel"
+        },
+        {
+          "text_ar": "العِلْمُ وَالمَعْرِفَةُ أَسَاسُ التَّقَدُّمِ وَالنَّجَاحِ.",
+          "phonetic_hint": "Al-ilmu wal-ma'rifatu asaasu at-taqaddumi wan-najaah."
+        },
+        {
+          "text_ar": "نَفْتَخِرُ بِلُغَتِنَا العَرَبِيَّةِ الجَمِيلَةِ دَائِمًا.",
+          "phonetic_hint": "Naftakhiru bi-lughatinaa al-arabiyyati al-jameelah daa'iman."
+        }
+      ]
+    },
+    "practice_activities": [
+      {
+        "id": "act_01",
+        "question_ar": "مَا الفِكْرَةُ الرَّئِيسَةُ الَّتِي يُؤَكِّدُ عَلَيْهَا دَرْسُ (شاطئ البحر)؟",
+        "question_en": "What is the main idea emphasized in 'The Seashore'?",
+        "options": [
+          "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+          "الانشغال بالألعاب دون إنجاز الواجبات",
+          "إهمال القراءة والمطالعة المستمرة",
+          "الابتعاد عن العمل الجماعي والتطوعي"
+        ],
+        "correct_option": "اكتساب المهارات اللغوية وتطبيق القيم الأخلاقية الأصيلة",
+        "explanation_ar": "يؤكد المنهاج الوزاري على الدمج بين إتقان اللغة واكتساب القيم السلوكية والوطنية النبيلة."
+      },
+      {
+        "id": "act_02",
+        "question_ar": "مَا هُوَ إِعْرَابُ كَلِمَةِ (الطَّالِبُ) فِي: (يَقْرَأُ الطَّالِبُ النَّصَّ)؟",
+        "question_en": "What is the grammatical case of 'al-talibu' in 'yaqra'u al-talibu an-nassa'?",
+        "options": [
+          "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+          "مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ",
+          "مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ",
+          "اسْمٌ مَجْرُورٌ بِالكَسْرَةِ"
+        ],
+        "correct_option": "فَاعِلٌ مَرْفُوعٌ وعَلَامَةُ رَفْعِهِ الضَّمَّةُ الظَّاهِرَةُ",
+        "explanation_ar": "الطالب هو من قام بفعل القراءة، فهو فاعل مرفوع بالضمة الظاهرة على آخره."
+      }
+    ],
+    "speaking_mission": {
+      "title_ar": "مهمة التحدث الصوتي: عبر بطلاقة",
+      "title_en": "Speaking Mission: Express Fluently",
+      "scenario_en": "Record a 30-second speech explaining why The Seashore is important in daily life.",
+      "prompts_ar": [
+        "تَحَدَّثْ عَنْ فَائِدَةِ هَذَا المَوْضُوعِ فِي حَيَاتِكَ اليَوْمِيَّةِ."
+      ],
+      "prompts_en": [
+        "Explain the real-world value of this topic."
+      ],
+      "recording_task_en": "Press the microphone to record your verbal response."
+    },
+    "parent_companion": {
+      "title_ar": "دليل ولي الأمر للمتابعة المنزلية",
+      "title_en": "Parent Companion Guide",
+      "summary_en": "Supports parents in discussing The Seashore with their child.",
+      "dinner_table_prompts": [
+        "اسأل طفلك: ما هي أجمل فكرة لفتت انتباهك في درس شاطئ البحر اليوم؟"
+      ],
+      "home_practice_checklist": [
+        "مراجعة بطاقات المفردات",
+        "الاستماع للنطق السليم عبر التطبيق"
+      ]
+    },
+    "tutor_handover": {
+      "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
+      "title_en": "Tutor Handover Notes",
+      "learner_focus": "Mastery of vocabulary, pronunciation, and grammatical structure for The Seashore.",
+      "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+      "rubric_categories": [
+        "الفهم والاستيعاب",
+        "صحة النطق والضبط بالشكل",
+        "التعبير الشفهي والكتابي"
+      ]
+    },
+    "exam_practice": {
+      "title_ar": "محاكاة الامتحان الوزاري",
+      "title_en": "MoE Exam Practice Simulation",
+      "total_marks": 20,
+      "objective_questions": [
+        {
+          "q_text_ar": "اختر المعنى الدقيق للسياق في درس (شاطئ البحر):",
+          "answer_key": "المعنى الصحيح المعتمد في المعجم المدرسي"
+        }
+      ],
+      "writing_task": "اكتب ثلاث جمل مفيدة توظف فيها المفردات الجديدة التي تعلمتها."
+    },
+    "spaced_recall": {
+      "title_ar": "التكرار المتباعد والتثبيت طويل الأمد",
+      "title_en": "Spaced Recall Review",
+      "linked_concepts": [
+        "شاطئ البحر",
+        "القواعد النحوية الأساسية",
+        "المفردات والتراكيب"
+      ]
+    }
+  }
+]

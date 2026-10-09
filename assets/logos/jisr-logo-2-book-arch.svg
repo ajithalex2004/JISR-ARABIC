@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1638"/>
+      <stop offset="50%" stop-color="#341A5B"/>
+      <stop offset="100%" stop-color="#140926"/>
+    </linearGradient>
+
+    <!-- Sun Dawn Radial Glow -->
+    <radialGradient id="sunGlow2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FBBF24" stop-opacity="1"/>
+      <stop offset="50%" stop-color="#F59E0B" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#D97706" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Emerald Page & Arch Gradient -->
+    <linearGradient id="emeraldPage2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#047857"/>
+      <stop offset="50%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#34D399"/>
+    </linearGradient>
+
+    <!-- Violet Wing Arch Gradient -->
+    <linearGradient id="violetWing2" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#581C87"/>
+      <stop offset="50%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#A78BFA"/>
+    </linearGradient>
+
+    <!-- Pearl White Book Pages -->
+    <linearGradient id="pageWhite2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+
+    <!-- Gold Accent Gradient -->
+    <linearGradient id="gold2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="60%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="shadow2" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#090314" flood-opacity="0.6"/>
+    </filter>
+
+    <!-- Specular Highlight for Sun -->
+    <filter id="glowBloom2" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Base App Icon Squircle (512x512 with 112px radius) -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad2)"/>
+  <rect x="5" y="5" width="502" height="502" rx="107" fill="none" stroke="#6D28D9" stroke-width="2.5" opacity="0.4"/>
+
+  <!-- Background Aura Rings -->
+  <circle cx="256" cy="220" r="160" fill="url(#sunGlow2)" opacity="0.2"/>
+  <circle cx="256" cy="220" r="100" fill="url(#sunGlow2)" opacity="0.35"/>
+
+  <!-- Central Rising Sun of Wisdom -->
+  <g filter="url(#glowBloom2)">
+    <circle cx="256" cy="205" r="46" fill="url(#gold2)"/>
+    <circle cx="256" cy="205" r="36" fill="#FFFBEB" opacity="0.7"/>
+    <circle cx="256" cy="205" r="16" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Central Bridge Spire / Monument Pillar -->
+  <path d="M 251 115 L 261 115 L 258 290 L 254 290 Z" fill="url(#gold2)" opacity="0.9"/>
+  <!-- Beacon Top Jewel -->
+  <polygon points="256,92 263,107 256,118 249,107" fill="#FFFFFF" filter="url(#glowBloom2)"/>
+
+  <!-- Bridge Cable Harp (Symmetrical Geometric Lines) -->
+  <g stroke="url(#gold2)" stroke-width="2" opacity="0.45">
+    <line x1="256" y1="130" x2="160" y2="280"/>
+    <line x1="256" y1="150" x2="185" y2="285"/>
+    <line x1="256" y1="170" x2="210" y2="290"/>
+
+    <line x1="256" y1="130" x2="352" y2="280"/>
+    <line x1="256" y1="150" x2="327" y2="285"/>
+    <line x1="256" y1="170" x2="302" y2="290"/>
+  </g>
+
+  <!-- The Open Book Foundation that Soars into Bridge Wings -->
+  <g filter="url(#shadow2)">
+    <!-- Left Wing (The UAE Emerald Bridge Arch) -->
+    <path d="M 252 300 
+             C 195 292, 130 258, 88 190
+             C 80 178, 92 168, 104 175
+             C 142 225, 195 255, 252 262 Z" 
+          fill="url(#emeraldPage2)"/>
+
+    <!-- Right Wing (The Royal Purple Knowledge Span) -->
+    <path d="M 260 300 
+             C 317 292, 382 258, 424 190
+             C 432 178, 420 168, 408 175
+             C 370 225, 317 255, 260 262 Z" 
+          fill="url(#violetWing2)"/>
+
+    <!-- Left Book Open Leaf (Sculptural Page) -->
+    <path d="M 254 336 
+             C 180 336, 120 305, 78 268 
+             C 74 264, 78 256, 84 258
+             C 126 288, 184 312, 254 316 Z" 
+          fill="url(#pageWhite2)"/>
+
+    <!-- Right Book Open Leaf (Sculptural Page) -->
+    <path d="M 258 336 
+             C 332 336, 392 305, 434 268 
+             C 438 264, 434 256, 428 258
+             C 386 288, 328 312, 258 316 Z" 
+          fill="url(#pageWhite2)"/>
+
+    <!-- Book Spine / Road Base Anchor -->
+    <polygon points="256,290 268,345 256,352 244,345" fill="url(#gold2)"/>
+  </g>
+
+  <!-- Floating Diamond Nuqta (Dot of Knowledge) -->
+  <g filter="url(#glowBloom2)">
+    <rect x="246" y="55" width="20" height="20" rx="4" transform="rotate(45 256 65)" fill="url(#gold2)"/>
+  </g>
+
+  <!-- Typography: Pure Modern Harmony -->
+  <text x="256" y="415" text-anchor="middle" font-family="'Cairo', 'Tajawal', sans-serif" font-weight="900" font-size="42" fill="#FFFFFF" letter-spacing="2">جـِـسْــــر</text>
+  <text x="256" y="450" text-anchor="middle" font-family="'Montserrat', 'Inter', sans-serif" font-weight="800" font-size="14" fill="#E2E8F0" letter-spacing="6">JISR ARABIC</text>
+  <text x="256" y="470" text-anchor="middle" font-family="'Montserrat', 'Inter', sans-serif" font-weight="600" font-size="9" fill="#FBBF24" letter-spacing="3.5">LEARNING PLATFORM</text>
+</svg>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>هوية تطبيق جسر (JISR ARABIC) — معرض الشعارات المقترحة</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #58337E;
+      --primary-dark: #381B60;
+      --emerald: #10B981;
+      --gold: #F59E0B;
+      --dark-surface: #0F172A;
+      --card-bg: #FFFFFF;
+      --border-color: #E2E8F0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      background: #F8FAFC;
+      color: #1E293B;
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+    header {
+      background: linear-gradient(135deg, #2D144E 0%, #58337E 60%, #16A34A 100%);
+      color: white;
+      padding: 48px 24px 36px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    header h1 {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    header p {
+      font-size: 15px;
+      opacity: 0.9;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    .badge-bar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .container {
+      max-width: 1240px;
+      margin: -24px auto 0;
+      padding: 0 20px;
+    }
+    .tabs-nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 10px 22px;
+      border-radius: 30px;
+      border: none;
+      background: white;
+      color: #64748B;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      background: #58337E;
+      color: white;
+      box-shadow: 0 6px 20px rgba(88, 51, 126, 0.35);
+      transform: translateY(-2px);
+    }
+    .grid-concepts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 28px;
+      margin-bottom: 40px;
+    }
+    .concept-card {
+      background: white;
+      border-radius: 28px;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .concept-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 35px rgba(88, 51, 126, 0.12);
+    }
+    .card-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #F1F5F9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1E293B;
+    }
+    .concept-tag {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .tag-1 { background: #FEF3C7; color: #B45309; }
+    .tag-2 { background: #E0E7FF; color: #4338CA; }
+    .tag-3 { background: #DCFCE7; color: #15803D; }
+
+    .logo-hero-preview {
+      background: #F8FAFC;
+      padding: 36px 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-bottom: 1px solid #F1F5F9;
+      position: relative;
+    }
+    .svg-wrapper-512 {
+      width: 250px;
+      height: 250px;
+      filter: drop-shadow(0 14px 28px rgba(0,0,0,0.18));
+      transition: transform 0.2s ease;
+    }
+    .svg-wrapper-512:hover {
+      transform: scale(1.03);
+    }
+    .card-body {
+      padding: 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .concept-desc {
+      font-size: 13.5px;
+      color: #475569;
+      line-height: 1.7;
+    }
+    .symbolism-list {
+      list-style: none;
+      font-size: 12.5px;
+      color: #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .symbolism-list li {
+      position: relative;
+      padding-right: 18px;
+    }
+    .symbolism-list li::before {
+      content: "✦";
+      position: absolute;
+      right: 0;
+      color: #58337E;
+      font-size: 12px;
+    }
+    .action-row {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid #F1F5F9;
+    }
+    .btn-download {
+      flex: 1;
+      background: #58337E;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.2s ease;
+    }
+    .btn-download:hover {
+      background: #432363;
+    }
+    .btn-outline {
+      background: transparent;
+      color: #58337E;
+      border: 1.5px solid #CBD5E1;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.2s ease;
+    }
+    .btn-outline:hover {
+      border-color: #58337E;
+      background: #F5F3FF;
+    }
+
+    /* Multi-Scale Matrix Section */
+    .scale-matrix-section {
+      background: white;
+      border-radius: 28px;
+      border: 1px solid #E2E8F0;
+      padding: 32px 28px;
+      margin-top: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+    }
+    .scale-matrix-section h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1E293B;
+      margin-bottom: 6px;
+    }
+    .scale-matrix-section p {
+      font-size: 13.5px;
+      color: #64748B;
+      margin-bottom: 24px;
+    }
+    .device-previews {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .preview-box {
+      border: 1px solid #E2E8F0;
+      border-radius: 20px;
+      padding: 20px;
+      background: #F8FAFC;
+    }
+    .preview-box-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #475569;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+    }
+    /* Browser Tab Simulator */
+    .browser-bar {
+      background: #E2E8F0;
+      border-radius: 12px 12px 0 0;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .browser-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .tab-item {
+      background: white;
+      border-radius: 8px;
+      padding: 5px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #334155;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+    .dark-tab {
+      background: #1E293B;
+      color: #F8FAFC;
+    }
+    /* Mobile Grid */
+    .app-icon-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      justify-content: space-around;
+      padding: 16px 0;
+    }
+    .app-icon-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .app-icon-item span {
+      font-size: 10px;
+      font-weight: 600;
+      color: #64748B;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>جسر اللغة العربية · JISR ARABIC</h1>
+    <p>معرض الهوية البصرية وتصاميم الشعارات الرسمية المتكيفة لمنصة وتطبيق جسر (SVG بدقة 512×512 ومطابقة الأيقونات المصغرة Favicon)</p>
+    <div class="badge-bar">
+      <span class="badge">دقة متناهية 512×512 Vector SVG</span>
+      <span class="badge">وضوح فائق كأيقونة متصفح Favicon 16×16</span>
+      <span class="badge">ألوان الهوية: البنفسجي الإمبراطوري · الأخضر الإماراتي · الذهب المشع</span>
+      <span class="badge">متوافق مع معايير App Store &amp; Google Play</span>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- 3 Core Concepts Grid -->
+    <div class="grid-concepts">
+
+      <!-- CONCEPT 1 -->
+      <div class="concept-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">الخيار الأول: جسر المعرفة الذهبي</div>
+            <div style="font-size: 11px; color: #64748B; font-family: 'Montserrat', sans-serif;">The Golden Bridge of Knowledge</div>
+          </div>
+          <span class="concept-tag tag-1">تراث معماري عصري</span>
+        </div>
+
+        <div class="logo-hero-preview">
+          <div class="svg-wrapper-512">
+            <img src="frontend/public/logos/jisr-logo-1-golden-bridge.svg" width="100%" height="100%" alt="JISR Logo 1">
+          </div>
+        </div>
+
+        <div class="card-body">
+          <p class="concept-desc">
+            تصميم هندسي متقن يدمج القوس المعماري للجسور المعلقة مع انسيابية حرف الجيم (ج) العربي الأصيل. يعتلي القوس نقطة الجيم المصممة كألماسة وضاءة ترمز لنجمة التميز الأكاديمي وإشعاع المعرفة في الإمارات.
+          </p>
+          <ul class="symbolism-list">
+            <li><strong>قوس الجسر:</strong> يرمز للانتقال السلس من مرحلة التأسيس إلى مرحلة التميز والطلاقة.</li>
+            <li><strong>النقطة الماسية:</strong> نقطة حرف الجيم كنبراس ذكاء وشعلة متقدة في سماء التعليم.</li>
+            <li><strong>خيوط التعليق الذهبية:</strong> ركائز المنهج الوزاري والترابط اللغوي بين الطالب والمعلم.</li>
+          </ul>
+
+          <div class="action-row">
+            <a href="assets/logos/jisr-logo-1-golden-bridge.svg" download="jisr-logo-1-golden-bridge.svg" class="btn-download">تحميل 512px SVG</a>
+            <a href="assets/logos/jisr-favicon-1.svg" download="jisr-favicon-1.svg" class="btn-outline">تحميل Favicon</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONCEPT 2 -->
+      <div class="concept-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">الخيار الثاني: صرح القراءة والآفاق</div>
+            <div style="font-size: 11px; color: #64748B; font-family: 'Montserrat', sans-serif;">The Open Book &amp; Soaring Arch</div>
+          </div>
+          <span class="concept-tag tag-2">أدبي وتربوي ملهم</span>
+        </div>
+
+        <div class="logo-hero-preview">
+          <div class="svg-wrapper-512">
+            <img src="frontend/public/logos/jisr-logo-2-book-arch.svg" width="100%" height="100%" alt="JISR Logo 2">
+          </div>
+        </div>
+
+        <div class="card-body">
+          <p class="concept-desc">
+            ينطلق التصميم من صفحات كتاب مفتوح تنحني وترتقي لتتحول إلى جناحين وجسر معلق يعبر نحو شمس الصباح الذهبية، مجسداً أن قراءة نصوص المنهاج هي الجسر الفعلي الذي يفتح آفاق المستقبل أمام أبناء الوطن.
+          </p>
+          <ul class="symbolism-list">
+            <li><strong>صفحات الكتاب:</strong> ترسيخ مكانة اللغة العربية وكتب القراءة المعتمدة وزارياً.</li>
+            <li><strong>شمس البزوغ الذهبية:</strong> تمثل فجر الإدراك وسعادة الطالب عند اكتساب المهارة.</li>
+            <li><strong>الصرح الرأسي والأسلاك:</strong> رمزية التطور التقني والعمراني لدولة الإمارات العربية المتحدة.</li>
+          </ul>
+
+          <div class="action-row">
+            <a href="assets/logos/jisr-logo-2-book-arch.svg" download="jisr-logo-2-book-arch.svg" class="btn-download">تحميل 512px SVG</a>
+            <a href="assets/logos/jisr-favicon-2.svg" download="jisr-favicon-2.svg" class="btn-outline">تحميل Favicon</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONCEPT 3 -->
+      <div class="concept-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">الخيار الثالث: المونوغرام الهندسي اللانهائي</div>
+            <div style="font-size: 11px; color: #64748B; font-family: 'Montserrat', sans-serif;">The Geometric Infinity Monogram</div>
+          </div>
+          <span class="concept-tag tag-3">هوية تقنية حديثة (EdTech)</span>
+        </div>
+
+        <div class="logo-hero-preview">
+          <div class="svg-wrapper-512">
+            <img src="frontend/public/logos/jisr-logo-3-geometric-infinity.svg" width="100%" height="100%" alt="JISR Logo 3">
+          </div>
+        </div>
+
+        <div class="card-body">
+          <p class="concept-desc">
+            مونوغرام تجريدي معاصر فائق التماسك، يشكّل شريطاً هندسياً ثلاثي الأبعاد برسم حرف (ج) ورمز اللانهاية (Infinity Loop). يمتاز بأقوى تباين لوني وبصري يجعله بارزاً جداً كأيقونة هاتف ورمز مصغر.
+          </p>
+          <ul class="symbolism-list">
+            <li><strong>الشريط اللانهائي:</strong> التعلم المستمر مدى الحياة وتطوير الذكاء التكيفي.</li>
+            <li><strong>الألوان الثلاثية:</strong> التناغم بين وقار البنفسجي، وحيوية الأخضر الإماراتي، وتألق الذهب.</li>
+            <li><strong>المكعب والماسة في المركز:</strong> استقرار القاعدة اللغوية في قلب التجربة التعليمية.</li>
+          </ul>
+
+          <div class="action-row">
+            <a href="assets/logos/jisr-logo-3-geometric-infinity.svg" download="jisr-logo-3-geometric-infinity.svg" class="btn-download">تحميل 512px SVG</a>
+            <a href="assets/logos/jisr-favicon-3.svg" download="jisr-favicon-3.svg" class="btn-outline">تحميل Favicon</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Scalability & Responsive Favicon Verification Section -->
+    <div class="scale-matrix-section">
+      <h2>اختبار وضوح الأيقونات في المقاسات المصغرة (Favicon &amp; App Icon Test)</h2>
+      <p>محاكاة بصرية تبيّن كيف تظهر الشعارات بدقة فائقة عند تصغيرها لأصغر مقاسات المتصفح وتطبيقات الجوال:</p>
+
+      <div class="device-previews">
+        <!-- 1. Simulated Browser Tab Light Mode -->
+        <div class="preview-box">
+          <div class="preview-box-title">
+            <span>تبويب المتصفح (وضع النهار · Light Mode)</span>
+            <span>16×16 و 32×32</span>
+          </div>
+          <div class="browser-bar">
+            <div class="browser-dot" style="background:#EF4444"></div>
+            <div class="browser-dot" style="background:#F59E0B"></div>
+            <div class="browser-dot" style="background:#10B981"></div>
+            <div class="tab-item">
+              <img src="frontend/public/logos/jisr-favicon-1.svg" width="16" height="16" alt="fav1">
+              <span>جسر | الخيار 1</span>
+            </div>
+            <div class="tab-item" style="background:#F1F5F9; opacity:0.8;">
+              <img src="frontend/public/logos/jisr-favicon-2.svg" width="16" height="16" alt="fav2">
+              <span>جسر | الخيار 2</span>
+            </div>
+            <div class="tab-item" style="background:#F1F5F9; opacity:0.8;">
+              <img src="frontend/public/logos/jisr-favicon-3.svg" width="16" height="16" alt="fav3">
+              <span>جسر | الخيار 3</span>
+            </div>
+          </div>
+          <div style="background:white; border-radius: 0 0 12px 12px; padding: 16px; font-size:11px; color:#64748B; text-align:center;">
+            يحتفظ الرمز بالتباين العالي والقراءة الفورية دون تشويش بصري.
+          </div>
+        </div>
+
+        <!-- 2. Simulated Browser Tab Dark Mode -->
+        <div class="preview-box">
+          <div class="preview-box-title">
+            <span>تبويب المتصفح (الوضع الليلي · Dark Mode)</span>
+            <span>16×16 و 32×32</span>
+          </div>
+          <div class="browser-bar" style="background:#0F172A">
+            <div class="browser-dot" style="background:#EF4444"></div>
+            <div class="browser-dot" style="background:#F59E0B"></div>
+            <div class="browser-dot" style="background:#10B981"></div>
+            <div class="tab-item dark-tab">
+              <img src="frontend/public/logos/jisr-favicon-1.svg" width="16" height="16" alt="fav1">
+              <span>JISR Arabic</span>
+            </div>
+            <div class="tab-item dark-tab" style="opacity:0.7">
+              <img src="frontend/public/logos/jisr-favicon-3.svg" width="16" height="16" alt="fav3">
+              <span>المونوغرام</span>
+            </div>
+          </div>
+          <div style="background:#1E293B; border-radius: 0 0 12px 12px; padding: 16px; font-size:11px; color:#94A3B8; text-align:center;">
+            تدرج الخلفية البنفسجية الملكية مع إطار اللمعان الخفيف يمنع اندماج الأيقونة مع الخلفيات الداكنة.
+          </div>
+        </div>
+
+        <!-- 3. Mobile Home Screen Simulator -->
+        <div class="preview-box">
+          <div class="preview-box-title">
+            <span>شاشة هاتف الجوال (iOS / Android Icon Scale)</span>
+            <span>64×64 و 96×96</span>
+          </div>
+          <div class="app-icon-row">
+            <div class="app-icon-item">
+              <img src="frontend/public/logos/jisr-favicon-1.svg" width="56" height="56" style="border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,0.15);" alt="Icon 1">
+              <span>الخيار 1</span>
+            </div>
+            <div class="app-icon-item">
+              <img src="frontend/public/logos/jisr-favicon-2.svg" width="56" height="56" style="border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,0.15);" alt="Icon 2">
+              <span>الخيار 2</span>
+            </div>
+            <div class="app-icon-item">
+              <img src="frontend/public/logos/jisr-favicon-3.svg" width="56" height="56" style="border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,0.15);" alt="Icon 3">
+              <span>الخيار 3</span>
+            </div>
+          </div>
+          <div style="font-size:11px; color:#64748B; text-align:center; padding-top:6px;">
+            زوايا التدوير الدقيقة بنصف قطر 112px (Squircle) تتوافق تلقائياً مع معايير الأندرويد والآيفون.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

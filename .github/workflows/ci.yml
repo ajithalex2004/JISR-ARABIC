@@ -44,12 +44,18 @@ jobs:
         run: python -m compileall -q backend
 
       - name: Verify Database Migrations Engine
-        run: python -m backend.migrations status
+        run: |
+          python -m backend.migrations status
+          python -m backend.migrations upgrade
 
       - name: Verify Audio Pre-Warming Engine
         run: python -m backend.scripts.prewarm_audio --dry-run --limit 5
 
       - name: Run Production SaaS Configuration Audit (Offline Validation)
+        env:
+          FAHIM_PAYMENT_WEBHOOK_SECRET: whsec_test_mock_webhook_secret_key_minimum_24
+          FAHIM_SMTP_HOST: smtp.mailtrap.io
+          GEMINI_API_KEY: AQ.MockGeminiApiKeyForOfflineTesting
         run: python -m backend.scripts.verify_production_readiness --skip-network
 
       - name: Run Enterprise Regression Test Suite (72 Tests across 10 Suites)

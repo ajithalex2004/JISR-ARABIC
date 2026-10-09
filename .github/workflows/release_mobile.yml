@@ -142,7 +142,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Deploy to Google Play Internal Track (Optional)
-        if: github.event.inputs.deploy_to_play_store == true && secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
+        if: github.event.inputs.deploy_to_play_store == 'true'
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}

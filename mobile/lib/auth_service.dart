@@ -18,19 +18,16 @@ class AuthService {
   static const _serverKey = 'fahim_custom_server_url';
 
   static const String productionApiBase = 'https://api.jisr.ae';
+  static const String liveTunnelHost = 'https://next-successfully-world-clearing.trycloudflare.com';
   static const String fallbackLanHost = 'http://192.168.1.17:8000';
   static const String emulatorHost = 'http://10.0.2.2:8000';
 
   static String resolveInitialApiBase() {
     const configured = String.fromEnvironment('FAHIM_API_BASE');
-    if (kReleaseMode) {
-      if (configured.isNotEmpty && configured.startsWith('https://')) {
-        return configured;
-      }
-      return productionApiBase;
+    if (configured.isNotEmpty && configured.startsWith('https://')) {
+      return configured;
     }
-    if (configured.isNotEmpty) return configured;
-    return emulatorHost;
+    return liveTunnelHost;
   }
 
   static String activeApiBase = resolveInitialApiBase();
@@ -177,15 +174,24 @@ class AuthService {
     final headers = <String, String>{'Content-Type': 'application/json'};
     if (token != null) headers['Authorization'] = 'Bearer $token';
 
+    final host = await getServerUrl();
     try {
-      return await _executeHttp(activeApiBase, path, headers, body, method);
+      return await _executeHttp(host, path, headers, body, method);
     } catch (e) {
       if (e is AuthException) {
         rethrow;
       }
+      if (host != liveTunnelHost) {
+        try {
+          final res = await _executeHttp(liveTunnelHost, path, headers, body, method);
+          activeApiBase = liveTunnelHost;
+          await storage.write(key: _serverKey, value: liveTunnelHost);
+          return res;
+        } catch (_) {}
+      }
       if (!kReleaseMode) {
-        final alternateHost = activeApiBase.contains('10.0.2.2') ? fallbackLanHost : emulatorHost;
-        if (activeApiBase != alternateHost) {
+        final alternateHost = host.contains('10.0.2.2') ? fallbackLanHost : emulatorHost;
+        if (host != alternateHost) {
           try {
             final res = await _executeHttp(alternateHost, path, headers, body, method);
             activeApiBase = alternateHost;

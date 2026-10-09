@@ -54,8 +54,10 @@ jobs:
       - name: Run Production SaaS Configuration Audit (Offline Validation)
         env:
           FAHIM_PAYMENT_WEBHOOK_SECRET: whsec_test_mock_webhook_secret_key_minimum_24
+          STRIPE_SECRET_KEY: sk_test_mock_secret_key_for_offline_validation_minimum_24
           FAHIM_SMTP_HOST: smtp.mailtrap.io
-          GEMINI_API_KEY: AQ.MockGeminiApiKeyForOfflineTesting
+          FAHIM_SMTP_FROM: noreply@jisr.ae
+          GEMINI_API_KEY: AIzaSyMockGeminiApiKeyForOfflineTesting12345
         run: python -m backend.scripts.verify_production_readiness --skip-network
 
       - name: Run Enterprise Regression Test Suite (72 Tests across 10 Suites)

@@ -1,0 +1,2 @@
+# JISR-ARABIC
+JISR ARABIC for UAE-CBSE Curiculum

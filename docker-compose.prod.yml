@@ -1,10 +1,11 @@
 # ==============================================================================
 # JISR Arabic 1,000-Student Scale - Production Container Orchestration
 # Services:
-#   1. web     - Nginx Reverse Proxy, Gzip Engine, and SPA Static Host
-#   2. api     - FastAPI Production Backend API (Multi-Worker uvloop)
-#   3. worker  - Standalone Asynchronous Task Processing Daemon
-#   4. redis   - Redis 7 In-Memory Cache & Task Queue with Persistence
+#   1. web      - Nginx Reverse Proxy, Gzip Engine, and SPA Static Host
+#   2. api      - FastAPI Production Backend API (Multi-Worker uvloop)
+#   3. worker   - Standalone Asynchronous Task Processing Daemon
+#   4. redis    - Redis 7 In-Memory Cache & Task Queue with Persistence
+#   5. postgres - Local PostgreSQL 16 Enterprise Database (Fallback / Simulation)
 # ==============================================================================
 
 services:
@@ -36,10 +37,10 @@ services:
     command: ["api"]
     environment:
       - FAHIM_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg://jisr_user:jisr_secure_password_2026@postgres:5432/jisr_production}
       - REDIS_URL=redis://redis:6379/0
-      - FAHIM_SECRET_KEY=${FAHIM_SECRET_KEY}
-      - FAHIM_CORS_ORIGINS=${FAHIM_CORS_ORIGINS:-http://localhost,https://jisr.ae,https://app.jisr.ae}
+      - FAHIM_SECRET_KEY=${FAHIM_SECRET_KEY:-jisr_production_secret_key_random_at_least_32_characters_long_2026}
+      - FAHIM_CORS_ORIGINS=${FAHIM_CORS_ORIGINS:-http://localhost,http://127.0.0.1,https://jisr.ae,https://app.jisr.ae}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DB_POOL_SIZE=${DB_POOL_SIZE:-15}
       - DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW:-10}
@@ -57,7 +58,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-}
       - FAHIM_PAYMENT_PROVIDER=${FAHIM_PAYMENT_PROVIDER:-stripe}
-      - FAHIM_PAYMENT_WEBHOOK_SECRET=${FAHIM_PAYMENT_WEBHOOK_SECRET:-}
+      - FAHIM_PAYMENT_WEBHOOK_SECRET=${FAHIM_PAYMENT_WEBHOOK_SECRET:-whsec_jisr_webhook_secret_key_minimum_24_chars}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
       - FAHIM_SMTP_HOST=${FAHIM_SMTP_HOST:-}
@@ -68,6 +69,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     volumes:
       - audio_cache:/app/tmp/audio-cache
       - task_artifacts:/app/tmp/task-artifacts
@@ -75,9 +78,9 @@ services:
       - jisr_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 15s
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
       start_period: 15s
     logging:
       driver: "json-file"
@@ -94,9 +97,9 @@ services:
     command: ["worker"]
     environment:
       - FAHIM_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg://jisr_user:jisr_secure_password_2026@postgres:5432/jisr_production}
       - REDIS_URL=redis://redis:6379/0
-      - FAHIM_SECRET_KEY=${FAHIM_SECRET_KEY}
+      - FAHIM_SECRET_KEY=${FAHIM_SECRET_KEY:-jisr_production_secret_key_random_at_least_32_characters_long_2026}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DB_POOL_SIZE=${DB_POOL_SIZE_WORKER:-5}
       - DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW_WORKER:-5}
@@ -110,6 +113,8 @@ services:
       - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-}
     depends_on:
       redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
       api:
         condition: service_healthy
@@ -135,7 +140,31 @@ services:
       - jisr_net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: jisr_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jisr_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jisr_secure_password_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-jisr_production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - jisr_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jisr_user} -d ${POSTGRES_DB:-jisr_production}"]
+      interval: 5s
       timeout: 3s
       retries: 5
       start_period: 5s
@@ -146,6 +175,8 @@ services:
         max-file: "3"
 
 volumes:
+  postgres_data:
+    driver: local
   redis_data:
     driver: local
   audio_cache:

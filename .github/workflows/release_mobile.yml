@@ -82,7 +82,23 @@ jobs:
           EOF
             echo "Production key.properties configured successfully."
           else
-            echo "ANDROID_KEYSTORE_BASE64 not set; falling back to debug signing."
+            echo "ANDROID_KEYSTORE_BASE64 not set; generating CI self-signed keystore for release packaging..."
+            keytool -genkeypair -v \
+              -keystore android/app/upload-keystore.jks \
+              -alias jisr_upload \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "jisr_ci_secret_pass" \
+              -keypass "jisr_ci_secret_pass" \
+              -dname "CN=JISR Mobile, OU=Engineering, O=JISR Arabic, L=Dubai, ST=Dubai, C=AE"
+            cat <<EOF > android/key.properties
+          keyAlias=jisr_upload
+          keyPassword=jisr_ci_secret_pass
+          storeFile=upload-keystore.jks
+          storePassword=jisr_ci_secret_pass
+          EOF
+            echo "CI self-signed key.properties configured successfully."
           fi
 
       - name: Install Dependencies
@@ -237,3 +253,4 @@ jobs:
           files: |
             release-artifacts/**/app-release.apk
             release-artifacts/**/app-release.aab
+            release-artifacts/**/*.ipa

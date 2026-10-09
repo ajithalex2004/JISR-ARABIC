@@ -43,11 +43,19 @@ android {
             val storePasswordVal = keystoreProperties.getProperty("storePassword")
             val storeFileVal = keystoreProperties.getProperty("storeFile")
 
-            if (storeFileVal != null && (file(storeFileVal).exists() || rootProject.file(storeFileVal).exists())) {
+            val candidateFile = if (storeFileVal != null) {
+                listOf(
+                    file(storeFileVal),
+                    rootProject.file(storeFileVal),
+                    rootProject.file("app/$storeFileVal")
+                ).firstOrNull { it.exists() }
+            } else null
+
+            if (candidateFile != null) {
                 keyAlias = keyAliasVal
                 keyPassword = keyPasswordVal
                 storePassword = storePasswordVal
-                storeFile = if (file(storeFileVal).exists()) file(storeFileVal) else rootProject.file(storeFileVal)
+                storeFile = candidateFile
             } else {
                 initWith(getByName("debug"))
             }

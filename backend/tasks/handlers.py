@@ -290,9 +290,28 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
     }
 
 
+def handle_draft_lessons(params: Dict[str, Any], update_progress: Callable[[int], None]) -> Dict[str, Any]:
+    """Draft lesson packages for a grade/term from textbook scans (teacher review required)."""
+    from backend.database import SessionLocal
+    from backend.modules.curriculum.drafting import draft_lessons
+
+    db = SessionLocal()
+    try:
+        return draft_lessons(
+            int(params["grade"]), int(params["term"]), db=db,
+            lesson_ids=params.get("lesson_ids") or None,
+            overwrite=bool(params.get("overwrite")),
+            actor_id=params.get("actor_id"),
+            progress=update_progress,
+        )
+    finally:
+        db.close()
+
+
 TASK_HANDLERS = {
     "synthesize_audio": handle_synthesize_audio,
     "bulk_enroll_learners": handle_bulk_enroll_learners,
     "send_weekly_digest": handle_send_weekly_digest,
     "process_textbook_ocr": handle_process_textbook_ocr,
+    "draft_lessons": handle_draft_lessons,
 }

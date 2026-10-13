@@ -40,7 +40,7 @@ services:
       - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg://jisr_user:jisr_secure_password_2026@postgres:5432/jisr_production}
       - REDIS_URL=redis://redis:6379/0
       - FAHIM_SECRET_KEY=${FAHIM_SECRET_KEY:-jisr_production_secret_key_random_at_least_32_characters_long_2026}
-      - FAHIM_CORS_ORIGINS=${FAHIM_CORS_ORIGINS:-http://localhost,http://127.0.0.1,https://jisr.ae,https://app.jisr.ae}
+      - FAHIM_CORS_ORIGINS=${FAHIM_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DB_POOL_SIZE=${DB_POOL_SIZE:-15}
       - DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW:-10}

@@ -167,3 +167,4 @@ yarn-debug.log*
 Thumbs.db
 ehthumbs.db
 desktop.ini
+.content-upload-progress.json

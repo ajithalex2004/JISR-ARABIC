@@ -4,9 +4,9 @@ import 'package:mobile/api_service.dart';
 
 void main() {
   group('Release Endpoint & Security Pinning', () {
-    test('Production API base points to enterprise domain', () {
-      expect(AuthService.productionApiBase, 'https://api.jisr.ae');
-      expect(AuthService.productionApiBase.startsWith('https://'), isTrue);
+    test('Production API base is injected at build time and HTTPS-only', () {
+      const base = AuthService.productionApiBase;
+      expect(base.isEmpty || base.startsWith('https://'), isTrue);
     });
 
     test('Initial API base resolves correctly', () {

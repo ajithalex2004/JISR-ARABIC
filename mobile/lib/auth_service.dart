@@ -17,16 +17,18 @@ class AuthService {
   static const _tokenKey = 'fahim_access_token';
   static const _serverKey = 'fahim_custom_server_url';
 
-  static const String productionApiBase = 'https://api.jisr.ae';
+  /// Production API address, injected at build time so no unowned domain is baked in:
+  /// `flutter build apk --release --dart-define=FAHIM_API_BASE=https://<api-host>`
+  static const String productionApiBase = String.fromEnvironment('FAHIM_API_BASE');
   static const String fallbackLanHost = 'http://192.168.1.17:8000';
   static const String emulatorHost = 'http://10.0.2.2:8000';
 
   static String resolveInitialApiBase() {
-    const configured = String.fromEnvironment('FAHIM_API_BASE');
-    if (configured.isNotEmpty && configured.startsWith('https://')) {
-      return configured;
+    if (productionApiBase.startsWith('https://')) {
+      return productionApiBase;
     }
-    return productionApiBase;
+    // Debug builds without FAHIM_API_BASE talk to a local backend on the emulator host.
+    return kReleaseMode ? productionApiBase : emulatorHost;
   }
 
   static String activeApiBase = resolveInitialApiBase();

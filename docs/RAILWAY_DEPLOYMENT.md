@@ -22,8 +22,11 @@ service. Split the worker out later, once page images move to S3/R2 storage.
 2. Your current production secrets from `C:\JISR ARABIC\.env.production` (or `backend\.env`).
 3. An email sender. Railway blocks outbound SMTP below the Pro plan, so use
    [Resend](https://resend.com) (free tier covers OTP volumes): create an API key and verify
-   your sending domain.
-4. Optional now, needed before the mobile release: DNS access for `jisr.ae`.
+   a sending domain. Resend only delivers to arbitrary parents from a domain you own, so
+   either use a domain you already control (for example your company domain) or register
+   one for the product now.
+4. No product domain is needed to start: the app runs on Railway's own `*.up.railway.app`
+   addresses until you buy one (Step 6).
 
 ## Step 1 — Create the project
 
@@ -48,7 +51,7 @@ REDIS_URL=${{Redis.REDIS_URL}}
 # Reuse the value from your current .env.production so existing logins keep working
 FAHIM_SECRET_KEY=<existing secret, 32+ characters>
 
-# The web service's public address (update after Step 4 / custom domains)
+# The web service's public address (update after Step 3 and again if you add a custom domain)
 FAHIM_CORS_ORIGINS=https://<web-service>.up.railway.app
 
 GEMINI_API_KEY=<your key>
@@ -125,23 +128,40 @@ first two commands with
 Redeploy the api afterwards so it re-checks migrations. Delete `jisr.dump` from the PC once
 the restore is verified: it contains children's personal data.
 
-**Textbook scans.** The reader needs `pdf_pages_sample/` (page images) and
-`vision-output-new/` (OCR) on the api volume at `/app/content`. Re-uploading the textbook
-PDFs through the web **Admin → Textbook PDF Library** renders page images straight onto the
-volume. For the existing folders, see "Uploading content folders" below.
+**Textbook scans.** The reader needs `pdf_pages_sample/` (page images, ~1.7 GB) and
+`vision-output-new/` (OCR, ~1.1 GB) on the api volume at `/app/content`. Upload them from
+the PC with the bundled script (admin account required; it sends ~200 MB parts and resumes
+if interrupted):
 
-## Step 6 — Custom domains (needed before the next mobile release)
+```cmd
+pip install requests
+python scripts\upload_content.py --api https://<api-service>.up.railway.app
+```
 
-The mobile app now defaults to `https://api.jisr.ae`. In each service → **Settings →
-Networking → Custom Domain**:
+The Hobby plan allows volumes up to 5 GB, which covers these folders with room to spare.
+Delete `.content-upload-progress.json` only if you want to upload everything again.
 
-- api → `api.jisr.ae`
-- web → `app.jisr.ae` (or `jisr.ae`)
+## Step 6 — Mobile app and domains
 
-Add the CNAME records Railway shows at your DNS provider, then update
-`FAHIM_CORS_ORIGINS=https://app.jisr.ae,https://jisr.ae` on the api and
-`VITE_API_URL=https://api.jisr.ae` on the web service. Until `api.jisr.ae` is live, build test
-APKs with `flutter build apk --dart-define=FAHIM_API_BASE=https://<api-service>.up.railway.app`.
+**Mobile builds.** The app has no API address built in; it is supplied at build time. In
+GitHub → repository **Settings → Secrets and variables → Actions → Variables**, add
+`FAHIM_API_BASE` = `https://<api-service>.up.railway.app`. The mobile release workflow refuses
+to build without it. For a local build on the PC:
+
+```cmd
+cd mobile
+flutter build apk --release --dart-define=FAHIM_API_BASE=https://<api-service>.up.railway.app
+```
+
+**Your own domain (later).** Railway addresses work indefinitely, but a product domain looks
+more trustworthy to schools and lets you move hosts without republishing the app. Once you
+own one (say `example.ae`), in each service → **Settings → Networking → Custom Domain** add
+`api.example.ae` (api) and `app.example.ae` (web), create the CNAME records Railway shows, then
+update `FAHIM_CORS_ORIGINS` on the api, `VITE_API_URL` on the web service and the
+`FAHIM_API_BASE` GitHub variable, and release a new app build.
+
+Never point the app at a domain you do not own: whoever controls it would receive users'
+logins and children's data.
 
 ## Step 7 — Retire the PC setup
 
@@ -150,18 +170,6 @@ Once the Railway app works end to end (sign up, OTP email, lesson, textbook page
 1. Stop the Cloudflare tunnel and `docker compose -f docker-compose.prod.yml down` on the PC.
 2. Move `.env.production` and the Google service-account key off the PC into Railway variables
    or a password manager.
-
-## Uploading content folders
-
-Railway volumes have no file browser, and the right copy method depends on how large
-`pdf_pages_sample/` and `vision-output-new/` are. Check their sizes on the PC (right-click →
-Properties) and choose:
-
-- **Small (under ~1 GB):** a one-off, admin-only upload endpoint that accepts a `.tgz` of the
-  two folders and unpacks it onto the volume.
-- **Large:** move page images to object storage (Cloudflare R2 or S3, via the existing
-  storage adapter) and serve them from a CDN, which also lets the worker run as its own
-  service again.
 
 ## Costs (approximate)
 

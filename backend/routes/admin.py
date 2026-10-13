@@ -365,3 +365,11 @@ def bulk_ingest_curriculum(payload: list[dict] | dict, db: Session=Depends(get_d
         "details": results
     }
 
+
+
+@router.post('/content-archive')
+def upload_content_archive(root: str, file: UploadFile = File(...), actor: Principal = Depends(get_current_user)):
+    """Unpack a .tar.gz of textbook page images or OCR output onto the content volume (admin only)."""
+    require_roles(actor, ('admin',))
+    from backend.modules.curriculum.content_archive import install_content_archive
+    return install_content_archive(root, file.file)

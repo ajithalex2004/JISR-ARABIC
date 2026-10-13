@@ -53,7 +53,7 @@ class TestArchitecture(unittest.TestCase):
         client = TestClient(app)
         response = client.get("/api/admin/page-image/999999")
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Page image not found"})
+        self.assertEqual(response.json(), {"detail": "Page image for page 999999 not found"})
 
     def test_scanned_page_still_resolves_from_project_root(self):
         from backend.modules.curriculum.authoring import get_page_image

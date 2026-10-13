@@ -1,8 +1,11 @@
+import hashlib
 import os
 import json
 from sqlalchemy import create_engine, text
 
-db_url = os.environ.get("DATABASE_URL", "postgresql+psycopg://jisr_user:jisr_secure_password_2026@postgres:5432/jisr_production")
+db_url = os.environ.get("DATABASE_URL")
+if not db_url:
+    raise SystemExit("DATABASE_URL must be set")
 engine = create_engine(db_url)
 
 with engine.begin() as conn:
@@ -29,8 +32,9 @@ with engine.begin() as conn:
             data["pdf_start_page"] = new_pdf
             new_json_str = json.dumps(data, ensure_ascii=False)
             conn.execute(
-                text("UPDATE lesson_versions SET content_json = :c WHERE id = :id"),
-                {"c": new_json_str, "id": row_id}
+                # Keep content_hash in step so the lesson integrity check still passes.
+                text("UPDATE lesson_versions SET content_json = :c, content_hash = :h WHERE id = :id"),
+                {"c": new_json_str, "h": hashlib.sha256(new_json_str.encode("utf-8")).hexdigest(), "id": row_id}
             )
             print(f"Updated {lesson_id} (v {version_tag}): pdf_start_page {old_pdf} -> {new_pdf}")
             updated_count += 1

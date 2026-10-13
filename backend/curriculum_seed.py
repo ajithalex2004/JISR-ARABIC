@@ -1,3 +1,4 @@
+import os
 import json
 import hashlib
 from sqlalchemy.orm import Session
@@ -789,18 +790,22 @@ def seed_database(db: Session, include_demo_data: bool = True):
         db.add(demo_tutor)
         db.commit()
 
-    # 8. Seed Admin Account (Sole Administrator)
-    demo_admin = db.query(User).filter(User.email == "alex@exlsolutions.ae").first()
-    if not demo_admin:
-        demo_admin = User(
-            email="alex@exlsolutions.ae",
-            password_hash=hash_password("exlsolutions@2026"),
-            full_name="Alex (EXL Administrator)",
-            role="admin",
-            is_verified=True
-        )
-        db.add(demo_admin)
-        db.commit()
+    # 8. Seed Admin Account only when credentials are supplied via the environment;
+    # admin passwords must never live in source control.
+    admin_email = os.getenv("FAHIM_SEED_ADMIN_EMAIL", "").strip().lower()
+    admin_password = os.getenv("FAHIM_SEED_ADMIN_PASSWORD", "")
+    if admin_email and admin_password:
+        demo_admin = db.query(User).filter(User.email == admin_email).first()
+        if not demo_admin:
+            demo_admin = User(
+                email=admin_email,
+                password_hash=hash_password(admin_password),
+                full_name="Platform Administrator",
+                role="admin",
+                is_verified=True
+            )
+            db.add(demo_admin)
+            db.commit()
 
     # 9. Seed Gamification Profiles & Badges
     if child1:

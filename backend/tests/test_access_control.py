@@ -15,6 +15,7 @@ from backend.models import (
     LearnerMistake, LearnerAttempt, BookEdition, Unit, Lesson, LessonVersion,
     UserSession,
 )
+from backend.redis_client import _fallback_cache
 from backend.security import create_access_token, decode_access_token, hash_password
 from backend.curriculum_seed import BALL_GAMES_CONTENT_V02
 
@@ -25,6 +26,7 @@ class TestAccessControl(unittest.TestCase):
         cls.password_hash = hash_password("TestPassword123!")
 
     def setUp(self):
+        _fallback_cache.clear()
         self.engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
         @event.listens_for(self.engine, "connect")
         def enable_foreign_keys(connection, _):
@@ -195,7 +197,7 @@ class TestAccessControl(unittest.TestCase):
     def test_routes_require_identity_unless_explicitly_public(self):
         from fastapi.routing import APIRoute
         public = {
-            "/", "/api/health", "/api/ready", "/api/metrics", "/api/meta", "/api/curriculum/schools", "/api/curriculum/grades",
+            "/", "/api/health", "/api/ready", "/api/meta", "/api/curriculum/schools", "/api/curriculum/grades",
             "/api/curriculum/diagnostic-questions", "/api/admin/coverage-report",
             "/api/admin/ocr-page/{pdf_page}", "/api/admin/page-image/{pdf_page}",
             "/api/audio/tts-info", "/api/audio/synthesize", "/api/modules/malazim/{lesson_id}",

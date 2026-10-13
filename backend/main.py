@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -14,6 +14,7 @@ from backend.errors import ApplicationError
 from backend.observability import ObservabilityMiddleware, logger
 from backend.config import validate_deployment_config
 from backend.redis_client import check_rate_limit
+from backend.api.dependencies import require_role
 
 environment = os.getenv("FAHIM_ENV", "development").lower()
 configured_origins = [origin.strip().rstrip("/") for origin in os.getenv("FAHIM_CORS_ORIGINS", "").split(",") if origin.strip()]
@@ -103,7 +104,7 @@ async def distributed_rate_limit(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"https://.*\.trycloudflare\.com|https://.*\.jisr\.ae",
+    allow_origin_regex=r"https://([a-z0-9-]+\.)*jisr\.ae",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -260,7 +261,7 @@ def readiness_check():
 
 
 @app.on_event("startup")
-def on_startup():
+def configure_runtime():
     try:
         import anyio.to_thread
         limiter = anyio.to_thread.current_default_thread_limiter()
@@ -279,14 +280,13 @@ def on_shutdown():
 
 
 @app.get("/api/metrics")
-def metrics():
-    """Minimal scrape endpoint for deployment monitoring."""
+def metrics(_admin=Depends(require_role(["admin"]))):
+    """Minimal scrape endpoint for deployment monitoring (admin only)."""
     return {**_request_metrics, "mode": os.getenv("FAHIM_ENV", "development")}
 
 
 @app.get("/download/apk")
 @app.get("/apk")
-@app.get("/jisr-arabic-app.apk")
 def download_latest_apk():
     from fastapi.responses import FileResponse
     candidates = [

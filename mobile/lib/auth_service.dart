@@ -18,7 +18,6 @@ class AuthService {
   static const _serverKey = 'fahim_custom_server_url';
 
   static const String productionApiBase = 'https://api.jisr.ae';
-  static const String liveTunnelHost = 'https://veteran-salmon-fin-charts.trycloudflare.com';
   static const String fallbackLanHost = 'http://192.168.1.17:8000';
   static const String emulatorHost = 'http://10.0.2.2:8000';
 
@@ -27,7 +26,7 @@ class AuthService {
     if (configured.isNotEmpty && configured.startsWith('https://')) {
       return configured;
     }
-    return liveTunnelHost;
+    return productionApiBase;
   }
 
   static String activeApiBase = resolveInitialApiBase();
@@ -57,7 +56,9 @@ class AuthService {
     final savedServer = await storage.read(key: _serverKey);
     if (savedServer != null && savedServer.trim().isNotEmpty) {
       final clean = savedServer.trim();
-      if (!kReleaseMode || clean.startsWith('https://')) {
+      // Temporary Cloudflare tunnel addresses from older builds are dead; use production.
+      final isRetiredTunnel = clean.contains('trycloudflare.com');
+      if (!isRetiredTunnel && (!kReleaseMode || clean.startsWith('https://'))) {
         activeApiBase = clean;
         return activeApiBase;
       }
@@ -200,14 +201,6 @@ class AuthService {
     } catch (e) {
       if (e is AuthException) {
         rethrow;
-      }
-      if (host != liveTunnelHost) {
-        try {
-          final res = await _executeHttp(liveTunnelHost, path, headers, body, method);
-          activeApiBase = liveTunnelHost;
-          await storage.write(key: _serverKey, value: liveTunnelHost);
-          return res;
-        } catch (_) {}
       }
       if (!kReleaseMode) {
         final alternateHost = host.contains('10.0.2.2') ? fallbackLanHost : emulatorHost;

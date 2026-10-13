@@ -6,6 +6,7 @@ and OCR textbook ingestion decoupled from the main HTTP request loop.
 import os
 import json
 import logging
+from backend.config import content_root
 from typing import Dict, Any, Callable
 from pathlib import Path
 
@@ -198,7 +199,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
         except Exception:
             reader = None
 
-    sample_dir = Path(__file__).resolve().parents[2] / "pdf_pages_sample"
+    sample_dir = content_root() / "pdf_pages_sample"
     sample_dir.mkdir(parents=True, exist_ok=True)
 
     pdfium_doc = None

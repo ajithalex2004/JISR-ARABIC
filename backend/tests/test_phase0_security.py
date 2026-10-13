@@ -101,12 +101,37 @@ class TestPhase0SecurityHardening(unittest.TestCase):
         # Confirm code was never in logs
         full_logs = "\n".join(captured.output)
         self.assertNotIn(test_code, full_logs)
-        self.assertIn("[OTP Delivery] SMTP not configured", full_logs)
+        self.assertIn("[OTP Delivery] Email not configured", full_logs)
 
         # In production without SMTP, it must fail closed (return False)
         with patch.dict(os.environ, {"FAHIM_ENV": "production", "FAHIM_SMTP_HOST": ""}):
             success_prod = send_otp_email(test_email, test_code, "login_otp")
             self.assertFalse(success_prod)
+
+    def test_otp_sent_through_resend_api_when_configured(self):
+        """With RESEND_API_KEY set, OTPs go through the Resend HTTP API instead of SMTP."""
+        from unittest.mock import MagicMock
+        response = MagicMock()
+        env = {"FAHIM_ENV": "production", "FAHIM_SMTP_HOST": "", "RESEND_API_KEY": "re_test_key",
+               "FAHIM_SMTP_FROM": "JISR <noreply@jisr.ae>"}
+        with patch.dict(os.environ, env), patch("requests.post", return_value=response) as post:
+            self.assertTrue(send_otp_email("parent@example.ae", "123456", "login_otp"))
+        url = post.call_args.args[0]
+        self.assertEqual(url, "https://api.resend.com/emails")
+        self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer re_test_key")
+        self.assertEqual(post.call_args.kwargs["json"]["to"], ["parent@example.ae"])
+        self.assertIn("123456", post.call_args.kwargs["json"]["text"])
+
+        response.raise_for_status.side_effect = RuntimeError("401 Unauthorized")
+        with patch.dict(os.environ, env), patch("requests.post", return_value=response):
+            self.assertFalse(send_otp_email("parent@example.ae", "123456", "login_otp"))
+
+    def test_smtp_password_accepts_documented_and_legacy_names(self):
+        from backend.email_delivery import _smtp_password
+        with patch.dict(os.environ, {"FAHIM_SMTP_PASS": "documented", "FAHIM_SMTP_PASSWORD": ""}):
+            self.assertEqual(_smtp_password(), "documented")
+        with patch.dict(os.environ, {"FAHIM_SMTP_PASS": "", "FAHIM_SMTP_PASSWORD": "legacy"}):
+            self.assertEqual(_smtp_password(), "legacy")
 
     def test_production_deployment_config_validation(self):
         """Verify that missing payment or secret parameters fails startup validation."""

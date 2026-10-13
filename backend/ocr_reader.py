@@ -1,6 +1,7 @@
 import os
 import re
 import pypdf
+from backend.config import content_root
 from typing import Dict, List, Any
 
 CANDIDATE_PDF_PATHS = [
@@ -1286,7 +1287,7 @@ def get_textbook_coverage_report() -> Dict[str, Any]:
 
 def get_page_ocr_data(pdf_page: int, edition_id: str | None = None) -> Dict[str, Any]:
     """Returns OCR text, translation, confidence, and page metadata for a specific PDF page."""
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    base_dir = str(content_root())
     
     from backend.grade8_textbook_data import GRADE_8_TEXTBOOK_PAGES_DATA
     is_gr8 = bool(edition_id and ('gr8' in edition_id.lower() or 'grade8' in edition_id.lower() or 'grade_8' in edition_id.lower()))

@@ -253,35 +253,17 @@ def send_weekly_digest(child_id: str, req: SendWeeklyDigestRequest, *, db: Sessi
     error_message = None
 
     if req.channel == "email":
-        host = os.getenv("FAHIM_SMTP_HOST", "").strip()
-        if host:
+        from backend.email_delivery import email_configured, send_email
+        if email_configured():
             try:
-                import smtplib
-                from email.message import EmailMessage
-                port = int(os.getenv("FAHIM_SMTP_PORT", "587"))
-                sender = os.getenv("FAHIM_SMTP_FROM", "").strip() or "noreply@jisr-arabic.com"
-                user = os.getenv("FAHIM_SMTP_USER", "").strip()
-                password = os.getenv("FAHIM_SMTP_PASS", "").strip()
-
-                msg = EmailMessage()
-                msg["Subject"] = f"التقرير الأسبوعي للطالب {child.name} | Weekly Learning Digest"
-                msg["From"] = sender
-                msg["To"] = recipient
-                msg.set_content(
+                send_email(
+                    recipient,
+                    f"التقرير الأسبوعي للطالب {child.name} | Weekly Learning Digest",
                     f"مرحباً ولي الأمر،\n\nإليكم ملخص الأداء الأسبوعي للطالب {child.name}:\n"
                     f"- دقائق الدراسة: {study_mins} دقيقة\n"
                     f"- الكبسولات المكتملة: {caps_count}\n"
-                    f"- متوسط الدرجات: {avg_score}%\n\nمنصة جسر لتعليم اللغة العربية"
+                    f"- متوسط الدرجات: {avg_score}%\n\nمنصة جسر لتعليم اللغة العربية",
                 )
-                if port == 465:
-                    smtp = smtplib.SMTP_SSL(host, port, timeout=10)
-                else:
-                    smtp = smtplib.SMTP(host, port, timeout=10)
-                    smtp.starttls()
-                if user and password:
-                    smtp.login(user, password)
-                smtp.send_message(msg)
-                smtp.quit()
                 delivery_status = "delivered"
             except Exception as e:
                 delivery_status = "failed"

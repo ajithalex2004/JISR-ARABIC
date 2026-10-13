@@ -1,5 +1,15 @@
 """Deployment configuration validation. Secret values are never logged or returned."""
 import os
+from pathlib import Path
+
+
+def content_root() -> Path:
+    """Folder holding pdf_pages_sample/ and vision-output*/ (textbook scans and OCR).
+
+    Defaults to the project root; set FAHIM_CONTENT_DIR to point at a mounted volume.
+    """
+    configured = os.getenv("FAHIM_CONTENT_DIR", "").strip()
+    return Path(configured) if configured else Path(__file__).resolve().parents[1]
 
 class ConfigurationError(RuntimeError):
     pass

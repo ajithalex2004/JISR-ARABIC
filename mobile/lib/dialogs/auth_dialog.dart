@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -1308,7 +1309,7 @@ class _AuthDialogState extends State<AuthDialog> {
                   decoration: InputDecoration(
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     isDense: true,
-                    hintText: 'http://192.168.1.17:8000',
+                    hintText: 'https://api.jisr.ae',
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -1317,25 +1318,22 @@ class _AuthDialogState extends State<AuthDialog> {
                   runSpacing: 4,
                   children: [
                     ActionChip(
-                      avatar: const Icon(Icons.bolt, size: 12, color: Color(0xFF6C5CE7)),
-                      label: const Text('Tunnel (Live)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                      backgroundColor: const Color(0xFFEEF2FF),
-                      onPressed: () => setDlgState(() => srvCtrl.text = 'https://veteran-salmon-fin-charts.trycloudflare.com'),
-                    ),
-                    ActionChip(
                       avatar: const Icon(Icons.cloud_done, size: 12, color: Color(0xFF10B981)),
                       label: const Text('Production', style: TextStyle(fontSize: 10)),
                       backgroundColor: const Color(0xFFECFDF5),
-                      onPressed: () => setDlgState(() => srvCtrl.text = 'https://api.jisr.ae'),
+                      onPressed: () => setDlgState(() => srvCtrl.text = AuthService.productionApiBase),
                     ),
-                    ActionChip(
-                      label: const Text('Wi-Fi (192.168.1.17)', style: TextStyle(fontSize: 10)),
-                      onPressed: () => setDlgState(() => srvCtrl.text = 'http://192.168.1.17:8000'),
-                    ),
-                    ActionChip(
-                      label: const Text('Emulator (10.0.2.2)', style: TextStyle(fontSize: 10)),
-                      onPressed: () => setDlgState(() => srvCtrl.text = 'http://10.0.2.2:8000'),
-                    ),
+                    // Local development servers are only offered in debug builds.
+                    if (!kReleaseMode) ...[
+                      ActionChip(
+                        label: const Text('Wi-Fi (LAN)', style: TextStyle(fontSize: 10)),
+                        onPressed: () => setDlgState(() => srvCtrl.text = AuthService.fallbackLanHost),
+                      ),
+                      ActionChip(
+                        label: const Text('Emulator (10.0.2.2)', style: TextStyle(fontSize: 10)),
+                        onPressed: () => setDlgState(() => srvCtrl.text = AuthService.emulatorHost),
+                      ),
+                    ],
                   ],
                 ),
                 if (pingResult != null) ...[

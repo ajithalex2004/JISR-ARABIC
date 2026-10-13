@@ -1,0 +1,14 @@
+# Railway service: JISR web app (React build served by nginx).
+# Config-as-code path: /railway/web.toml
+# Requires service variables NGINX_CONF=nginx/nginx.railway.conf and
+# VITE_API_URL=<public API URL>; both are read at build time.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.frontend"
+watchPatterns = ["frontend/**", "nginx/**", "Dockerfile.frontend"]
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

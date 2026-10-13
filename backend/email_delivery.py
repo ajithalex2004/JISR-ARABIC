@@ -1,4 +1,4 @@
-"""Small SMTP adapter for transactional OTP delivery."""
+"""Transactional email delivery: Resend HTTP API (when RESEND_API_KEY is set) or SMTP."""
 import os
 import smtplib
 from email.message import EmailMessage
@@ -16,27 +16,74 @@ def _mask_email(email: str) -> str:
     return f"{masked_name}@{domain}"
 
 
-def send_otp_email(recipient: str, code: str, purpose: str) -> bool:
+def _smtp_password() -> str:
+    # FAHIM_SMTP_PASS is the documented name; FAHIM_SMTP_PASSWORD is accepted for older configs.
+    return os.getenv("FAHIM_SMTP_PASS", "") or os.getenv("FAHIM_SMTP_PASSWORD", "")
+
+
+def _sender() -> str:
+    return os.getenv("FAHIM_SMTP_FROM", "").strip() or "noreply@jisr-arabic.com"
+
+
+def email_configured() -> bool:
+    """True when an email transport (Resend API or SMTP) is configured."""
+    return bool(os.getenv("RESEND_API_KEY", "").strip() or os.getenv("FAHIM_SMTP_HOST", "").strip())
+
+
+def _send_via_resend(recipient: str, subject: str, body_text: str) -> None:
+    import requests
+    response = requests.post(
+        "https://api.resend.com/emails",
+        headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY'].strip()}"},
+        json={"from": _sender(), "to": [recipient], "subject": subject, "text": body_text},
+        timeout=15,
+    )
+    response.raise_for_status()
+
+
+def _send_via_smtp(recipient: str, subject: str, body_text: str) -> None:
     host = os.getenv("FAHIM_SMTP_HOST", "").strip()
+    port = int(os.getenv("FAHIM_SMTP_PORT", "587"))
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = _sender()
+    message["To"] = recipient
+    message.set_content(body_text)
+
+    # Support both port 465 (SSL) and port 587 / 25 (STARTTLS)
+    if port == 465:
+        smtp_conn = smtplib.SMTP_SSL(host, port, timeout=15)
+    else:
+        smtp_conn = smtplib.SMTP(host, port, timeout=15)
+    with smtp_conn as smtp:
+        if port != 465 and os.getenv("FAHIM_SMTP_TLS", "1") == "1":
+            smtp.starttls()
+        username = os.getenv("FAHIM_SMTP_USER", "").strip()
+        if username:
+            smtp.login(username, _smtp_password())
+        smtp.send_message(message)
+
+
+def send_email(recipient: str, subject: str, body_text: str) -> None:
+    """Send a plain-text email through the configured transport; raises on failure."""
+    if os.getenv("RESEND_API_KEY", "").strip():
+        _send_via_resend(recipient, subject, body_text)
+    else:
+        _send_via_smtp(recipient, subject, body_text)
+
+
+def send_otp_email(recipient: str, code: str, purpose: str) -> bool:
     masked = _mask_email(recipient)
-    if not host:
-        logger.info(f"[OTP Delivery] SMTP not configured for {masked} ({purpose})")
+    if not email_configured():
+        logger.info(f"[OTP Delivery] Email not configured for {masked} ({purpose})")
         if os.getenv("FAHIM_ENV", "development").lower() == "production":
-            logger.error("[OTP Delivery] Cannot deliver OTP in production: FAHIM_SMTP_HOST is not configured")
+            logger.error("[OTP Delivery] Cannot deliver OTP in production: no email transport is configured")
             return False
         return True
 
-    port = int(os.getenv("FAHIM_SMTP_PORT", "587"))
-    sender = os.getenv("FAHIM_SMTP_FROM", "").strip() or "noreply@jisr-arabic.com"
     purpose_label = "تسجيل الدخول (Login)" if "login" in purpose else "إنشاء الحساب (Account Signup)" if "signup" in purpose else "استعادة كلمة المرور (Password Reset)"
-
-    try:
-        message = EmailMessage()
-        message["Subject"] = f"رمز التحقق لمنصة جسر: {code} | JISR Arabic Verification Code"
-        message["From"] = sender
-        message["To"] = recipient
-
-        body_text = f"""مرحباً بكم في منصة جسر لتعليم اللغة العربية
+    subject = f"رمز التحقق لمنصة جسر: {code} | JISR Arabic Verification Code"
+    body_text = f"""مرحباً بكم في منصة جسر لتعليم اللغة العربية
 Welcome to JISR Arabic Learning Platform
 
 رمز التحقق الخاص بك هو: {code}
@@ -50,23 +97,8 @@ If you did not request this code, please ignore this email.
 
 منصة جسر (JISR Arabic)
 """
-        message.set_content(body_text)
-
-        # Support both port 465 (SSL) and port 587 / 25 (STARTTLS)
-        if port == 465:
-            smtp_conn = smtplib.SMTP_SSL(host, port, timeout=15)
-        else:
-            smtp_conn = smtplib.SMTP(host, port, timeout=15)
-
-        with smtp_conn as smtp:
-            if port != 465 and os.getenv("FAHIM_SMTP_TLS", "1") == "1":
-                smtp.starttls()
-            username = os.getenv("FAHIM_SMTP_USER", "").strip()
-            password = os.getenv("FAHIM_SMTP_PASSWORD", "")
-            if username:
-                smtp.login(username, password)
-            smtp.send_message(message)
-
+    try:
+        send_email(recipient, subject, body_text)
         logger.info(f"[OTP Delivery] Successfully dispatched {purpose} verification email to {masked}")
         return True
     except Exception as e:

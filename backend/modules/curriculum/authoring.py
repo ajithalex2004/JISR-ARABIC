@@ -11,6 +11,7 @@ from backend.models import (
 from backend.schemas import AdminAddTermRequest, AdminAddClassRequest, AdminAddLessonRequest, AdminUpdateEditionRequest
 from backend.ocr_reader import get_textbook_coverage_report, get_page_ocr_data
 from backend.errors import ApplicationError
+from backend.config import content_root
 from backend.redis_client import invalidate_lesson_cache
 import re
 
@@ -279,7 +280,7 @@ def get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | Non
 def get_page_image(pdf_page: int, edition_id: str | None = None):
     """Resolve a scanned page file from edition subfolder or search across editions."""
     from pathlib import Path
-    base_dir = Path(__file__).resolve().parents[3] / "pdf_pages_sample"
+    base_dir = content_root() / "pdf_pages_sample"
     
     # 1. Direct edition path
     if edition_id:
@@ -304,7 +305,7 @@ def get_textbook_library(db: Session):
     """Retrieve full catalog of official UAE MoE textbooks with indexing and render telemetry."""
     from pathlib import Path
     from backend.models import BookEdition, ScannedPage
-    base_dir = Path(__file__).resolve().parents[3] / "pdf_pages_sample"
+    base_dir = content_root() / "pdf_pages_sample"
     
     editions = db.query(BookEdition).order_by(BookEdition.id).all()
     results = []

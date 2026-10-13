@@ -60,19 +60,8 @@ jobs:
           GEMINI_API_KEY: AIzaSyMockGeminiApiKeyForOfflineTesting12345
         run: python -m backend.scripts.verify_production_readiness --skip-network
 
-      - name: Run Enterprise Regression Test Suite (72 Tests across 10 Suites)
-        run: |
-          python -m unittest \
-            backend.tests.test_phase0_security \
-            backend.tests.test_phase1_trust \
-            backend.tests.test_phase2_reliability \
-            backend.tests.test_phase3_trust \
-            backend.tests.test_phase4_polish \
-            backend.tests.test_phase5_scalability \
-            backend.tests.test_storage_and_prewarming \
-            backend.tests.test_pillar_6_task_queue \
-            backend.tests.test_load_testing_harness \
-            backend.tests.test_saas_readiness
+      - name: Run Full Backend Test Suite (all backend/tests files)
+        run: python -m unittest discover -s backend/tests -t .
 
   # ============================================================================
   # 2. Frontend CI (Node 20, TypeScript Verification & Production Vite Build)

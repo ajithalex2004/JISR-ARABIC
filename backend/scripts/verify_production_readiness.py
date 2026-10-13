@@ -253,8 +253,12 @@ def check_email_smtp(skip_network: bool = False) -> CheckResult:
     password = os.getenv("FAHIM_SMTP_PASS", "").strip()
     from_email = os.getenv("FAHIM_SMTP_FROM", "").strip()
 
+    if not host and os.getenv("RESEND_API_KEY", "").strip():
+        if not from_email:
+            return res.warn("RESEND_API_KEY set but FAHIM_SMTP_FROM (sender address) is not set")
+        return res.success(f"Resend email API configured (sender {from_email})")
     if not host:
-        return res.fail("FAHIM_SMTP_HOST is not configured (OTP delivery will fail in production)")
+        return res.fail("No email transport configured: set RESEND_API_KEY or FAHIM_SMTP_HOST (OTP delivery will fail in production)")
 
     if not from_email:
         return res.warn("FAHIM_SMTP_FROM is not set, defaulting to noreply")

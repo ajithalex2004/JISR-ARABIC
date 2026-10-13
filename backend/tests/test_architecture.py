@@ -53,7 +53,7 @@ class TestArchitecture(unittest.TestCase):
         client = TestClient(app)
         response = client.get("/api/admin/page-image/999999")
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Page image not found"})
+        self.assertEqual(response.json(), {"detail": "Page image for page 999999 not found"})
 
     def test_scanned_page_still_resolves_from_project_root(self):
         from backend.modules.curriculum.authoring import get_page_image
@@ -79,3 +79,14 @@ class TestArchitecture(unittest.TestCase):
         )
         self.assertEqual(response.json(), audio.synthesize_audio(text="مرحبا", speed=0.6, lang="ar-AE"))
         self.assertEqual(client.get("/api/audio/synthesize").status_code, 422)
+
+
+class TestContentRoot(unittest.TestCase):
+    def test_content_root_defaults_to_project_root_and_honours_env(self):
+        import os
+        from unittest.mock import patch
+        from backend.config import content_root
+        with patch.dict(os.environ, {"FAHIM_CONTENT_DIR": ""}):
+            self.assertEqual(content_root(), Path(__file__).resolve().parents[2])
+        with patch.dict(os.environ, {"FAHIM_CONTENT_DIR": "/app/content"}):
+            self.assertEqual(content_root(), Path("/app/content"))

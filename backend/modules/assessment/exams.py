@@ -58,11 +58,15 @@ def _questions_for_scope(grade: int, term: int, *, db: Session):
     return questions
 
 
+EXAM_QUESTION_COUNT = 10
+
+
 def _exam_questions(grade: int, term: int, *, db: Session):
-    # Consult published curriculum content dynamically from database first
+    # Consult published curriculum content dynamically from database first, but only
+    # when it can fill a full-length exam; a partial bank would break the MoE blueprint.
     published = _questions_for_scope(grade, term, db=db)
-    if published:
-        return published
+    if len(published) >= EXAM_QUESTION_COUNT:
+        return published[:EXAM_QUESTION_COUNT]
 
     # Fallback to curated static assessment banks if curriculum content is pending publication
     if grade == 5 and term == 1:
@@ -75,6 +79,8 @@ def _exam_questions(grade: int, term: int, *, db: Session):
         from backend.assessment_bank import ASSESSMENT_QUESTIONS_TERM3
         return ASSESSMENT_QUESTIONS_TERM3
 
+    if published:
+        return published
     raise ApplicationError(404, "No published assessment content is available for this grade and term")
 
 def get_adaptive_assessment(lesson_id: str, child_id=None, is_reviewer=False, *, db: Session, actor=None):

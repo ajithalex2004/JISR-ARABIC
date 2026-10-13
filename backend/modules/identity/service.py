@@ -21,7 +21,7 @@ from backend.errors import ApplicationError
 from backend.modules.identity.access import (
     Principal, visible_children, require_child, require_roles, PARENT_ROLES
 )
-from backend.email_delivery import send_otp_email
+from backend.email_delivery import email_configured, send_otp_email
 from backend.redis_client import (
     is_session_revoked_in_cache, record_revoked_token, record_revoked_user,
     cache_get, cache_set, cache_delete, record_student_active_session, is_student_session_superseded
@@ -210,8 +210,7 @@ def signup_request_otp(req: SignupRequest, *, db: Session):
         raise ApplicationError(503, "Unable to deliver verification code. Email delivery service is temporarily unavailable.")
 
     dbg = _debug_otp(code)
-    has_smtp = bool(os.getenv("FAHIM_SMTP_HOST", "").strip())
-    if not has_smtp and not is_prod:
+    if not email_configured() and not is_prod:
         dbg = code
         msg = f"Verification code generated: {code} (Local/offline testing mode)."
     else:

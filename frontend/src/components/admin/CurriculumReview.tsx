@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../../services/api';
+import { api, API_BASE } from '../../services/api';
 import { TextbookPdfUploader } from './TextbookPdfUploader';
 import { BookOpen, CheckCircle2, Clock, Layers, Sparkles } from 'lucide-react';
 
@@ -135,7 +135,7 @@ export const CurriculumReview: React.FC = () => {
                     Textbook Pages & Transcribed Content ({selected.pages?.length || 0} pages)
                   </h3>
                   <a
-                    href={`/api/admin/page-image/${selected.start_page}?edition_id=moe_gr${selected.grade || grade}_vol${selected.term || term}_2023`}
+                    href={`${API_BASE}/api/admin/page-image/${selected.start_page}?edition_id=moe_gr${selected.grade || grade}_vol${selected.term || term}_2023`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs text-purple-700 hover:underline flex items-center gap-1 font-semibold"

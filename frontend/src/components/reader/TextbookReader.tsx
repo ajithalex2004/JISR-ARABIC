@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BookOpen, Volume2, FileText, Sparkles, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
-import { api } from '../../services/api';
+import { api, API_BASE } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ArabEnglishToggleSwitch } from '../common/ArabEnglishToggleSwitch';
@@ -73,7 +73,7 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
   const currentEditionId = `moe_gr${grade}_vol${term}_2023`;
 
   useEffect(() => {
-    fetch(`/api/admin/textbook-pages/${currentEditionId}`)
+    fetch(`${API_BASE}/api/admin/textbook-pages/${currentEditionId}`)
       .then((res) => (res.ok ? res.json() : []))
       .then((pages: any[]) => {
         if (pages && pages.length > 0) {
@@ -490,14 +490,14 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
                   <div className="border-2 border-slate-300 bg-slate-100 p-2 rounded-sm min-h-[500px] max-h-[750px] overflow-auto flex items-center justify-center">
                     <img
                       key={`${currentEditionId}-${currentPage}`}
-                      src={`/api/admin/page-image/${currentPage}?edition_id=${currentEditionId}`}
+                      src={`${API_BASE}/api/admin/page-image/${currentPage}?edition_id=${currentEditionId}`}
                       alt={`Textbook Page ${currentPage}`}
                       className="max-w-full h-auto object-contain shadow-md rounded-xs"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         if (!target.dataset.triedFallback) {
                           target.dataset.triedFallback = 'true';
-                          target.src = `/api/admin/page-image/${currentPage}`;
+                          target.src = `${API_BASE}/api/admin/page-image/${currentPage}`;
                         }
                       }}
                     />

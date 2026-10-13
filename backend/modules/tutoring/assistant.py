@@ -27,6 +27,19 @@ logger = logging.getLogger("fahim.ai")
 # Model configuration: defaults to gemini-2.0-flash (fast, stable, officially supported)
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
+
+def _child_safety_settings(types):
+    """Strictest Gemini content filters: every learner talking to Fahim is a child."""
+    return [
+        types.SafetySetting(category=category, threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE)
+        for category in (
+            types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+            types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+        )
+    ]
+
 BALL_GAMES_KNOWLEDGE = {
     "كرة القدم": {
         "text_ar": "كرة القدم هي اللعبة الشعبية الأولى عالمياً. تُلعب بفريقين، في كل فريق 11 لاعباً، ومدة الشوط 45 دقيقة.",
@@ -851,7 +864,8 @@ CRITICAL FORMATTING REQUIREMENT (BILINGUAL INTERLEAVING):
         cfg = types.GenerateContentConfig(
             system_instruction=ATTACHMENT_SYSTEM_PROMPT if has_attachment else ASK_FAHIM_SYSTEM_PROMPT,
             temperature=0.3,
-            response_mime_type="application/json"
+            response_mime_type="application/json",
+            safety_settings=_child_safety_settings(types),
         )
         try:
             response = client.models.generate_content(
@@ -932,7 +946,8 @@ Student Grade: {req.grade}
         cfg = types.GenerateContentConfig(
             system_instruction=SOCRATIC_LEARN_SYSTEM_PROMPT,
             temperature=0.3,
-            response_mime_type="application/json"
+            response_mime_type="application/json",
+            safety_settings=_child_safety_settings(types),
         )
         response = client.models.generate_content(
             model=GEMINI_MODEL,
@@ -1002,7 +1017,8 @@ Instructions:
         cfg = types.GenerateContentConfig(
             system_instruction=QUESTION_PAPER_SYSTEM_PROMPT,
             temperature=0.2,
-            response_mime_type="application/json"
+            response_mime_type="application/json",
+            safety_settings=_child_safety_settings(types),
         )
 
         try:

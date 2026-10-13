@@ -96,11 +96,12 @@ def _enforce_resend_cooldown(db: Session, email: str, purpose: str):
 
 
 def _debug_otp(code: str) -> Optional[str]:
-    if not os.getenv("FAHIM_SMTP_HOST", "").strip() or os.getenv("FAHIM_EXPOSE_DEBUG_OTP", "0") == "1":
-        return code
+    # Production environments MUST NEVER expose OTP in response payloads under any circumstances
     if os.getenv("FAHIM_ENV", "development").lower() == "production":
         return None
-    return code
+    if not os.getenv("FAHIM_SMTP_HOST", "").strip() or os.getenv("FAHIM_EXPOSE_DEBUG_OTP", "0") == "1":
+        return code
+    return None
 
 
 def get_current_user(authorization: Optional[str]=None, *, db: Session) -> Principal:

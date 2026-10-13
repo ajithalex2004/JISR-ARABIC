@@ -373,3 +373,61 @@ def upload_content_archive(root: str, file: UploadFile = File(...), actor: Princ
     require_roles(actor, ('admin',))
     from backend.modules.curriculum.content_archive import install_content_archive
     return install_content_archive(root, file.file)
+
+
+class ContentDraftRequest(BaseModel):
+    grade: int
+    term: int
+    lesson_ids: Optional[list[str]] = None
+    overwrite: bool = False
+
+
+@router.post('/content-drafts')
+def start_content_drafts(req: ContentDraftRequest, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """Queue AI drafting of a grade/term's lessons from the textbook scans (admin only)."""
+    require_roles(actor, ('admin',))
+    import os
+    if not (1 <= req.grade <= 12 and req.term in (1, 2, 3)):
+        raise HTTPException(status_code=400, detail='grade must be 1-12 and term 1-3')
+    if not (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+        raise HTTPException(status_code=503, detail='GEMINI_API_KEY is not configured')
+    if not db.query(Lesson).filter(Lesson.grade == req.grade, Lesson.term == req.term).first():
+        raise HTTPException(status_code=404, detail=f'No lessons found for Grade {req.grade} Term {req.term}')
+    from backend.tasks.queue import enqueue_task
+    task = enqueue_task(
+        task_type="draft_lessons",
+        params={"grade": req.grade, "term": req.term, "lesson_ids": req.lesson_ids,
+                "overwrite": req.overwrite, "actor_id": actor.id},
+        actor_id=actor.id,
+    )
+    return {"task_id": task.id, "poll_url": f"/api/tasks/{task.id}", "status": "queued"}
+
+
+@router.get('/lessons/{lesson_id}/versions')
+def list_lesson_versions(lesson_id: str, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """All versions of a lesson for review, newest first, with AI-draft provenance."""
+    require_roles(actor, ('admin',))
+    import json as _json
+    versions = db.query(LessonVersion).filter(LessonVersion.lesson_id == lesson_id).order_by(LessonVersion.created_at.desc()).all()
+    out = []
+    for v in versions:
+        try:
+            provenance = _json.loads(v.content_json).get("provenance")
+        except (TypeError, ValueError):
+            provenance = None
+        out.append({"id": v.id, "version_tag": v.version_tag, "status": v.status, "is_active": v.is_active,
+                    "created_by": v.created_by, "reviewed_by": v.reviewed_by,
+                    "created_at": v.created_at.isoformat() if v.created_at else None,
+                    "ai_draft": v.created_by == "ai-drafter", "provenance": provenance})
+    return out
+
+
+@router.get('/lessons/{lesson_id}/versions/{version_id}')
+def get_lesson_version(lesson_id: str, version_id: str, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """Full content of one lesson version, for preview before approval."""
+    require_roles(actor, ('admin',))
+    import json as _json
+    v = db.query(LessonVersion).filter(LessonVersion.id == version_id, LessonVersion.lesson_id == lesson_id).first()
+    if not v:
+        raise HTTPException(status_code=404, detail='Lesson version not found')
+    return {"id": v.id, "version_tag": v.version_tag, "status": v.status, "content": _json.loads(v.content_json)}

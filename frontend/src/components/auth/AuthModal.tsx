@@ -724,18 +724,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <span>Already have an OTP code? Enter OTP Here →</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetState();
-                    setOtpCode('123456');
-                    setMode('signup_details');
-                  }}
-                  className="text-[11px] text-slate-500 hover:text-slate-800 font-medium flex items-center justify-center gap-1 mx-auto transition-colors"
-                >
-                  <Sparkles className="w-3 h-3 text-amber-500" />
-                  <span>Direct Registration with Password (تخطي التحقق)</span>
-                </button>
+                {/* Development-only shortcut: the backend rejects the demo code in production. */}
+                {import.meta.env.DEV && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetState();
+                      setOtpCode('123456');
+                      setMode('signup_details');
+                    }}
+                    className="text-[11px] text-slate-500 hover:text-slate-800 font-medium flex items-center justify-center gap-1 mx-auto transition-colors"
+                  >
+                    <Sparkles className="w-3 h-3 text-amber-500" />
+                    <span>Direct Registration with Password (تخطي التحقق)</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -786,13 +789,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 />
                 <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1 px-1">
                   <span>Standard 6-digit code</span>
-                  <button
-                    type="button"
-                    onClick={() => setOtpCode('123456')}
-                    className="text-[#6C5CE7] hover:underline font-semibold"
-                  >
-                    Use Demo Code (123456)
-                  </button>
+                  {import.meta.env.DEV && (
+                    <button
+                      type="button"
+                      onClick={() => setOtpCode('123456')}
+                      className="text-[#6C5CE7] hover:underline font-semibold"
+                    >
+                      Use Demo Code (123456)
+                    </button>
+                  )}
                 </div>
               </div>
 

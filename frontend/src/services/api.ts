@@ -37,6 +37,12 @@ export async function parseErrorDetail(res: Response, fallback: string): Promise
 }
 
 // Central transport: every application API request carries the current session.
+async function jsonOrThrow(res: Response) {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : `Request failed (${res.status})`);
+  return data;
+}
+
 export async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   const headers = new Headers(init.headers);
   const token = localStorage.getItem('fahim_token');
@@ -487,6 +493,30 @@ export const api = {
     if (pageCount !== undefined) body.append('page_count', pageCount.toString());
     const res = await authenticatedFetch(`${API_BASE}/api/admin/curriculum-upload`, { method: 'POST', body });
     return res.json();
+  },
+
+  async startContentDrafts(grade: number, term: number, lessonIds?: string[], overwrite = false) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/content-drafts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grade, term, lesson_ids: lessonIds, overwrite }),
+    });
+    return jsonOrThrow(res);
+  },
+
+  async getLessonVersions(lessonId: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/lessons/${encodeURIComponent(lessonId)}/versions`);
+    return jsonOrThrow(res);
+  },
+
+  async getLessonVersion(lessonId: string, versionId: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/lessons/${encodeURIComponent(lessonId)}/versions/${encodeURIComponent(versionId)}`);
+    return jsonOrThrow(res);
+  },
+
+  async reviewLessonVersion(lessonId: string, versionId: string, action: 'approve' | 'publish') {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/lessons/${encodeURIComponent(lessonId)}/versions/${encodeURIComponent(versionId)}/${action}`, { method: 'POST' });
+    return jsonOrThrow(res);
   },
 
   async getTask(taskId: string) {

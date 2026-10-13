@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api, API_BASE } from '../../services/api';
 import { TextbookPdfUploader } from './TextbookPdfUploader';
+import { AiDraftPanel } from './AiDraftPanel';
 import { BookOpen, CheckCircle2, Clock, Layers, Sparkles } from 'lucide-react';
 
 export const CurriculumReview: React.FC = () => {
@@ -14,7 +15,7 @@ export const CurriculumReview: React.FC = () => {
       const data = await api.getCurriculumReview(term, grade);
       setLessons(data || []);
       if (data && data.length > 0) {
-        setSelected(data[0]);
+        setSelected((prev: any) => data.find((l: any) => l.id === prev?.id) || data[0]);
       } else {
         setSelected(null);
       }
@@ -127,6 +128,8 @@ export const CurriculumReview: React.FC = () => {
                   {selected.status === 'published' ? 'Unpublish (Return to Review)' : 'Approve & Publish Lesson'}
                 </button>
               </div>
+
+              <AiDraftPanel grade={grade} term={term} lesson={selected} onChanged={() => load()} />
 
               {/* Scanned Pages List */}
               <div className="space-y-4">

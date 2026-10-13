@@ -587,7 +587,7 @@ def _validate_version_quality(lesson: Lesson, version: LessonVersion):
     activity_ids = set()
     duplicate_ids = set()
     has_defect = None
-    def inspect_node(node):
+    def inspect_node(node, in_options=False):
         nonlocal has_defect
         if isinstance(node, dict):
             for k, v in node.items():
@@ -595,14 +595,15 @@ def _validate_version_quality(lesson: Lesson, version: LessonVersion):
                     has_defect = "missing_arabic_field"
                 if k.endswith("_en") and isinstance(v, str) and not v.strip():
                     has_defect = "missing_english_field"
-                if k == "id" and isinstance(v, str):
+                # Option ids (opt_a, b, ...) only need to be unique within their question.
+                if k == "id" and isinstance(v, str) and not in_options:
                     if v in activity_ids:
                         duplicate_ids.add(v)
                     activity_ids.add(v)
-                inspect_node(v)
+                inspect_node(v, in_options or k == "options")
         elif isinstance(node, list):
             for item in node:
-                inspect_node(item)
+                inspect_node(item, in_options)
     inspect_node(content)
     if duplicate_ids:
         return "duplicate_activity_id"

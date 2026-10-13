@@ -394,9 +394,14 @@ class CurriculumLessonPackage {
     final startPage = content['start_page'] is int
         ? content['start_page'] as int
         : 6;
-    final pdfStart = content['pdf_start_page'] is int
-        ? content['pdf_start_page'] as int
-        : startPage + 2;
+    final int pdfStart;
+    if (content['pdf_start_page'] is int && (content['pdf_start_page'] as int) > startPage) {
+      pdfStart = content['pdf_start_page'] as int;
+    } else if (grade == 5 && term == 1) {
+      pdfStart = startPage + 1;
+    } else {
+      pdfStart = startPage;
+    }
 
     final pages = <LessonContentPage>[];
 
@@ -404,7 +409,24 @@ class CurriculumLessonPackage {
     final learningPaths = content['learning_paths'] as Map?;
     final p1Ar = <String>[];
     final p1En = <String>[];
-    if (learningPaths != null) {
+    if (lessonId == 'lesson_01_ball_games') {
+      p1Ar.addAll(const [
+        'نَوَاتِجُ التَّعَلُّمِ: يَسْتَمِعُ وَيَفْهَمُ المَعْنَى الكُلِّيَّ فِي نُصُوصٍ بَسِيطَةٍ لِمَوْضُوعَاتٍ وَصْفِيَّةٍ مَأْلُوفَةٍ.',
+        'يَسْتَمِعُ وَيُحَدِّدُ مَعْلُومَاتٍ مُحَدَّدَةً فِي نُصُوصٍ مُوَسَّعَةٍ وَبَسِيطَةٍ لِمَوْضُوعَاتٍ وَصْفِيَّةٍ مَأْلُوفَةٍ.',
+        'يُعِيدُ سَرْدَ مَعْلُومَاتٍ تَفْصِيلِيَّةٍ مِنْ قِصَصٍ وَتَجَارِبَ شَخْصِيَّةٍ.',
+        'يُنْتِجُ حَدِيثًا مُتَرَابِطًا مُسْتَخْدِمًا التَّنْغِيمَ وَالإِيقَاعَ الصَّحِيحَيْنِ.',
+        'يَقْرَأُ وَيُحَدِّدُ النِّقَاطَ الرَّئِيسَةَ لِنُصُوصٍ مُوَسَّعَةٍ بَسِيطَةٍ.',
+        'يَكْتُبُ نُصُوصًا بَسِيطَةً فِي مَوْضُوعَاتٍ وَصْفِيَّةٍ مَأْلُوفَةٍ.',
+      ]);
+      p1En.addAll(const [
+        'Learning Outcomes: Listens and understands overall meaning in simple texts on familiar descriptive topics.',
+        'Listens and identifies specific information in extended simple texts on familiar descriptive topics.',
+        'Retells detailed information from stories and personal experiences.',
+        'Produces coherent speech using correct intonation and rhythm.',
+        'Reads and identifies main points of extended simple texts.',
+        'Writes simple texts on familiar descriptive topics.',
+      ]);
+    } else if (learningPaths != null) {
       learningPaths.forEach((key, val) {
         if (val is Map) {
           final tAr = val['title_ar']?.toString() ?? '';

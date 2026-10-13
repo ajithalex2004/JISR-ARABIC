@@ -103,6 +103,7 @@ async def distributed_rate_limit(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex=r"https://.*\.trycloudflare\.com|https://.*\.jisr\.ae",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -285,11 +286,21 @@ def metrics():
 
 @app.get("/download/apk")
 @app.get("/apk")
+@app.get("/jisr-arabic-app.apk")
 def download_latest_apk():
     from fastapi.responses import FileResponse
-    apk_path = os.path.abspath("JISR_Arabic_v2.4.apk")
-    if os.path.exists(apk_path):
-        return FileResponse(apk_path, media_type="application/vnd.android.package-archive", filename="JISR_Arabic_v2.4.apk")
+    candidates = [
+        os.path.abspath("JISR_Arabic_v2.5_Aligned.apk"),
+        os.path.abspath("jisr-arabic-app-release.apk"),
+        os.path.abspath("JISR_Arabic_v2.4.apk"),
+        os.path.join(os.path.dirname(__file__), "JISR_Arabic_v2.5_Aligned.apk"),
+        os.path.join(os.path.dirname(__file__), "jisr-arabic-app-release.apk"),
+        os.path.join(os.path.dirname(__file__), "..", "JISR_Arabic_v2.5_Aligned.apk"),
+        os.path.join(os.path.dirname(__file__), "..", "jisr-arabic-app-release.apk"),
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return FileResponse(p, media_type="application/vnd.android.package-archive", filename="JISR_Arabic_v2.5_Aligned.apk")
     return JSONResponse(status_code=404, content={"detail": "APK not found"})
 
 

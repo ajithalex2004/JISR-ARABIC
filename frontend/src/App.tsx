@@ -14,6 +14,7 @@ import { AskFahimModal } from './components/ai/AskFahimModal';
 import { OnboardingWizardModal } from './components/onboarding/OnboardingWizardModal';
 import { MobileFrameSimulator } from './components/mobile/MobileFrameSimulator';
 import { SocraticLearnStudio } from './components/learning/SocraticLearnStudio';
+import { MindmapsViewer } from './components/learning/MindmapsViewer';
 import { MalazimViewer } from './components/learning/MalazimViewer';
 import { CapsulesGrid } from './components/learning/CapsulesGrid';
 import { AdaptiveAssessmentStudio } from './components/learning/AdaptiveAssessmentStudio';
@@ -97,7 +98,15 @@ export function App() {
         if (u) {
           setUser(u);
           if (u.children && u.children.length > 0) {
-            setActiveChild(u.children[0]);
+            const savedChildId = localStorage.getItem('active_child_id');
+            const matchedChild = savedChildId
+              ? u.children.find(c => c.id === savedChildId)
+              : null;
+            const chosen = matchedChild || u.children[0];
+            setActiveChild(chosen);
+            if (chosen.default_grade && u.role !== 'admin') {
+              setAppGrade(chosen.default_grade);
+            }
           }
         }
       } catch (e) {
@@ -109,10 +118,13 @@ export function App() {
 
   const handleAuthSuccess = (auth: AuthResponse, _isNewSignup?: boolean) => {
     setUser(auth.user);
-    if (auth.active_child) {
-      setActiveChild(auth.active_child);
-    } else if (auth.user.children && auth.user.children.length > 0) {
-      setActiveChild(auth.user.children[0]);
+    const chosenChild = auth.active_child || (auth.user.children && auth.user.children.length > 0 ? auth.user.children[0] : null);
+    if (chosenChild) {
+      setActiveChild(chosenChild);
+      localStorage.setItem('active_child_id', chosenChild.id);
+      if (chosenChild.default_grade && auth.user.role !== 'admin') {
+        setAppGrade(chosenChild.default_grade);
+      }
     }
     setIsOnboardingOpen(false);
   };
@@ -121,8 +133,13 @@ export function App() {
     try {
       const auth = await api.switchChild(childId);
       setUser(auth.user);
-      if (auth.active_child) {
-        setActiveChild(auth.active_child);
+      const chosenChild = auth.active_child || (auth.user.children && auth.user.children.length > 0 ? auth.user.children.find(c => c.id === childId) : null);
+      if (chosenChild) {
+        setActiveChild(chosenChild);
+        localStorage.setItem('active_child_id', chosenChild.id);
+        if (chosenChild.default_grade && auth.user.role !== 'admin') {
+          setAppGrade(chosenChild.default_grade);
+        }
       }
     } catch (err) {
       console.error('Failed to switch child:', err);
@@ -170,6 +187,7 @@ export function App() {
       <Sidebar
         user={user}
         activeChild={activeChild}
+        selectedGrade={appGrade}
         currentView={currentView}
         onSelectView={(view) => {
           setCurrentView(view);
@@ -244,6 +262,8 @@ export function App() {
           <CatalogueView
             user={user}
             activeChild={activeChild}
+            initialGrade={appGrade}
+            onSelectGrade={setAppGrade}
             onSelectLesson={handleSelectLesson}
             onOpenPaywall={handleOpenPaywall}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
@@ -267,6 +287,18 @@ export function App() {
 
         {currentView === 'learn' && (
           <SocraticLearnStudio activeChild={activeChild} />
+        )}
+
+        {currentView === 'mindmaps' && (
+          <MindmapsViewer
+            user={user}
+            activeChild={activeChild}
+            initialGrade={appGrade}
+            onSelectGrade={setAppGrade}
+            onOpenAskFahim={(_query) => {
+              setIsAskFahimOpen(true);
+            }}
+          />
         )}
 
         {currentView === 'malazim' && (

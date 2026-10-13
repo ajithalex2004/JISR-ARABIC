@@ -218,7 +218,25 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
     { page: 16, pnum: 15, titleAr: 'أثناء وبعد الكتابة: نص الإجازة', titleEn: 'Drafting & Vacation Text' },
   ];
 
-  const CHAPTER_1_PAGES = grade === 7 ? GR7_CHAPTER_1_PAGES : grade === 6 ? GR6_CHAPTER_1_PAGES : GR5_CHAPTER_1_PAGES;
+  const GR8_CHAPTER_1_PAGES = [
+    { page: 6, pnum: 6, titleAr: 'تقديم المنهاج: لا للتنمر', titleEn: 'Curriculum Intro: No to Bullying' },
+    { page: 7, pnum: 7, titleAr: 'نواتج التعلم: عام التسامح', titleEn: 'Learning Outcomes: Year of Tolerance' },
+    { page: 8, pnum: 8, titleAr: 'أستمع: عام التسامح', titleEn: 'Listening: Year of Tolerance' },
+    { page: 9, pnum: 9, titleAr: 'أتحدث: تعزيز التسامح', titleEn: 'Speaking: Promoting Tolerance' },
+    { page: 10, pnum: 10, titleAr: 'أقرأ: عام التسامح', titleEn: 'Reading: Year of Tolerance' },
+    { page: 11, pnum: 11, titleAr: 'النحو: الجملة البسيطة والمركبة', titleEn: 'Grammar: Simple & Compound Sentences' },
+    { page: 12, pnum: 12, titleAr: 'نواتج التعلم: صديقي الغريب', titleEn: 'Learning Outcomes: My Strange Friend' },
+    { page: 13, pnum: 13, titleAr: 'أستمع: صديقي الغريب', titleEn: 'Listening: My Strange Friend' },
+    { page: 14, pnum: 14, titleAr: 'أتحدث: قبول الآخر', titleEn: 'Speaking: Accepting Others' },
+    { page: 15, pnum: 15, titleAr: 'أقرأ: تقبل الغريب', titleEn: 'Reading: Embracing the Stranger' },
+    { page: 16, pnum: 16, titleAr: 'أكتب: علاقتي مع صديقي الغريب', titleEn: 'Writing: Friendship Across Cultures' },
+  ];
+
+  const CHAPTER_1_PAGES =
+    grade === 8 ? GR8_CHAPTER_1_PAGES :
+    grade === 7 ? GR7_CHAPTER_1_PAGES :
+    grade === 6 ? GR6_CHAPTER_1_PAGES :
+    GR5_CHAPTER_1_PAGES;
 
   const OTHER_CHAPTERS = [
     { page: 18, title: 'Horse Riding (ركوب الخيل)', pnum: 16 },
@@ -231,17 +249,30 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
     { page: 88, title: 'My Clothes (ملابسي)', pnum: 86 },
     { page: 98, title: 'Fun Time (وقت المرح)', pnum: 96 }
   ];
+
+  const getFallbackChapter1Title = (g: number) => {
+    switch (g) {
+      case 8:
+        return 'Chapter 1 · Year of Tolerance & Coexistence (عَامُ التَّسَامُحِ وَالتَّعَايُشِ)';
+      case 7:
+        return 'Chapter 1 · How I Spent My Vacation (كَيْفَ قَضَيْتُ إِجَازَتِي؟)';
+      case 6:
+        return 'Chapter 1 · Needs & Desires (احْتِيَاجَاتِي وَرَغَبَاتِي)';
+      case 5:
+        return 'Chapter 1 · Ball Games (أَلْعَابُ الكُرَةِ)';
+      default:
+        return `Chapter 1 · Grade ${g} Curriculum (مِنْهَاجُ الصَّفِّ ${g})`;
+    }
+  };
+
   const defaultChapter1Page = (grade === 6 ? 8 : 7);
+  const fallbackOtherChapters = grade === 5 ? OTHER_CHAPTERS.map((chapter, index) => ({ page: chapter.page, title: `Chapter ${index + 2} · ${chapter.title}` })) : [];
   const chapterOptions = chapters.length ? chapters : [
     {
       page: defaultChapter1Page,
-      title: grade === 7
-        ? 'Chapter 1 · How I Spent My Vacation (كَيْفَ قَضَيْتُ إِجَازَتِي؟)'
-        : grade === 6
-        ? 'Chapter 1 · Needs & Desires (احْتِيَاجَاتِي وَرَغَبَاتِي)'
-        : 'Chapter 1 · Ball Games (أَلْعَابُ الكُرَةِ)'
+      title: getFallbackChapter1Title(grade)
     },
-    ...OTHER_CHAPTERS.map((chapter, index) => ({ page: chapter.page, title: `Chapter ${index + 2} · ${chapter.title}` }))
+    ...fallbackOtherChapters
   ];
   const selectedChapter = [...chapterOptions].reverse().find((chapter) => currentPage >= chapter.page) || chapterOptions[0];
 
@@ -338,7 +369,7 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
                 Chapter 1 · Complete
               </span>
               <h3 className="text-sm font-bold text-slate-900 font-arabic">
-                {grade === 6 ? 'احْتِيَاجَاتِي وَرَغَبَاتِي (My Needs & Desires)' : 'أَلْعَابُ الكُرَةِ (Ball Games)'}
+                {selectedChapter?.title || (chapters[0]?.title ?? `Grade ${grade} Curriculum`)}
               </h3>
               <span className="text-[11px] text-slate-500 font-sans">
                 {grade === 6 ? 'Printed Pages 8 to 17 (10 Pages)' : 'Printed Pages 6 to 15 (10 Pages)'}
@@ -403,7 +434,7 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-4 gap-3">
               <div>
                 <span className="text-xs font-mono text-slate-500 block">
-                  PDF Page {currentPage} · Printed Page {pageData?.printed_page || '—'} · {pageData?.unit || 'الرياضات والهوايات'}
+                  PDF Page {currentPage} · Printed Page {pageData?.printed_page || '—'} · {pageData?.unit || selectedChapter?.title || `Grade ${grade}`}
                 </span>
                 <h2 className="text-xl font-black text-slate-900 font-arabic mt-1 text-right sm:text-left" dir="rtl">
                   {pageData?.title_ar}
@@ -456,15 +487,18 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
                     </span>
                     <span className="font-mono text-[11px] text-slate-500">Printed Page {pageData?.printed_page}</span>
                   </div>
-                  <div className="border-2 border-slate-300 bg-slate-100 p-2 rounded-sm max-h-[750px] overflow-auto flex items-center justify-center">
+                  <div className="border-2 border-slate-300 bg-slate-100 p-2 rounded-sm min-h-[500px] max-h-[750px] overflow-auto flex items-center justify-center">
                     <img
+                      key={`${currentEditionId}-${currentPage}`}
                       src={`/api/admin/page-image/${currentPage}?edition_id=${currentEditionId}`}
                       alt={`Textbook Page ${currentPage}`}
                       className="max-w-full h-auto object-contain shadow-md rounded-xs"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.onerror = null;
-                        target.src = `/api/admin/page-image/${currentPage}`;
+                        if (!target.dataset.triedFallback) {
+                          target.dataset.triedFallback = 'true';
+                          target.src = `/api/admin/page-image/${currentPage}`;
+                        }
                       }}
                     />
                   </div>

@@ -7,6 +7,9 @@ import '../arab_english_service.dart';
 class MindmapsScreen extends StatefulWidget {
   final bool isArabic;
   final int initialGrade;
+  final dynamic api;
+  final String? token;
+  final ValueChanged<int>? onGradeChanged;
   final Function(String text)? onVocalize;
   final Function(String query)? onAskFahim;
   final VoidCallback onBack;
@@ -15,6 +18,9 @@ class MindmapsScreen extends StatefulWidget {
     super.key,
     required this.isArabic,
     this.initialGrade = 5,
+    this.api,
+    this.token,
+    this.onGradeChanged,
     this.onVocalize,
     this.onAskFahim,
     required this.onBack,
@@ -31,7 +37,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
   String _selectedGrammarTopicKey = 'sentence_types';
 
   // UAE MoE Class 5 Term 1 Chapters
-  final List<Map<String, dynamic>> _chapters = [
+  static final List<Map<String, dynamic>> _grade5Chapters = [
     {
       'id': 'chapter_1',
       'titleAr': 'أَلْعَابُ الكُرَةِ',
@@ -549,12 +555,541 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
     },
   ];
 
+  // _grade6Chapters
+  static final List<Map<String, dynamic>> _grade6Chapters = [
+  {
+    'id': 'chapter_1',
+    'titleAr': 'أَنَا إِمَارَاتِيٌّ وَأَعْتَزُّ بِهُوِيَّتِي',
+    'titleEn': 'I am Emirati & Proud of My Identity',
+    'unitAr': 'الهُوِيَّةُ وَالوَطَنُ',
+    'unitEn': 'National Identity & Homeland',
+    'pages': '6 - 15',
+    'icon': Icons.auto_stories_rounded,
+    'color': const Color(0xFF2563EB),
+    'summaryAr': 'ترسيخ الانتماء للوطن، الاعتزاز بالهوية الإماراتية الأصيلة، سنع الأجداد، وقاعدة كان وأخواتها.',
+    'summaryEn': 'Strengthening patriotic belonging, pride in authentic Emirati identity, ancestral heritage, and Kana & its sisters grammar.',
+    'branches': [
+      {
+        'titleAr': 'المفردات وجذور الكلمات',
+        'titleEn': 'Core Vocabulary & Roots',
+        'icon': Icons.menu_book_rounded,
+        'color': const Color(0xFF0284C7),
+        'items': [
+          { 'ar': 'الهُوِيَّةُ', 'en': 'Identity', 'root': 'ه - و - ي', 'meaningAr': 'مَجْمُوعُ السِّمَاتِ وَالقِيَمِ الَّتِي تُمَيِّزُ الفَرْدَ وَالمُجْتَمَعَ.', 'meaningEn': 'The ensemble of traits, values, and traditions distinguishing an individual and society.' },
+          { 'ar': 'الاعْتِزَازُ', 'en': 'Pride / Cherishing', 'root': 'ع - ز - ز', 'meaningAr': 'الشُّعُورُ بِالفَخْرِ وَالشَّرَفِ وَالكَرَامَةِ الوَطَنِيَّةِ.', 'meaningEn': 'A profound feeling of pride, honor, and national dignity.' },
+          { 'ar': 'الانْتِمَاءُ', 'en': 'Belonging / Allegiance', 'root': 'ن - م - ي', 'meaningAr': 'الارْتِبَاطُ الوَثِيقُ بِالأَرْضِ وَالقِيَادَةِ وَالتُّرَاثِ.', 'meaningEn': 'Steadfast bond and loyalty to the land, leadership, and heritage.' },
+          { 'ar': 'السَّنَعُ الإِمَارَاتِيُّ', 'en': 'Emirati San\'a (Etiquette)', 'root': 'س - ن - ع', 'meaningAr': 'الآدَابُ وَالعَادَاتُ وَالأَخْلَاقُ الحَمِيدَةُ المُتَوَارَثَةُ.', 'meaningEn': 'Traditional cultural etiquette, chivalry, and virtuous manners passed down generations.' }
+        ]
+      },
+      {
+        'titleAr': 'حقائق ومحاور الدرس',
+        'titleEn': 'Reading Facts & National Values',
+        'icon': Icons.menu_book_rounded,
+        'color': const Color(0xFF059669),
+        'items': [
+          { 'ar': 'قِيَمُ الوَطَنِ: رُوحُ الاتِّحَادِ', 'en': 'National Values: Spirit of the Union', 'meaningAr': 'تَأْسِيسُ دَوْلَةِ الإِمَارَاتِ عَلَى قِيَمِ الوَحْدَةِ وَالعَطَاءِ.', 'meaningEn': 'Founding of the UAE on principles of unity, cohesion, and benevolence.' },
+          { 'ar': 'عَلَمُ الإِمَارَاتِ: رَمْزُ السِّيَادَةِ', 'en': 'UAE Flag: Symbol of Sovereignty', 'meaningAr': 'الأَلْوَانُ الأَرْبَعَةُ: الأَحْمَرُ، الأَخْضَرُ، الأَبْيَضُ، وَالأَسْوَدُ.', 'meaningEn': 'The 4 Pan-Arab colors representing courage, hope, purity, and resolve.' }
+        ]
+      },
+      {
+        'titleAr': 'القواعد المرتبطة: كَانَ وَأَخَوَاتُهَا',
+        'titleEn': 'Grammar: Kana & Its Sisters',
+        'icon': Icons.menu_book_rounded,
+        'color': const Color(0xFF7C3AED),
+        'items': [
+          { 'ar': 'كَانَ الوَطَنُ عَزِيزًا فِي قُلُوبِنَا.', 'en': 'The homeland was cherished in our hearts.', 'meaningEn': 'Kana enters nominal sentence, keeps noun marfoo\' and makes predicate mansoob.' },
+          { 'ar': 'أَصْبَحَ العِلْمُ سِلَاحَ الأَجْيَالِ.', 'en': 'Knowledge became the weapon of generations.', 'meaningEn': 'Asbaha acts like Kana, making subject marfoo\' and predicate mansoob.' }
+        ]
+      }
+    ]
+  }
+];
+
+
+  // _grade7Chapters
+  static final List<Map<String, dynamic>> _grade7Chapters = [
+  {
+    'id': 'chapter_1',
+    'titleAr': 'وَثِيقَةُ الأُخُوَّةِ الإِنْسَانِيَّةِ فِي أَبُوظَبِي',
+    'titleEn': 'Document on Human Fraternity',
+    'unitAr': 'التَّسَامُحُ وَالأُخُوَّةُ الإِنْسَانِيَّةُ',
+    'unitEn': 'Tolerance & Human Fraternity',
+    'pages': '6 - 15',
+    'icon': Icons.auto_stories_rounded,
+    'color': const Color(0xFF059669),
+    'summaryAr': 'القيم العالمية لوثيقة الأخوة الإنسانية الموقعة في أبوظبي، ورسالة الإمارات في التعايش والسلام وقاعدة إن وأخواتها.',
+    'summaryEn': 'Universal principles of the Human Fraternity Document signed in Abu Dhabi, promoting peace, global coexistence, and Inna & its sisters grammar.',
+    'branches': [
+      {
+        'titleAr': 'مفردات التسامح والإخاء',
+        'titleEn': 'Tolerance Vocabulary',
+        'icon': Icons.menu_book_rounded,
+        'color': const Color(0xFF0284C7),
+        'items': [
+          { 'ar': 'التَّسَامُحُ', 'en': 'Tolerance & Forbearance', 'root': 'س - م - ح', 'meaningAr': 'قَبُولُ الآخَرِ وَاحْتِرَامُ الِاخْتِلَافِ.', 'meaningEn': 'Embracing diversity and mutual respect.' },
+          { 'ar': 'الأُخُوَّةُ', 'en': 'Fraternity / Brotherhood', 'root': 'أ - خ - و', 'meaningAr': 'الرَّابِطَةُ الإِنْسَانِيَّةُ الجَامِعَةُ بَيْنَ البَشَرِ.', 'meaningEn': 'Universal bond of shared humanity.' },
+          { 'ar': 'التَّعَايُشُ', 'en': 'Coexistence', 'root': 'ع - ي - ش', 'meaningAr': 'العَيْشُ المُشْتَرَكُ فِي سَلَامٍ وَأَمَانٍ.', 'meaningEn': 'Harmonious mutual living in safety and respect.' }
+        ]
+      },
+      {
+        'titleAr': 'المحاور الإنسانية والوطنية',
+        'titleEn': 'Humanitarian & National Pillars',
+        'icon': Icons.menu_book_rounded,
+        'color': const Color(0xFF059669),
+        'items': [
+          { 'ar': 'وَثِيقَةُ أَبُوظَبِي: نِدَاءُ السَّلَامِ', 'en': 'Abu Dhabi Document: Call for Peace', 'meaningAr': 'تَوْقِيعُ الوَثِيقَةِ التَّارِيخِيَّةِ لِتَعْزِيزِ الحِوَارِ بَيْنَ الأَدْيَانِ.', 'meaningEn': 'Historic signing to foster interfaith dialogue and fraternity.' },
+          { 'ar': 'دَوْلَةُ الإِمَارَاتِ: حَاضِنَةُ التَّسَامُحِ', 'en': 'UAE: Global Oasis of Tolerance', 'meaningAr': 'احْتِضَانُ أَكْثَرَ مِنْ 200 جِنْسِيَّةٍ فِي تَنَاغُمٍ وَتَعَايُشٍ.', 'meaningEn': 'Embracing more than 200 nationalities in harmony and solidarity.' }
+        ]
+      },
+      {
+        'titleAr': 'القواعد المرتبطة: إِنَّ وَأَخَوَاتُهَا',
+        'titleEn': 'Grammar: Inna & Its Sisters',
+        'icon': Icons.menu_book_rounded,
+        'color': const Color(0xFF7C3AED),
+        'items': [
+          { 'ar': 'إِنَّ التَّسَامُحَ قِيمَةٌ نَبِيلَةٌ.', 'en': 'Verily, tolerance is a noble value.', 'meaningEn': 'Inna makes the noun accusative (Tasamuh-a) and predicate nominative (Qeemat-un).' },
+          { 'ar': 'لَعَلَّ السَّلَامَ يَعُمُّ العَالَمَ.', 'en': 'May peace prevail across the world.', 'meaningEn': 'La\'alla operates like Inna in expressing hopeful desire.' }
+        ]
+      }
+    ]
+  }
+];
+
+
+  // _grade8Chapters
+  static final List<Map<String, dynamic>> _grade8Chapters = [
+  {
+    'id': 'chapter_1',
+    'titleAr': 'أَبُو الطَّيِّبِ المُتَنَبِّي شَاعِرُ الحِكْمَةِ',
+    'titleEn': 'Al-Mutanabbi: Poet of Wisdom',
+    'unitAr': 'فُرْسَانُ الكَلِمَةِ وَرَوَائِعُ الأَدَبِ',
+    'unitEn': 'Masterpieces of Arabic Literature',
+    'pages': '6 - 15',
+    'icon': Icons.auto_stories_rounded,
+    'color': const Color(0xFF7C3AED),
+    'summaryAr': 'روائع شعر أبي الطيب المتنبي، فصاحته، وحكمته الخالدة التي سارت بها الركبان.',
+    'summaryEn': 'Immortal literary masterworks of Abu al-Tayyib al-Mutanabbi, classical eloquence, and proverbial wisdom.',
+    'branches': [
+      {
+        'titleAr': 'المفردات البلاغية وجذور الكلمات',
+        'titleEn': 'Rhetorical Vocabulary & Roots',
+        'icon': Icons.menu_book_rounded,
+        'color': const Color(0xFF0284C7),
+        'items': [
+          { 'ar': 'الفَصَاحَةُ', 'en': 'Eloquence', 'root': 'ف - ص - ح', 'meaningAr': 'خُلُوُّ الكَلَامِ مِنَ العُيُوبِ وَوُضُوحُ الدَّلَالَةِ.', 'meaningEn': 'Clarity and supreme purity of speech.' },
+          { 'ar': 'الحِكْمَةُ', 'en': 'Wisdom', 'root': 'ح - ك - م', 'meaningAr': 'وَضْعُ الشَّيْءِ فِي مَوْضِعِهِ المُنَاسِبِ.', 'meaningEn': 'Sound judgment and profound philosophical insight.' }
+        ]
+      },
+      {
+        'titleAr': 'القواعد: الفِعْلُ المَبْنِيُّ لِلْمَجْهُولِ',
+        'titleEn': 'Grammar: Passive Voice & Pro-Agent',
+        'icon': Icons.menu_book_rounded,
+        'color': const Color(0xFF7C3AED),
+        'items': [
+          { 'ar': 'نُظِّمَتِ القَصِيدَةُ بِإِبْدَاعٍ.', 'en': 'The poem was composed with brilliance.', 'meaningEn': 'Direct object takes nominative pro-agent role.' }
+        ]
+      }
+    ]
+  }
+];
+
+
+// UAE MoE Class 1 Term 1 Chapters
+  static final List<Map<String, dynamic>> _grade1Chapters = [
+    {
+      'id': 'chapter_1',
+      'titleAr': 'أُسْرَتِي وَبَيْتِي السَّعِيدُ',
+      'titleEn': 'My Family & Happy Home',
+      'unitAr': 'أَنَا وَأُسْرَتِي',
+      'unitEn': 'Me and My Family',
+      'icon': Icons.home_rounded,
+      'color': const Color(0xFF2563EB),
+      'pages': '6 - 15',
+      'summaryAr': 'التعرف على أفراد الأسرة، بر الوالدين، الحروف الهجائية، والمدود القصيرة والطويلة.',
+      'summaryEn': 'Family members, honoring parents, Arabic alphabet, short and long vowels.',
+      'branches': [
+        {
+          'titleAr': 'المفردات وجذور الكلمات',
+          'titleEn': 'Core Vocabulary & Roots',
+          'icon': Icons.menu_book_rounded,
+          'color': const Color(0xFF0284C7),
+          'items': [
+            {'ar': 'الأُسْرَةُ (أَبٌ، أُمٌّ، أَخٌ، أُخْتٌ)', 'en': 'The Family (Dad, Mom, Brother, Sister)', 'root': 'أ - س - ر', 'meaningAr': 'العَائِلَةُ المُتَرَابِطَةُ فِي البَيْتِ.', 'meaningEn': 'The loving family household.'},
+            {'ar': 'البَيْتُ (الدَّارُ)', 'en': 'The Home / House', 'root': 'ب - ي - ت', 'meaningAr': 'مَسْكَنُ الأُسْرَةِ المَلِيءُ بِالمَحَبَّةِ.', 'meaningEn': 'Home filled with love.'},
+          ],
+        },
+        {
+          'titleAr': 'الحركات والمدود',
+          'titleEn': 'Vowels & Lengthening (Harakat & Madd)',
+          'icon': Icons.record_voice_over_rounded,
+          'color': const Color(0xFF059669),
+          'items': [
+            {'ar': 'الفَتْحَةُ وَمَدُّ الأَلِفِ (بَـ / بَا)', 'en': 'Fatha & Madd Alif (Ba / Baa)', 'meaningAr': 'صَوْتٌ قَصِيرٌ يَمْتَدُّ بِالأَلِفِ.', 'meaningEn': 'Short sound lengthened with Alif.'},
+            {'ar': 'الضَّمَّةُ وَمَدُّ الوَاوِ (بُـ / بُو)', 'en': 'Damma & Madd Waw (Bu / Boo)', 'meaningAr': 'صَوْتٌ قَصِيرٌ يَمْتَدُّ بِالوَاوِ.', 'meaningEn': 'Short sound lengthened with Waw.'},
+          ],
+        },
+      ],
+    },
+  ];
+
+  // UAE MoE Class 2 Term 1 Chapters
+  static final List<Map<String, dynamic>> _grade2Chapters = [
+    {
+      'id': 'chapter_1',
+      'titleAr': 'مَدْرَسَتِي وَأَصْدِقَائِي',
+      'titleEn': 'My School & Friends',
+      'unitAr': 'حَيَاتُنَا المَدْرَسِيَّةُ',
+      'unitEn': 'Our School Life',
+      'icon': Icons.school_rounded,
+      'color': const Color(0xFF0891B2),
+      'pages': '6 - 15',
+      'summaryAr': 'البيئة المدرسية، الصداقة والتعاون، أسماء الإشارة، والضمائر المنفصلة.',
+      'summaryEn': 'School community, friendship, demonstrative pronouns, and personal pronouns.',
+      'branches': [
+        {
+          'titleAr': 'المفردات وجذور الكلمات',
+          'titleEn': 'Core Vocabulary & Roots',
+          'icon': Icons.menu_book_rounded,
+          'color': const Color(0xFF0284C7),
+          'items': [
+            {'ar': 'الصَّدِيقُ (ج: أَصْدِقَاء)', 'en': 'The Friend (pl. Friends)', 'root': 'ص - د - ق', 'meaningAr': 'المُخْلِصُ الَّذِي يُعِينُ صَاحِبَهُ.', 'meaningEn': 'Loyal caring companion.'},
+            {'ar': 'التَّعَاوُنُ', 'en': 'Cooperation / Teamwork', 'root': 'ع - و - ن', 'meaningAr': 'مُسَاعَدَةُ الآخَرِينَ فِي الخَيْرِ.', 'meaningEn': 'Helping others collaboratively.'},
+          ],
+        },
+      ],
+    },
+  ];
+
+  // UAE MoE Class 3 Term 1 Chapters
+  static final List<Map<String, dynamic>> _grade3Chapters = [
+    {
+      'id': 'chapter_1',
+      'titleAr': 'وَطَنِي الإِمَارَاتُ مَهْدُ الخَيْرِ',
+      'titleEn': 'My Homeland UAE: Cradle of Goodness',
+      'unitAr': 'الوَطَنُ وَالانْتِمَاءُ',
+      'unitEn': 'Homeland & Belonging',
+      'icon': Icons.flag_rounded,
+      'color': const Color(0xFF16A34A),
+      'pages': '6 - 15',
+      'summaryAr': 'معالم الإمارات، فضل الوطن، أقسام الكلمة (اسم، فعل، حرف)، وحروف الجر.',
+      'summaryEn': 'UAE landmarks, gratitude to homeland, parts of speech, and prepositions.',
+      'branches': [
+        {
+          'titleAr': 'المفردات وجذور الكلمات',
+          'titleEn': 'Core Vocabulary & Roots',
+          'icon': Icons.menu_book_rounded,
+          'color': const Color(0xFF0284C7),
+          'items': [
+            {'ar': 'الوَطَنُ (ج: أَوْطَان)', 'en': 'The Homeland', 'root': 'و - ط - ن', 'meaningAr': 'الأَرْضُ الغَالِيَةُ الَّتِي نَعِيشُ فِيهَا.', 'meaningEn': 'The precious land we belong to.'},
+            {'ar': 'الخَيْرُ وَالعَطَاءُ', 'en': 'Goodness & Giving', 'root': 'خ - ي - ر', 'meaningAr': 'مُسَاعَدَةُ النَّاسِ وَإِكْرَامُهُمْ.', 'meaningEn': 'Benevolence and generosity.'},
+          ],
+        },
+      ],
+    },
+  ];
+
+  // UAE MoE Class 4 Term 1 Chapters
+  static final List<Map<String, dynamic>> _grade4Chapters = [
+    {
+      'id': 'chapter_1',
+      'titleAr': 'فِي حُبِّ الإِمَارَاتِ وَإِنْجَازَاتِهَا',
+      'titleEn': 'In Love of the UAE & Its Achievements',
+      'unitAr': 'إِنْجَازَاتٌ وَطَنِيَّةٌ',
+      'unitEn': 'National Achievements',
+      'icon': Icons.military_tech_rounded,
+      'color': const Color(0xFFD97706),
+      'pages': '6 - 15',
+      'summaryAr': 'إنجازات الفضاء والصناعة في الإمارات، الجملة الفعلية، والفاعل والمفعول به.',
+      'summaryEn': 'UAE space and industrial achievements, verbal sentence structure, subject and object.',
+      'branches': [
+        {
+          'titleAr': 'المفردات وجذور الكلمات',
+          'titleEn': 'Core Vocabulary & Roots',
+          'icon': Icons.menu_book_rounded,
+          'color': const Color(0xFF0284C7),
+          'items': [
+            {'ar': 'الإِنْجَازُ (ج: إِنْجَازَات)', 'en': 'Achievement / Milestone', 'root': 'ن - ج - ز', 'meaningAr': 'العَمَلُ النَّاجِحُ العَظِيمُ.', 'meaningEn': 'Great successful accomplishment.'},
+            {'ar': 'الفَضَاءُ وَالرِّيَادَةُ', 'en': 'Space & Leadership', 'root': 'ف - ض - و', 'meaningAr': 'اسْتِكْشَافُ الكَوَاكِبِ وَالنُّجُومِ.', 'meaningEn': 'Exploration of cosmos and leadership.'},
+          ],
+        },
+      ],
+    },
+  ];
+
+  // UAE MoE Class 9 Term 1 Chapters
+  static final List<Map<String, dynamic>> _grade9Chapters = [
+    {
+      'id': 'chapter_1',
+      'titleAr': 'الفِكْرُ الفَلْسَفِيُّ وَحَضَارَةُ الإِمَارَاتِ',
+      'titleEn': 'Philosophical Thought & UAE Civilization',
+      'unitAr': 'الفِكْرُ وَالمُنَاظَرَةُ',
+      'unitEn': 'Thought & Debate',
+      'icon': Icons.psychology_rounded,
+      'color': const Color(0xFF4F46E5),
+      'pages': '6 - 15',
+      'summaryAr': 'بناء الحجة والمناظرة، المشتقات اللغوية (اسم الفاعل والمفعول)، واقتصاد المعرفة.',
+      'summaryEn': 'Logical argumentation, participles, and the knowledge economy.',
+      'branches': [
+        {
+          'titleAr': 'المفردات وجذور الكلمات',
+          'titleEn': 'Core Vocabulary & Roots',
+          'icon': Icons.menu_book_rounded,
+          'color': const Color(0xFF0284C7),
+          'items': [
+            {'ar': 'المُنَاظَرَةُ', 'en': 'Structured Debate', 'root': 'ن - ظ - ر', 'meaningAr': 'حِوَارٌ فِكْرِيٌّ مُقْنِعٌ بِالحُجَجِ.', 'meaningEn': 'Intellectual persuasive dialogue.'},
+            {'ar': 'البُرْهَانُ', 'en': 'Conclusive Proof', 'root': 'ب - ر - ه', 'meaningAr': 'الدَّلِيلُ القَاطِعُ عَلَى صِحَّةِ الفِكْرَةِ.', 'meaningEn': 'Irrefutable empirical evidence.'},
+          ],
+        },
+      ],
+    },
+  ];
+
+  // UAE MoE Class 10 Term 1 Chapters
+  static final List<Map<String, dynamic>> _grade10Chapters = [
+    {
+      'id': 'chapter_1',
+      'titleAr': 'الأَدَبُ العَرَبِيُّ الجَاهِلِيُّ وَقِيَمُ الفُرُوسِيَّةِ',
+      'titleEn': 'Pre-Islamic Arabic Literature & Chivalry',
+      'unitAr': 'عُصُورُ الأَدَبِ',
+      'unitEn': 'Literary Eras',
+      'icon': Icons.auto_stories_rounded,
+      'color': const Color(0xFF7C3AED),
+      'pages': '6 - 15',
+      'summaryAr': 'المعلقات، شجاعة الفرسان، التشبيه البليغ والاستعارة، وعلم الصرف.',
+      'summaryEn': 'The Muallaqat odes, chivalry, eloquent similes, metaphors, and morphology.',
+      'branches': [
+        {
+          'titleAr': 'المفردات وجذور الكلمات',
+          'titleEn': 'Core Vocabulary & Roots',
+          'icon': Icons.menu_book_rounded,
+          'color': const Color(0xFF0284C7),
+          'items': [
+            {'ar': 'المُعَلَّقَاتُ', 'en': 'The Mu\'allaqat Odes', 'root': 'ع - ل - ق', 'meaningAr': 'قَصَائِدُ عَرَبِيَّةٌ خَالِدَةٌ عُلِّقَتْ فِي الكَعْبَةِ.', 'meaningEn': 'Masterpiece ancient Arabian odes.'},
+            {'ar': 'الفُرُوسِيَّةُ', 'en': 'Chivalry & Knighthood', 'root': 'ف - ر - س', 'meaningAr': 'الشَّجَاعَةُ وَالنَّجْدَةُ وَالكَرَمُ.', 'meaningEn': 'Bravery, honor, and valor.'},
+          ],
+        },
+      ],
+    },
+  ];
+
+  // UAE MoE Class 11 Term 1 Chapters
+  static final List<Map<String, dynamic>> _grade11Chapters = [
+    {
+      'id': 'chapter_1',
+      'titleAr': 'الأَدَبُ الأَنْدَلُسِيُّ وَعُلُومُ البَلَاغَةِ',
+      'titleEn': 'Andalusian Literature & Rhetorical Sciences',
+      'unitAr': 'البَلَاغَةُ وَالأَدَبُ الأَنْدَلُسِيُّ',
+      'unitEn': 'Rhetoric & Andalusian Odes',
+      'icon': Icons.menu_book_rounded,
+      'color': const Color(0xFF059669),
+      'pages': '6 - 15',
+      'summaryAr': 'الموشحات الأندلسية، جماليات الطبيعة، علم البيان والبديع، والجناس والطباق.',
+      'summaryEn': 'Muwashahat poetry, nature descriptions, rhetorical figures, paronomasia and antithesis.',
+      'branches': [
+        {
+          'titleAr': 'المفردات وجذور الكلمات',
+          'titleEn': 'Core Vocabulary & Roots',
+          'icon': Icons.menu_book_rounded,
+          'color': const Color(0xFF0284C7),
+          'items': [
+            {'ar': 'المُوَشَّحُ (ج: مُوَشَّحَات)', 'en': 'Muwashah (Strophic Ode)', 'root': 'و - ش - ح', 'meaningAr': 'فَنٌّ شِعْرِيٌّ أَنْدَلُسِيٌّ ذُو أَوْزَانٍ مُتَنَوِّعَةٍ.', 'meaningEn': 'Strophic musical poetic form of Andalusia.'},
+          ],
+        },
+      ],
+    },
+  ];
+
+  // UAE MoE Class 12 Term 1 Chapters
+  static final List<Map<String, dynamic>> _grade12Chapters = [
+    {
+      'id': 'chapter_1',
+      'titleAr': 'رُؤْيَةُ الخَمْسِينَ وَالبُحُوثُ الأَدَبِيَّةُ المُتَقَدِّمَةُ',
+      'titleEn': 'UAE Centennial 2071 & Advanced Literary Research',
+      'unitAr': 'النَّقْدُ وَالمُسْتَقْبَلُ',
+      'unitEn': 'Criticism & The Future',
+      'icon': Icons.lightbulb_rounded,
+      'color': const Color(0xFFEA580C),
+      'pages': '6 - 15',
+      'summaryAr': 'النقد الأدبي الحديث، الدراسات اللغوية المتقدمة، واستشراف مستقبل الثقافة الإماراتية.',
+      'summaryEn': 'Modern literary criticism, advanced linguistic analysis, and UAE cultural futurology.',
+      'branches': [
+        {
+          'titleAr': 'المفردات وجذور الكلمات',
+          'titleEn': 'Core Vocabulary & Roots',
+          'icon': Icons.menu_book_rounded,
+          'color': const Color(0xFF0284C7),
+          'items': [
+            {'ar': 'الاسْتِشْرَافُ', 'en': 'Foresight & Horizon Scanning', 'root': 'ش - ر - ف', 'meaningAr': 'التَّخْطِيطُ العِلْمِيُّ الذَّكِيُّ لِلْمُسْتَقْبَلِ.', 'meaningEn': 'Strategic scientific planning for future.'},
+          ],
+        },
+      ],
+    },
+  ];
+
+  List<Map<String, dynamic>> _chapters = [];
+
+  static List<Map<String, dynamic>> _getFallbackChapters(int grade) {
+    switch (grade) {
+      case 1:
+        return _grade1Chapters;
+      case 2:
+        return _grade2Chapters;
+      case 3:
+        return _grade3Chapters;
+      case 4:
+        return _grade4Chapters;
+      case 6:
+        return _grade6Chapters;
+      case 7:
+        return _grade7Chapters;
+      case 8:
+        return _grade8Chapters;
+      case 9:
+        return _grade9Chapters;
+      case 10:
+        return _grade10Chapters;
+      case 11:
+        return _grade11Chapters;
+      case 12:
+        return _grade12Chapters;
+      case 5:
+      default:
+        return _grade5Chapters;
+    }
+  }
+
+  static List<Map<String, dynamic>> _castMapList(dynamic list) {
+    if (list is! List) return [];
+    return list.map((item) {
+      if (item is Map) {
+        final map = Map<String, dynamic>.from(item);
+        if (map['branches'] is List) {
+          map['branches'] = (map['branches'] as List).map((b) {
+            if (b is Map) {
+              final bMap = Map<String, dynamic>.from(b);
+              if (bMap['items'] is List) {
+                bMap['items'] = (bMap['items'] as List).map((it) => it is Map ? Map<String, dynamic>.from(it) : <String, dynamic>{}).toList();
+              }
+              if (bMap['color'] is String) {
+                bMap['color'] = _parseColor(bMap['color'] as String);
+              }
+              return bMap;
+            }
+            return <String, dynamic>{};
+          }).toList();
+        }
+        if (map['color'] is String) {
+          map['color'] = _parseColor(map['color'] as String);
+        }
+        map['icon'] ??= Icons.auto_stories_rounded;
+        return map;
+      }
+      return <String, dynamic>{};
+    }).toList();
+  }
+
+  static Color _parseColor(String? colorStr) {
+    if (colorStr == null || colorStr.isEmpty) return const Color(0xFF2563EB);
+    try {
+      final hex = colorStr.replaceAll('#', '');
+      if (hex.length == 6) {
+        return Color(int.parse('FF$hex', radix: 16));
+      }
+    } catch (_) {}
+    return const Color(0xFF2563EB);
+  }
+
   @override
   void initState() {
     super.initState();
     _selectedGrade = widget.initialGrade;
     _tabController = TabController(length: 3, vsync: this);
+    _loadChaptersForGrade(_selectedGrade);
   }
+
+  @override
+  void didUpdateWidget(covariant MindmapsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialGrade != oldWidget.initialGrade && widget.initialGrade != _selectedGrade) {
+      _loadChaptersForGrade(widget.initialGrade);
+    }
+  }
+
+  void _loadChaptersForGrade(int grade) async {
+    setState(() {
+      _selectedGrade = grade;
+      _selectedChapterIndex = 0;
+      _chapters = _getFallbackChapters(grade);
+    });
+
+    if (widget.api != null) {
+      try {
+        final res = await widget.api.mindmaps(grade: grade, term: 1, token: widget.token);
+        if (res != null && res['chapters'] is List && (res['chapters'] as List).isNotEmpty && mounted) {
+          final live = _castMapList(res['chapters']);
+          if (live.isNotEmpty) {
+            setState(() {
+              _chapters = live;
+              if (_selectedChapterIndex >= _chapters.length) {
+                _selectedChapterIndex = 0;
+              }
+            });
+          }
+        }
+      } catch (err) {
+        debugPrint('Failed to fetch remote mindmaps for grade $grade: $err');
+      }
+    }
+  }
+
+  void _showGradePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.isArabic ? 'اختر الصف الدراسي (Select Grade)' : 'Select Grade (اختر الصف)',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) {
+                  final isSel = g == _selectedGrade;
+                  return ChoiceChip(
+                    label: Text(widget.isArabic ? 'الصف $g' : 'Grade $g'),
+                    selected: isSel,
+                    selectedColor: const Color(0xFF6C5CE7),
+                    labelStyle: TextStyle(
+                      color: isSel ? Colors.white : const Color(0xFF334155),
+                      fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    onSelected: (selected) {
+                      if (selected) {
+                        Navigator.pop(ctx);
+                        _loadChaptersForGrade(g);
+                        widget.onGradeChanged?.call(g);
+                      }
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 
   @override
   void dispose() {
@@ -570,7 +1105,13 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final activeChapter = _chapters[_selectedChapterIndex];
+    if (_chapters.isEmpty) {
+      _chapters = _getFallbackChapters(_selectedGrade);
+    }
+    if (_selectedChapterIndex >= _chapters.length) {
+      _selectedChapterIndex = 0;
+    }
+    final activeChapter = _chapters.isNotEmpty ? _chapters[_selectedChapterIndex] : _grade5Chapters[0];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -727,20 +1268,29 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: const Color(0xFF6C5CE7).withValues(alpha: 0.3)),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.school_rounded, color: Color(0xFF6C5CE7), size: 15),
-                      const SizedBox(width: 6),
-                      Text(
-                        widget.isArabic ? 'الصَّفُّ: الخَامِسُ (Class 5)' : 'Class: Grade 5',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF6C5CE7),
-                        ),
+                  child: InkWell(
+                    onTap: () => _showGradePicker(context),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.school_rounded, color: Color(0xFF6C5CE7), size: 15),
+                          const SizedBox(width: 6),
+                          Text(
+                            widget.isArabic ? 'الصَّفُّ: $_selectedGrade (Class $_selectedGrade)' : 'Class: Grade $_selectedGrade',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF6C5CE7),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFF6C5CE7), size: 18),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1203,9 +1753,608 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
   }
 
   // ---------------------------------------------------------------------------
-  // TAB 2: SYNTAX & GRAMMAR DECISION FLOWCHART (Complete Bilingual Trees)
+  // TAB 2: SYNTAX & GRAMMAR DECISION FLOWCHART (Grade-Adaptive Decision Trees)
   // ---------------------------------------------------------------------------
   Widget _buildSyntaxFlowchartTab() {
+    switch (_selectedGrade) {
+      case 6:
+        return _buildGrade6SyntaxFlowchart();
+      case 7:
+        return _buildGrade7SyntaxFlowchart();
+      case 8:
+        return _buildGrade8SyntaxFlowchart();
+      case 5:
+      default:
+        return _buildGrade5SyntaxFlowchart();
+    }
+  }
+
+  // GRADE 6: KANA & SISTERS (الأفعال الناسخة) SYNTAX FLOWCHART
+  Widget _buildGrade6SyntaxFlowchart() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Explanatory Banner
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEEF2FF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFC7D2FE)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6C5CE7),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.schema_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.isArabic
+                          ? 'خوارزمية إعراب الأفعال الناسخة (كان وأخواتها) والجملة التامة'
+                          : 'Grade 6: Incomplete Verbs (Kana & Sisters) Parsing Decision Tree',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E1B4B)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.isArabic
+                          ? 'اتبع المسارات لتحديد الفعل الناسخ واسمه المرفوع وخبره المنصوب في سياق الهوية والوطن.'
+                          : 'Follow algorithmic branches to parse Kana and its sisters, Ism Kana, and Khabar Kana accurately.',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF4338CA)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        // STEP 1: ROOT QUESTION
+        _buildFlowNode(
+          stepNumber: '1',
+          titleAr: 'هَلْ سُبِقَتِ الجُمْلَةُ بِفِعْلٍ نَاسِخٍ (كَانَ، أَصْبَحَ، أَمْسَى، صَارَ، لَيْسَ)؟',
+          titleEn: 'Is the sentence introduced by an Incomplete Verb (Kana, Asbaha, Sara, Laysa)?',
+          descriptionAr: 'تَدْخُلُ الأَفْعَالُ النَّاسِخَةُ عَلَى الجُمْلَةِ الاسْمِيَّةِ فَتَرْفَعُ المُبْتَدَأَ اسْمًا لَهَا وَتَنْصِبُ الخَبَرَ خَبَرًا لَهَا.',
+          descriptionEn: 'Incomplete auxiliary verbs preserve the subject as Nominative (Marfoo) and convert the predicate into Accusative (Mansoob).',
+          color: const Color(0xFF2563EB),
+          icon: Icons.account_balance_rounded,
+        ),
+
+        _buildFlowConnector(label: widget.isArabic ? 'تَفَرُّعُ القَرَارِ الإِعْرَابِيِّ (Parsing Decision Split)' : 'Parsing Decision Split (تفرع القرار)'),
+
+        // STEP 2: TWO PATHS (KANA & SISTERS VS COMPLETE VERBAL SENTENCE)
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // PATH A: KANA & SISTERS
+            Expanded(
+              child: _buildBranchPathway(
+                titleAr: 'دَخَلَ عَلَيْهَا فِعْلٌ نَاسِخٌ (كَانَ وَأَخَوَاتُهَا)',
+                titleEn: 'Incomplete Verb (Kana & Sisters Clause)',
+                subtitleAr: 'مِثَالٌ: كَانَ الوَطَنُ عَزِيزًا',
+                subtitleEn: 'Example: "The homeland was cherished"',
+                color: const Color(0xFF0D9488),
+                steps: [
+                  {
+                    'roleAr': 'الفِعْلُ النَّاسِخُ',
+                    'roleEn': 'Annulled Auxiliary Verb',
+                    'caseAr': 'مَاضٍ مَبْنِيٌّ عَلَى الفَتْحِ',
+                    'caseEn': 'Past tense verb (Kana)',
+                    'detailAr': 'كَانَ: تَرْفَعُ المُبْتَدَأَ وَتَنْصِبُ الخَبَرَ.',
+                    'detailEn': 'Kana: Introduces the clause and modifies case.',
+                  },
+                  {
+                    'roleAr': 'اسْمُ كَانَ (المَرْفُوعُ)',
+                    'roleEn': 'Subject of Kana (Ism Kana)',
+                    'caseAr': 'مَرْفُوعٌ بِالضَّمَّةِ [ـُ]',
+                    'caseEn': 'Nominative case with Damma (-u)',
+                    'detailAr': 'الوَطَنُ: اسْمُ كَانَ مَرْفُوعٌ بِالضَّمَّةِ الظَّاهِرَةِ.',
+                    'detailEn': 'Al-Watanu: The subject being qualified.',
+                  },
+                  {
+                    'roleAr': 'خَبَرُ كَانَ (المَنْصُوبُ)',
+                    'roleEn': 'Predicate of Kana (Khabar Kana)',
+                    'caseAr': 'مَنْصُوبٌ بِالفَتْحَةِ [ـً]',
+                    'caseEn': 'Accusative case with Fatha (-an)',
+                    'detailAr': 'عَزِيزًا: خَبَرُ كَانَ مَنْصُوبٌ بِالفَتْحَةِ الظَّاهِرَةِ.',
+                    'detailEn': '\'Azeezan: The predicate attribute of the subject.',
+                  },
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+
+            // PATH B: COMPLETE VERBAL SENTENCE
+            Expanded(
+              child: _buildBranchPathway(
+                titleAr: 'جُمْلَةٌ فِعْلِيَّةٌ تَامَّةٌ (فِعْلٌ وَفَاعِلٌ)',
+                titleEn: 'Complete Action Verb Sentence',
+                subtitleAr: 'مِثَالٌ: يَفْتَخِرُ المُواطِنُ بِهُوِيَّتِهِ',
+                subtitleEn: 'Example: "The citizen is proud of his identity"',
+                color: const Color(0xFFEA580C),
+                steps: [
+                  {
+                    'roleAr': 'الفِعْلُ التَّامُّ',
+                    'roleEn': 'Complete Action Verb',
+                    'caseAr': 'مُضَارِعٌ مَرْفُوعٌ بِالضَّمَّةِ [ـُ]',
+                    'caseEn': 'Present indicative with Damma',
+                    'detailAr': 'يَفْتَخِرُ: حَدَثٌ يَحْتَاجُ فَاعِلاً تَامًّا.',
+                    'detailEn': 'Yaftakhiru: Verb expressing active pride.',
+                  },
+                  {
+                    'roleAr': 'الفَاعِلُ (مَنْ يَفْتَخِرُ؟)',
+                    'roleEn': 'Subject Agent (Fa\'il)',
+                    'caseAr': 'مَرْفُوعٌ بِالضَّمَّةِ [ـُ]',
+                    'caseEn': 'Nominative case with Damma (-u)',
+                    'detailAr': 'المُواطِنُ: هُوَ مَنْ يَقُومُ بِالاعْتِزَازِ.',
+                    'detailEn': 'Al-Muwatinu: The citizen performing action.',
+                  },
+                  {
+                    'roleAr': 'جَارٌّ وَمَجْرُورٌ',
+                    'roleEn': 'Prepositional Object',
+                    'caseAr': 'مَجْرُورٌ بِالكَسْرَةِ [ـِ]',
+                    'caseEn': 'Genitive case with Kasra (-i)',
+                    'detailAr': 'بِهُوِيَّتِهِ: البَاءُ حَرْفُ جَرٍّ + هُوِيَّةِ اسْمٌ مَجْرُورٌ.',
+                    'detailEn': 'Bi-huwiyyatihi: "In his national identity".',
+                  },
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        // FLOW 2: TYPES OF KHABAR KANA
+        _buildFlowNode(
+          stepNumber: '2',
+          titleAr: 'مُخَطَّطُ أَنْوَاعِ خَبَرِ كَانَ (المُفْرَدُ، الجُمْلَةُ، شِبْهُ الجُمْلَةِ)',
+          titleEn: 'Khabar Kana Types Flowchart (Single, Clause, Semi-Clause)',
+          descriptionAr: 'يَأْتِي خَبَرُ كَانَ عَلَى ثَلَاثَةِ أَنْوَاعٍ رَئِيسَةٍ مَعَ حُكْمِهَا الإِعْرَابِيِّ:',
+          descriptionEn: 'The predicate of Kana can be a single noun, a verbal clause, or a prepositional phrase:',
+          color: const Color(0xFF7C3AED),
+          icon: Icons.alt_route_rounded,
+        ),
+
+        _buildFlowConnector(label: widget.isArabic ? 'القَاعِدَةُ الحَتْمِيَّةُ (Mandatory Rule)' : 'Mandatory Rule (القاعدة الحتمية)'),
+
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFAF5FF),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFDDD6FE)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF7C3AED), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.isArabic ? 'أَنْوَاعُ خَبَرِ كَانَ الثَّلَاثَةُ فِي الإِعْرَابِ:' : 'The 3 Forms of Khabar Kana:',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF5B21B6)),
+                        ),
+                        Text(
+                          widget.isArabic ? 'خَبَرٌ مُفْرَدٌ (مَنْصُوبٌ) | خَبَرٌ جُمْلَةٌ (فِي مَحَلِّ نَصْبٍ) | خَبَرٌ شِبْهُ جُمْلَةٍ (فِي مَحَلِّ نَصْبٍ)' : 'Single Word (Mansoob) | Verbal Clause (In Accusative) | Prepositional Phrase (In Accusative)',
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Color(0xFF6D28D9)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFEDE9FE)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• خَبَرٌ مُفْرَدٌ: كَانَ الشَّعْبُ مُتَّحِدًا (مُتَّحِدًا: خَبَرُ كَانَ مَنْصُوبٌ بِالفَتْحَةِ).',
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF1E1B4B)),
+                    ),
+                    Text(
+                      '  Single Word Predicate: "The people were united" (Mansoob with Fatha).',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '• خَبَرٌ جُمْلَةٌ فِعْلِيَّةٌ: كَانَ الأَجْدَادُ يَحْمُونَ الأَرْضَ (جُمْلَةُ "يَحْمُونَ" فِي مَحَلِّ نَصْبِ خَبَرِ كَانَ).',
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF1E1B4B)),
+                    ),
+                    Text(
+                      '  Verbal Clause Predicate: "The ancestors protected the land" (Clause in place of accusative).',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '• خَبَرٌ شِبْهُ جُمْلَةٍ: كَانَ العَلَمُ فِي القِمَّةِ ("فِي القِمَّةِ" شِبْهُ جُمْلَةٍ فِي مَحَلِّ نَصْبِ خَبَرِ كَانَ).',
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF1E1B4B)),
+                    ),
+                    Text(
+                      '  Prepositional Predicate: "The flag was at the peak" (Prepositional phrase in place of accusative).',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // FLOW 3: CONNECTED PRONOUNS AS ISM KANA
+        _buildFlowNode(
+          stepNumber: '3',
+          titleAr: 'مُخَطَّطُ ضَمَائِرِ اسْمِ كَانَ المُتَّصِلَةِ فِي مَحَلِّ رَفْعٍ',
+          titleEn: 'Connected Pronouns as Subject of Kana (Ism Kana)',
+          descriptionAr: 'عِنْدَ اتِّصَالِ الضَّمِيرِ بِـ (كَانَ أَوْ إِحْدَى أَخَوَاتِهَا) يُعْرَبُ ضَمِيرًا مُتَّصِلاً فِي مَحَلِّ رَفْعِ اسْمِ كَانَ:',
+          descriptionEn: 'Pronouns attached directly to Kana serve as its nominative subject noun:',
+          color: const Color(0xFF0284C7),
+          icon: Icons.person_pin_rounded,
+        ),
+
+        const SizedBox(height: 10),
+
+        Row(
+          children: [
+            _buildPronounBadge(ar: 'أَنَا (تُ)', word: 'كُنْتُ', en: 'I was', sub: 'Kana + Me', color: const Color(0xFF2563EB)),
+            const SizedBox(width: 6),
+            _buildPronounBadge(ar: 'نَحْنُ (نَا)', word: 'كُنَّا', en: 'We were', sub: 'Kana + Us', color: const Color(0xFF059669)),
+            const SizedBox(width: 6),
+            _buildPronounBadge(ar: 'هُمْ (واو)', word: 'كَانُوا', en: 'They were', sub: 'Kana + They', color: const Color(0xFFD97706)),
+            const SizedBox(width: 6),
+            _buildPronounBadge(ar: 'أَنْتُمْ (تُمْ)', word: 'صِرْتُمْ', en: 'You became', sub: 'Sara + You pl.', color: const Color(0xFF7C3AED)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // GRADE 7: INNA & SISTERS (الحروف الناسخة) SYNTAX FLOWCHART
+  Widget _buildGrade7SyntaxFlowchart() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFBBF7D0)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16A34A),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.schema_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.isArabic
+                          ? 'خوارزمية إعراب الحروف الناسخة (إنّ وأخواتها) والجملة البحرية'
+                          : 'Grade 7: Inna & Sisters Annulled Particles Decision Tree',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF14532D)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.isArabic
+                          ? 'اتبع المسارات لتحديد حرف التوكيد واسمه المنصوب وخبره المرفوع في تراث البحر والغوص.'
+                          : 'Follow branches to identify Inna and its sisters, its accusative noun, and nominative predicate.',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF15803D)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        _buildFlowNode(
+          stepNumber: '1',
+          titleAr: 'هَلْ بُدِئَتِ الجُمْلَةُ بِحَرْفٍ نَاسِخٍ (إِنَّ، أَنَّ، كَأَنَّ، لَكِنَّ، لَيْتَ، لَعَلَّ)؟',
+          titleEn: 'Is the sentence introduced by an Annulled Particle (Inna or its sisters)?',
+          descriptionAr: 'تَدْخُلُ إِنَّ وَأَخَوَاتُهَا عَلَى الجُمْلَةِ الاسْمِيَّةِ فَتَنْصِبُ المُبْتَدَأَ اسْمًا لَهَا وَتَرْفَعُ الخَبَرَ خَبَرًا لَهَا.',
+          descriptionEn: 'Inna and its sisters set the subject noun in Accusative (Fatha) and retain the predicate in Nominative (Damma).',
+          color: const Color(0xFF16A34A),
+          icon: Icons.security_rounded,
+        ),
+
+        _buildFlowConnector(label: widget.isArabic ? 'تَفَرُّعُ القَرَارِ الإِعْرَابِيِّ (Parsing Decision Split)' : 'Decision Split (تفرع القرار)'),
+
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildBranchPathway(
+                titleAr: 'جُمْلَةُ إِنَّ وَأَخَوَاتِهَا (الحُرُوفُ النَّاسِخَةُ)',
+                titleEn: 'Inna & Sisters Clause',
+                subtitleAr: 'مِثَالٌ: إِنَّ التُّرَاثَ خَالِدٌ',
+                subtitleEn: 'Example: "Verily, heritage is immortal"',
+                color: const Color(0xFF0D9488),
+                steps: [
+                  {
+                    'roleAr': 'الحَرْفُ النَّاسِخُ',
+                    'roleEn': 'Annulled Particle (Inna)',
+                    'caseAr': 'حَرْفُ تَوْكِيدٍ وَنَصْبٍ',
+                    'caseEn': 'Emphasis & Accusative particle',
+                    'detailAr': 'إِنَّ: تَنْصِبُ الاسْمَ وَتَرْفَعُ الخَبَرَ.',
+                    'detailEn': 'Inna: Sets subject to Fatha & predicate to Damma.',
+                  },
+                  {
+                    'roleAr': 'اسْمُ إِنَّ (المَنْصُوبُ)',
+                    'roleEn': 'Subject of Inna (Ism Inna)',
+                    'caseAr': 'مَنْصُوبٌ بِالفَتْحَةِ [ـَ]',
+                    'caseEn': 'Accusative case with Fatha (-a)',
+                    'detailAr': 'التُّرَاثَ: اسْمُ إِنَّ مَنْصُوبٌ بِالفَتْحَةِ الظَّاهِرَةِ.',
+                    'detailEn': 'Al-Turatha: Accusative noun introduced by Inna.',
+                  },
+                  {
+                    'roleAr': 'خَبَرُ إِنَّ (المَرْفُوعُ)',
+                    'roleEn': 'Predicate of Inna (Khabar Inna)',
+                    'caseAr': 'مَرْفُوعٌ بِالضَّمَّةِ [ـٌ]',
+                    'caseEn': 'Nominative case with Damma (-un)',
+                    'detailAr': 'خَالِدٌ: خَبَرُ إِنَّ مَرْفُوعٌ بِالضَّمَّةِ الظَّاهِرَةِ.',
+                    'detailEn': 'Khalidun: Nominative predicate completing meaning.',
+                  },
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+
+            Expanded(
+              child: _buildBranchPathway(
+                titleAr: 'الجُمْلَةُ الفِعْلِيَّةُ التُّرَاثِيَّةُ (البَحْرِيَّةُ)',
+                titleEn: 'Maritime Verbal Sentence',
+                subtitleAr: 'مِثَالٌ: أَبْحَرَ النَّاخُوذَةُ فِي الخَلِيجِ',
+                subtitleEn: 'Example: "The captain sailed into the Gulf"',
+                color: const Color(0xFF0284C7),
+                steps: [
+                  {
+                    'roleAr': 'الفِعْلُ المَاضِي',
+                    'roleEn': 'Past Tense Verb',
+                    'caseAr': 'مَبْنِيٌّ عَلَى الفَتْحِ [ـَ]',
+                    'caseEn': 'Past action verb with Fatha',
+                    'detailAr': 'أَبْحَرَ: حَدَثُ الإِبْحَارِ فِي عُرْضِ البَحْرِ.',
+                    'detailEn': 'Abhara: The sailing action initiated.',
+                  },
+                  {
+                    'roleAr': 'الفَاعِلُ (مَنْ أَبْحَرَ؟)',
+                    'roleEn': 'Subject Agent (Fa\'il)',
+                    'caseAr': 'مَرْفُوعٌ بِالضَّمَّةِ [ـُ]',
+                    'caseEn': 'Nominative case with Damma (-u)',
+                    'detailAr': 'النَّاخُوذَةُ: رُبَّانُ السَّفِينَةِ الَّذِي قَامَ بِالإِبْحَارِ.',
+                    'detailEn': 'Al-Nakhoodhatu: The captain performing the voyage.',
+                  },
+                  {
+                    'roleAr': 'جَارٌّ وَمَجْرُورٌ',
+                    'roleEn': 'Prepositional Phrase',
+                    'caseAr': 'مَجْرُورٌ بِالكَسْرَةِ [ـِ]',
+                    'caseEn': 'Genitive case with Kasra (-i)',
+                    'detailAr': 'فِي الخَلِيجِ: فِي حَرْفُ جَرٍّ + الخَلِيجِ اسْمٌ مَجْرُورٌ.',
+                    'detailEn': 'Fi al-khaleej-i: In the Arabian Gulf.',
+                  },
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        _buildFlowNode(
+          stepNumber: '2',
+          titleAr: 'مُخَطَّطُ ضَمَائِرِ اسْمِ إِنَّ المُتَّصِلَةِ فِي مَحَلِّ نَصْبٍ',
+          titleEn: 'Connected Pronouns Functioning as Ism Inna (In Accusative)',
+          descriptionAr: 'عِنْدَ اتِّصَالِ الضَّمِيرِ بِـ (إِنَّ أَوْ إِحْدَى أَخَوَاتِهَا) يُعْرَبُ فِي مَحَلِّ نَصْبِ اسْمِ إِنَّ:',
+          descriptionEn: 'Pronouns attached to Inna function as its accusative subject noun:',
+          color: const Color(0xFF16A34A),
+          icon: Icons.person_pin_rounded,
+        ),
+
+        const SizedBox(height: 10),
+
+        Row(
+          children: [
+            _buildPronounBadge(ar: 'أَنَا (ـنِي)', word: 'إِنَّنِي', en: 'Indeed I am', sub: 'Inna + Me', color: const Color(0xFF16A34A)),
+            const SizedBox(width: 6),
+            _buildPronounBadge(ar: 'نَحْنُ (ـنَا)', word: 'إِنَّنَا', en: 'Indeed we are', sub: 'Inna + Us', color: const Color(0xFF0284C7)),
+            const SizedBox(width: 6),
+            _buildPronounBadge(ar: 'هُوَ (ـهُ)', word: 'إِنَّهُ', en: 'Indeed he is', sub: 'Inna + Him', color: const Color(0xFFD97706)),
+            const SizedBox(width: 6),
+            _buildPronounBadge(ar: 'أَنْتَ (ـكَ)', word: 'إِنَّكَ', en: 'Indeed you are', sub: 'Inna + You', color: const Color(0xFF7C3AED)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // GRADE 8: ACCUSATIVES (المفعول المطلق ولأجله والحال) SYNTAX FLOWCHART
+  Widget _buildGrade8SyntaxFlowchart() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFBEB),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFFDE68A)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD97706),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.schema_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.isArabic
+                          ? 'خوارزمية إعراب المنصوبات: المفعول المطلق والمفعول لأجله والحال'
+                          : 'Grade 8: Accusative Complements Decision Tree',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF78350F)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.isArabic
+                          ? 'اتبع المسارات للتمييز بين المفعول المطلق والمفعول لأجله والحال في بلاغة النصوص.'
+                          : 'Follow branches to differentiate absolute object, object of reason, and adverbial states.',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFFB45309)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        _buildFlowNode(
+          stepNumber: '1',
+          titleAr: 'مَا نَوْعُ الاسْمِ المَنْصُوبِ الزَّائِدِ فِي الجُمْلَةِ الفِعْلِيَّةِ؟',
+          titleEn: 'What type of accusative complement appears in the verbal sentence?',
+          descriptionAr: 'انْظُرْ هَلْ هُوَ مَصْدَرٌ مِنْ لَفْظِ الفِعْلِ (مُطْلَق)، أَمْ مَصْدَرٌ يُبَيِّنُ سَبَبَ الفِعْلِ (لِأَجْلِهِ)، أَمْ وَصْفٌ يُبَيِّنُ الهَيْئَةَ (حَال)؟',
+          descriptionEn: 'Check if it is a cognate verbal noun (Absolute), explains motive (Reason), or describes state (Haal).',
+          color: const Color(0xFFD97706),
+          icon: Icons.filter_list_rounded,
+        ),
+
+        _buildFlowConnector(label: widget.isArabic ? 'تَفَرُّعُ القَرَارِ الإِعْرَابِيِّ (Parsing Decision Split)' : 'Decision Split (تفرع القرار)'),
+
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildBranchPathway(
+                titleAr: 'المَفْعُولُ المُطْلَقُ (مَصْدَرٌ مِنْ لَفْظِ الفِعْلِ)',
+                titleEn: 'Absolute Cognate Object (Maf\'ul Mutlaq)',
+                subtitleAr: 'مِثَالٌ: انْتَصَرَ الوَطَنُ انْتِصَارًا',
+                subtitleEn: 'Example: "The nation triumphed a great victory"',
+                color: const Color(0xFF2563EB),
+                steps: [
+                  {
+                    'roleAr': 'الفِعْلُ وَالفَاعِلُ',
+                    'roleEn': 'Verb & Doer',
+                    'caseAr': 'فِعْلٌ مَاضٍ + فَاعِلٌ [ـُ]',
+                    'caseEn': 'Past verb & nominative agent',
+                    'detailAr': 'انْتَصَرَ: فِعْلٌ مَاضٍ | الوَطَنُ: فَاعِلٌ مَرْفُوعٌ.',
+                    'detailEn': 'Intasara: Action | Al-Watanu: Doer.',
+                  },
+                  {
+                    'roleAr': 'المَفْعُولُ المُطْلَقُ',
+                    'roleEn': 'Absolute Cognate Object',
+                    'caseAr': 'مَنْصُوبٌ بِالفَتْحَةِ [ـً]',
+                    'caseEn': 'Accusative with Fatha (-an)',
+                    'detailAr': 'انْتِصَارًا: مَصْدَرٌ مَأْخُوذٌ مِنْ لَفْظِ (انْتَصَرَ).',
+                    'detailEn': 'Intisaran: Cognate noun emphasizing victory.',
+                  },
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+
+            Expanded(
+              child: _buildBranchPathway(
+                titleAr: 'المَفْعُولُ لِأَجْلِهِ (سَبَبُ الفِعْلِ)',
+                titleEn: 'Object of Reason (Maf\'ul Li-Ajlih)',
+                subtitleAr: 'مِثَالٌ: وَقَفْتُ احْتِرَامًا لِلْعَلَمِ',
+                subtitleEn: 'Example: "I stood out of respect for the flag"',
+                color: const Color(0xFF059669),
+                steps: [
+                  {
+                    'roleAr': 'الفِعْلُ وَالفَاعِلُ',
+                    'roleEn': 'Verb & Subject Pronoun',
+                    'caseAr': 'فِعْلٌ + التَّاءُ فَاعِلٌ',
+                    'caseEn': 'Past verb with subject pronoun',
+                    'detailAr': 'وَقَفْتُ: فِعْلٌ مَاضٍ + التَّاءُ فِي مَحَلِّ رَفْعِ فَاعِلٍ.',
+                    'detailEn': 'Waqaftu: "I stood".',
+                  },
+                  {
+                    'roleAr': 'المَفْعُولُ لِأَجْلِهِ (لِمَاذَا؟)',
+                    'roleEn': 'Object of Reason (Why?)',
+                    'caseAr': 'مَنْصُوبٌ بِالفَتْحَةِ [ـً]',
+                    'caseEn': 'Accusative with Fatha (-an)',
+                    'detailAr': 'احْتِرَامًا: مَصْدَرٌ قَلْبِيٌّ يُبَيِّنُ سَبَبَ الوُقُوفِ.',
+                    'detailEn': 'Ihtiraman: Answers "Why did you stand?".',
+                  },
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        _buildFlowNode(
+          stepNumber: '2',
+          titleAr: 'مُخَطَّطُ الحَالِ المَنْصُوبَةِ (بَيَانُ هَيْئَةِ صَاحِبِ الحَالِ)',
+          titleEn: 'Accusative State / Adverbial Condition (Al-Haal)',
+          descriptionAr: 'الحَالُ اسْمٌ نَكِرَةٌ مَنْصُوبٌ يُبَيِّنُ هَيْئَةَ صَاحِبِ الحَالِ (المَعْرِفَةِ) عِنْدَ وُقُوعِ الفِعْلِ: (كَيْفَ؟):',
+          descriptionEn: 'Al-Haal describes the transient physical or emotional state of the subject when the action took place:',
+          color: const Color(0xFFD97706),
+          icon: Icons.directions_run_rounded,
+        ),
+
+        const SizedBox(height: 10),
+
+        Row(
+          children: [
+            _buildPronounBadge(ar: 'سَالِمًا', word: 'عَادَ سَالِمًا', en: 'Returned safe', sub: 'Safe state', color: const Color(0xFF059669)),
+            const SizedBox(width: 6),
+            _buildPronounBadge(ar: 'مُبْتَسِمًا', word: 'أَقْبَلَ مُبْتَسِمًا', en: 'Arrived smiling', sub: 'Smiling state', color: const Color(0xFF2563EB)),
+            const SizedBox(width: 6),
+            _buildPronounBadge(ar: 'مُفْتَخِرًا', word: 'وَقَفَ مُفْتَخِرًا', en: 'Stood proud', sub: 'Proud state', color: const Color(0xFFD97706)),
+            const SizedBox(width: 6),
+            _buildPronounBadge(ar: 'مُسْرِعًا', word: 'انْطَلَقَ مُسْرِعًا', en: 'Dashed quickly', sub: 'Speed state', color: const Color(0xFF7C3AED)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // GRADE 5 (AND DEFAULT BASELINE): NOMINAL VS VERBAL SENTENCES SYNTAX FLOWCHART
+  Widget _buildGrade5SyntaxFlowchart() {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -1730,158 +2879,10 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
   // TAB 3: CURRICULUM RULES TREE (Topic-by-topic with complete English Translations)
   // ---------------------------------------------------------------------------
   Widget _buildCurriculumRulesTab() {
-    final rules = [
-      {
-        'key': 'sentence_types',
-        'titleAr': 'الجُمْلَةُ الاسْمِيَّةُ وَالجُمْلَةُ الفِعْلِيَّةُ',
-        'titleEn': 'Nominal vs Verbal Sentences',
-        'badgeAr': 'الوحدة 1',
-        'badgeEn': 'Unit 1',
-        'ruleAr': 'الجُمْلَةُ الاسْمِيَّةُ تَبْدَأُ بِاسْمٍ وَتَتَكَوَّنُ مِنْ رُكْنَيْنِ رَئِيسَيْنِ: مُبْتَدَأ وَخَبَر، وَكِلاهُمَا مَرْفُوعٌ بِالضَّمَّةِ. أَمَّا الجُمْلَةُ الفِعْلِيَّةُ فَتَبْدَأُ بِفِعْلٍ وَتَتَكَوَّنُ مِنْ فِعْلٍ وَفَاعِلٍ (مَرْفُوع) وَمَفْعُولٍ بِهِ (مَنْصُوب).',
-        'ruleEn': 'A Nominal Sentence starts with a noun and consists of two primary pillars: Subject (Mubtada) and Predicate (Khabar), both in the nominative case with Damma. A Verbal Sentence starts with a verb and consists of a Verb, Subject Agent (Fa\'il, Marfoo\'), and Direct Object (Maf\'ul Bihi, Mansoob).',
-        'formulaAr': 'جملة اسمية: مُبْتَدَأ (مَرْفُوع) + خَبَر (مَرْفُوع) | جملة فعلية: فِعْل + فَاعِل (مَرْفُوع) + مَفْعُول بِهِ (مَنْصُوب)',
-        'formulaEn': 'Nominal: Subject (Damma) + Predicate (Damma) | Verbal: Verb + Doer (Damma) + Object (Fatha)',
-        'examples': [
-          {
-            'sentenceAr': 'الكُرَةُ سَرِيعَةٌ',
-            'sentenceEn': 'The ball is fast',
-            'analysisAr': 'الكُرَةُ: مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ | سَرِيعَةٌ: خَبَرٌ مَرْفُوعٌ بِالضَّمَّةِ.',
-            'analysisEn': 'Al-Kuratu: Subject noun (Marfoo\' with Damma) | Saree\'atun: Predicate (Marfoo\' with Damma).',
-          },
-          {
-            'sentenceAr': 'قَذَفَ اللَّاعِبُ الكُرَةَ',
-            'sentenceEn': 'The player kicked the ball',
-            'analysisAr': 'قَذَفَ: فِعْلٌ مَاضٍ | اللَّاعِبُ: فَاعِلٌ مَرْفُوعٌ بِالضَّمَّةِ | الكُرَةَ: مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ.',
-            'analysisEn': 'Qadhafa: Past verb | Al-La\'ibu: Doer (Marfoo\' with Damma) | Al-Kurata: Object (Mansoob with Fatha).',
-          },
-        ],
-      },
-      {
-        'key': 'prepositions',
-        'titleAr': 'حُرُوفُ الجَرِّ وَالاسْمُ المَجْرُورُ',
-        'titleEn': 'Prepositions & Genitive Nouns',
-        'badgeAr': 'الوحدة 1',
-        'badgeEn': 'Unit 1',
-        'ruleAr': 'حُرُوفُ الجَرِّ تَدْخُلُ عَلَى الأَسْمَاءِ فَقَطْ وَتَجُرُّهَا بِالكَسْرَةِ الظَّاهِرَةِ. مِنْ أَشْهَرِهَا: (مِنْ، إِلَى، عَنْ، عَلَى، فِي، البَاء، الكَاف، اللَّام).',
-        'ruleEn': 'Prepositions prefix nouns exclusively and cause them to enter the genitive case, marked with a visible Kasra (-i sound). Key prepositions: Min (from), Ila (to), \'An (about), \'Ala (on), Fi (in), Bi- (with), Ka- (like), Li- (for).',
-        'formulaAr': 'حَرْفُ جَرٍّ + اسْمٌ مَجْرُورٌ وَعَلامَةُ جَرِّهِ الكَسْرَةُ الظَّاهِرَةُ',
-        'formulaEn': 'Preposition (Harf Jarr) + Genitive Noun (Ism Majroor with Kasra)',
-        'examples': [
-          {
-            'sentenceAr': 'يَلْعَبُ الطُّلاَّبُ فِي المَلْعَبِ',
-            'sentenceEn': 'The students play on the pitch',
-            'analysisAr': 'فِي: حَرْفُ جَرٍّ | المَلْعَبِ: اسْمٌ مَجْرُورٌ وَعَلامَةُ جَرِّهِ الكَسْرَةُ الظَّاهِرَةُ.',
-            'analysisEn': 'Fi: Preposition | Al-Mal\'abi: Genitive noun with Kasra (-i).',
-          },
-          {
-            'sentenceAr': 'سَافَرَ الفَرِيقُ إِلَى دُبَيٍّ',
-            'sentenceEn': 'The team traveled to Dubai',
-            'analysisAr': 'إِلَى: حَرْفُ جَرٍّ | دُبَيٍّ: اسْمٌ مَجْرُورٌ وَعَلامَةُ جَرِّهِ الكَسْرَةُ الظَّاهِرَةُ.',
-            'analysisEn': 'Ila: Preposition | Dubayyin: Genitive noun with Kasra (-i).',
-          },
-        ],
-      },
-      {
-        'key': 'adverbs',
-        'titleAr': 'ظَرْفَا الزَّمَانِ وَالمَكَانِ (المَفْعُولُ فِيهِ)',
-        'titleEn': 'Adverbs of Time & Place (Maf\'ul Feeh)',
-        'badgeAr': 'الوحدة 2',
-        'badgeEn': 'Unit 2',
-        'ruleAr': 'اسْمٌ مَنْصُوبٌ بِالفَتْحَةِ يَدُلُّ عَلَى زَمَانِ وُقُوعِ الفِعْلِ (ظَرْفُ زَمَانٍ) أَوْ مَكَانِ وُقُوعِهِ (ظَرْفُ مَكَانٍ).',
-        'ruleEn': 'An accusative noun (Mansoob with Fatha) specifying the exact time an action took place (Adverb of Time) or the location where it occurred (Adverb of Place).',
-        'formulaAr': 'ظَرْفُ زَمَانٍ: (صَبَاحًا، مَسَاءً، لَيْلاً) | ظَرْفُ مَكَانٍ: (أَمَامَ، خَلْفَ، فَوْقَ، تَحْتَ)',
-        'formulaEn': 'Time: Sabahan (morning), Masa\'an (evening) | Place: Amama (in front), Khalfa (behind), Fawqa (above)',
-        'examples': [
-          {
-            'sentenceAr': 'تَدَرَّبَ العَدَّاءُ مَسَاءً',
-            'sentenceEn': 'The runner trained in the evening',
-            'analysisAr': 'مَسَاءً: ظَرْفُ زَمَانٍ مَنْصُوبٌ وَعَلامَةُ نَصْبِهِ الفَتْحَةُ الظَّاهِرَةُ.',
-            'analysisEn': 'Masa\'an: Adverb of Time (Mansoob with Fatha).',
-          },
-          {
-            'sentenceAr': 'وَقَفَ الحَكَمُ أَمَامَ المَرْمَى',
-            'sentenceEn': 'The referee stood in front of the goal',
-            'analysisAr': 'أَمَامَ: ظَرْفُ مَكَانٍ مَنْصُوبٌ وَعَلامَةُ نَصْبِهِ الفَتْحَةُ الظَّاهِرَةُ.',
-            'analysisEn': 'Amama: Adverb of Place (Mansoob with Fatha).',
-          },
-        ],
-      },
-      {
-        'key': 'adjectives',
-        'titleAr': 'النَّعْتُ وَالمَنْعُوتُ (الصِّفَةُ وَالمَوْصُوفُ)',
-        'titleEn': 'Adjective Agreement (Na\'at & Man\'ut)',
-        'badgeAr': 'الوحدة 2',
-        'badgeEn': 'Unit 2',
-        'ruleAr': 'النَّعْتُ هُوَ تَابِعٌ يَذْكُرُ صِفَةً فِي اسْمٍ قَبْلَهُ (المَنْعُوت). يَتْبَعُ النَّعْتُ مَنْعُوتَهُ فِي 4 أُمُورٍ: الإِعْرَابِ (رَفْعًا وَنَصْبًا وَجَرًّا)، التَّعْرِيفِ وَالتَّنْكِيرِ، التَّذْكِيرِ وَالتَّأْنِيثِ، وَالعَدَدِ.',
-        'ruleEn': 'An adjective (Na\'at) describes a preceding noun (Man\'ut). The adjective must strictly agree with its noun across 4 dimensions: Grammatical case (Nominative/Accusative/Genitive), Definiteness (with/without "Al-"), Gender (Masc/Fem), and Number (Singular/Dual/Plural).',
-        'formulaAr': 'اسْمٌ مَنْعُوتٌ + اسْمٌ نَعْتٌ (مُطَابَقَةٌ كَامِلَةٌ فِي الحَرَكَةِ وَالتَّعْرِيفِ)',
-        'formulaEn': 'Noun (Man\'ut) + Adjective (Na\'at) [100% agreement in vowel case & definiteness]',
-        'examples': [
-          {
-            'sentenceAr': 'شَاهَدْتُ المُبَارَاةَ الحَمَاسِيَّةَ',
-            'sentenceEn': 'I watched the thrilling match',
-            'analysisAr': 'الحَمَاسِيَّةَ: نَعْتٌ مَنْصُوبٌ بِالفَتْحَةِ يَتْبَعُ (المُبَارَاةَ) فِي التَّعْرِيفِ وَالنَّصْبِ.',
-            'analysisEn': 'Al-Hamasiyyata: Adjective (Mansoob with Fatha) agreeing with the definite object.',
-          },
-          {
-            'sentenceAr': 'هَذَا حِصَانٌ عَرَبِيٌّ أَصِيلٌ',
-            'sentenceEn': 'This is a purebred Arabian horse',
-            'analysisAr': 'عَرَبِيٌّ: نَعْتٌ مَرْفُوعٌ بِالضَّمَّةِ يَتْبَعُ (حِصَانٌ) فِي التَّنْكِيرِ وَالرَّفْعِ.',
-            'analysisEn': 'Arabiyyun: Adjective (Marfoo\' with Damma) agreeing in indefinite nominative case.',
-          },
-        ],
-      },
-      {
-        'key': 'demonstratives',
-        'titleAr': 'أَسْمَاءُ الإِشَارَةِ لِلْقَرِيبِ وَالبَعِيدِ',
-        'titleEn': 'Demonstrative Pronouns (Asma\' Al-Isharah)',
-        'badgeAr': 'الوحدة 3',
-        'badgeEn': 'Unit 3',
-        'ruleAr': 'أَسْمَاءُ الإِشَارَةِ أَلْفَاظٌ يُشَارُ بِهَا إِلَى شَيْءٍ مُعَيَّنٍ: هَذَا (مُفْرَد مُذَكَّر)، هَذِهِ (مُفْرَد مُؤَنَّث وَجَمْع غَيْر العَاقِل)، هَؤُلاءِ (جَمْع العَاقِل بِنَوْعَيْهِ).',
-        'ruleEn': 'Demonstratives point to specific referents: Hatha (singular masculine = "this"), Hathihi (singular feminine & non-human plurals = "this / these"), Ha\'ula\'i (human plurals for both genders = "these").',
-        'formulaAr': 'هَذَا (مُذَكَّر) | هَذِهِ (مُؤَنَّث + جَمْع غَيْر عَاقِل) | هَؤُلاءِ (جَمْع عَاقِل)',
-        'formulaEn': 'Hatha (Masc sing.) | Hathihi (Fem sing. + Non-human pl.) | Ha\'ula\'i (Human pl.)',
-        'examples': [
-          {
-            'sentenceAr': 'هَذِهِ أَلْعَابٌ رِيَاضِيَّةٌ مُفِيدَةٌ',
-            'sentenceEn': 'These are beneficial sports games',
-            'analysisAr': 'هَذِهِ: اسْمُ إِشَارَةٍ لِجَمْعِ غَيْرِ العَاقِلِ (أَلْعَابٌ).',
-            'analysisEn': 'Hathihi: Demonstrative pronoun used for non-human plural ("Al\'ab").',
-          },
-          {
-            'sentenceAr': 'هَؤُلاءِ طُلاَّبٌ مُجْتَهِدُونَ',
-            'sentenceEn': 'These are diligent students',
-            'analysisAr': 'هَؤُلاءِ: اسْمُ إِشَارَةٍ لِجَمْعِ العَاقِلِ (طُلاَّبٌ).',
-            'analysisEn': 'Ha\'ula\'i: Demonstrative pronoun used for human plural ("Tullab").',
-          },
-        ],
-      },
-      {
-        'key': 'conjunctions',
-        'titleAr': 'حُرُوفُ العَطْفِ وَدَلالَاتُهَا',
-        'titleEn': 'Conjunction Particles (Huroof Al-\'Atf)',
-        'badgeAr': 'الوحدة 3',
-        'badgeEn': 'Unit 3',
-        'ruleAr': 'تَرْبِطُ بَيْنَ كَلِمَتَيْنِ وَيَتْبَعُ المَعْطُوفُ المَعْطُوفَ عَلَيْهِ فِي الإِعْرَابِ: الوَاوُ (لِلْمُشَارَكَةِ)، الفَاءُ (لِلتَّرْتِيبِ وَالسُّرْعَةِ)، ثُمَّ (لِلتَّرْتِيبِ مَعَ التَّرَاخِي فِي الوَقْتِ)، أَوْ (لِلتَّخْيِيرِ).',
-        'ruleEn': 'Conjunctions link two words where the joined word matches the previous word\'s vowel case: Waw (simultaneous partnership), Fa (immediate sequential order), Thumma (delayed sequence with time gap), Aw (choice or option).',
-        'formulaAr': 'مَعْطُوفٌ عَلَيْهِ + حَرْفُ عَطْفٍ (وَ، فَـ، ثُمَّ، أَوْ) + مَعْطُوفٌ (يَتْبَعُهُ فِي الإِعْرَابِ)',
-        'formulaEn': 'Base Word + Conjunction (Waw, Fa, Thumma, Aw) + Joined Word (matches case)',
-        'examples': [
-          {
-            'sentenceAr': 'حَضَرَ زَايِدٌ وَرَاشِدٌ',
-            'sentenceEn': 'Zayed and Rashid arrived together',
-            'analysisAr': 'الوَاوُ: حَرْفُ عَطْفٍ لِلْمُشَارَكَةِ | رَاشِدٌ: مَعْطُوفٌ مَرْفُوعٌ بِالضَّمَّةِ.',
-            'analysisEn': 'Waw: Conjunction of partnership | Rashidun: Conjoined noun (Marfoo\' with Damma).',
-          },
-          {
-            'sentenceAr': 'رَمَى اللَّاعِبُ الكُرَةَ فَسَجَّلَ هَدَفًا',
-            'sentenceEn': 'The player threw the ball and instantly scored a goal',
-            'analysisAr': 'الفَاءُ: حَرْفُ عَطْفٍ يُفِيدُ التَّرْتِيبَ وَالسُّرْعَةَ المُبَاشِرَةَ.',
-            'analysisEn': 'Fa: Conjunction indicating immediate, instantaneous sequential action.',
-          },
-        ],
-      },
-    ];
+    final rules = _getCurriculumRulesForGrade(_selectedGrade);
+    if (rules.isNotEmpty && !rules.any((r) => r['key'] == _selectedGrammarTopicKey)) {
+      _selectedGrammarTopicKey = rules.first['key'] as String;
+    }
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -2107,4 +3108,485 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
       ],
     );
   }
+
+  static List<Map<String, dynamic>> _getCurriculumRulesForGrade(int grade) {
+    switch (grade) {
+      case 6:
+        return _grade6Rules;
+      case 7:
+        return _grade7Rules;
+      case 8:
+        return _grade8Rules;
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+        return _gradePrimaryRules;
+      case 9:
+      case 10:
+      case 11:
+      case 12:
+        return _gradeSecondaryRules;
+      case 5:
+      default:
+        return _grade5Rules;
+    }
+  }
+
+  // GRADE 6 CURRICULUM RULES
+  static final List<Map<String, dynamic>> _grade6Rules = [
+    {
+      'key': 'kana_sisters',
+      'titleAr': 'كَانَ وَأَخَوَاتُهَا (الأَفْعَالُ النَّاسِخَةُ)',
+      'titleEn': 'Kana & Its Sisters (Incomplete Auxiliary Verbs)',
+      'badgeAr': 'الوحدة 1 (الصف 6)',
+      'badgeEn': 'Unit 1 (Grade 6)',
+      'ruleAr': 'أَفْعَالٌ نَاسِخَةٌ نَاقِصَةٌ تَدْخُلُ عَلَى الجُمْلَةِ الاسْمِيَّةِ، فَتَرْفَعُ المُبْتَدَأَ وَيُسَمَّى اسْمَهَا، وَتَنْصِبُ الخَبَرَ وَيُسَمَّى خَبَرَهَا. مِنْ أَخَوَاتِهَا: (كَانَ، أَصْبَحَ، أَضْحَى، أَمْسَى، ظَلَّ، بَاتَ، صَارَ، لَيْسَ).',
+      'ruleEn': 'Incomplete auxiliary verbs entering a nominal sentence. They retain the Subject (Ism Kana) in the nominative case with Damma and convert the Predicate (Khabar Kana) into the accusative case with Fatha. Sisters include: Kana (was), Asbaha (became morning), Sara (became), Laysa (is not).',
+      'formulaAr': 'فِعْلٌ نَاسِخٌ + اسْمُ كَانَ (مَرْفُوعٌ بِالضَّمَّةِ [ـُ]) + خَبَرُ كَانَ (مَنْصُوبٌ بِالفَتْحَةِ [ـً])',
+      'formulaEn': 'Auxiliary Verb + Subject Noun (Marfoo with Damma) + Predicate (Mansoob with Fatha)',
+      'examples': [
+        {
+          'sentenceAr': 'كَانَ الوَطَنُ عَزِيزًا',
+          'sentenceEn': 'The homeland was cherished / dear',
+          'analysisAr': 'كَانَ: فِعْلٌ مَاضٍ نَاسِخٌ | الوَطَنُ: اسْمُ كَانَ مَرْفُوعٌ بِالضَّمَّةِ | عَزِيزًا: خَبَرُ كَانَ مَنْصُوبٌ بِالفَتْحَةِ.',
+          'analysisEn': 'Kana: Incomplete verb | Al-Watanu: Subject of Kana (Damma) | Azeezan: Predicate of Kana (Fatha).',
+        },
+        {
+          'sentenceAr': 'أَصْبَحَ الطَّالِبُ مُعْتَزًّا بِهُوِيَّتِهِ',
+          'sentenceEn': 'The student became proud of his identity',
+          'analysisAr': 'أَصْبَحَ: فِعْلٌ نَاسِخٌ | الطَّالِبُ: اسْمُ أَصْبَحَ مَرْفُوعٌ بِالضَّمَّةِ | مُعْتَزًّا: خَبَرُ أَصْبَحَ مَنْصُوبٌ بِالفَتْحَةِ.',
+          'analysisEn': 'Asbaha: Incomplete verb | Al-Talibu: Subject (Damma) | Mu\'tazzan: Predicate (Fatha).',
+        },
+        {
+          'sentenceAr': 'صَارَ الاتِّحَادُ قُوَّةً',
+          'sentenceEn': 'The Union became strength',
+          'analysisAr': 'صَارَ: فِعْلٌ نَاسِخٌ لِلتَّحَوُّلِ | الاتِّحَادُ: اسْمُ صَارَ مَرْفُوعٌ بِالضَّمَّةِ | قُوَّةً: خَبَرُ صَارَ مَنْصُوبٌ بِالفَتْحَةِ.',
+          'analysisEn': 'Sara: Verb of transformation | Al-Ittihadu: Subject (Damma) | Quwwatan: Predicate (Fatha).',
+        },
+      ],
+    },
+    {
+      'key': 'kana_khabar_types',
+      'titleAr': 'أَنْوَاعُ خَبَرِ كَانَ (مُفْرَدٌ، جُمْلَةٌ، شِبْهُ جُمْلَةٍ)',
+      'titleEn': 'Types of Khabar Kana (Single Word, Clause, Prepositional)',
+      'badgeAr': 'الوحدة 2 (الصف 6)',
+      'badgeEn': 'Unit 2 (Grade 6)',
+      'ruleAr': 'يَأْتِي خَبَرُ كَانَ عَلَى ثَلَاثَةِ أَنْوَاعٍ: 1) مُفْرَدًا (كَلِمَةً وَاحِدَةً مَنْصُوبَةً)، 2) جُمْلَةً (فِعْلِيَّةً أَوْ اسْمِيَّةً فِي مَحَلِّ نَصْبٍ)، 3) شِبْهَ جُمْلَةٍ (جَارٌّ وَمَجْرُورٌ أَوْ ظَرْفٌ فِي مَحَلِّ نَصْبٍ).',
+      'ruleEn': 'The predicate of Kana appears as: 1) Single accusative word (Mufrad), 2) Sentence clause (Verbal or Nominal in place of accusative), 3) Prepositional phrase or adverbial clause (Shibh Jumlah).',
+      'formulaAr': 'كَانَ + اسْمُ كَانَ + [مُفْرَدٌ مَنْصُوبٌ | جُمْلَةٌ فِعْلِيَّةٌ | شِبْهُ جُمْلَةٍ جَارٌّ وَمَجْرُورٌ]',
+      'formulaEn': 'Kana + Ism Kana + [Accusative Single Noun | Verbal Clause | Prepositional Phrase]',
+      'examples': [
+        {
+          'sentenceAr': 'ظَلَّ الجُنْدِيُّ يَحْمِي الوَطَنَ',
+          'sentenceEn': 'The soldier remained guarding the homeland',
+          'analysisAr': 'ظَلَّ: فِعْلٌ نَاسِخٌ | الجُنْدِيُّ: اسْمُ ظَلَّ مَرْفُوعٌ | يَحْمِي الوَطَنَ: جُمْلَةٌ فِعْلِيَّةٌ فِي مَحَلِّ نَصْبِ خَبَرِ ظَلَّ.',
+          'analysisEn': 'Zhalla: Auxiliary verb | Al-Jundiyyu: Subject | Yahmi al-watan: Verbal clause serving as predicate.',
+        },
+        {
+          'sentenceAr': 'بَاتَ العَلَمُ فِي القِمَّةِ',
+          'sentenceEn': 'The flag stayed at the peak',
+          'analysisAr': 'بَاتَ: فِعْلٌ نَاسِخٌ | العَلَمُ: اسْمُ بَاتَ مَرْفُوعٌ | فِي القِمَّةِ: شِبْهُ جُمْلَةٍ فِي مَحَلِّ نَصْبِ خَبَرِ بَاتَ.',
+          'analysisEn': 'Bata: Auxiliary verb | Al-\'Alamu: Subject | Fi al-qimmati: Prepositional phrase as predicate.',
+        },
+      ],
+    },
+    {
+      'key': 'verbal_identity',
+      'titleAr': 'الفَاعِلُ وَالمَفْعُولُ بِهِ فِي سِيَاقِ الوَطَنِ وَالهُوِيَّةِ',
+      'titleEn': 'Subject & Direct Object in Patriotic Sentences',
+      'badgeAr': 'الوحدة 2 (الصف 6)',
+      'badgeEn': 'Unit 2 (Grade 6)',
+      'ruleAr': 'الفَاعِلُ اسْمٌ مَرْفُوعٌ بِالضَّمَّةِ يَدُلُّ عَلَى مَنْ فَعَلَ الفِعْلَ، وَالمَفْعُولُ بِهِ اسْمٌ مَنْصُوبٌ بِالفَتْحَةِ يَدُلُّ عَلَى مَنْ وَقَعَ عَلَيْهِ فِعْلُ الفَاعِلِ.',
+      'ruleEn': 'The Subject Agent (Fa\'il) is in the nominative case with Damma representing the doer. The Direct Object (Maf\'ul Bihi) is in the accusative case with Fatha receiving the action.',
+      'formulaAr': 'فِعْلٌ + فَاعِلٌ (مَرْفُوعٌ بِالضَّمَّةِ [ـُ]) + مَفْعُولٌ بِهِ (مَنْصُوبٌ بِالفَتْحَةِ [ـَ])',
+      'formulaEn': 'Verb + Subject Agent (Damma) + Direct Object (Fatha)',
+      'examples': [
+        {
+          'sentenceAr': 'يَصُونُ الإِمَارَاتِيُّ عَهْدَ الأَجْدَادِ',
+          'sentenceEn': 'The Emirati honors the covenant of the ancestors',
+          'analysisAr': 'يَصُونُ: فِعْلٌ مُضَارِعٌ | الإِمَارَاتِيُّ: فَاعِلٌ مَرْفُوعٌ بِالضَّمَّةِ | عَهْدَ: مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ.',
+          'analysisEn': 'Yasoonu: Present verb | Al-Imaratiyyu: Doer (Damma) | \'Ahda: Direct object (Fatha).',
+        },
+        {
+          'sentenceAr': 'رَفَعَ الشَّبَابُ عَلَمَ الإِمَارَاتِ',
+          'sentenceEn': 'The youth raised the flag of the UAE',
+          'analysisAr': 'رَفَعَ: فِعْلٌ مَاضٍ | الشَّبَابُ: فَاعِلٌ مَرْفُوعٌ بِالضَّمَّةِ | عَلَمَ: مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ.',
+          'analysisEn': 'Rafa\'a: Past verb | Al-Shabab: Doer (Damma) | \'Alama: Direct object (Fatha).',
+        },
+      ],
+    },
+    {
+      'key': 'naat_manoot',
+      'titleAr': 'النَّعْتُ وَالمَنْعُوتُ فِي سِيَاقِ الهُوِيَّةِ وَالتُّرَاثِ',
+      'titleEn': 'Adjective Agreement (Na\'at & Man\'ut) in Heritage',
+      'badgeAr': 'الوحدة 3 (الصف 6)',
+      'badgeEn': 'Unit 3 (Grade 6)',
+      'ruleAr': 'النَّعْتُ تَابِعٌ يَصِفُ المَنْعُوتَ قَبْلَهُ، وَيَتْبَعُهُ فِي الإِعْرَابِ (رَفْعًا وَنَصْبًا وَجَرًّا) وَالتَّعْرِيفِ وَالتَّنْكِيرِ وَالتَّذْكِيرِ وَالتَّأْنِيثِ وَالعَدَدِ.',
+      'ruleEn': 'The adjective strictly agrees with the qualified noun in 4 categories: grammatical case, definiteness, gender, and singular/dual/plural number.',
+      'formulaAr': 'مَنْعُوتٌ + نَعْتٌ مُطَابِقٌ (ـُـُ / ـَـَ / ـِـِ)',
+      'formulaEn': 'Noun + Matching Adjective (Identical vowels & definiteness)',
+      'examples': [
+        {
+          'sentenceAr': 'نَفْتَخِرُ بِالهُوِيَّةِ الإِمَارَاتِيَّةِ الأَصِيلَةِ',
+          'sentenceEn': 'We are proud of authentic Emirati identity',
+          'analysisAr': 'الإِمَارَاتِيَّةِ: نَعْتٌ مَجْرُورٌ بِالكَسْرَةِ يَتْبَعُ (الهُوِيَّةِ) فِي التَّعْرِيفِ وَالجَرِّ.',
+          'analysisEn': 'Al-Imaratiyyati: Adjective matching genitive definite noun in Kasra.',
+        },
+        {
+          'sentenceAr': 'أَسَّسَ القَادَةُ العُظَمَاءُ دَوْلَةً حَدِيثَةً',
+          'sentenceEn': 'The great leaders founded a modern state',
+          'analysisAr': 'العُظَمَاءُ: نَعْتٌ مَرْفُوعٌ لِـ (القَادَةُ) | حَدِيثَةً: نَعْتٌ مَنْصُوبٌ لِـ (دَوْلَةً).',
+          'analysisEn': 'Al-\'Uzama\'u: Nominative adj | Hadeethatan: Accusative adj.',
+        },
+      ],
+    },
+    {
+      'key': 'cohesive_connectives',
+      'titleAr': 'الرَّوَابِطُ التَّرْكِيبِيَّةُ وَأَدَوَاتُ التَّعْلِيلِ وَالاسْتِدْرَاكِ',
+      'titleEn': 'Cohesive Connectives, Causation & Concession',
+      'badgeAr': 'الوحدة 3 (الصف 6)',
+      'badgeEn': 'Unit 3 (Grade 6)',
+      'ruleAr': 'أَدَوَاتٌ تَرْبِطُ الجُمَلَ لِبِنَاءِ فَقْرَةٍ مُتَمَاسِكَةٍ: (بِمَا أَنَّ... فَإِنَّ...) لِلتَّعْلِيلِ، (عَلَى الرَّغْمِ مِنْ... إِلَّا أَنَّ...) لِلاسْتِدْرَاكِ، (كَذَلِكَ... كَمَا أَنَّ...) لِلإِضَافَةِ.',
+      'ruleEn': 'Syntactic sentence linkers creating cohesive discourse: Bima anna (Since/Given that), \'Ala al-raghmi min (Despite/Although), Kamā anna (Furthermore).',
+      'formulaAr': 'بِمَا أَنَّ (السَّبَبُ) + فَإِنَّ (النَّتِيجَةُ) | عَلَى الرَّغْمِ مِنْ (المَانِعُ) + اسْتِطَاعَ (الفِعْلُ)',
+      'formulaEn': 'Since [Cause] -> Verily [Result] | Despite [Concession] -> [Accomplishment]',
+      'examples': [
+        {
+          'sentenceAr': 'بِمَا أَنَّنَا أَبْنَاءُ الإِمَارَاتِ، فَإِنَّ وَاجِبَنَا خِدْمَةُ الوَطَنِ',
+          'sentenceEn': 'Since we are children of the UAE, our duty is serving the nation',
+          'analysisAr': 'رَابِطٌ شَرْطِيٌّ تَعْلِيلِيٌّ يُفِيدُ تَرَتُّبَ النَّتِيجَةِ عَلَى السَّبَبِ.',
+          'analysisEn': 'Causal connector linking national belonging to patriotic duty.',
+        },
+        {
+          'sentenceAr': 'عَلَى الرَّغْمِ مِنْ تَطَوُّرِ الحَيَاةِ، نَتَمَسَّكُ بِسَنَعِ الأَجْدَادِ',
+          'sentenceEn': 'Despite modern evolution, we cling to ancestral values (San\'a)',
+          'analysisAr': 'عَلَى الرَّغْمِ مِنْ: أَدَاةُ اسْتِدْرَاكٍ وَمُفَارَقَةٍ تَرْبِطُ بَيْنَ أَمْرَيْنِ.',
+          'analysisEn': 'Concession linker highlighting loyalty to heritage amidst modernity.',
+        },
+      ],
+    },
+  ];
+
+  // GRADE 7 CURRICULUM RULES
+  static final List<Map<String, dynamic>> _grade7Rules = [
+    {
+      'key': 'inna_sisters',
+      'titleAr': 'إِنَّ وَأَخَوَاتُهَا (الحُرُوفُ النَّاسِخَةُ)',
+      'titleEn': 'Inna & Its Sisters (Annulled Accusative Particles)',
+      'badgeAr': 'الوحدة 1 (الصف 7)',
+      'badgeEn': 'Unit 1 (Grade 7)',
+      'ruleAr': 'حُرُوفٌ نَاسِخَةٌ تَدْخُلُ عَلَى الجُمْلَةِ الاسْمِيَّةِ، فَتَنْصِبُ المُبْتَدَأَ وَيُسَمَّى اسْمَهَا، وَتَرْفَعُ الخَبَرَ وَيُسَمَّى خَبَرَهَا. مِنْهَا: (إِنَّ، أَنَّ، كَأَنَّ، لَكِنَّ، لَيْتَ، لَعَلَّ).',
+      'ruleEn': 'Annulled particles entering nominal sentences. They make the subject Accusative (Ism Inna with Fatha) and retain the predicate Nominative (Khabar Inna with Damma).',
+      'formulaAr': 'حَرْفٌ نَاسِخٌ + اسْمُ إِنَّ (مَنْصُوبٌ بِالفَتْحَةِ [ـَ]) + خَبَرُ إِنَّ (مَرْفُوعٌ بِالضَّمَّةِ [ـُ])',
+      'formulaEn': 'Inna Particle + Ism Inna (Mansoob Fatha) + Khabar Inna (Marfoo Damma)',
+      'examples': [
+        {
+          'sentenceAr': 'إِنَّ التُّرَاثَ خَالِدٌ',
+          'sentenceEn': 'Verily, heritage is immortal',
+          'analysisAr': 'إِنَّ: حَرْفُ تَوْكِيدٍ وَنَصْبٍ | التُّرَاثَ: اسْمُ إِنَّ مَنْصُوبٌ بِالفَتْحَةِ | خَالِدٌ: خَبَرُ إِنَّ مَرْفُوعٌ بِالضَّمَّةِ.',
+          'analysisEn': 'Inna: Emphasis particle | Al-Turatha: Ism Inna (Fatha) | Khalidun: Khabar Inna (Damma).',
+        },
+        {
+          'sentenceAr': 'عَلِمْتُ أَنَّ البَحْرَ عَطَاءٌ',
+          'sentenceEn': 'I learned that the sea is generous giving',
+          'analysisAr': 'أَنَّ: حَرْفٌ نَاسِخٌ | البَحْرَ: اسْمُ أَنَّ مَنْصُوبٌ بِالفَتْحَةِ | عَطَاءٌ: خَبَرُ أَنَّ مَرْفُوعٌ بِالضَّمَّةِ.',
+          'analysisEn': 'Anna: Particle | Al-Bahra: Subject (Fatha) | \'Ataa\'un: Predicate (Damma).',
+        },
+      ],
+    },
+    {
+      'key': 'lazim_mutaaddi',
+      'titleAr': 'الفِعْلُ اللَّازِمُ وَالفِعْلُ المُتَعَدِّي',
+      'titleEn': 'Intransitive vs Transitive Verbs',
+      'badgeAr': 'الوحدة 2 (الصف 7)',
+      'badgeEn': 'Unit 2 (Grade 7)',
+      'ruleAr': 'الفِعْلُ اللَّازِمُ يَكْتَفِي بِفَاعِلِهِ وَلا يَحْتَاجُ لِمَفْعُولٍ بِهِ. أَمَّا الفِعْلُ المُتَعَدِّي فَيَتَعَدَّى فَاعِلَهُ لِيَنْصِبَ مَفْعُولاً بِهِ وَاحِدًا أَوْ أَكْثَرَ.',
+      'ruleEn': 'Intransitive verbs (Lazim) require only a subject to complete meaning. Transitive verbs (Muta\'addi) pass beyond the subject to govern an accusative direct object.',
+      'formulaAr': 'لَازِمٌ: فِعْلٌ + فَاعِلٌ | مُتَعَدٍّ: فِعْلٌ + فَاعِلٌ + مَفْعُولٌ بِهِ (مَنْصُوبٌ)',
+      'formulaEn': 'Intransitive: Verb + Doer | Transitive: Verb + Doer + Direct Object (Fatha)',
+      'examples': [
+        {
+          'sentenceAr': 'غَاصَ البَحَّارُ فِي الأَعْمَاقِ',
+          'sentenceEn': 'The sailor dived into the deep (Intransitive)',
+          'analysisAr': 'غَاصَ: فِعْلٌ لَازِمٌ اكْتَفَى بِفَاعِلِهِ (البَحَّارُ) دُونَ مَفْعُولٍ بِهِ.',
+          'analysisEn': 'Ghaasa: Intransitive verb completing clause without direct object.',
+        },
+        {
+          'sentenceAr': 'جَمَعَ الغَوَّاصُ المَحَارَ',
+          'sentenceEn': 'The diver gathered the oysters (Transitive)',
+          'analysisAr': 'جَمَعَ: فِعْلٌ مُتَعَدٍّ نَصَبَ المَفْعُولَ بِهِ (المَحَارَ).',
+          'analysisEn': 'Jama\'a: Transitive verb governing object (Al-Mahara).',
+        },
+      ],
+    },
+    {
+      'key': 'pronouns_types',
+      'titleAr': 'الضَّمَائِرُ المُتَّصِلَةُ وَالمُنْفَصِلَةُ وَإِعْرَابُهَا',
+      'titleEn': 'Attached & Separate Pronouns and Parsing',
+      'badgeAr': 'الوحدة 3 (الصف 7)',
+      'badgeEn': 'Unit 3 (Grade 7)',
+      'ruleAr': 'الضَّمَائِرُ أَسْمَاءٌ مَعْرِفَةٌ تَدُلُّ عَلَى مُتَكَلِّمٍ أَوْ مُخَاطَبٍ أَوْ غَائِبٍ. تَكُونُ مُنْفَصِلَةً مُسْتَقِلَّةً (أَنَا، أَنْتَ، هُوَ) أَوْ مُتَّصِلَةً بِكَلِمَةٍ أُخْرَى.',
+      'ruleEn': 'Pronouns represent 1st, 2nd, or 3rd person entities. They appear as standalone words or attached suffixes carrying nominative, accusative, or genitive roles.',
+      'formulaAr': 'مُنْفَصِلٌ: (أَنَا، نَحْنُ، هُوَ) | مُتَّصِلٌ: (ـتُ، ـنَا، ـهُ، ـكَ)',
+      'formulaEn': 'Separate: Ana, Nahnu, Huwa | Attached: -tu (Doer), -na (Our/We), -hu (His)',
+      'examples': [
+        {
+          'sentenceAr': 'نَحْنُ أَبْنَاءُ الإِمَارَاتِ',
+          'sentenceEn': 'We are children of the UAE',
+          'analysisAr': 'نَحْنُ: ضَمِيرٌ مُنْفَصِلٌ فِي مَحَلِّ رَفْعِ مُبْتَدَأٍ.',
+          'analysisEn': 'Nahnu: Separate personal pronoun functioning as subject.',
+        },
+        {
+          'sentenceAr': 'شَارَكْتُ فِي سِبَاقِ الهَجَنِ',
+          'sentenceEn': 'I took part in the camel race',
+          'analysisAr': 'التَّاءُ (ـتُ): ضَمِيرٌ مُتَّصِلٌ فِي مَحَلِّ رَفْعِ فَاعِلٍ.',
+          'analysisEn': '-tu: Attached pronoun functioning as nominative doer.',
+        },
+      ],
+    },
+  ];
+
+  // GRADE 8 CURRICULUM RULES
+  static final List<Map<String, dynamic>> _grade8Rules = [
+    {
+      'key': 'maful_mutlaq',
+      'titleAr': 'المَفْعُولُ المُطْلَقُ وَأَنْوَاعُهُ الثَّلَاثَةُ',
+      'titleEn': 'Absolute Object (Maf\'ul Mutlaq) & Its 3 Types',
+      'badgeAr': 'الوحدة 1 (الصف 8)',
+      'badgeEn': 'Unit 1 (Grade 8)',
+      'ruleAr': 'اسْمٌ مَنْصُوبٌ يُذْكَرُ بَعْدَ فِعْلٍ مِنْ لَفْظِهِ لِتَأْكِيدِهِ، أَوْ لِبَيَانِ نَوْعِهِ، أَوْ لِبَيَانِ عَدَدِهِ.',
+      'ruleEn': 'An accusative verbal noun derived from the same root as the preceding verb. It serves 3 rhetorical functions: to emphasize the action, specify its quality, or count occurrences.',
+      'formulaAr': 'فِعْلٌ + ... + مَصْدَرٌ مَنْصُوبٌ مِنْ لَفْظِ الفِعْلِ [مُؤَكِّد / مُبَيِّن لِلنَّوْع / مُبَيِّن لِلْعَدَد]',
+      'formulaEn': 'Verb + Cognate Accusative Noun [Emphasis / Qualitative / Quantitative]',
+      'examples': [
+        {
+          'sentenceAr': 'انْتَصَرَ الوَطَنُ انْتِصَارًا',
+          'sentenceEn': 'The nation triumphed a decisive victory (Emphasis)',
+          'analysisAr': 'انْتِصَارًا: مَفْعُولٌ مُطْلَقٌ مَنْصُوبٌ بِالفَتْحَةِ مُؤَكِّدٌ لِلْفِعْلِ.',
+          'analysisEn': 'Intisaran: Absolute object (Mansoob) emphasizing triumph.',
+        },
+        {
+          'sentenceAr': 'قَرَأَ الطَّالِبُ قِرَاءَةً مُتَأَنِّيَةً',
+          'sentenceEn': 'The student read a thoughtful reading (Qualitative)',
+          'analysisAr': 'قِرَاءَةً: مَفْعُولٌ مُطْلَقٌ مَنْصُوبٌ مُبَيِّنٌ لِلنَّوْعِ.',
+          'analysisEn': 'Qira\'atan: Absolute object accompanied by an adjective describing type.',
+        },
+      ],
+    },
+    {
+      'key': 'maful_liajlih',
+      'titleAr': 'المَفْعُولُ لِأَجْلِهِ وَشُرُوطُ إِعْرَابِهِ',
+      'titleEn': 'Object of Reason (Maf\'ul Li-Ajlih)',
+      'badgeAr': 'الوحدة 2 (الصف 8)',
+      'badgeEn': 'Unit 2 (Grade 8)',
+      'ruleAr': 'مَصْدَرٌ قَلْبِيٌّ مَنْصُوبٌ يُذْكَرُ لِبَيَانِ السَّبَبِ الَّذِي دَعَا إِلَى حُدُوثِ الفِعْلِ. يَصْلُحُ جَوَابًا لِسُؤَالِ: (لِمَاذَا؟).',
+      'ruleEn': 'An accusative noun of intent or emotion explaining the underlying cause or motive behind an action. Directly answers the question "Why?".',
+      'formulaAr': 'فِعْلٌ + ... + مَصْدَرٌ مَنْصُوبٌ [يُجِيبُ عَنْ: لِمَاذَا؟]',
+      'formulaEn': 'Action Verb + ... + Accusative Verbal Noun [Answers: Why?]',
+      'examples': [
+        {
+          'sentenceAr': 'وَقَفْتُ احْتِرَامًا لِلْمُعَلِّمِ',
+          'sentenceEn': 'I stood out of respect for the teacher',
+          'analysisAr': 'احْتِرَامًا: مَفْعُولٌ لِأَجْلِهِ مَنْصُوبٌ بِالفَتْحَةِ بَيَّنَ سَبَبَ الوُقُوفِ.',
+          'analysisEn': 'Ihtiraman: Object of reason (Mansoob) explaining the standing.',
+        },
+        {
+          'sentenceAr': 'نَتَدَرَّبُ رَغْبَةً فِي الفَوْزِ',
+          'sentenceEn': 'We train out of desire for victory',
+          'analysisAr': 'رَغْبَةً: مَفْعُولٌ لِأَجْلِهِ مَنْصُوبٌ وَعَلامَةُ نَصْبِهِ الفَتْحَةُ.',
+          'analysisEn': 'Raghbatan: Object of reason showing motive.',
+        },
+      ],
+    },
+    {
+      'key': 'al_haal',
+      'titleAr': 'الحَالُ المَنْصُوبَةُ وَصَاحِبُ الحَالِ',
+      'titleEn': 'The Accusative State (Al-Haal) & Its Subject',
+      'badgeAr': 'الوحدة 3 (الصف 8)',
+      'badgeEn': 'Unit 3 (Grade 8)',
+      'ruleAr': 'اسْمٌ نَكِرَةٌ مَنْصُوبٌ يُبَيِّنُ هَيْئَةَ صَاحِبِهِ (المَعْرِفَةِ) عِنْدَ وُقُوعِ الفِعْلِ. يَصْلُحُ جَوَابًا لِسُؤَالِ: (كَيْفَ؟).',
+      'ruleEn': 'An indefinite accusative modifier describing the transient physical or emotional state of a definite noun when an action takes place. Answers "How?".',
+      'formulaAr': 'فِعْلٌ + فَاعِلٌ (مَعْرِفَة) + حَالٌ نَكِرَةٌ مَنْصُوبَةٌ [ـً]',
+      'formulaEn': 'Verb + Definite Agent + Indefinite Accusative State (-an)',
+      'examples': [
+        {
+          'sentenceAr': 'عَادَ الجُنْدِيُّ سَالِمًا',
+          'sentenceEn': 'The soldier returned safe and sound',
+          'analysisAr': 'سَالِمًا: حَالٌ مَنْصُوبَةٌ بِالفَتْحَةِ بَيَّنَتْ هَيْئَةَ (الجُنْدِيُّ) عِنْدَ العَوْدَةِ.',
+          'analysisEn': 'Saliman: Accusative state modifying the returning soldier.',
+        },
+      ],
+    },
+  ];
+
+  // PRIMARY GRADES (1-4) CURRICULUM RULES
+  static final List<Map<String, dynamic>> _gradePrimaryRules = [
+    {
+      'key': 'word_parts',
+      'titleAr': 'أَقْسَامُ الكَلِمَةِ (اسْمٌ، فِعْلٌ، حَرْفٌ)',
+      'titleEn': 'Parts of Speech (Noun, Verb, Particle)',
+      'badgeAr': 'المرحلة التأسيسية',
+      'badgeEn': 'Primary Foundations',
+      'ruleAr': 'تَنْقَسِمُ الكَلِمَاتُ فِي اللُّغَةِ العَرَبِيَّةِ إِلَى: اسْمٍ (يَدُلُّ عَلَى إِنْسَانٍ أَوْ حَيَوَانٍ أَوْ شَيْءٍ)، وَفِعْلٍ (حَدَثٌ مُرْتَبِطٌ بِزَمَنٍ)، وَحَرْفٍ (يَرْبِطُ الكَلِمَاتِ).',
+      'ruleEn': 'Words in Arabic are classified into Nouns (people, places, things), Verbs (actions bound to time), and Particles (connectors).',
+      'formulaAr': 'كَلِمَةٌ = [اسْمٌ] أَوْ [فِعْلٌ] أَوْ [حَرْفٌ]',
+      'formulaEn': 'Word = [Noun] or [Verb] or [Particle]',
+      'examples': [
+        {
+          'sentenceAr': 'قَرَأَ رَاشِدٌ فِي الكِتَابِ',
+          'sentenceEn': 'Rashid read in the book',
+          'analysisAr': 'قَرَأَ (فِعْلٌ) | رَاشِدٌ (اسْمٌ) | فِي (حَرْفٌ) | الكِتَابِ (اسْمٌ).',
+          'analysisEn': 'Qara\'a (Verb) | Rashid (Noun) | Fi (Particle) | Al-Kitab (Noun).',
+        },
+      ],
+    },
+  ];
+
+  // SECONDARY GRADES (9-12) CURRICULUM RULES
+  static final List<Map<String, dynamic>> _gradeSecondaryRules = [
+    {
+      'key': 'morphology_participles',
+      'titleAr': 'المُشْتَقَّاتُ: اسْمُ الفَاعِلِ وَاسْمُ المَفْعُولِ وَصِيَغُ المُبَالَغَةِ',
+      'titleEn': 'Morphological Derivations (Participles & Intensive Forms)',
+      'badgeAr': 'المرحلة الثانوية',
+      'badgeEn': 'Secondary Advanced',
+      'ruleAr': 'أَسْمَاءٌ تُشْتَقُّ مِنْ حُرُوفِ الفِعْلِ لِتَدُلَّ عَلَى مَنْ قَامَ بِالفِعْلِ (اسْمُ فَاعِلٍ: فَاعِل / مُفْعِل)، أَوْ مَنْ وَقَعَ عَلَيْهِ (اسْمُ مَفْعُولٍ: مَفْعُول / مُفْعَل).',
+      'ruleEn': 'Derived nouns denoting the doer of an action (Active Participle), the recipient (Passive Participle), or intensified frequency.',
+      'formulaAr': 'فِعْلٌ ثُلَاثِيٌّ -> فَاعِلٌ (كَاتِبٌ) | مَفْعُولٌ (مَكْتُوبٌ)',
+      'formulaEn': 'Trilateral Root -> Fa\'il (Active) | Maf\'ool (Passive)',
+      'examples': [
+        {
+          'sentenceAr': 'المُخْتَرِعُ مُبْدِعٌ فِي صِنَاعَةِ المُسْتَقْبَلِ',
+          'sentenceEn': 'The inventor is creative in building the future',
+          'analysisAr': 'المُخْتَرِعُ: اسْمُ فَاعِلٍ مِنْ فِعْلٍ غَيْرِ ثُلَاثِيٍّ (اخْتَرَعَ).',
+          'analysisEn': 'Al-Mukhtari\'u: Active participle derived from verb Ikhtara\'a.',
+        },
+      ],
+    },
+  ];
+
+  // GRADE 5 CURRICULUM RULES (STATIC MAP)
+  static final List<Map<String, dynamic>> _grade5Rules = [
+    {
+      'key': 'sentence_types',
+      'titleAr': 'الجُمْلَةُ الاسْمِيَّةُ وَالجُمْلَةُ الفِعْلِيَّةُ',
+      'titleEn': 'Nominal vs Verbal Sentences',
+      'badgeAr': 'الوحدة 1 (الصف 5)',
+      'badgeEn': 'Unit 1 (Grade 5)',
+      'ruleAr': 'الجُمْلَةُ الاسْمِيَّةُ تَبْدَأُ بِاسْمٍ وَتَتَكَوَّنُ مِنْ رُكْنَيْنِ رَئِيسَيْنِ: مُبْتَدَأ وَخَبَر، وَكِلاهُمَا مَرْفُوعٌ بِالضَّمَّةِ. أَمَّا الجُمْلَةُ الفِعْلِيَّةُ فَتَبْدَأُ بِفِعْلٍ وَتَتَكَوَّنُ مِنْ فِعْلٍ وَفَاعِلٍ (مَرْفُوع) وَمَفْعُولٍ بِهِ (مَنْصُوب).',
+      'ruleEn': 'A Nominal Sentence starts with a noun and consists of Subject (Mubtada) and Predicate (Khabar), both in nominative case with Damma. A Verbal Sentence starts with a verb and consists of Verb, Subject Agent (Fa\'il, Marfoo), and Direct Object (Maf\'ul Bihi, Mansoob).',
+      'formulaAr': 'جملة اسمية: مُبْتَدَأ (مَرْفُوع) + خَبَر (مَرْفُوع) | جملة فعلية: فِعْل + فَاعِل (مَرْفُوع) + مَفْعُول بِهِ (مَنْصُوب)',
+      'formulaEn': 'Nominal: Subject (Damma) + Predicate (Damma) | Verbal: Verb + Doer (Damma) + Object (Fatha)',
+      'examples': [
+        {
+          'sentenceAr': 'الكُرَةُ سَرِيعَةٌ',
+          'sentenceEn': 'The ball is fast',
+          'analysisAr': 'الكُرَةُ: مُبْتَدَأٌ مَرْفُوعٌ بِالضَّمَّةِ | سَرِيعَةٌ: خَبَرٌ مَرْفُوعٌ بِالضَّمَّةِ.',
+          'analysisEn': 'Al-Kuratu: Subject noun (Marfoo with Damma) | Saree\'atun: Predicate (Marfoo with Damma).',
+        },
+        {
+          'sentenceAr': 'قَذَفَ اللَّاعِبُ الكُرَةَ',
+          'sentenceEn': 'The player kicked the ball',
+          'analysisAr': 'قَذَفَ: فِعْلٌ مَاضٍ | اللَّاعِبُ: فَاعِلٌ مَرْفُوعٌ بِالضَّمَّةِ | الكُرَةَ: مَفْعُولٌ بِهِ مَنْصُوبٌ بِالفَتْحَةِ.',
+          'analysisEn': 'Qadhafa: Past verb | Al-La\'ibu: Doer (Marfoo with Damma) | Al-Kurata: Object (Mansoob with Fatha).',
+        },
+      ],
+    },
+    {
+      'key': 'prepositions',
+      'titleAr': 'حُرُوفُ الجَرِّ وَالاسْمُ المَجْرُورُ',
+      'titleEn': 'Prepositions & Genitive Nouns',
+      'badgeAr': 'الوحدة 1 (الصف 5)',
+      'badgeEn': 'Unit 1 (Grade 5)',
+      'ruleAr': 'حُرُوفُ الجَرِّ تَدْخُلُ عَلَى الأَسْمَاءِ فَقَطْ وَتَجُرُّهَا بِالكَسْرَةِ الظَّاهِرَةِ. مِنْ أَشْهَرِهَا: (مِنْ، إِلَى، عَنْ، عَلَى، فِي، البَاء، الكَاف، اللَّام).',
+      'ruleEn': 'Prepositions prefix nouns exclusively and cause them to enter the genitive case, marked with Kasra (-i sound).',
+      'formulaAr': 'حَرْفُ جَرٍّ + اسْمٌ مَجْرُورٌ وَعَلامَةُ جَرِّهِ الكَسْرَةُ الظَّاهِرَةُ',
+      'formulaEn': 'Preposition (Harf Jarr) + Genitive Noun (Ism Majroor with Kasra)',
+      'examples': [
+        {
+          'sentenceAr': 'يَلْعَبُ الطُّلاَّبُ فِي المَلْعَبِ',
+          'sentenceEn': 'The students play on the pitch',
+          'analysisAr': 'فِي: حَرْفُ جَرٍّ | المَلْعَبِ: اسْمٌ مَجْرُورٌ وَعَلامَةُ جَرِّهِ الكَسْرَةُ الظَّاهِرَةُ.',
+          'analysisEn': 'Fi: Preposition | Al-Mal\'abi: Genitive noun with Kasra (-i).',
+        },
+      ],
+    },
+    {
+      'key': 'adverbs',
+      'titleAr': 'ظَرْفَا الزَّمَانِ وَالمَكَانِ (المَفْعُولُ فِيهِ)',
+      'titleEn': 'Adverbs of Time & Place (Maf\'ul Feeh)',
+      'badgeAr': 'الوحدة 2 (الصف 5)',
+      'badgeEn': 'Unit 2 (Grade 5)',
+      'ruleAr': 'اسْمٌ مَنْصُوبٌ بِالفَتْحَةِ يَدُلُّ عَلَى زَمَانِ وُقُوعِ الفِعْلِ (ظَرْفُ زَمَانٍ) أَوْ مَكَانِ وُقُوعِهِ (ظَرْفُ مَكَانٍ).',
+      'ruleEn': 'An accusative noun specifying the time an action took place (Adverb of Time) or location (Adverb of Place).',
+      'formulaAr': 'ظَرْفُ زَمَانٍ: (صَبَاحًا، مَسَاءً) | ظَرْفُ مَكَانٍ: (أَمَامَ، خَلْفَ، فَوْقَ)',
+      'formulaEn': 'Time: Sabahan, Masa\'an | Place: Amama, Khalfa, Fawqa',
+      'examples': [
+        {
+          'sentenceAr': 'تَدَرَّبَ العَدَّاءُ مَسَاءً',
+          'sentenceEn': 'The runner trained in the evening',
+          'analysisAr': 'مَسَاءً: ظَرْفُ زَمَانٍ مَنْصُوبٌ وَعَلامَةُ نَصْبِهِ الفَتْحَةُ الظَّاهِرَةُ.',
+          'analysisEn': 'Masa\'an: Adverb of Time (Mansoob with Fatha).',
+        },
+      ],
+    },
+    {
+      'key': 'adjectives',
+      'titleAr': 'النَّعْتُ وَالمَنْعُوتُ (الصِّفَةُ وَالمَوْصُوفُ)',
+      'titleEn': 'Adjective Agreement (Na\'at & Man\'ut)',
+      'badgeAr': 'الوحدة 2 (الصف 5)',
+      'badgeEn': 'Unit 2 (Grade 5)',
+      'ruleAr': 'النَّعْتُ هُوَ تَابِعٌ يَذْكُرُ صِفَةً فِي اسْمٍ قَبْلَهُ. يَتْبَعُ النَّعْتُ مَنْعُوتَهُ فِي الإِعْرَابِ وَالتَّعْرِيفِ وَالتَّذْكِيرِ وَالعَدَدِ.',
+      'ruleEn': 'An adjective describes a preceding noun, matching across case, definiteness, gender, and number.',
+      'formulaAr': 'اسْمٌ مَنْعُوتٌ + اسْمٌ نَعْتٌ (مُطَابَقَةٌ كَامِلَةٌ فِي الحَرَكَةِ)',
+      'formulaEn': 'Noun (Man\'ut) + Adjective (Na\'at) [100% agreement]',
+      'examples': [
+        {
+          'sentenceAr': 'شَاهَدْتُ المُبَارَاةَ الحَمَاسِيَّةَ',
+          'sentenceEn': 'I watched the thrilling match',
+          'analysisAr': 'الحَمَاسِيَّةَ: نَعْتٌ مَنْصُوبٌ بِالفَتْحَةِ يَتْبَعُ (المُبَارَاةَ).',
+          'analysisEn': 'Al-Hamasiyyata: Adjective agreeing in definite accusative.',
+        },
+      ],
+    },
+    {
+      'key': 'demonstratives',
+      'titleAr': 'أَسْمَاءُ الإِشَارَةِ لِلْقَرِيبِ وَالبَعِيدِ',
+      'titleEn': 'Demonstrative Pronouns (Asma\' Al-Isharah)',
+      'badgeAr': 'الوحدة 3 (الصف 5)',
+      'badgeEn': 'Unit 3 (Grade 5)',
+      'ruleAr': 'أَسْمَاءُ الإِشَارَةِ أَلْفَاظٌ يُشَارُ بِهَا إِلَى شَيْءٍ مُعَيَّنٍ: هَذَا، هَذِهِ، هَؤُلاءِ.',
+      'ruleEn': 'Demonstratives point to specific referents: Hatha (Masc sing), Hathihi (Fem sing & Non-human pl), Ha\'ula\'i (Human pl).',
+      'formulaAr': 'هَذَا (مُذَكَّر) | هَذِهِ (مُؤَنَّث) | هَؤُلاءِ (جَمْع)',
+      'formulaEn': 'Hatha (Masc) | Hathihi (Fem) | Ha\'ula\'i (Plural)',
+      'examples': [
+        {
+          'sentenceAr': 'هَذِهِ أَلْعَابٌ رِيَاضِيَّةٌ مُفِيدَةٌ',
+          'sentenceEn': 'These are beneficial sports games',
+          'analysisAr': 'هَذِهِ: اسْمُ إِشَارَةٍ لِجَمْعِ غَيْرِ العَاقِلِ.',
+          'analysisEn': 'Hathihi: Demonstrative used for non-human plural.',
+        },
+      ],
+    },
+    {
+      'key': 'conjunctions',
+      'titleAr': 'حُرُوفُ العَطْفِ وَدَلالَاتُهَا',
+      'titleEn': 'Conjunction Particles (Huroof Al-\'Atf)',
+      'badgeAr': 'الوحدة 3 (الصف 5)',
+      'badgeEn': 'Unit 3 (Grade 5)',
+      'ruleAr': 'تَرْبِطُ بَيْنَ كَلِمَتَيْنِ: الوَاوُ (لِلْمُشَارَكَةِ)، الفَاءُ (لِلتَّرْتِيبِ وَالسُّرْعَةِ)، ثُمَّ (لِلتَّرَاخِي)، أَوْ (لِلتَّخْيِيرِ).',
+      'ruleEn': 'Conjunctions linking two words: Waw (partnership), Fa (immediate sequence), Thumma (delayed sequence), Aw (choice).',
+      'formulaAr': 'مَعْطُوفٌ عَلَيْهِ + حَرْفُ عَطْفٍ + مَعْطُوفٌ',
+      'formulaEn': 'Base Word + Conjunction + Joined Word',
+      'examples': [
+        {
+          'sentenceAr': 'حَضَرَ زَايِدٌ وَرَاشِدٌ',
+          'sentenceEn': 'Zayed and Rashid arrived together',
+          'analysisAr': 'الوَاوُ: حَرْفُ عَطْفٍ | رَاشِدٌ: مَعْطُوفٌ مَرْفُوعٌ بِالضَّمَّةِ.',
+          'analysisEn': 'Waw: Conjunction | Rashid: Conjoined noun (Marfoo).',
+        },
+      ],
+    },
+  ];
 }

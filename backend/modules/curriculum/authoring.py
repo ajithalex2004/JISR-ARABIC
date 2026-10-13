@@ -101,7 +101,7 @@ def get_coverage_report():
 _TRANSLATION_CACHE = {}
 
 def _translate_ar_to_en(text_ar: str) -> str:
-    """Fast, cached translation of Arabic curriculum text to English."""
+    """Fast, cached translation of Arabic curriculum text to English with resilient fallbacks."""
     import urllib.request
     import urllib.parse
     import json
@@ -110,6 +110,8 @@ def _translate_ar_to_en(text_ar: str) -> str:
     cleaned = text_ar.strip()
     if cleaned in _TRANSLATION_CACHE:
         return _TRANSLATION_CACHE[cleaned]
+
+    # 1. Try Google Translate gtx
     try:
         q = urllib.parse.quote(cleaned[:1000])
         url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q={q}"
@@ -118,11 +120,27 @@ def _translate_ar_to_en(text_ar: str) -> str:
             data = json.loads(resp.read().decode("utf-8"))
             if data and isinstance(data, list) and len(data) > 0 and isinstance(data[0], list):
                 res = "".join(seg[0] for seg in data[0] if seg and len(seg) > 0 and seg[0])
-                _TRANSLATION_CACHE[cleaned] = res
-                return res
+                if res.strip():
+                    _TRANSLATION_CACHE[cleaned] = res.strip()
+                    return res.strip()
     except Exception:
         pass
-    return ""
+
+    # 2. Resilient Fallback: MyMemory Translation API
+    try:
+        q = urllib.parse.quote(cleaned[:500])
+        url = f"https://api.mymemory.translated.net/get?q={q}&langpair=ar|en"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            res = data.get("responseData", {}).get("translatedText", "")
+            if res and not str(res).startswith("MYMEMORY WARNING:") and res != cleaned:
+                _TRANSLATION_CACHE[cleaned] = res.strip()
+                return res.strip()
+    except Exception:
+        pass
+
+    return f"Lesson text: {cleaned[:80]}"
 
 
 def _clean_ocr_paragraphs(raw_text: str, printed_page: int) -> list[str]:
@@ -188,8 +206,15 @@ def _clean_ocr_paragraphs(raw_text: str, printed_page: int) -> list[str]:
 
 def get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | None = None):
     """Fetch OCR transcription, image reference, and dual-language translation for a book page."""
+    is_gr8 = bool(edition_id and ("gr8" in edition_id.lower() or "grade8" in edition_id.lower() or "grade_8" in edition_id.lower()))
     is_gr7 = bool(edition_id and ("gr7" in edition_id.lower() or "grade7" in edition_id.lower() or "grade_7" in edition_id.lower()))
     is_gr6 = bool(edition_id and ("gr6" in edition_id.lower() or "grade6" in edition_id.lower() or "grade_6" in edition_id.lower()))
+
+    # Prioritize curated, verified pages for Grade 8 Volume 1 only
+    if is_gr8 and (not edition_id or "vol1" in edition_id.lower() or "term1" in edition_id.lower()):
+        from backend.grade8_textbook_data import GRADE_8_TEXTBOOK_PAGES_DATA
+        if pdf_page in GRADE_8_TEXTBOOK_PAGES_DATA or str(pdf_page) in GRADE_8_TEXTBOOK_PAGES_DATA:
+            return get_page_ocr_data(pdf_page, edition_id=edition_id)
 
     # Prioritize curated, verified pages for Grade 7 Volume 1 only
     if is_gr7 and (not edition_id or "vol1" in edition_id.lower() or "term1" in edition_id.lower()):
@@ -267,11 +292,10 @@ def get_page_image(pdf_page: int, edition_id: str | None = None):
     if legacy_path.is_file():
         return str(legacy_path)
         
-    # 3. Search across all edition subfolders (only when edition_id is omitted)
-    if not edition_id:
-        matches = list(base_dir.glob(f"*/page_{pdf_page}.png"))
-        if matches:
-            return str(matches[0])
+    # 3. Search across all edition subfolders as fallback
+    matches = list(base_dir.glob(f"*/page_{pdf_page}.png"))
+    if matches:
+        return str(matches[0])
 
     raise ApplicationError(status_code=404, detail=f"Page image for page {pdf_page} not found")
 
@@ -312,11 +336,13 @@ def get_textbook_library(db: Session):
 def get_textbook_pages(edition_id: str, db: Session):
     """Fetch all indexed pages with OCR text preview, English translation, and image references for a specific textbook edition."""
     from backend.models import ScannedPage
+    is_gr8 = bool("gr8" in edition_id.lower() or "grade8" in edition_id.lower())
     is_gr7 = bool("gr7" in edition_id.lower() or "grade7" in edition_id.lower())
     is_gr6 = bool("gr6" in edition_id.lower() or "grade6" in edition_id.lower())
     is_gr5 = bool("gr5" in edition_id.lower() or "grade5" in edition_id.lower())
 
     from backend.ocr_reader import TEXTBOOK_PAGES_DATA, GRADE_6_TEXTBOOK_PAGES_DATA, GRADE_7_TEXTBOOK_PAGES_DATA
+    from backend.grade8_textbook_data import GRADE_8_TEXTBOOK_PAGES_DATA
 
     pages = db.query(ScannedPage).filter(
         ScannedPage.book_edition_id == edition_id
@@ -325,7 +351,9 @@ def get_textbook_pages(edition_id: str, db: Session):
     result = []
     for p in pages:
         curated = None
-        if is_gr7:
+        if is_gr8:
+            curated = GRADE_8_TEXTBOOK_PAGES_DATA.get(p.pdf_page) or GRADE_8_TEXTBOOK_PAGES_DATA.get(str(p.pdf_page))
+        elif is_gr7:
             curated = GRADE_7_TEXTBOOK_PAGES_DATA.get(p.pdf_page) or GRADE_7_TEXTBOOK_PAGES_DATA.get(str(p.pdf_page))
         elif is_gr6:
             curated = GRADE_6_TEXTBOOK_PAGES_DATA.get(p.pdf_page) or GRADE_6_TEXTBOOK_PAGES_DATA.get(str(p.pdf_page))

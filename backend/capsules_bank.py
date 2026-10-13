@@ -661,13 +661,22 @@ CAPSULES_DATA: List[Dict[str, Any]] = [
 ]
 
 def get_all_capsules(grade: Any = None) -> List[Dict[str, Any]]:
-    """Return all available microlearning capsules, optionally filtered by grade."""
+    """Return all available microlearning capsules, optionally filtered by grade.
+
+    Grades without hand-authored capsules get capsules generated from that
+    grade's official syllabus (instead of returning the full, Grade 5-first list).
+    """
     if grade is not None:
         try:
             g = int(grade)
             filtered = [c for c in CAPSULES_DATA if c.get("grade") == g]
             if filtered:
                 return filtered
+            if 1 <= g <= 12:
+                from backend.generated_study_content import generate_capsules
+                generated = generate_capsules(g)
+                if generated:
+                    return generated
         except (ValueError, TypeError):
             pass
     return CAPSULES_DATA
@@ -677,4 +686,8 @@ def get_capsule_by_id(capsule_id: str) -> Dict[str, Any]:
     for c in CAPSULES_DATA:
         if c["id"] == capsule_id:
             return c
+    from backend.generated_study_content import get_generated_capsule
+    generated = get_generated_capsule(capsule_id)
+    if generated is not None:
+        return generated
     return CAPSULES_DATA[0]

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   BookOpen, BookText, Clock, FlaskConical, Sparkles,
   Target, Trophy, User as UserIcon, LogOut,
-  Smartphone, Monitor, ChevronRight, CheckCircle, ShieldCheck, Settings
+  Smartphone, Monitor, ChevronRight, CheckCircle, ShieldCheck, Settings, GitFork
 } from 'lucide-react';
 import { User, ChildProfile } from '../../types';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
@@ -10,6 +10,7 @@ import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 interface SidebarProps {
   user: User | null;
   activeChild: ChildProfile | null;
+  selectedGrade?: number;
   currentView: string;
   onSelectView: (view: string) => void;
   onOpenAuth: () => void;
@@ -32,6 +33,7 @@ const AVATAR_ICONS: Record<string, string> = {
 export const Sidebar: React.FC<SidebarProps> = ({
   user,
   activeChild,
+  selectedGrade,
   currentView,
   onSelectView,
   onOpenAuth,
@@ -42,6 +44,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile = false,
   onCloseMobile
 }) => {
+  const displayGrade = user?.role === 'admin'
+    ? (selectedGrade || 8)
+    : (activeChild?.default_grade || selectedGrade || 5);
   const activeAvatar = AVATAR_ICONS[activeChild?.avatar_id || 'avatar_falcon'] || '🦅';
 
   const menuItems = [
@@ -60,6 +65,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: BookOpen,
       badge: 'Ch. 1 Full (p. 6–15)',
       isView: (v: string) => v === 'reader'
+    },
+    {
+      id: 'mindmaps',
+      titleEn: 'Mindmaps & Flowcharts',
+      titleAr: 'خرائط المفاهيم والتدفق',
+      icon: GitFork,
+      badge: 'Visual AI',
+      isView: (v: string) => v === 'mindmaps'
     },
     {
       id: 'malazim',
@@ -168,12 +181,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
               <div className="truncate">
                 <div className="text-xs font-bold text-slate-900 truncate">
-                  {activeChild?.name || user?.email?.split('@')[0] || 'Guest Student'}
+                  {user?.role === 'admin' ? 'Admin Supervisor' : (activeChild?.name || user?.email?.split('@')[0] || 'Guest Student')}
                 </div>
                 <div className="text-[10px] text-[#6C5CE7] font-semibold flex items-center gap-1">
-                  <span>الصف {activeChild?.default_grade || 5}</span>
+                  <span>الصف {displayGrade}</span>
                   <span className="text-slate-300">•</span>
-                  <span>Grade {activeChild?.default_grade || 5} {activeChild?.curriculum_stream ? (activeChild.curriculum_stream.includes('Non-Arabs') || activeChild.curriculum_stream.includes('B') ? 'Arabic B' : activeChild.curriculum_stream) : 'Arabic B'}</span>
+                  <span>Grade {displayGrade} {activeChild?.curriculum_stream ? (activeChild.curriculum_stream.includes('Non-Arabs') || activeChild.curriculum_stream.includes('B') ? 'Arabic B' : activeChild.curriculum_stream) : 'Arabic B'}</span>
                 </div>
               </div>
             </div>

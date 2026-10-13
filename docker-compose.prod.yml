@@ -74,6 +74,8 @@ services:
     volumes:
       - audio_cache:/app/tmp/audio-cache
       - task_artifacts:/app/tmp/task-artifacts
+      - ./pdf_pages_sample:/app/pdf_pages_sample:ro
+      - ./vision-output-new:/app/vision-output-new:ro
     networks:
       - jisr_net
     healthcheck:
@@ -121,6 +123,8 @@ services:
     volumes:
       - audio_cache:/app/tmp/audio-cache
       - task_artifacts:/app/tmp/task-artifacts
+      - ./pdf_pages_sample:/app/pdf_pages_sample:ro
+      - ./vision-output-new:/app/vision-output-new:ro
     networks:
       - jisr_net
     healthcheck:

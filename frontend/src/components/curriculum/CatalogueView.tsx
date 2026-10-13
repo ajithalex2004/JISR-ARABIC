@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   BookOpen, Lock, Unlock, Play, CheckCircle2, Clock, Sparkles,
   ChevronRight, FlaskConical, BookText, Mic, Volume2, ArrowRight,
-  Award, FileText, CheckCircle, GraduationCap, Calendar
+  Award, FileText, CheckCircle, GraduationCap, Calendar, GitFork
 } from 'lucide-react';
 import { LessonSummary, TermSummary, ChildProfile, User } from '../../types';
 import { api } from '../../services/api';
@@ -16,6 +16,8 @@ interface CatalogueViewProps {
   onOpenOnboarding?: () => void;
   onSelectView?: (view: string) => void;
   onOpenAskFahim?: () => void;
+  initialGrade?: number;
+  onSelectGrade?: (grade: number) => void;
 }
 
 export const CatalogueView: React.FC<CatalogueViewProps> = ({
@@ -25,7 +27,9 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
   onOpenPaywall,
   onOpenOnboarding,
   onSelectView,
-  onOpenAskFahim
+  onOpenAskFahim,
+  initialGrade,
+  onSelectGrade
 }) => {
   const availableGrades = React.useMemo(() => {
     if (user?.role === 'admin') {
@@ -44,13 +48,28 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
     return [5];
   }, [user, activeChild]);
 
-  const [selectedGrade, setSelectedGrade] = useState<number>(() => {
-    return activeChild?.default_grade || 5;
+  const [selectedGrade, setSelectedGradeState] = useState<number>(() => {
+    if (initialGrade && (user?.role === 'admin' || !activeChild?.default_grade)) {
+      return initialGrade;
+    }
+    return activeChild?.default_grade || initialGrade || 5;
   });
   const [selectedTerm, setSelectedTerm] = useState<number>(1);
   const [terms, setTerms] = useState<TermSummary[]>([]);
   const [lessons, setLessons] = useState<LessonSummary[]>([]);
   const [loadError, setLoadError] = useState('');
+
+  // Keep the app-wide grade (used by Textbook, Mindmaps, Booklets, Capsules) in sync.
+  const setSelectedGrade = (g: number) => {
+    setSelectedGradeState(g);
+    onSelectGrade?.(g);
+  };
+
+  useEffect(() => {
+    if (initialGrade && initialGrade !== selectedGrade && availableGrades.includes(initialGrade)) {
+      setSelectedGradeState(initialGrade);
+    }
+  }, [initialGrade]);
 
   useEffect(() => {
     if (availableGrades.length > 0 && !availableGrades.includes(selectedGrade)) {
@@ -59,10 +78,10 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
   }, [availableGrades, selectedGrade]);
 
   useEffect(() => {
-    if (activeChild?.default_grade && availableGrades.includes(activeChild.default_grade)) {
+    if (user?.role !== 'admin' && activeChild?.default_grade && availableGrades.includes(activeChild.default_grade)) {
       setSelectedGrade(activeChild.default_grade);
     }
-  }, [activeChild, availableGrades]);
+  }, [activeChild, availableGrades, user?.role]);
 
   const loadData = async () => {
     setLoadError('');
@@ -266,6 +285,34 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
               <div className="text-[11px] text-emerald-300 font-medium">Chapter 1 Active</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Visual Learning Showcase: Mindmaps & Flowcharts */}
+      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl relative overflow-hidden border border-indigo-500/30">
+        <div className="absolute -right-10 -bottom-10 w-52 h-52 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/30 border border-indigo-400/30 text-xs font-bold text-amber-300">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>جديد • دراسة بصرية تفاعلية (NEW • VISUAL LEARNING)</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
+              <GitFork className="w-7 h-7 text-amber-300 transform rotate-90" />
+              <span>خرائط المفاهيم والتدفق الذهني (Mindmaps & Flowcharts)</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-indigo-200 max-w-2xl leading-relaxed">
+              Interactive concept mindmaps for lessons, syntax decision flowcharts & grammar rules tree designed for quick visual mastery.
+            </p>
+          </div>
+
+          <button
+            onClick={() => onSelectView && onSelectView('mindmaps')}
+            className="shrink-0 px-6 py-3.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2.5 cursor-pointer self-start md:self-auto"
+          >
+            <span>استكشف خرائط المفاهيم (Open Mindmaps)</span>
+            <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+          </button>
         </div>
       </div>
 

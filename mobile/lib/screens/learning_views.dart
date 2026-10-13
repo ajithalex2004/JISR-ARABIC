@@ -2674,12 +2674,18 @@ class MalazimView extends StatefulWidget {
   final VoidCallback? onBack;
   final Function(String)? onVocalize;
   final String activeWord;
+  final int grade;
+  final ApiService? api;
+  final String? token;
 
   const MalazimView({
     super.key,
     this.onBack,
     this.onVocalize,
     this.activeWord = '',
+    this.grade = 5,
+    this.api,
+    this.token,
   });
 
   @override
@@ -2690,8 +2696,147 @@ class _MalazimViewState extends State<MalazimView> {
   String _mode = 'study'; // 'study' or 'quick_review'
   final Map<String, int> _selectedAnswers = {};
   final Map<String, bool> _submittedExercises = {};
+  List<Map<String, dynamic>> _sections = [];
 
-  final List<Map<String, dynamic>> _sections = [
+  @override
+  void initState() {
+    super.initState();
+    _sections = _getFallbackSections(widget.grade);
+    _fetchLiveMalazim();
+  }
+
+  void _fetchLiveMalazim() async {
+    if (widget.api != null) {
+      try {
+        final res = await widget.api!.malazim(grade: widget.grade, token: widget.token);
+        if (res != null && res['study_mode'] is Map && res['study_mode']['sections'] is List && mounted) {
+          final liveSecs = (res['study_mode']['sections'] as List).map((s) {
+            final m = Map<String, dynamic>.from(s as Map);
+            final ex = m['inline_exercise'] is Map ? Map<String, dynamic>.from(m['inline_exercise']) : null;
+            return {
+              'id': m['section_id'] ?? 'sec_01',
+              'title_ar': m['title_ar'] ?? '',
+              'title_en': m['title_en'] ?? '',
+              'content_ar': m['content_ar'] ?? '',
+              'content_en': m['content_en'] ?? '',
+              'takeaways': (m['key_takeaways_ar'] as List? ?? []).map((t) => {'ar': t.toString(), 'en': ''}).toList(),
+              'question_ar': ex?['question_ar'] ?? '',
+              'question_en': ex?['question_en'] ?? '',
+              'options_ar': ex?['options'] is List ? (ex!['options'] as List).cast<String>() : <String>[],
+              'options_en': ex?['options_en'] is List ? (ex!['options_en'] as List).cast<String>() : <String>[],
+              'correct_idx': ex?['correct_index'] ?? 0,
+              'explanation_ar': ex?['explanation_ar'] ?? '',
+              'explanation_en': ex?['explanation_en'] ?? '',
+            };
+          }).toList();
+          if (liveSecs.isNotEmpty) {
+            setState(() => _sections = liveSecs);
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  List<Map<String, dynamic>> _getFallbackSections(int grade) {
+    if (grade == 6) {
+      return _grade6Sections;
+    } else if (grade == 7) {
+      return _grade7Sections;
+    } else if (grade == 8) {
+      return _grade8Sections;
+    }
+    return _grade5Sections;
+  }
+
+  static final List<Map<String, dynamic>> _grade7Sections = [
+    {
+      'id': 'sec_g7_01',
+      'title_ar': '١. وثيقة الأخوة الإنسانية وقيم التسامح في الإمارات',
+      'title_en': '1. Document on Human Fraternity & Values of Tolerance',
+      'content_ar':
+          'تُعَدُّ وَثِيقَةُ الأُخُوَّةِ الإِنْسَانِيَّةِ الَّتِي وُقِّعَتْ فِي أَبُوظَبِي إِعْلَانًا تَارِيخِيًّا لِتَعْزِيزِ الحِوَارِ وَالتَّعَايُشِ السِّلْمِيِّ وَاحْتِرَامِ الآخَرِ، وَتُجَسِّدُ نَهْجَ دَوْلَةِ الإِمَارَاتِ فِي تَرْسِيخِ الأُخُوَّةِ بَيْنَ الشُّعُوبِ.',
+      'content_en':
+          'The Document on Human Fraternity signed in Abu Dhabi is a landmark declaration fostering dialogue, peaceful coexistence, and mutual respect, reflecting the UAE\'s steadfast mission in universal fraternity.',
+      'takeaways': [
+        {'ar': 'وثيقة الأخوة الإنسانية: ميثاق عالمي للتعايش المشترك والسلام.', 'en': 'Human Fraternity Document: Global charter for coexistence and peace.'},
+        {'ar': 'التسامح: ركيزة أساسية في الهوية والمجتمع الإماراتي.', 'en': 'Tolerance: A foundational pillar of UAE society.'},
+      ],
+      'question_ar': 'أين تم توقيع وثيقة الأخوة الإنسانية التاريخية؟',
+      'question_en': 'Where was the historic Document on Human Fraternity signed?',
+      'options_ar': ['أبوظبي', 'القاهرة', 'لندن'],
+      'options_en': ['Abu Dhabi', 'Cairo', 'London'],
+      'correct_idx': 0,
+      'explanation_ar': 'صحيح! وُقّعت الوثيقة التاريخية في عاصمة دولة الإمارات أبوظبي عام 2019.',
+      'explanation_en': 'Correct! Signed in Abu Dhabi, capital of the UAE, in 2019.',
+    },
+  ];
+
+  static final List<Map<String, dynamic>> _grade6Sections = [
+    {
+      'id': 'sec_g6_01',
+      'title_ar': '١. مفهوم الحاجات والرغبات والوعي المالي',
+      'title_en': '1. Needs vs. Desires & Financial Literacy',
+      'content_ar':
+          'يُمَيِّزُ عِلْمُ الِاقْتِصَادِ وَاللُّغَةِ بَيْنَ نَوْعَيْنِ مِنَ المُتَطَلَّبَاتِ:\n١. الحَاجَاتُ: كُلُّ مَا يَلْزَمُ الإِنْسَانَ لِلْبَقَاءِ عَلَى قَيْدِ الحَيَاةِ (كَالمَاءِ، الطَّعَامِ، المَسْكَنِ، وَالدَّوَاءِ).\n٢. الرَّغَبَاتُ: الأَشْيَاءُ التَّحْسِينِيَّةُ وَالتَّرْفِيهِيَّةُ الَّتِي يُمْكِنُ الاسْتِغْنَاءُ عَنْهَا أَوْ تَأْجِيلُهَا (كَالأَلْعَابِ، السَّاعَاتِ الفَاخِرَةِ، وَالسَّفَرِ التَّرْفِيهِيِّ).',
+      'content_en':
+          'Economics and language distinguish between two essential categories:\n1. Needs: What sustains human survival (water, food, shelter, medicine).\n2. Desires/Wants: Upgrades and leisure items that can be postponed or dispensed with without risking life (video games, luxury watches, leisure travel).',
+      'takeaways': [
+        {'ar': 'الحاجات: ضرورية للبقاء ولا يمكن الاستغناء عنها.', 'en': 'Needs: Essential for survival.'},
+        {'ar': 'الرغبات: تحسينية وترفيهية يمكن الاستغناء عنها.', 'en': 'Desires: Luxury additions that can be postponed.'},
+      ],
+      'question_ar': 'أي من العناصر التالية يصنف ضمن (الرغبات) وليس (الحاجات)؟',
+      'question_en': 'Which of the following is classified as a Desire rather than a Need?',
+      'options_ar': ['الغذاء الصحي', 'الدواء عند المرض', 'ساعة ذكية فاخرة'],
+      'options_en': ['Healthy food', 'Medicine when sick', 'A luxury smartwatch'],
+      'correct_idx': 2,
+      'explanation_ar': 'أحسنت! الساعة الذكية الفاخرة رغبة تحسينية وترفيهية وليست حاجة بقاء.',
+      'explanation_en': 'Correct! A luxury smartwatch is a leisure want, not a survival need.',
+    },
+    {
+      'id': 'sec_g6_02',
+      'title_ar': '٢. الأسلوب الخبري والإنشائي الطلبي',
+      'title_en': '2. Declarative Style vs. Creative Request Style',
+      'content_ar':
+          'يَنْقَسِمُ الكَلَامُ فِي اللُّغَةِ العَرَبِيَّةِ إِلَى:\n١. الأُسْلُوبُ الخَبَرِيُّ: كَلَامٌ يَحْتَمِلُ الصِّدْقَ أَوِ الكَذِبَ (مِثْلَ: الأَلْعَابُ الإِلِكْتُرُونِيَّةُ مِنَ الرَّغَبَاتِ).\n٢. الأُسْلُوبُ الإِنْشَائِيُّ الطَّلَبِيُّ: لَا يَحْتَمِلُ الصِّدْقَ وَالكَذِبَ، وَمِنْهُ الِاسْتِفْهَامُ (هَلْ تَعْلَمُ؟)، وَالنِّدَاءُ (يَا بُنَيَّ)، وَالنَّهْيُ (لَا تُسْرِفْ).',
+      'content_en':
+          'Arabic discourse is structured into:\n1. Declarative Style: A proposition verifiable as true or false.\n2. Creative Request Style: Inquiries (Hal/Kayfa), Calling (Yaa), Prohibitions (Laa tusrif), and Commands.',
+      'takeaways': [
+        {'ar': 'الأسلوب الخبري: يحتمل الصدق والكذب.', 'en': 'Declarative: Verifiable true or false.'},
+        {'ar': 'الأسلوب الإنشائي: استفهام، نداء، نهي، أمر.', 'en': 'Creative: Questions, calls, prohibitions.'},
+      ],
+      'question_ar': 'ما نوع الأسلوب في جملة: (كَيْفَ تُقَسِّمُ مَصْرُوفَكَ الشَّهْرِيَّ؟)؟',
+      'question_en': 'What is the sentence style in: "How do you allocate your monthly allowance?"?',
+      'options_ar': ['أسلوب خبري', 'أسلوب إنشائي طلبي (استفهام)', 'أسلوب تعجب'],
+      'options_en': ['Declarative style', 'Creative style (Question)', 'Exclamatory style'],
+      'correct_idx': 1,
+      'explanation_ar': 'صحيح! الجملة سؤال تبدأ بأداة استفهام، فهو أسلوب إنشائي طلبي.',
+      'explanation_en': 'Correct! Beginning with a question word, it is Creative Interrogative style.',
+    },
+  ];
+
+  static final List<Map<String, dynamic>> _grade8Sections = [
+    {
+      'id': 'sec_g8_01',
+      'title_ar': '١. روائع شعر المتنبي ومفهوم الحكمة',
+      'titleEn': '1. Masterpieces of Al-Mutanabbi & Wisdom',
+      'content_ar':
+          'يُعَدُّ أَبُو الطَّيِّبِ المُتَنَبِّي شَاعِرَ العَرَبِيَّةِ الأَكْبَرَ، حَيْثُ تَمَيَّزَ شِعْرُهُ بِالحِكْمَةِ البَالِغَةِ وَالفَصَاحَةِ المُطْلَقَةِ وَالاعْتِزَازِ بِالنَّفْسِ، وَصَارَتْ أَبْيَاتُهُ أَمْثَالًا سَائِرَةً بَيْنَ النَّاسِ.',
+      'content_en':
+          'Abu al-Tayyib al-Mutanabbi is celebrated as the foremost poet of the Arabic language, famed for his philosophical wisdom, supreme eloquence, and proud heroic verses that became enduring proverbs.',
+      'takeaways': [
+        {'ar': 'المتنبي: شاعر الحكمة والفروسية والفصاحة.', 'en': 'Al-Mutanabbi: Poet of wisdom, chivalry, and eloquence.'},
+      ],
+      'question_ar': 'بم اشتهر شعر أبي الطيب المتنبي؟',
+      'question_en': 'What was the hallmark of Abu al-Tayyib al-Mutanabbi\'s poetry?',
+      'options_ar': ['الحكمة البالغة والفروسية', 'الشعر الهزلي', 'القصص الخيالية'],
+      'options_en': ['Philosophical wisdom & valor', 'Humorous poetry', 'Fantasy tales'],
+      'correct_idx': 0,
+      'explanation_ar': 'أحسنت! اشتهر المتنبي بأبيات الحكمة والفروسية وفصاحة البيان.',
+      'explanation_en': 'Well done! Renowned for philosophical wisdom, chivalry, and eloquent eloquence.',
+    },
+  ];
+
+  static final List<Map<String, dynamic>> _grade5Sections = [
     {
       'id': 'sec_01',
       'title_ar': '١. مفهوم الكرة ولقب (الساحرة المستديرة)',
@@ -3554,12 +3699,18 @@ class CapsulesView extends StatefulWidget {
   final Set<String> completedCapsules;
   final Function(String id) onCapsuleCompleted;
   final VoidCallback? onBack;
+  final int grade;
+  final ApiService? api;
+  final String? token;
 
   const CapsulesView({
     super.key,
     required this.completedCapsules,
     required this.onCapsuleCompleted,
     this.onBack,
+    this.grade = 5,
+    this.api,
+    this.token,
   });
 
   @override
@@ -3567,7 +3718,142 @@ class CapsulesView extends StatefulWidget {
 }
 
 class _CapsulesViewState extends State<CapsulesView> {
-  final List<Map<String, String>> _capsulesList = [
+  List<Map<String, String>> _capsulesList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _capsulesList = _getFallbackCapsules(widget.grade);
+    _fetchLiveCapsules();
+  }
+
+  void _fetchLiveCapsules() async {
+    if (widget.api != null) {
+      try {
+        final res = await widget.api!.capsules(grade: widget.grade, token: widget.token);
+        if (res is List && res.isNotEmpty && mounted) {
+          final liveCaps = res.map((c) {
+            final m = Map<String, dynamic>.from(c as Map);
+            return {
+              'id': m['id']?.toString() ?? '',
+              'title': m['title_ar']?.toString() ?? '',
+              'titleEn': m['title_en']?.toString() ?? '',
+              'duration': '${m['duration_minutes'] ?? 3} دقائق',
+              'durationEn': '${m['duration_minutes'] ?? 3} mins',
+              'rule': m['summary_ar']?.toString() ?? '',
+              'ruleEn': m['summary_en']?.toString() ?? '',
+            };
+          }).toList();
+          if (liveCaps.isNotEmpty) {
+            setState(() => _capsulesList = liveCaps);
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  List<Map<String, String>> _getFallbackCapsules(int grade) {
+    if (grade == 6) {
+      return _grade6Capsules;
+    } else if (grade == 7) {
+      return _grade7Capsules;
+    } else if (grade == 8) {
+      return _grade8Capsules;
+    }
+    return _grade5Capsules;
+  }
+
+  static final List<Map<String, String>> _grade7Capsules = [
+    {
+      'id': 'capsule_g7_01',
+      'title': 'إن وأخواتها والحروف الناسخة',
+      'titleEn': 'Inna & Its Sisters (Accusative Particles)',
+      'duration': '3 دقائق',
+      'durationEn': '3 mins',
+      'rule': 'إِنَّ، أَنَّ، كَأَنَّ، لَكِنَّ، لَيْتَ، لَعَلَّ: تَنْصِبُ المبتدأ وترفع الخبر.',
+      'ruleEn': 'Enters nominal sentence: makes subject accusative and keeps predicate nominative.',
+    },
+    {
+      'id': 'capsule_g7_02',
+      'title': 'تراث الغوص ومصطلحات البحر',
+      'titleEn': 'Pearl Diving Heritage & Sea Terminology',
+      'duration': '4 دقائق',
+      'durationEn': '4 mins',
+      'rule': 'الغيص (الغواص)، السيب (ساحب الحبل)، النوخذة (ربان السفينة)، والطواش (تاجر اللؤلؤ).',
+      'ruleEn': 'Maritime hierarchy: Ghais (diver), Saib (lifeline hauler), Noukhada (captain), Tawash (merchant).',
+    },
+  ];
+
+  static final List<Map<String, String>> _grade6Capsules = [
+    {
+      'id': 'capsule_g6_01',
+      'title': 'الوعي المالي: التفريق بين الحاجات والرغبات',
+      'titleEn': 'Financial Literacy: Needs vs. Desires',
+      'duration': '3 دقائق',
+      'durationEn': '3 mins',
+      'rule': 'الحاجة ضرورية للبقاء (ماء، طعام، دواء)، والرغبة تحسينية وترفيهية يمكن الاستغناء عنها.',
+      'ruleEn': 'Needs are vital for survival; desires are luxury additions that can be postponed.',
+    },
+    {
+      'id': 'capsule_g6_02',
+      'title': 'الأسلوب الخبري والإنشائي الطلبي',
+      'titleEn': 'Declarative vs. Creative Request Style',
+      'duration': '4 دقائق',
+      'durationEn': '4 mins',
+      'rule': 'الخبري يحتمل الصدق والكذب، والإنشائي الطلبي يشمل الاستفهام (هل/كيف)، والنداء (يا)، والنهي (لا).',
+      'ruleEn': 'Declarative is verifiable as true/false; creative request includes inquiries, calls, and prohibitions.',
+    },
+    {
+      'id': 'capsule_g6_03',
+      'title': 'الهمزة المتوسطة وقوة الحركات',
+      'titleEn': 'Middle Hamza & Vowel Strength Hierarchy',
+      'duration': '4 دقائق',
+      'durationEn': '4 mins',
+      'rule': 'صراع الحركات: الكسرة أقوى (نبرة ئـ) > الضمة (واو ؤ) > الفتحة (ألف أ) > السكون.',
+      'ruleEn': 'Vowel battle: Kasrah wins (Nabrah), then Dammah (Waw), then Fathah (Alif), then Sukun.',
+    },
+    {
+      'id': 'capsule_g6_04',
+      'title': 'حروف الجر وعلامة الكسرة',
+      'titleEn': 'Prepositions & Genitive Case',
+      'duration': '3 دقائق',
+      'durationEn': '3 mins',
+      'rule': 'مِنْ، إِلَى، عَنْ، عَلَى، فِي، الباء، الكاف، اللام: تجر الاسم بعدها بالكسرة الظاهرة.',
+      'ruleEn': 'Prepositions govern following singular nouns into the genitive case with Kasrah.',
+    },
+    {
+      'id': 'capsule_g6_05',
+      'title': 'كان وأخواتها والأفعال الناسخة',
+      'titleEn': 'Kana & Its Sisters (Incomplete Verbs)',
+      'duration': '4 دقائق',
+      'durationEn': '4 mins',
+      'rule': 'تدخل على الجملة الاسمية فترفع المبتدأ ويسمى اسمها، وتنصب الخبر ويسمى خبرها.',
+      'ruleEn': 'Enters nominal sentence: keeps subject nominative and makes predicate accusative.',
+    },
+  ];
+
+  static final List<Map<String, String>> _grade8Capsules = [
+    {
+      'id': 'capsule_g8_01',
+      'title': 'الفعل المبني للمجهول ونائب الفاعل',
+      'titleEn': 'Passive Voice & Pro-Agent (Na\'ib al-Fa\'il)',
+      'duration': '4 دقائق',
+      'durationEn': '4 mins',
+      'rule': 'يُحذف الفاعل ويحل المفعول به محله مرفوعاً: (نُظِّمَ المِهْرَجَانُ).',
+      'ruleEn': 'Active doer is omitted, and direct object takes nominative pro-agent role.',
+    },
+    {
+      'id': 'capsule_g8_02',
+      'title': 'بلاغة التشبيه وأركانه الأربعة',
+      'titleEn': 'Rhetoric: Four Pillars of Simile',
+      'duration': '4 دقائق',
+      'durationEn': '4 mins',
+      'rule': 'المشبه + أداة التشبيه + المشبه به + وجه الشبه: (العِلْمُ كَالنُّورِ فِي الهِدَايَةِ).',
+      'ruleEn': 'Topic + Comparator Particle + Vehicle + Ground of Comparison.',
+    },
+  ];
+
+  static final List<Map<String, String>> _grade5Capsules = [
     {
       'id': 'capsule_01_taa_marbutah',
       'title': 'التاء المربوطة (ـة) والهاء (ـه)',

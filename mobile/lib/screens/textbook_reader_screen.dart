@@ -50,18 +50,18 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
   String get _currentEditionId => 'moe_gr${_currentGrade}_vol${_currentTerm}_2023';
 
   static const List<Map<String, dynamic>> _chapterJumps = [
+    {'chapter': 0, 'pdf': 5, 'print': 3, 'titleAr': 'المقدمة', 'titleEn': 'Introduction'},
     {'chapter': 0, 'pdf': 6, 'print': 4, 'titleAr': 'الغلاف والوحدة الأولى', 'titleEn': 'Unit 1 Cover'},
-    {'chapter': 0, 'pdf': 7, 'print': 5, 'titleAr': 'فهرس الموضوعات', 'titleEn': 'Table of Contents'},
-    {'chapter': 1, 'pdf': 8, 'print': 6, 'titleAr': 'الدرس 1: ألعاب الكرة', 'titleEn': 'Ch 1: Ball Games'},
-    {'chapter': 2, 'pdf': 18, 'print': 16, 'titleAr': 'الدرس 2: ركوب الخيل', 'titleEn': 'Ch 2: Horse Riding'},
-    {'chapter': 3, 'pdf': 28, 'print': 26, 'titleAr': 'الدرس 3: الجري', 'titleEn': 'Ch 3: Running'},
-    {'chapter': 4, 'pdf': 38, 'print': 36, 'titleAr': 'الدرس 4: الفنون', 'titleEn': 'Ch 4: Arts'},
-    {'chapter': 5, 'pdf': 48, 'print': 46, 'titleAr': 'الدرس 5: القراءة', 'titleEn': 'Ch 5: Reading'},
-    {'chapter': 6, 'pdf': 58, 'print': 56, 'titleAr': 'الدرس 6: في مدرستي', 'titleEn': 'Ch 6: At My School'},
-    {'chapter': 7, 'pdf': 68, 'print': 66, 'titleAr': 'الدرس 7: في بيتي', 'titleEn': 'Ch 7: At My Home'},
-    {'chapter': 8, 'pdf': 78, 'print': 76, 'titleAr': 'الدرس 8: طعامي', 'titleEn': 'Ch 8: My Food'},
-    {'chapter': 9, 'pdf': 88, 'print': 86, 'titleAr': 'الدرس 9: ملابسي', 'titleEn': 'Ch 9: My Clothes'},
-    {'chapter': 10, 'pdf': 98, 'print': 96, 'titleAr': 'الدرس 10: وقت المرح', 'titleEn': 'Ch 10: Fun Time'},
+    {'chapter': 1, 'pdf': 7, 'print': 6, 'titleAr': 'الدرس 1: ألعاب الكرة', 'titleEn': 'Ch 1: Ball Games'},
+    {'chapter': 2, 'pdf': 17, 'print': 16, 'titleAr': 'الدرس 2: ركوب الخيل', 'titleEn': 'Ch 2: Horse Riding'},
+    {'chapter': 3, 'pdf': 27, 'print': 26, 'titleAr': 'الدرس 3: الجري', 'titleEn': 'Ch 3: Running'},
+    {'chapter': 4, 'pdf': 37, 'print': 36, 'titleAr': 'الدرس 4: الفنون', 'titleEn': 'Ch 4: Arts'},
+    {'chapter': 5, 'pdf': 47, 'print': 46, 'titleAr': 'الدرس 5: القراءة', 'titleEn': 'Ch 5: Reading'},
+    {'chapter': 6, 'pdf': 57, 'print': 56, 'titleAr': 'الدرس 6: في مدرستي', 'titleEn': 'Ch 6: At My School'},
+    {'chapter': 7, 'pdf': 67, 'print': 66, 'titleAr': 'الدرس 7: في بيتي', 'titleEn': 'Ch 7: At My Home'},
+    {'chapter': 8, 'pdf': 77, 'print': 76, 'titleAr': 'الدرس 8: طعامي', 'titleEn': 'Ch 8: My Food'},
+    {'chapter': 9, 'pdf': 87, 'print': 86, 'titleAr': 'الدرس 9: ملابسي', 'titleEn': 'Ch 9: My Clothes'},
+    {'chapter': 10, 'pdf': 97, 'print': 96, 'titleAr': 'الدرس 10: وقت المرح', 'titleEn': 'Ch 10: Fun Time'},
   ];
 
   @override
@@ -143,6 +143,7 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
   }
 
   ChapterPage? get _staticChapterPageData {
+    if (_currentGrade != 5 || _currentTerm != 1) return null;
     try {
       return kChapter1Pages.firstWhere((p) => p.pdfPage == _currentPdfPage);
     } catch (_) {
@@ -187,9 +188,10 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
         final start = l['start_page'] is int
             ? l['start_page'] as int
             : (int.tryParse(l['start_page']?.toString() ?? '1') ?? 1);
+        final pdfStart = (_currentGrade == 5 && _currentTerm == 1) ? (start + 1) : start;
         return {
           'chapter': order,
-          'pdf': start,
+          'pdf': pdfStart,
           'print': start,
           'titleAr': l['title_ar']?.toString() ?? 'الدرس $order',
           'titleEn': l['title_en']?.toString() ?? 'Lesson $order',
@@ -251,7 +253,10 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
     }
     final st = _staticChapterPageData;
     if (_currentGrade == 5 && _currentTerm == 1 && st != null) return st.printedPage;
-    return _currentPdfPage >= 3 ? (_currentPdfPage - 2) : _currentPdfPage;
+    if (_currentGrade == 5 && _currentTerm == 1) {
+      return (_currentPdfPage >= 2 ? (_currentPdfPage - 1) : _currentPdfPage);
+    }
+    return _currentPdfPage;
   }
 
   void _openFullScreenZoom() {
@@ -327,17 +332,25 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
                       minScale: 0.8,
                       maxScale: 5.0,
                       child: Center(
-                        child: Image.asset(
-                          'assets/pages/page_$pdfPage.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, error, stack) => Image.network(
-                            '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/$pdfPage?edition_id=$_currentEditionId',
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, error2, stack2) => const Center(
-                              child: Text('Page scan unavailable', style: TextStyle(color: Colors.white70)),
-                            ),
-                          ),
-                        ),
+                        child: (_currentGrade == 5 && _currentTerm == 1)
+                            ? Image.asset(
+                                'assets/pages/page_$pdfPage.png',
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, error, stack) => Image.network(
+                                  '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/$pdfPage?edition_id=$_currentEditionId',
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, error2, stack2) => const Center(
+                                    child: Text('Page scan unavailable', style: TextStyle(color: Colors.white70)),
+                                  ),
+                                ),
+                              )
+                            : Image.network(
+                                '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/$pdfPage?edition_id=$_currentEditionId',
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, error2, stack2) => const Center(
+                                  child: Text('Page scan unavailable', style: TextStyle(color: Colors.white70)),
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -934,22 +947,35 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
                         minScale: 1.0,
                         maxScale: 3.5,
                         child: Center(
-                          child: Image.asset(
-                            'assets/pages/page_$pdfPage.png',
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, error, stack) => Image.network(
-                              '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/$pdfPage?edition_id=$_currentEditionId',
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, error2, stack2) => Container(
-                                height: 200,
-                                alignment: Alignment.center,
-                                child: Text(
-                                  widget.isArabic ? 'صورة الصفحة قيد المراجعة' : 'Page scan loading / unavailable',
-                                  style: const TextStyle(color: Color(0xFF94A3B8)),
+                          child: (_currentGrade == 5 && _currentTerm == 1)
+                              ? Image.asset(
+                                  'assets/pages/page_$pdfPage.png',
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, error, stack) => Image.network(
+                                    '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/$pdfPage?edition_id=$_currentEditionId',
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, error2, stack2) => Container(
+                                      height: 200,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        widget.isArabic ? 'صورة الصفحة قيد المراجعة' : 'Page scan loading / unavailable',
+                                        style: const TextStyle(color: Color(0xFF94A3B8)),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Image.network(
+                                  '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/$pdfPage?edition_id=$_currentEditionId',
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, error2, stack2) => Container(
+                                    height: 200,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      widget.isArabic ? 'صورة الصفحة قيد المراجعة' : 'Page scan loading / unavailable',
+                                      style: const TextStyle(color: Color(0xFF94A3B8)),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
                         ),
                       ),
                     ),

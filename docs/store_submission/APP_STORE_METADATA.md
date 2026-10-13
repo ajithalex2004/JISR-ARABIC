@@ -4,8 +4,8 @@
 **Secondary Language:** English (United States / UK / UAE)  
 **Target Category:** Education (التعليم)  
 **Target Age Rating:** 4+ (Apple) / Everyone (Google Play) / Ages 6-12 (Families Program)  
-**Official Website:** `https://jisr.ae`  
-**API & Backend Endpoint:** `https://api.jisr.ae` (AWS UAE `me-central-1`)  
+**Official Website:** `https://jisrarabic.com`  
+**API & Backend Endpoint:** `https://api.jisrarabic.com` (AWS UAE `me-central-1`)  
 
 ---
 
@@ -171,11 +171,11 @@ arabic,learn arabic,fahim,jisr,uae,curriculum,tutor,reading,speaking,grammar,dub
 
 | Parameter | Value |
 | :--- | :--- |
-| **Support URL** | `https://jisr.ae/support` |
-| **Marketing URL** | `https://jisr.ae` |
-| **Privacy Policy URL** | `https://jisr.ae/privacy` |
-| **Terms of Service URL** | `https://jisr.ae/terms` |
-| **Support Email** | `support@jisr.ae` |
+| **Support URL** | `https://jisrarabic.com/support` |
+| **Marketing URL** | `https://jisrarabic.com` |
+| **Privacy Policy URL** | `https://jisrarabic.com/privacy` |
+| **Terms of Service URL** | `https://jisrarabic.com/terms` |
+| **Support Email** | `support@jisrarabic.com` |
 | **Support Phone** | `+971 4 000 0000` (UAE) |
 | **Copyright Notice** | `© 2026 JISR EdTech FZ-LLC. All rights reserved.` |
 
@@ -186,7 +186,7 @@ arabic,learn arabic,fahim,jisr,uae,curriculum,tutor,reading,speaking,grammar,dub
 Both Apple App Store Review and Google Play Console require test credentials and review instructions:
 
 ### 5.1 Demo Review Account
-- **Demo Username / Email:** `reviewer@jisr.ae`
+- **Demo Username / Email:** `reviewer@jisrarabic.com`
 - **Demo Password:** `JISRReview2026!`
 - **Account Type:** Student (Pre-configured with Grade 4 & 5 UAE Curriculum access)
 
@@ -199,7 +199,7 @@ Thank you for reviewing JISR Arabic (فهيم).
 1. SIGN-IN INSTRUCTIONS:
 - Open the application.
 - On the initial screen, enter the provided review credentials:
-  Email: reviewer@jisr.ae
+  Email: reviewer@jisrarabic.com
   Password: JISRReview2026!
 - Tap "تسجيل الدخول / Sign In". The app will navigate directly to the Student Dashboard.
 
@@ -216,5 +216,5 @@ Thank you for reviewing JISR Arabic (فهيم).
 - Audio recordings are processed ephemerally for phonetic evaluation and are not retained or sold.
 - The app fully complies with the UAE Personal Data Protection Law (Federal Decree-Law No. 45/2021) and COPPA.
 
-If you have any questions or require additional test environments, please contact us at devops@jisr.ae.
+If you have any questions or require additional test environments, please contact us at devops@jisrarabic.com.
 ```

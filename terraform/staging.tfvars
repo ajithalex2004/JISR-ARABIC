@@ -9,9 +9,9 @@ environment  = "staging"
 project_name = "jisr-arabic"
 
 # --- Domain & Networking ---
-domain_name   = "staging.jisr.ae"
-api_subdomain = "api.staging.jisr.ae"
-cdn_subdomain = "cdn.staging.jisr.ae"
+domain_name   = "staging.jisrarabic.com"
+api_subdomain = "api.staging.jisrarabic.com"
+cdn_subdomain = "cdn.staging.jisrarabic.com"
 vpc_cidr      = "10.10.0.0/16"
 
 # --- Compute Capacity (ECS Fargate) ---
@@ -33,7 +33,7 @@ db_backup_retention_days = 7
 redis_node_type = "cache.t4g.medium"
 
 # --- Security & Proxies ---
-cors_origins    = "https://staging.jisr.ae,https://app.staging.jisr.ae"
+cors_origins    = "https://staging.jisrarabic.com,https://app.staging.jisrarabic.com"
 trusted_proxies = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
 
 # --- Availability Zones (Multi-AZ UAE me-central-1) ---

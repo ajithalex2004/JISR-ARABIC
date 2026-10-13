@@ -59,7 +59,7 @@ Ideal for automated GitHub Actions workflows, staging gates, or Grafana Cloud te
 k6 run load_tests/k6_load_test.js
 
 # Target a remote staging or production cluster
-k6 run -e TARGET_URL=https://api.jisr.ae load_tests/k6_load_test.js
+k6 run -e TARGET_URL=https://api.jisrarabic.com load_tests/k6_load_test.js
 ```
 
 ---

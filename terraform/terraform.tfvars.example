@@ -8,9 +8,9 @@ environment  = "production"
 project_name = "jisr-arabic"
 
 # --- Domain & Networking ---
-domain_name   = "jisr.ae"
-api_subdomain = "api.jisr.ae"
-cdn_subdomain = "cdn.jisr.ae"
+domain_name   = "jisrarabic.com"
+api_subdomain = "api.jisrarabic.com"
+cdn_subdomain = "cdn.jisrarabic.com"
 vpc_cidr      = "10.0.0.0/16"
 
 # --- Compute Capacity (ECS Fargate) ---
@@ -33,7 +33,7 @@ db_backup_retention_days = 35              # 35 Days continuous Point-In-Time Re
 redis_node_type = "cache.m6g.large" # 2 vCPU, 6.38 GB RAM (Multi-AZ)
 
 # --- Security & Proxies ---
-cors_origins    = "https://jisr.ae,https://app.jisr.ae,https://admin.jisr.ae"
+cors_origins    = "https://jisrarabic.com,https://app.jisrarabic.com,https://admin.jisrarabic.com"
 trusted_proxies = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
 
 # --- Availability Zones (Multi-AZ UAE me-central-1) ---

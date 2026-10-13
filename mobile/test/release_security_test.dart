@@ -4,9 +4,8 @@ import 'package:mobile/api_service.dart';
 
 void main() {
   group('Release Endpoint & Security Pinning', () {
-    test('Production API base is injected at build time and HTTPS-only', () {
-      const base = AuthService.productionApiBase;
-      expect(base.isEmpty || base.startsWith('https://'), isTrue);
+    test('Production API base points to the owned product domain over HTTPS', () {
+      expect(AuthService.productionApiBase, 'https://api.jisrarabic.com');
     });
 
     test('Initial API base resolves correctly', () {

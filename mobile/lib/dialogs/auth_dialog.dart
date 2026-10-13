@@ -686,7 +686,7 @@ class _AuthDialogState extends State<AuthDialog> {
                     labelText: _dialogIsArabic
                         ? 'البريد الإلكتروني لولي الأمر'
                         : 'Parent Email ID',
-                    hintText: 'parent@jisr.ae',
+                    hintText: 'parent@example.com',
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -1309,7 +1309,7 @@ class _AuthDialogState extends State<AuthDialog> {
                   decoration: InputDecoration(
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     isDense: true,
-                    hintText: 'https://…',
+                    hintText: 'https://api.jisrarabic.com',
                   ),
                 ),
                 const SizedBox(height: 10),

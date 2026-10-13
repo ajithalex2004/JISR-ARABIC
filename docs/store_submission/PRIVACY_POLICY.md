@@ -86,7 +86,7 @@ Under the UAE Federal Decree-Law No. 45/2021, you possess the following rights:
 4. **Right to Restrict Processing:** Limit the processing of your data under specific conditions.
 5. **Right to Data Portability:** Obtain your learning history in a structured, machine-readable format.
 
-To exercise any of these rights, email our Data Protection Officer at: **privacy@jisr.ae**.
+To exercise any of these rights, email our Data Protection Officer at: **privacy@jisrarabic.com**.
 
 ---
 
@@ -97,7 +97,7 @@ In compliance with Google Play Store and Apple App Store mandates, users can del
    - Navigate to **الإعدادات (Settings) > الحساب (Account) > حذف الحساب والبيانات (Delete Account & Data)**.
    - Confirm deletion. The system immediately revokes JWT tokens, purges student profile records, and schedules database tombstones within 24 hours.
 2. **Web Portal Deletion Request:**
-   - Visit our dedicated self-service deletion portal: `https://jisr.ae/delete-account` or email `privacy@jisr.ae` with your registered email address.
+   - Visit our dedicated self-service deletion portal: `https://jisrarabic.com/delete-account` or email `privacy@jisrarabic.com` with your registered email address.
 
 ---
 
@@ -109,8 +109,8 @@ If you have questions, feedback, or concerns regarding this Privacy Policy or ou
 JISR EdTech FZ-LLC  
 Dubai Internet City / Abu Dhabi Global Market  
 United Arab Emirates  
-Email: `privacy@jisr.ae` / `support@jisr.ae`  
-Website: `https://jisr.ae`
+Email: `privacy@jisrarabic.com` / `support@jisrarabic.com`  
+Website: `https://jisrarabic.com`
 
 ---
 
@@ -123,4 +123,4 @@ Website: `https://jisr.ae`
 1. **توطين البيانات:** تخزن جميع بيانات الطلاب والمعلمين داخل مراكز بيانات سحابية متطورة في دولة الإمارات العربية المتحدة.
 2. **انعدام الإعلانات:** التطبيق خالٍ تماماً بنسبة 100% من أي إعلانات تجارية أو تتبع سلوكي خارجي.
 3. **معالجة الصوت والصور:** تُعالج التسجيلات الصوتية في مهام التحدث وصور أوراق العمل بشكل فوري ومؤقت لأغراض التقييم التعليمي الذكي دون بيعها أو استغلالها تجارياً.
-4. **حقوق الحذف:** يحق لولي الأمر أو الطالب في أي وقت طلب حذف الحساب وكافة البيانات المرتبطة به عبر التطبيق أو عبر مراسلتنا على `privacy@jisr.ae`.
+4. **حقوق الحذف:** يحق لولي الأمر أو الطالب في أي وقت طلب حذف الحساب وكافة البيانات المرتبطة به عبر التطبيق أو عبر مراسلتنا على `privacy@jisrarabic.com`.

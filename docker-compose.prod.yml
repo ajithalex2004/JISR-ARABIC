@@ -65,7 +65,7 @@ services:
       - FAHIM_SMTP_PORT=${FAHIM_SMTP_PORT:-587}
       - FAHIM_SMTP_USER=${FAHIM_SMTP_USER:-}
       - FAHIM_SMTP_PASS=${FAHIM_SMTP_PASS:-}
-      - FAHIM_SMTP_FROM=${FAHIM_SMTP_FROM:-noreply@jisr-arabic.com}
+      - FAHIM_SMTP_FROM=${FAHIM_SMTP_FROM:-noreply@jisrarabic.com}
     depends_on:
       redis:
         condition: service_healthy

@@ -15,7 +15,7 @@ Google Play mandates an explicit disclosure of all data collected, shared, and e
 - **Is all of the user data collected by your app encrypted in transit?**  
   👉 **Yes** (All network traffic is encrypted via HTTPS / TLS 1.3).
 - **Do you provide a way for users to request that their data be deleted?**  
-  👉 **Yes** (In-app deletion under Settings > Account, and web deletion portal at `https://jisr.ae/delete-account`).
+  👉 **Yes** (In-app deletion under Settings > Account, and web deletion portal at `https://jisrarabic.com/delete-account`).
 
 ---
 

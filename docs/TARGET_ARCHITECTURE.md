@@ -107,7 +107,7 @@ flowchart TD
   * **API Client**: Centralized HTTP client (`frontend/src/api/client.ts`) with request interceptors attaching `Authorization: Bearer <token>`, propagating `X-Request-ID`, and cleanly intercepting 401/403 authorization failures.
 * **Mobile Client (`mobile/`)**: Cross-platform Flutter application (iOS and Android).
   * **Token Storage**: Hardware-backed credential persistence via `flutter_secure_storage` (iOS Keychain and Android EncryptedSharedPreferences).
-  * **Release Pinning**: Production builds enforce HTTPS (`FAHIM_API_BASE=https://api.jisr.ae`).
+  * **Release Pinning**: Production builds enforce HTTPS (`FAHIM_API_BASE=https://api.jisrarabic.com`).
   * **Zero Guest Bypasses**: Authenticates directly against the backend authentication API (`mobile/lib/services/api_service.dart`) with zero local guest mock identities.
 
 ### Pillar 2: CDN/WAF and Trusted Load Balancer

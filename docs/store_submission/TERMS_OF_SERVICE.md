@@ -71,5 +71,5 @@ These Terms shall be governed by and construed in accordance with the laws of th
 For legal, licensing, or compliance inquiries:  
 **JISR EdTech FZ-LLC**  
 United Arab Emirates  
-Email: `legal@jisr.ae` / `support@jisr.ae`  
-Website: `https://jisr.ae`
+Email: `legal@jisrarabic.com` / `support@jisrarabic.com`  
+Website: `https://jisrarabic.com`

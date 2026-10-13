@@ -58,6 +58,6 @@ resource "aws_secretsmanager_secret_version" "app_secrets" {
     FAHIM_SMTP_PORT              = "587"
     FAHIM_SMTP_USER              = "AKIA_SMTP_USER_PLACEHOLDER"
     FAHIM_SMTP_PASS              = "SMTP_PASS_PLACEHOLDER"
-    FAHIM_SMTP_FROM              = "noreply@jisr.ae"
+    FAHIM_SMTP_FROM              = "noreply@jisrarabic.com"
   })
 }

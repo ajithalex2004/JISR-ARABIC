@@ -1,6 +1,6 @@
 # JISR Arabic (فهيم) — Mobile Release Runbook
 **Target Platforms:** Android (Google Play Store `.aab` / `.apk`) & iOS (Apple App Store / TestFlight `.ipa`)  
-**Production API Base:** `https://api.jisr.ae` (AWS UAE `me-central-1`)  
+**Production API Base:** `https://api.jisrarabic.com` (AWS UAE `me-central-1`)  
 **Flutter Framework:** Flutter 3.38+ / Dart 3.10+
 
 ---
@@ -10,8 +10,8 @@
 This runbook defines the exact, end-to-end operational procedure for building, signing, and distributing the **JISR Arabic (فهيم)** mobile applications for production release.
 
 ### Core Security & Hardening Guarantees
-1. **Strict Production Endpoint Pinning (`https://api.jisr.ae`):**
-   - The application defaults to `https://api.jisr.ae` in release mode.
+1. **Strict Production Endpoint Pinning (`https://api.jisrarabic.com`):**
+   - The application defaults to `https://api.jisrarabic.com` in release mode.
    - In release mode (`kReleaseMode == true`), any attempt to connect over unencrypted HTTP (`http://`) or loopback emulator addresses (`10.0.2.2`, `192.168.x.x`) is **strictly aborted** with an `AuthException`.
    - The internal developer server-switcher icon (`IconButton`) in `AuthDialog` is completely hidden and disabled in release mode.
 2. **Cleartext Traffic Enforcement:**
@@ -87,7 +87,7 @@ ProGuard/R8 optimization rules are defined in [`mobile/android/app/proguard-rule
 1. **Google Play App Bundle (`.aab`):**
    ```bash
    flutter build appbundle --release \
-     --dart-define=FAHIM_API_BASE=https://api.jisr.ae \
+     --dart-define=FAHIM_API_BASE=https://api.jisrarabic.com \
      --obfuscate \
      --split-debug-info=build/app/outputs/symbols
    ```
@@ -96,7 +96,7 @@ ProGuard/R8 optimization rules are defined in [`mobile/android/app/proguard-rule
 2. **Testing APK (`.apk`):**
    ```bash
    flutter build apk --release \
-     --dart-define=FAHIM_API_BASE=https://api.jisr.ae
+     --dart-define=FAHIM_API_BASE=https://api.jisrarabic.com
    ```
    **Output:** `mobile/build/app/outputs/flutter-apk/app-release.apk`
 
@@ -114,7 +114,7 @@ Run on macOS:
 ```bash
 cd mobile
 flutter build ipa --release \
-  --dart-define=FAHIM_API_BASE=https://api.jisr.ae \
+  --dart-define=FAHIM_API_BASE=https://api.jisrarabic.com \
   --obfuscate \
   --split-debug-info=build/app/outputs/symbols
 ```
@@ -151,7 +151,7 @@ version: 2.4.0+24
 ## 6. Pre-Flight Verification Checklist
 
 Before submitting to app stores:
-- [x] Strict HTTPS endpoint: `FAHIM_API_BASE=https://api.jisr.ae` enforced.
+- [x] Strict HTTPS endpoint: `FAHIM_API_BASE=https://api.jisrarabic.com` enforced.
 - [x] Zero cleartext fallback: `android:usesCleartextTraffic="false"` and `NSAllowsArbitraryLoads=false`.
 - [x] Developer server switcher concealed in release mode.
 - [x] Audio speaking permissions declared in both Arabic and English.
@@ -171,9 +171,9 @@ Complete store listing metadata, legal policies, and graphic assets are cataloge
 3. **Turnkey Graphic Asset Generator:** [`mobile/scripts/generate_store_assets.ps1`](file:///c:/JISR%20ARABIC/mobile/scripts/generate_store_assets.ps1)
    - Automatically builds `icon_playstore_512.png`, `icon_appstore_1024.png`, and `feature_graphic_1024x500.png` in `mobile/assets/store/`.
 4. **Privacy Policy (UAE PDPL & COPPA):** [`docs/store_submission/PRIVACY_POLICY.md`](file:///c:/JISR%20ARABIC/docs/store_submission/PRIVACY_POLICY.md)
-   - Self-hosted at `https://jisr.ae/privacy` with UAE sovereign data hosting in AWS UAE (`me-central-1`).
+   - Self-hosted at `https://jisrarabic.com/privacy` with UAE sovereign data hosting in AWS UAE (`me-central-1`).
 5. **Terms of Service:** [`docs/store_submission/TERMS_OF_SERVICE.md`](file:///c:/JISR%20ARABIC/docs/store_submission/TERMS_OF_SERVICE.md)
-   - Hosted at `https://jisr.ae/terms`.
+   - Hosted at `https://jisrarabic.com/terms`.
 6. **Store Compliance & Data Safety Declarations:** [`docs/store_submission/STORE_COMPLIANCE_AND_DECLARATIONS.md`](file:///c:/JISR%20ARABIC/docs/store_submission/STORE_COMPLIANCE_AND_DECLARATIONS.md)
    - Google Play Data Safety, Families policy questionnaire, Android permission justifications, Apple Nutrition Labels, and IARC ratings.
 

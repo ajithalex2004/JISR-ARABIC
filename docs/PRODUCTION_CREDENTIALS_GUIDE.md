@@ -31,24 +31,24 @@ python -m backend.scripts.verify_production_readiness --verbose
 JISR Arabic uses transactional email for non-repudiable OTP signups, password resets, and invoice delivery.
 
 ### 2.1 Domain Verification & Anti-Spam Records (DNS)
-In your DNS management console (Route 53 or Cloudflare for `jisr.ae`), configure:
+In your DNS management console (Route 53 or Cloudflare for `jisrarabic.com`), configure:
 
 1. **DKIM Records:**
-   In AWS SES console (`me-central-1`), add your domain `jisr.ae` and enable Easy DKIM. Add the 3 generated CNAME records:
+   In AWS SES console (`me-central-1`), add your domain `jisrarabic.com` and enable Easy DKIM. Add the 3 generated CNAME records:
    ```text
-   <token1>._domainkey.jisr.ae -> <token1>.dkim.amazonses.com
-   <token2>._domainkey.jisr.ae -> <token2>.dkim.amazonses.com
-   <token3>._domainkey.jisr.ae -> <token3>.dkim.amazonses.com
+   <token1>._domainkey.jisrarabic.com -> <token1>.dkim.amazonses.com
+   <token2>._domainkey.jisrarabic.com -> <token2>.dkim.amazonses.com
+   <token3>._domainkey.jisrarabic.com -> <token3>.dkim.amazonses.com
    ```
 2. **SPF Record:**
-   Add or update your TXT record on `jisr.ae`:
+   Add or update your TXT record on `jisrarabic.com`:
    ```text
    v=spf1 include:amazonses.com ~all
    ```
 3. **DMARC Record:**
-   Add TXT record for `_dmarc.jisr.ae`:
+   Add TXT record for `_dmarc.jisrarabic.com`:
    ```text
-   v=DMARC1; p=reject; rua=mailto:dmarc-reports@jisr.ae; pct=100
+   v=DMARC1; p=reject; rua=mailto:dmarc-reports@jisrarabic.com; pct=100
    ```
 
 ### 2.2 SMTP Credentials Generation
@@ -65,7 +65,7 @@ In your DNS management console (Route 53 or Cloudflare for `jisr.ae`), configure
    FAHIM_SMTP_PORT=587
    FAHIM_SMTP_USER=AKIA...
    FAHIM_SMTP_PASS=B...
-   FAHIM_SMTP_FROM=noreply@jisr.ae
+   FAHIM_SMTP_FROM=noreply@jisrarabic.com
    ```
 
 ---
@@ -83,7 +83,7 @@ JISR Arabic uses provider-hosted checkout sessions (Stripe Checkout) to maintain
 ### 3.2 Webhook Configuration
 1. In the Stripe Dashboard, go to **Developers** -> **Webhooks** -> **Add destination**.
 2. Configure:
-   - **Endpoint URL:** `https://api.jisr.ae/api/payments/webhook`
+   - **Endpoint URL:** `https://api.jisrarabic.com/api/payments/webhook`
    - **Events to listen for:**
      - `checkout.session.completed`
      - `payment_intent.succeeded`
@@ -111,14 +111,14 @@ To ensure zero container disk dependencies and high-speed audio playback across 
 ### 4.2 CloudFront Distribution
 1. Create a CloudFront distribution pointing to `jisr-prod-assets-ae.s3.me-central-1.amazonaws.com`.
 2. Select **Origin access control settings (recommended)** to sign requests.
-3. Configure Alternate domain name (CNAME): `cdn.jisr.ae`.
+3. Configure Alternate domain name (CNAME): `cdn.jisrarabic.com`.
 4. Configure S3 bucket policy allowing `cloudfront.amazonaws.com` read access.
 5. Set environment variables:
    ```bash
    STORAGE_BACKEND=s3
    S3_BUCKET_NAME=jisr-prod-assets-ae
    S3_REGION_NAME=me-central-1
-   S3_CDN_DOMAIN=cdn.jisr.ae
+   S3_CDN_DOMAIN=cdn.jisrarabic.com
    AWS_ACCESS_KEY_ID=AKIA...
    AWS_SECRET_ACCESS_KEY=...
    ```

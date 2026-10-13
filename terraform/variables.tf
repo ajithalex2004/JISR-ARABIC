@@ -25,19 +25,19 @@ variable "project_name" {
 variable "domain_name" {
   description = "Apex domain name for the educational platform"
   type        = string
-  default     = "jisr.ae"
+  default     = "jisrarabic.com"
 }
 
 variable "api_subdomain" {
   description = "Subdomain dedicated to the FastAPI backend API"
   type        = string
-  default     = "api.jisr.ae"
+  default     = "api.jisrarabic.com"
 }
 
 variable "cdn_subdomain" {
   description = "Subdomain dedicated to the CloudFront CDN asset distribution"
   type        = string
-  default     = "cdn.jisr.ae"
+  default     = "cdn.jisrarabic.com"
 }
 
 # --- Network Configuration ---
@@ -120,7 +120,7 @@ variable "redis_node_type" {
 variable "cors_origins" {
   description = "Comma-separated allowlist of origins permitted for CORS"
   type        = string
-  default     = "https://jisr.ae,https://app.jisr.ae,https://admin.jisr.ae"
+  default     = "https://jisrarabic.com,https://app.jisrarabic.com,https://admin.jisrarabic.com"
 }
 
 variable "trusted_proxies" {

@@ -188,7 +188,7 @@ jobs:
 
       - name: Build Web Application
         env:
-          VITE_API_BASE: "https://api.jisr.ae"
+          VITE_API_BASE: "https://api.jisrarabic.com"
         run: npm run build
 
       - name: Configure AWS Credentials
@@ -225,9 +225,9 @@ jobs:
     steps:
       - name: Verify API Health Endpoint
         run: |
-          echo "Checking https://api.jisr.ae/api/health..."
+          echo "Checking https://api.jisrarabic.com/api/health..."
           for i in {1..12}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://api.jisr.ae/api/health" || true)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://api.jisrarabic.com/api/health" || true)
             if [ "$STATUS" = "200" ]; then
               echo "Health check succeeded (HTTP 200)."
               exit 0
@@ -244,5 +244,5 @@ jobs:
           echo "### JISR Arabic Deployment Completed! 🚀" >> $GITHUB_STEP_SUMMARY
           echo "- **Target Environment:** ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Image Tag:** ${{ needs.build-and-push.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Production API:** https://api.jisr.ae" >> $GITHUB_STEP_SUMMARY
+          echo "- **Production API:** https://api.jisrarabic.com" >> $GITHUB_STEP_SUMMARY
           echo "- **Frontend CDN:** Invalidated & Live" >> $GITHUB_STEP_SUMMARY

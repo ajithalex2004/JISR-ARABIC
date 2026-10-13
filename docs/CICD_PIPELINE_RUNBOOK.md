@@ -1,7 +1,7 @@
 # JISR Arabic (فهيم) — CI/CD Pipeline Runbook
 **Target Infrastructure:** AWS UAE (`me-central-1`), GitHub Actions, Google Play Store, Apple App Store  
 **Target Scale:** 10,000+ Active Students | 1,000 Concurrent Users (CCU)  
-**Security Standard:** Strict HTTPS (`https://api.jisr.ae`), Zero-Cleartext, Automated Migrations, Zero-Downtime Rolling Updates
+**Security Standard:** Strict HTTPS (`https://api.jisrarabic.com`), Zero-Cleartext, Automated Migrations, Zero-Downtime Rolling Updates
 
 ---
 
@@ -59,7 +59,7 @@ The JISR Arabic CI/CD automation pipeline is architected into three specialized,
   2. **Database Migrations:** Applies pending PostgreSQL schema migrations (`python -m backend.migrations run`) before updating services to prevent runtime schema mismatches.
   3. **ECS Rolling Update:** Issues zero-downtime updates to AWS ECS Fargate services (`jisr-backend-service` and `jisr-worker-service`) and waits for task stability.
   4. **Static Frontend CDN:** Syncs compiled Vite bundle to S3 and triggers an invalidation (`/*`) on CloudFront.
-  5. **Live Verification:** Automatically queries `https://api.jisr.ae/api/health` and posts a summary to GitHub.
+  5. **Live Verification:** Automatically queries `https://api.jisrarabic.com/api/health` and posts a summary to GitHub.
 
 ### 2.3 Mobile Store Release (`release_mobile.yml`)
 * **Trigger:** Tag push matching `v*` (e.g. `v2.4.0`) or manual execution via `workflow_dispatch`.

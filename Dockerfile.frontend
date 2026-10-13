@@ -34,6 +34,7 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy optimized production Nginx configuration
 COPY ${NGINX_CONF} /etc/nginx/nginx.conf
+COPY nginx/security_headers.conf /etc/nginx/security_headers.conf
 
 # Add healthcheck for web gateway
 HEALTHCHECK --interval=20s --timeout=5s --start-period=5s --retries=3 \

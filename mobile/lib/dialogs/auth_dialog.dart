@@ -1309,7 +1309,7 @@ class _AuthDialogState extends State<AuthDialog> {
                   decoration: InputDecoration(
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     isDense: true,
-                    hintText: 'https://api.jisr.ae',
+                    hintText: 'https://…',
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -1317,12 +1317,13 @@ class _AuthDialogState extends State<AuthDialog> {
                   spacing: 6,
                   runSpacing: 4,
                   children: [
-                    ActionChip(
-                      avatar: const Icon(Icons.cloud_done, size: 12, color: Color(0xFF10B981)),
-                      label: const Text('Production', style: TextStyle(fontSize: 10)),
-                      backgroundColor: const Color(0xFFECFDF5),
-                      onPressed: () => setDlgState(() => srvCtrl.text = AuthService.productionApiBase),
-                    ),
+                    if (AuthService.productionApiBase.isNotEmpty)
+                      ActionChip(
+                        avatar: const Icon(Icons.cloud_done, size: 12, color: Color(0xFF10B981)),
+                        label: const Text('Production', style: TextStyle(fontSize: 10)),
+                        backgroundColor: const Color(0xFFECFDF5),
+                        onPressed: () => setDlgState(() => srvCtrl.text = AuthService.productionApiBase),
+                      ),
                     // Local development servers are only offered in debug builds.
                     if (!kReleaseMode) ...[
                       ActionChip(

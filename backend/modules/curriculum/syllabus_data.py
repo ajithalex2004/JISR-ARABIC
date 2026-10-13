@@ -623,6 +623,8 @@ def generate_dynamic_lesson_content(lesson: Any) -> Dict[str, Any]:
     term = getattr(lesson, "term", 1)
     page = getattr(lesson, "start_page", 6)
     lesson_id = getattr(lesson, "id", f"lesson_g{grade}_t{term}_01")
+    pdf_offset = 1 if (grade in (5, 7) and term == 1) else 0
+    pdf_start = page + pdf_offset
 
     # Grade-tailored grammar info
     grammar_info = GRADE_GRAMMAR_MAP.get(grade, GRADE_GRAMMAR_MAP[5])
@@ -637,7 +639,7 @@ def generate_dynamic_lesson_content(lesson: Any) -> Dict[str, Any]:
         "grade": grade,
         "term": term,
         "start_page": page,
-        "pdf_start_page": page,
+        "pdf_start_page": pdf_start,
 
         # 1. Prep Check (Tab 8)
         "prep_check": {

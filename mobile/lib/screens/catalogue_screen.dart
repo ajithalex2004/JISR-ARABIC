@@ -367,15 +367,23 @@ class CatalogueScreen extends StatelessWidget {
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
+                              children: [
                                 Text(
-                                  'أَلْعَابُ الكُرَةِ (Ball Games)',
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF58337E)),
+                                  currentGrade == 6
+                                      ? 'أَنَا إِمَارَاتِيٌّ وَأَعْتَزُّ بِهُوِيَّتِي (I am Emirati & Proud of My Identity)'
+                                      : (currentGrade == 8
+                                          ? 'أَبُو الطَّيِّبِ المُتَنَبِّي شَاعِرُ الحِكْمَةِ (Al-Mutanabbi: Poet of Wisdom)'
+                                          : 'أَلْعَابُ الكُرَةِ (Ball Games)'),
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF58337E)),
                                 ),
-                                SizedBox(height: 2),
+                                const SizedBox(height: 2),
                                 Text(
-                                  'النص القرائي: السَّاحِرَةُ المُسْتَدِيرَةُ (The Round Sorceress / Football)',
-                                  style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                                  currentGrade == 6
+                                      ? 'النص القرائي: رُوحُ الاتِّحَادِ وَالاعْتِزَازُ بِالهُوِيَّةِ الوَطَنِيَّةِ (Spirit of the Union & Identity)'
+                                      : (currentGrade == 8
+                                          ? 'النص القرائي: فَرَائِدُ الحِكْمَةِ وَرَوَائِعُ الشِّعْرِ (Pearls of Wisdom & Eloquence)'
+                                          : 'النص القرائي: السَّاحِرَةُ المُسْتَدِيرَةُ (The Round Sorceress / Football)'),
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                                 ),
                               ],
                             ),
@@ -433,7 +441,13 @@ class CatalogueScreen extends StatelessWidget {
                                 InkWell(
                                   onTap: () {
                                     if (onVocalize != null) {
-                                      onVocalize!('كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ الأَكْثَرُ شَعْبِيَّةً فِي العَالَمِ. يُحِبُّهَا الكِبَارُ وَالصِّغَارُ، حَيْثُ يَتَنَافَسُ فِي المَلْعَبِ فَرِيقَانِ كَبِيرَانِ لِتَسْجِيلِ الهَدَفِ فِي شِبَاكِ حَارِسِ المَرْمَى.');
+                                      onVocalize!(
+                                        currentGrade == 6
+                                            ? 'الإِمَارَاتُ وَطَنُ الأَمْجَادِ وَالعَطَاءِ. نَعْتَزُّ بِهُوِيَّتِنَا وَقِيَمِ أَبِينَا زَايِدٍ رَحِمَهُ اللَّهُ فِي بِنَاءِ الإِنْسَانِ وَالوَطَنِ.'
+                                            : (currentGrade == 8
+                                                ? 'أَنَا الَّذِي نَظَرَ الأَعْمَى إِلَى أَدَبِي، وَأَسْمَعَتْ كَلِمَاتِي مَنْ بِهِ صَمَمُ.'
+                                                : 'كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ الأَكْثَرُ شَعْبِيَّةً فِي العَالَمِ. يُحِبُّهَا الكِبَارُ وَالصِّغَارُ، حَيْثُ يَتَنَافَسُ فِي المَلْعَبِ فَرِيقَانِ كَبِيرَانِ لِتَسْجِيلِ الهَدَفِ فِي شِبَاكِ حَارِسِ المَرْمَى.')
+                                      );
                                     }
                                   },
                                   child: Row(
@@ -450,10 +464,14 @@ class CatalogueScreen extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              '«كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ الأَكْثَرُ شَعْبِيَّةً فِي العَالَمِ. يُحِبُّهَا الكِبَارُ وَالصِّغَارُ، حَيْثُ يَتَنَافَسُ فِي المَلْعَبِ فَرِيقَانِ كَبِيرَانِ لِتَسْجِيلِ الهَدَفِ فِي شِبَاكِ حَارِسِ المَرْمَى.»',
+                            Text(
+                              currentGrade == 6
+                                  ? '«الإِمَارَاتُ وَطَنُ الأَمْجَادِ وَالعَطَاءِ. نَعْتَزُّ بِهُوِيَّتِنَا وَقِيَمِ أَبِينَا زَايِدٍ رَحِمَهُ اللَّهُ فِي بِنَاءِ الإِنْسَانِ وَالوَطَنِ، وَنَرْفَعُ عَلَمَنَا خَفَّاقًا فِي كُلِّ المَيَادِينِ.»'
+                                  : (currentGrade == 8
+                                      ? '«أَنَا الَّذِي نَظَرَ الأَعْمَى إِلَى أَدَبِي ... وَأَسْمَعَتْ كَلِمَاتِي مَنْ بِهِ صَمَمُ. الخَيْلُ وَاللَّيْلُ وَالبَيْدَاءُ تَعْرِفُنِي ... وَالسَّيْفُ وَالرُّمْحُ وَالقِرْطَاسُ وَالقَلَمُ.»'
+                                      : '«كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ الأَكْثَرُ شَعْبِيَّةً فِي العَالَمِ. يُحِبُّهَا الكِبَارُ وَالصِّغَارُ، حَيْثُ يَتَنَافَسُ فِي المَلْعَبِ فَرِيقَانِ كَبِيرَانِ لِتَسْجِيلِ الهَدَفِ فِي شِبَاكِ حَارِسِ المَرْمَى.»'),
                               textAlign: TextAlign.right,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF1E293B),
@@ -461,9 +479,13 @@ class CatalogueScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
-                              '"Football is the most popular game in the world. Both young and old love it, where two large teams compete on the pitch to score goals into the goalkeeper\'s net."',
-                              style: TextStyle(fontSize: 10.5, fontStyle: FontStyle.italic, color: Color(0xFF64748B)),
+                            Text(
+                              currentGrade == 6
+                                  ? '"The UAE is the homeland of glories and benevolence. We take immense pride in our authentic identity, the values of our father Zayed in human development, and fluttering our flag high across all arenas."'
+                                  : (currentGrade == 8
+                                      ? '"I am the one whose literature was perceived even by the blind, and whose words were heard by the deaf. The steed, the night, and the desert know me, as do the sword, the spear, the parchment, and the pen."'
+                                      : '"Football is the most popular game in the world. Both young and old love it, where two large teams compete on the pitch to score goals into the goalkeeper\'s net."'),
+                              style: const TextStyle(fontSize: 10.5, fontStyle: FontStyle.italic, color: Color(0xFF64748B)),
                             ),
                           ],
                         ),

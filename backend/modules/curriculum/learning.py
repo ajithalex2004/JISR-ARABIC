@@ -11,6 +11,17 @@ from backend.errors import ApplicationError
 from backend.modules.curriculum.access import require_lesson, learner_content
 from backend.redis_client import cache_get, cache_set
 
+def _resolve_booklet_lesson_id(lesson_id) -> str:
+    """Map grade aliases (``grade_8``, ``g8``, ``8``) to that grade's Chapter 1 lesson id."""
+    from backend.generated_study_content import lesson_id_for_grade
+    import re
+    actual_lesson_id = str(lesson_id).strip()
+    m = re.match(r"^(?:grade_?|g)?(\d{1,2})$", actual_lesson_id.lower())
+    if m and 1 <= int(m.group(1)) <= 12:
+        return lesson_id_for_grade(int(m.group(1)))
+    return actual_lesson_id
+
+
 def get_malazim(lesson_id: str, child_id=None, is_reviewer=False, *, db: Session, actor=None):
     """
     Retrieve interactive study booklet for a lesson or grade.
@@ -18,13 +29,7 @@ def get_malazim(lesson_id: str, child_id=None, is_reviewer=False, *, db: Session
     - Study Mode (وضع المذاكرة الشامل مع التمارين التفاعلية)
     - Notes / Quick Review Mode (وضع الملاحظات المركزة ومراجعة الـ 15 دقيقة)
     """
-    actual_lesson_id = str(lesson_id).strip()
-    if actual_lesson_id.lower() in ("grade_7", "7", "g7", "grade7"):
-        actual_lesson_id = "lesson_g7_t1_ch01"
-    elif actual_lesson_id.lower() in ("grade_6", "6", "g6", "grade6"):
-        actual_lesson_id = "lesson_g6_t1_ch01"
-    elif actual_lesson_id.lower() in ("grade_5", "5", "g5", "grade5"):
-        actual_lesson_id = "lesson_01_ball_games"
+    actual_lesson_id = _resolve_booklet_lesson_id(lesson_id)
 
     reviewer = bool(actor is not None and getattr(actor, "role", None) in {"admin", "tutor"}) and is_reviewer
     require_lesson(db, actor, actual_lesson_id, child_id, is_reviewer=is_reviewer)
@@ -151,13 +156,7 @@ def complete_capsule(capsule_id: str, payload: CapsuleCompleteRequest, *, db: Se
 
 
 def check_booklet_answer(lesson_id, payload, *, db: Session, actor=None):
-    actual_lesson_id = str(lesson_id).strip()
-    if actual_lesson_id.lower() in ("grade_7", "7", "g7", "grade7"):
-        actual_lesson_id = "lesson_g7_t1_ch01"
-    elif actual_lesson_id.lower() in ("grade_6", "6", "g6", "grade6"):
-        actual_lesson_id = "lesson_g6_t1_ch01"
-    elif actual_lesson_id.lower() in ("grade_5", "5", "g5", "grade5"):
-        actual_lesson_id = "lesson_01_ball_games"
+    actual_lesson_id = _resolve_booklet_lesson_id(lesson_id)
 
     require_lesson(db, actor, actual_lesson_id, payload.child_id)
     booklet = get_malazim_booklet(actual_lesson_id)

@@ -26,7 +26,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
 }) => {
   const availableGrades = useMemo(() => {
     if (user?.role === 'admin') {
-      return [5, 6, 7];
+      return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     }
     if (user?.role === 'learner' && activeChild?.default_grade) {
       return [activeChild.default_grade];
@@ -69,11 +69,15 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
   const [feedback, setFeedback] = useState<Record<string, any>>({});
   const [error, setError] = useState('');
 
-  const targetLessonId = lessonId || (selectedGrade === 7 ? 'lesson_g7_t1_ch01' : selectedGrade === 6 ? 'lesson_g6_t1_ch01' : 'lesson_01_ball_games');
+  const targetLessonId = lessonId || (selectedGrade === 5 ? 'lesson_01_ball_games' : `lesson_g${selectedGrade}_t1_ch01`);
 
   useEffect(() => {
     const fetchBooklet = async () => {
       setLoading(true);
+      setBookletData(null);
+      setSelectedAnswers({});
+      setSubmittedExercises({});
+      setFeedback({});
       try {
         const res = await api.getMalazim(targetLessonId, activeChild?.id, selectedGrade);
         if (res.success && res.booklet) {

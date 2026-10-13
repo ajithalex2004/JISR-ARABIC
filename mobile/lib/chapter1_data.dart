@@ -21,7 +21,7 @@ class ChapterPage {
 
 const List<ChapterPage> kChapter1Pages = [
   ChapterPage(
-    pdfPage: 8,
+    pdfPage: 7,
     printedPage: 6,
     titleAr: 'نَوَاتِجُ التَّعَلُّمِ - أَلْعَابُ الكُرَةِ',
     titleEn: 'Learning Outcomes - Ball Games',
@@ -43,7 +43,7 @@ const List<ChapterPage> kChapter1Pages = [
     ],
   ),
   ChapterPage(
-    pdfPage: 9,
+    pdfPage: 8,
     printedPage: 7,
     titleAr: 'قَامُوسِي',
     titleEn: 'My Glossary',
@@ -69,7 +69,7 @@ const List<ChapterPage> kChapter1Pages = [
     ],
   ),
   ChapterPage(
-    pdfPage: 10,
+    pdfPage: 9,
     printedPage: 8,
     titleAr: 'أَسْتَمِعُ - أَلْعَابُ الكُرَةِ',
     titleEn: 'I Listen - Ball Games',
@@ -87,7 +87,7 @@ const List<ChapterPage> kChapter1Pages = [
     ],
   ),
   ChapterPage(
-    pdfPage: 11,
+    pdfPage: 10,
     printedPage: 9,
     titleAr: 'بَعْدَ الِاسْتِمَاعِ - أَبْحَثُ عَنِ الخَطَأِ',
     titleEn: 'After Listening - Error Hunting & Categorization',
@@ -109,7 +109,7 @@ const List<ChapterPage> kChapter1Pages = [
     ],
   ),
   ChapterPage(
-    pdfPage: 12,
+    pdfPage: 11,
     printedPage: 10,
     titleAr: 'أَتَحَدَّثُ - اسْتِبْيَانُ أَلْعَابِ الكُرَةِ',
     titleEn: 'I Speak - Ball Games Survey & Opinions',
@@ -131,7 +131,7 @@ const List<ChapterPage> kChapter1Pages = [
     ],
   ),
   ChapterPage(
-    pdfPage: 13,
+    pdfPage: 12,
     printedPage: 11,
     titleAr: 'مُخَطَّطُ الأَصَابِعِ الخَمْسَةِ وَالعَرْضُ التَّقْدِيمِيُّ',
     titleEn: 'Five-Finger Discussion Framework & Presentation',
@@ -157,7 +157,7 @@ const List<ChapterPage> kChapter1Pages = [
     ],
   ),
   ChapterPage(
-    pdfPage: 14,
+    pdfPage: 13,
     printedPage: 12,
     titleAr: 'أَقْرَأُ - السَّاحِرَةُ المُسْتَدِيرَةُ',
     titleEn: 'I Read - The Round Magician (Football)',
@@ -183,7 +183,7 @@ const List<ChapterPage> kChapter1Pages = [
     ],
   ),
   ChapterPage(
-    pdfPage: 15,
+    pdfPage: 14,
     printedPage: 13,
     titleAr: 'بَعْدَ القِرَاءَةِ - وَقْتُ المُنَاقَشَةِ',
     titleEn: 'After Reading - Discussion & Comprehension',
@@ -205,7 +205,7 @@ const List<ChapterPage> kChapter1Pages = [
     ],
   ),
   ChapterPage(
-    pdfPage: 16,
+    pdfPage: 15,
     printedPage: 14,
     titleAr: 'أَكْتُبُ - قَبْلَ الكِتَابَةِ (التَّخْطِيطُ)',
     titleEn: 'I Write - Pre-Writing Planning Questions',
@@ -229,7 +229,7 @@ const List<ChapterPage> kChapter1Pages = [
     ],
   ),
   ChapterPage(
-    pdfPage: 17,
+    pdfPage: 16,
     printedPage: 15,
     titleAr: 'أَسْتَعِينُ بِالتَّرَاكِيبِ وَأَحْتَفِلُ بِكِتَابَتِي',
     titleEn: 'Connective Structures & Publishing My Writing',

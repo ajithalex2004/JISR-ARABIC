@@ -4,7 +4,7 @@ import type {
   SpeechEvaluationResult
 } from '../types';
 
-export const API_BASE = ((import.meta as any).env?.VITE_API_URL || 'http://127.0.0.1:8000');
+export const API_BASE = ((import.meta as any).env?.VITE_API_URL ?? '');
 
 export function createApiUrl(path: string): URL {
   const base = API_BASE.startsWith('http')
@@ -20,15 +20,43 @@ function getAuthHeader(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+export async function parseErrorDetail(res: Response, fallback: string): Promise<string> {
+  try {
+    const text = await res.text();
+    try {
+      const data = JSON.parse(text);
+      if (typeof data?.detail === 'string') return data.detail;
+      if (Array.isArray(data?.detail) && data.detail[0]?.msg) return data.detail[0].msg;
+      return fallback;
+    } catch {
+      return fallback;
+    }
+  } catch {
+    return fallback;
+  }
+}
+
 // Central transport: every application API request carries the current session.
 export async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   const headers = new Headers(init.headers);
   const token = localStorage.getItem('fahim_token');
   if (token) headers.set('Authorization', `Bearer ${token}`);
   const res = await fetch(input, { ...init, headers });
-  if (res.status === 401 || res.status === 403) {
-    const data = await res.clone().json().catch(() => ({}));
-    const message = data.detail || (res.status === 401 ? 'Please sign in to continue.' : 'You do not have access to this action.');
+
+  const urlStr = typeof input === 'string' ? input : (input instanceof Request ? input.url : input.toString());
+  const isAuthLoginEndpoint = urlStr.includes('/api/auth/login') ||
+    urlStr.includes('/api/auth/student-pin-login') ||
+    urlStr.includes('/api/auth/verify-login-otp') ||
+    urlStr.includes('/api/auth/login-otp') ||
+    urlStr.includes('/api/auth/signup') ||
+    urlStr.includes('/api/auth/create-password-enroll');
+
+  if (!isAuthLoginEndpoint && (res.status === 401 || res.status === 403)) {
+    let message = res.status === 401 ? 'Please sign in to continue.' : 'You do not have access to this action.';
+    try {
+      const data = await res.clone().json();
+      if (data?.detail) message = data.detail;
+    } catch {}
     window.dispatchEvent(new CustomEvent('fahim:access-denied', { detail: { status: res.status, message } }));
     throw new Error(message);
   }
@@ -48,7 +76,7 @@ export const api = {
   },
   async setTutorAssignment(tutorId: string, childId: string, enabled: boolean) {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/tutor-assignments/${encodeURIComponent(tutorId)}/${encodeURIComponent(childId)}`, { method: enabled ? 'PUT' : 'DELETE' });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Could not update assignment');
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not update assignment'));
     return res.json();
   },
 
@@ -59,7 +87,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
     });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Failed to request signup OTP');
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Failed to request signup OTP'));
     return res.json();
   },
 
@@ -69,7 +97,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, code, purpose })
     });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Invalid or expired OTP');
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Invalid or expired OTP'));
     return res.json();
   },
 
@@ -91,7 +119,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Failed to complete registration');
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Failed to complete registration'));
     const authData: AuthResponse = await res.json();
     localStorage.setItem('fahim_token', authData.access_token);
     return authData;
@@ -103,7 +131,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Invalid email or password');
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Invalid email or password'));
     const authData: AuthResponse = await res.json();
     localStorage.setItem('fahim_token', authData.access_token);
     return authData;
@@ -115,7 +143,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
     });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Failed to send login code');
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Failed to send login code'));
     return res.json();
   },
 
@@ -125,7 +153,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, code })
     });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Invalid or expired login code');
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Invalid or expired login code'));
     const authData: AuthResponse = await res.json();
     localStorage.setItem('fahim_token', authData.access_token);
     return authData;
@@ -137,7 +165,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ parent_email, pin, child_id })
     });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Incorrect student PIN or parent email');
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Incorrect student PIN or parent email'));
     const authData: AuthResponse = await res.json();
     localStorage.setItem('fahim_token', authData.access_token);
     return authData;
@@ -652,6 +680,12 @@ export const api = {
     const query = params.toString() ? `?${params.toString()}` : '';
     const res = await authenticatedFetch(`${API_BASE}/api/modules/capsules${query}`);
     if (!res.ok) throw new Error('Failed to load learning capsules');
+    return res.json();
+  },
+
+  async getMindmaps(grade: number, term: number = 1) {
+    const res = await authenticatedFetch(`${API_BASE}/api/modules/mindmaps?grade=${grade}&term=${term}`);
+    if (!res.ok) throw new Error('Failed to load mindmaps');
     return res.json();
   },
 

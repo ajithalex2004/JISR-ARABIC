@@ -612,13 +612,19 @@ def get_malazim_booklet(lesson_id: str = "lesson_01_ball_games") -> Dict[str, An
     if lid in MALAZIM_DATA:
         return MALAZIM_DATA[lid]
 
-    # Resolve by grade pattern in identifier
-    if "7" in lid:
-        return MALAZIM_DATA.get("lesson_g7_t1_ch01")
-    if "6" in lid:
-        return MALAZIM_DATA.get("lesson_g6_t1_ch01")
-    if "5" in lid:
-        return MALAZIM_DATA.get("lesson_01_ball_games")
+    # Resolve structured ids (lesson_g8_t1_ch01) and grade aliases (grade_8) for
+    # grades/chapters without a hand-authored booklet. Previously any id that did
+    # not contain "5"/"6"/"7" silently fell back to the Grade 5 booklet.
+    from backend.generated_study_content import parse_lesson_reference, generate_booklet
+    ref = parse_lesson_reference(lid)
+    if ref is not None:
+        grade, term, order = ref
+        authored = MALAZIM_DATA.get(f"lesson_g{grade}_t{term}_ch{order:02d}")
+        if authored is not None:
+            return authored
+        generated = generate_booklet(grade, term, order)
+        if generated is not None:
+            return generated
 
     # Default to requested or fallback to Grade 5
     return MALAZIM_DATA.get(lesson_id) or MALAZIM_DATA.get("lesson_01_ball_games")
@@ -630,4 +636,6 @@ def get_malazim_by_grade(grade: int = 5) -> Dict[str, Any]:
         return MALAZIM_DATA["lesson_g7_t1_ch01"]
     if grade == 6:
         return MALAZIM_DATA["lesson_g6_t1_ch01"]
-    return MALAZIM_DATA["lesson_01_ball_games"]
+    if grade == 5:
+        return MALAZIM_DATA["lesson_01_ball_games"]
+    return get_malazim_booklet(f"grade_{grade}")

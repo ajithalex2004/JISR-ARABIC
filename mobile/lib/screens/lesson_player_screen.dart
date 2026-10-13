@@ -344,6 +344,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
               ),
               child: Text(
                 word,
+                textDirection: TextDirection.rtl,
                 style: style ??
                     const TextStyle(
                       fontSize: 16,
@@ -593,24 +594,39 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                   minScale: 0.8,
                   maxScale: 5.0,
                   child: Center(
-                    child: Image.asset(
-                      'assets/pages/page_$pdfPage.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, error, stack) => Image.network(
-                        '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/$pdfPage?edition_id=moe_gr${widget.package.grade}_vol${widget.package.term}_2023',
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, error2, stack2) => Container(
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            widget.isArabic
-                                ? 'صورة الصفحة الممسوحة غير متوفرة'
-                                : 'Scanned page image unavailable',
-                            style: const TextStyle(color: Colors.white70),
+                    child: (widget.package.grade == 5 && widget.package.term == 1)
+                        ? Image.asset(
+                            'assets/pages/page_$pdfPage.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, error, stack) => Image.network(
+                              '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/$pdfPage?edition_id=moe_gr${widget.package.grade}_vol${widget.package.term}_2023',
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, error2, stack2) => Container(
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  widget.isArabic
+                                      ? 'صورة الصفحة الممسوحة غير متوفرة'
+                                      : 'Scanned page image unavailable',
+                                  style: const TextStyle(color: Colors.white70),
+                                ),
+                              ),
+                            ),
+                          )
+                        : Image.network(
+                            '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/$pdfPage?edition_id=moe_gr${widget.package.grade}_vol${widget.package.term}_2023',
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, error2, stack2) => Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.all(24),
+                              child: Text(
+                                widget.isArabic
+                                    ? 'صورة الصفحة الممسوحة غير متوفرة'
+                                    : 'Scanned page image unavailable',
+                                style: const TextStyle(color: Colors.white70),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
                   ),
                 ),
               ),
@@ -708,47 +724,83 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                 minScale: 1.0,
                 maxScale: 4.0,
                 child: Center(
-                  child: Image.asset(
-                    'assets/pages/page_${page.pdfPage}.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.network(
-                        '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/${page.pdfPage}?edition_id=moe_gr${widget.package.grade}_vol${widget.package.term}_2023',
-                        fit: BoxFit.contain,
-                        loadingBuilder: (ctx, child, progress) {
-                          if (progress == null) return child;
-                          return Container(
-                            height: 320,
+                  child: (widget.package.grade == 5 && widget.package.term == 1)
+                      ? Image.asset(
+                          'assets/pages/page_${page.pdfPage}.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.network(
+                              '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/${page.pdfPage}?edition_id=moe_gr${widget.package.grade}_vol${widget.package.term}_2023',
+                              fit: BoxFit.contain,
+                              loadingBuilder: (ctx, child, progress) {
+                                if (progress == null) return child;
+                                return Container(
+                                  height: 320,
+                                  alignment: Alignment.center,
+                                  child: const CircularProgressIndicator(color: Color(0xFF047857)),
+                                );
+                              },
+                              errorBuilder: (ctx, err, stack) => Container(
+                                height: 240,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.menu_book, size: 48, color: Color(0xFF94A3B8)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      widget.isArabic
+                                          ? 'كتاب الطالب: صفحة ${page.printedPage}'
+                                          : 'Textbook Page ${page.printedPage}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      widget.isArabic ? 'تعذر تحميل صورة الصفحة' : 'Unable to load page scan',
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Image.network(
+                          '${widget.api?.baseUrl ?? apiBase}/api/admin/page-image/${page.pdfPage}?edition_id=moe_gr${widget.package.grade}_vol${widget.package.term}_2023',
+                          fit: BoxFit.contain,
+                          loadingBuilder: (ctx, child, progress) {
+                            if (progress == null) return child;
+                            return Container(
+                              height: 320,
+                              alignment: Alignment.center,
+                              child: const CircularProgressIndicator(color: Color(0xFF047857)),
+                            );
+                          },
+                          errorBuilder: (ctx, err, stack) => Container(
+                            height: 240,
                             alignment: Alignment.center,
-                            child: const CircularProgressIndicator(color: Color(0xFF047857)),
-                          );
-                        },
-                        errorBuilder: (ctx, err, stack) => Container(
-                          height: 240,
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.menu_book, size: 48, color: Color(0xFF94A3B8)),
-                              const SizedBox(height: 8),
-                              Text(
-                                widget.isArabic
-                                    ? 'كتاب الطالب: صفحة ${page.printedPage}'
-                                    : 'Textbook Page ${page.printedPage}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.isArabic ? 'تعذر تحميل صورة الصفحة' : 'Unable to load page scan',
-                                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                              ),
-                            ],
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.menu_book, size: 48, color: Color(0xFF94A3B8)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.isArabic
+                                      ? 'كتاب الطالب: صفحة ${page.printedPage}'
+                                      : 'Textbook Page ${page.printedPage}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  widget.isArabic ? 'تعذر تحميل صورة الصفحة' : 'Unable to load page scan',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      );
-                    },
-                  ),
                 ),
               ),
             ),

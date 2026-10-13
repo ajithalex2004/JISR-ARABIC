@@ -117,7 +117,16 @@ class ApiService {
   }, useCache: true);
   Future<dynamic> lesson(String id, {String? childId, String? token}) => get('/api/curriculum/lesson/$id', token: token, query: {'child_id': ?childId}, useCache: true);
   Future<dynamic> submitAttempt(Map<String, dynamic> body, {String? token}) => post('/api/attempts/submit', token: token, body: body);
-  Future<dynamic> capsules({String? childId, String? token}) => get('/api/modules/capsules', token: token, query: {'child_id': ?childId}, useCache: true);
+  Future<dynamic> capsules({int? grade, String? childId, String? token}) => get('/api/modules/capsules', token: token, query: {
+    if (grade != null) 'grade': '$grade',
+    'child_id': ?childId,
+  }, useCache: true);
+  Future<dynamic> mindmaps({int grade = 5, int term = 1, String? token}) => get('/api/modules/mindmaps', token: token, query: {'grade': '$grade', 'term': '$term'}, useCache: true);
+  Future<dynamic> malazim({int? grade, String? lessonId, String? childId, String? token}) => get('/api/modules/malazim', token: token, query: {
+    if (grade != null) 'grade': '$grade',
+    'lesson_id': ?lessonId,
+    'child_id': ?childId,
+  }, useCache: true);
   Future<dynamic> completeCapsule(String id, Map<String, dynamic> body, {String? token}) => post('/api/modules/capsules/$id/complete', token: token, body: body);
   Future<dynamic> adaptiveAssessment(String lessonId, {String? childId, String? token}) => get('/api/modules/assessments/adaptive/$lessonId', token: token, query: {'child_id': ?childId});
   Future<dynamic> examSimulation({int grade = 5, int term = 1, String? childId, String? token}) => get('/api/modules/assessments/exam-simulation/$grade/$term', token: token, query: {'child_id': ?childId});

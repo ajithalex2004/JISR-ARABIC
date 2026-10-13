@@ -24,8 +24,8 @@ from backend.schemas import (
 
 logger = logging.getLogger("fahim.ai")
 
-# Model configuration: defaults to gemini-3.5-flash-lite (fast, free tier, zero 503 latency)
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+# Model configuration: defaults to gemini-2.0-flash (fast, stable, officially supported)
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 BALL_GAMES_KNOWLEDGE = {
     "كرة القدم": {

@@ -50,6 +50,13 @@ def list_capsules(
     optional_child(db, actor, child_id)
     return service.list_capsules(child_id=child_id, grade=grade, db=db)
 
+@router.get('/mindmaps')
+def list_mindmaps(grade: int = Query(5, ge=1, le=12), term: int = Query(1, ge=1, le=3)):
+    """Concept-map chapters for the requested grade/term, built from the official syllabus."""
+    from backend.generated_study_content import generate_mindmap_chapters
+    return {"success": True, "grade": grade, "term": term,
+            "chapters": generate_mindmap_chapters(grade, term)}
+
 @router.get('/capsules/{capsule_id}')
 def get_capsule(capsule_id: str):
     """Retrieve full content, audio script, and checkpoint quiz for a capsule."""

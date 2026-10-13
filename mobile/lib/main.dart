@@ -213,6 +213,15 @@ class _MainScreenState extends State<MainScreen> {
           _isArabic = (savedLang == 'ar');
         });
       }
+      final savedGradeStr = await _auth.storage.read(key: 'active_child_grade');
+      if (mounted && savedGradeStr != null && int.tryParse(savedGradeStr) != null) {
+        final parsedGrade = int.parse(savedGradeStr);
+        if (parsedGrade >= 1 && parsedGrade <= 12) {
+          setState(() {
+            _currentGrade = parsedGrade;
+          });
+        }
+      }
     } catch (_) {}
     final authData = await _auth.restore();
     if (mounted) {
@@ -330,10 +339,16 @@ class _MainScreenState extends State<MainScreen> {
           e.message.contains('locked') ||
           e.message.contains('402')) {
         if (_user?['role'] == 'admin') {
-          setState(() {
-            _activeLessonPackage = CurriculumLessonPackage.fromStaticChapter1();
-            _activeView = 'lesson';
-          });
+          if (lessonId == 'lesson_01_ball_games') {
+            setState(() {
+              _activeLessonPackage = CurriculumLessonPackage.fromStaticChapter1();
+              _activeView = 'lesson';
+            });
+            return;
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message), backgroundColor: Colors.red.shade700),
+          );
           return;
         }
         _showPaywallDialog(_currentGrade, _currentTerm);
@@ -450,6 +465,9 @@ class _MainScreenState extends State<MainScreen> {
     });
     if (_activeChild != null) {
       _auth.storage.write(key: 'active_child_id', value: _activeChild!['id']?.toString());
+      if (_activeChild!['default_grade'] != null) {
+        _auth.storage.write(key: 'active_child_grade', value: _activeChild!['default_grade'].toString());
+      }
     }
     if (_user?['role'] == 'admin' && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1862,6 +1880,7 @@ class _MainScreenState extends State<MainScreen> {
           api: _api,
           initialGrade: _currentGrade,
           initialTerm: _currentTerm,
+          initialPage: ((_currentGrade == 5 || _currentGrade == 6 || _currentGrade == 7) && _currentTerm == 1) ? 8 : 7,
           onGradeTermChanged: (grade, term) {
             setState(() {
               _currentGrade = grade;
@@ -1919,9 +1938,15 @@ class _MainScreenState extends State<MainScreen> {
           onBack: () => setState(() => _activeView = 'catalogue'),
           onVocalize: _vocalizeText,
           activeWord: _activeWord,
+          grade: _currentGrade,
+          api: _api,
+          token: _token,
         );
       case 'capsules':
         return CapsulesView(
+          grade: _currentGrade,
+          api: _api,
+          token: _token,
           completedCapsules: _completedCapsules,
           onCapsuleCompleted: (id) {
             setState(() => _completedCapsules.add(id));
@@ -1941,6 +1966,17 @@ class _MainScreenState extends State<MainScreen> {
         return MindmapsScreen(
           isArabic: _isArabic,
           initialGrade: _currentGrade,
+          api: _api,
+          token: _token,
+          onGradeChanged: (g) {
+            setState(() {
+              _currentGrade = g;
+              if (_activeChild != null) {
+                _activeChild!['default_grade'] = g;
+              }
+            });
+            _auth.storage.write(key: 'active_child_grade', value: g.toString());
+          },
           onVocalize: _vocalizeText,
           onAskFahim: (query) {
             _showAskFahimDialog(initialMode: 'text');

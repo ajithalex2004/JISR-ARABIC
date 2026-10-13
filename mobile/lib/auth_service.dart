@@ -18,7 +18,7 @@ class AuthService {
   static const _serverKey = 'fahim_custom_server_url';
 
   static const String productionApiBase = 'https://api.jisr.ae';
-  static const String liveTunnelHost = 'https://walker-courier-reservations-william.trycloudflare.com';
+  static const String liveTunnelHost = 'https://veteran-salmon-fin-charts.trycloudflare.com';
   static const String fallbackLanHost = 'http://192.168.1.17:8000';
   static const String emulatorHost = 'http://10.0.2.2:8000';
 
@@ -84,12 +84,25 @@ class AuthService {
   Future<Map<String, dynamic>> verifyLoginOtp(String email, String code) =>
       _authenticate('/api/auth/verify-login-otp', {'email': email.trim().toLowerCase(), 'code': code.trim()});
 
-  Future<Map<String, dynamic>> learnerLogin(String parentEmail, String pin) =>
-      _authenticate('/api/auth/student-pin-login', {'parent_email': parentEmail.trim().toLowerCase(), 'pin': pin.trim()});
+  Future<Map<String, dynamic>> learnerLogin(String parentEmail, String pin) async {
+    final data = await _authenticate('/api/auth/student-pin-login', {'parent_email': parentEmail.trim().toLowerCase(), 'pin': pin.trim()});
+    final activeChild = data['active_child'];
+    if (activeChild is Map && activeChild['id'] != null) {
+      await storage.write(key: 'active_child_id', value: activeChild['id'].toString());
+      if (activeChild['default_grade'] != null) {
+        await storage.write(key: 'active_child_grade', value: activeChild['default_grade'].toString());
+      }
+    }
+    return data;
+  }
 
   Future<Map<String, dynamic>> switchChild(String token, String childId) async {
     final data = await _authenticateWithToken('/api/auth/switch-child/$childId', token);
     await storage.write(key: 'active_child_id', value: childId);
+    final activeChild = data['active_child'];
+    if (activeChild is Map && activeChild['default_grade'] != null) {
+      await storage.write(key: 'active_child_grade', value: activeChild['default_grade'].toString());
+    }
     return data;
   }
 
@@ -112,10 +125,17 @@ class AuthService {
       } else if (children.isNotEmpty) {
         activeChild = children.first;
       }
+      if (activeChild != null && activeChild['id'] != null) {
+        await storage.write(key: 'active_child_id', value: activeChild['id'].toString());
+        if (activeChild['default_grade'] != null) {
+          await storage.write(key: 'active_child_grade', value: activeChild['default_grade'].toString());
+        }
+      }
       return {'access_token': token, 'user': user, 'active_child': activeChild};
     } on AuthException {
       await storage.delete(key: _tokenKey);
       await storage.delete(key: 'active_child_id');
+      await storage.delete(key: 'active_child_grade');
       return null;
     }
   }

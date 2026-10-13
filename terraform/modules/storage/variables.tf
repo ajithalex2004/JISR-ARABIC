@@ -8,5 +8,5 @@ variable "environment" {
 
 variable "cdn_domain_name" {
   type    = string
-  default = "cdn.jisr.ae"
+  default = "cdn.jisrarabic.com"
 }

@@ -5,7 +5,7 @@
 set -euo pipefail
 
 TARGET="${1:-appbundle}"
-API_BASE="${2:-https://api.jisr.ae}"
+API_BASE="${2:-https://api.jisrarabic.com}"
 OBFUSCATE="${3:-true}"
 
 echo "=========================================================="

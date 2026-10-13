@@ -2,12 +2,12 @@
 .SYNOPSIS
     Automated Release Packaging Script for JISR Arabic (فهيم) Mobile App.
 .DESCRIPTION
-    Validates mobile environment, enforces HTTPS endpoint pinning (https://api.jisr.ae),
+    Validates mobile environment, enforces HTTPS endpoint pinning (https://api.jisrarabic.com),
     runs test suites, and packages production Android (.aab / .apk) and iOS artifacts.
 .PARAMETER Target
     Build target: 'appbundle' (Google Play .aab), 'apk' (Direct .apk), 'ios' (Xcode/IPA), or 'all'.
 .PARAMETER ApiBase
-    Production API base URL (Must begin with https://). Defaults to 'https://api.jisr.ae'.
+    Production API base URL (Must begin with https://). Defaults to 'https://api.jisrarabic.com'.
 .PARAMETER Clean
     If specified, runs 'flutter clean' before building.
 .PARAMETER Obfuscate
@@ -17,7 +17,7 @@ param (
     [ValidateSet('appbundle', 'apk', 'ios', 'all')]
     [string]$Target = 'appbundle',
 
-    [string]$ApiBase = 'https://api.jisr.ae',
+    [string]$ApiBase = 'https://api.jisrarabic.com',
 
     [switch]$Clean,
 

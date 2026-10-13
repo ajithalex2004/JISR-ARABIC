@@ -3,12 +3,12 @@
 # ==============================================================================
 
 output "alb_dns_name" {
-  description = "Application Load Balancer DNS hostname for public DNS CNAME mapping (api.jisr.ae)"
+  description = "Application Load Balancer DNS hostname for public DNS CNAME mapping (api.jisrarabic.com)"
   value       = module.ecs.alb_dns_name
 }
 
 output "cloudfront_domain_name" {
-  description = "CloudFront CDN distribution domain name for asset CNAME mapping (cdn.jisr.ae)"
+  description = "CloudFront CDN distribution domain name for asset CNAME mapping (cdn.jisrarabic.com)"
   value       = module.storage.cloudfront_domain_name
 }
 

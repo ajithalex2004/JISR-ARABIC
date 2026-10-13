@@ -17,9 +17,9 @@ on:
           - apk
           - ios
       api_base:
-        description: "API Base URL (Strict HTTPS). Leave empty to use the FAHIM_API_BASE repository variable."
-        required: false
-        default: ""
+        description: "API Base URL (Strict HTTPS)"
+        required: true
+        default: "https://api.jisrarabic.com"
       deploy_to_play_store:
         description: "Deploy .aab to Google Play Internal Testing"
         required: false
@@ -116,10 +116,10 @@ jobs:
           API_BASE_INPUT: ${{ github.event.inputs.api_base }}
           API_BASE_VAR: ${{ vars.FAHIM_API_BASE }}
         run: |
-          API_BASE="${API_BASE_INPUT:-$API_BASE_VAR}"
+          API_BASE="${API_BASE_INPUT:-${API_BASE_VAR:-https://api.jisrarabic.com}}"
           case "$API_BASE" in
             https://*) ;;
-            *) echo "::error::Set the FAHIM_API_BASE repository variable (or the api_base input) to the HTTPS API address"; exit 1 ;;
+            *) echo "::error::API base must be an https:// address, got: $API_BASE"; exit 1 ;;
           esac
           mkdir -p build/app/outputs/symbols
           flutter build appbundle --release \
@@ -133,10 +133,10 @@ jobs:
           API_BASE_INPUT: ${{ github.event.inputs.api_base }}
           API_BASE_VAR: ${{ vars.FAHIM_API_BASE }}
         run: |
-          API_BASE="${API_BASE_INPUT:-$API_BASE_VAR}"
+          API_BASE="${API_BASE_INPUT:-${API_BASE_VAR:-https://api.jisrarabic.com}}"
           case "$API_BASE" in
             https://*) ;;
-            *) echo "::error::Set the FAHIM_API_BASE repository variable (or the api_base input) to the HTTPS API address"; exit 1 ;;
+            *) echo "::error::API base must be an https:// address, got: $API_BASE"; exit 1 ;;
           esac
           mkdir -p build/app/outputs/symbols
           flutter build apk --release \
@@ -207,10 +207,10 @@ jobs:
           API_BASE_INPUT: ${{ github.event.inputs.api_base }}
           API_BASE_VAR: ${{ vars.FAHIM_API_BASE }}
         run: |
-          API_BASE="${API_BASE_INPUT:-$API_BASE_VAR}"
+          API_BASE="${API_BASE_INPUT:-${API_BASE_VAR:-https://api.jisrarabic.com}}"
           case "$API_BASE" in
             https://*) ;;
-            *) echo "::error::Set the FAHIM_API_BASE repository variable (or the api_base input) to the HTTPS API address"; exit 1 ;;
+            *) echo "::error::API base must be an https:// address, got: $API_BASE"; exit 1 ;;
           esac
           mkdir -p build/app/outputs/symbols
           flutter build ipa --release \

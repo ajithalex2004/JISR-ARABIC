@@ -17,9 +17,10 @@ class AuthService {
   static const _tokenKey = 'fahim_access_token';
   static const _serverKey = 'fahim_custom_server_url';
 
-  /// Production API address, injected at build time so no unowned domain is baked in:
-  /// `flutter build apk --release --dart-define=FAHIM_API_BASE=https://<api-host>`
-  static const String productionApiBase = String.fromEnvironment('FAHIM_API_BASE');
+  /// Production API on the product's own domain (jisrarabic.com). Override at build time with
+  /// `--dart-define=FAHIM_API_BASE=https://<api-host>` (for example a staging server).
+  static const String productionApiBase =
+      String.fromEnvironment('FAHIM_API_BASE', defaultValue: 'https://api.jisrarabic.com');
   static const String fallbackLanHost = 'http://192.168.1.17:8000';
   static const String emulatorHost = 'http://10.0.2.2:8000';
 

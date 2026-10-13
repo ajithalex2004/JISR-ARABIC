@@ -71,7 +71,7 @@ Copy the production variables example:
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 ```
-Edit `terraform.tfvars` with your target domain (`jisr.ae`) and subdomains.
+Edit `terraform.tfvars` with your target domain (`jisrarabic.com`) and subdomains.
 
 ### Step 2: Initialize Terraform
 ```bash
@@ -124,7 +124,7 @@ aws secretsmanager put-secret-value \
         "FAHIM_SMTP_PORT": "587",
         "FAHIM_SMTP_USER": "YOUR_SES_SMTP_USER",
         "FAHIM_SMTP_PASS": "YOUR_SES_SMTP_PASSWORD",
-        "FAHIM_SMTP_FROM": "noreply@jisr.ae"
+        "FAHIM_SMTP_FROM": "noreply@jisrarabic.com"
     }'
 ```
 
@@ -140,8 +140,8 @@ aws secretsmanager put-secret-value \
 
 ### Step 8: Configure DNS CNAME Records
 In your DNS provider (Route 53 or Cloudflare):
-- CNAME `api.jisr.ae` -> `<ALB_DNS_NAME>`
-- CNAME `cdn.jisr.ae` -> `<CLOUDFRONT_DOMAIN_NAME>`
+- CNAME `api.jisrarabic.com` -> `<ALB_DNS_NAME>`
+- CNAME `cdn.jisrarabic.com` -> `<CLOUDFRONT_DOMAIN_NAME>`
 
 ---
 

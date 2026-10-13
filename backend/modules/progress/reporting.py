@@ -234,7 +234,7 @@ def send_weekly_digest(child_id: str, req: SendWeeklyDigestRequest, *, db: Sessi
         raise ApplicationError(status_code=404, detail="Child profile not found")
 
     parent = db.query(User).filter(User.id == child.parent_id).first()
-    recipient = req.recipient_email or (parent.email if parent else "parent@jisr-arabic.com")
+    recipient = req.recipient_email or (parent.email if parent else "parent@example.com")
 
     gp = db.query(GamificationProfile).filter(GamificationProfile.child_id == child.id).first()
     study_mins = gp.weekly_study_minutes if gp else 0

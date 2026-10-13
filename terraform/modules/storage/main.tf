@@ -49,7 +49,7 @@ resource "aws_s3_bucket_cors_configuration" "assets" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "HEAD"]
-    allowed_origins = ["https://jisr.ae", "https://app.jisr.ae", "https://*.jisr.ae", "http://localhost:3000"]
+    allowed_origins = ["https://jisrarabic.com", "https://app.jisrarabic.com", "https://*.jisrarabic.com", "http://localhost:3000"]
     expose_headers  = ["ETag", "Content-Length", "Content-Range"]
     max_age_seconds = 3600
   }

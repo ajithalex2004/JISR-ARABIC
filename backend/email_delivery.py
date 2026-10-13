@@ -22,7 +22,7 @@ def _smtp_password() -> str:
 
 
 def _sender() -> str:
-    return os.getenv("FAHIM_SMTP_FROM", "").strip() or "noreply@jisr-arabic.com"
+    return os.getenv("FAHIM_SMTP_FROM", "").strip() or "noreply@jisrarabic.com"
 
 
 def email_configured() -> bool:

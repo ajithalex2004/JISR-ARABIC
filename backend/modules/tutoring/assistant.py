@@ -492,6 +492,33 @@ Respond ONLY with a valid JSON object matching this structure:
 """
 
 
+def _record_gemini_failure(feature: str, error: Exception) -> None:
+    from backend.alerts import record_failure
+    record_failure("gemini", f"{feature} ({GEMINI_MODEL}): {error}")
+
+
+def probe_gemini() -> dict:
+    """Make one tiny Gemini call so a broken key or retired model is caught before users notice."""
+    import time
+    started = time.perf_counter()
+    result = {"model": GEMINI_MODEL, "ok": False, "error": None, "latency_ms": None}
+    client = _get_gemini_client()
+    if client is None:
+        result["error"] = "GEMINI_API_KEY is not set or the Gemini client could not start"
+    else:
+        try:
+            response = client.models.generate_content(model=GEMINI_MODEL, contents="Reply with the single word: ok")
+            if not (response.text or "").strip():
+                raise RuntimeError("Gemini returned an empty reply")
+            result["ok"] = True
+        except Exception as e:
+            result["error"] = " ".join(str(e).split())[:300]
+    result["latency_ms"] = round((time.perf_counter() - started) * 1000)
+    if not result["ok"]:
+        _record_gemini_failure("Health check", result["error"])
+    return result
+
+
 def _get_gemini_client():
     try:
         from dotenv import load_dotenv
@@ -511,6 +538,7 @@ def _get_gemini_client():
         return genai.Client(api_key=api_key)
     except Exception as e:
         logger.warning(f"Failed to initialize Google GenAI Client: {e}")
+        _record_gemini_failure("Client initialisation failed", e)
         return None
 
 
@@ -980,6 +1008,7 @@ CRITICAL FORMATTING REQUIREMENT (BILINGUAL INTERLEAVING):
             }
     except Exception as e:
         logger.warning(f"Gemini Ask Fahim query failed, falling back to curriculum dictionary: {e}")
+        _record_gemini_failure("Ask Fahim", e)
         return None
 
 
@@ -1033,6 +1062,7 @@ Student Grade: {req.grade}
             )
     except Exception as e:
         logger.warning(f"Gemini Socratic Learn query failed, falling back to local logic: {e}")
+        _record_gemini_failure("Socratic learn", e)
         return None
 
 
@@ -1131,6 +1161,7 @@ Instructions:
                 )
     except Exception as e:
         logger.warning(f"Gemini solve_question_paper query failed, falling back: {e}")
+        _record_gemini_failure("Question paper solver", e)
         return None
 
 

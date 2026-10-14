@@ -13,7 +13,8 @@ from backend.schemas import AdminAddTermRequest, AdminAddClassRequest, AdminAddL
 from fastapi.responses import FileResponse
 from backend.modules.curriculum import authoring as service
 from backend.modules.tutoring import assignments
-from backend.modules.identity import admin_students
+from backend.modules.identity import admin_students, admin_parents
+from backend.modules.billing import admin_payments
 from backend.modules import school
 from backend.schemas import ClassCreateRequest, ClassMembershipRequest, TutorClassRequest
 from backend.redis_client import invalidate_lesson_cache, invalidate_school_cache
@@ -303,6 +304,93 @@ def delete_student(child_id: str, actor: Principal = Depends(get_current_user), 
 @router.put('/students/{child_id}/grade')
 def set_student_grade(child_id: str, payload: AdminStudentGradeRequest, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
     return admin_students.set_student_grade(child_id, payload.grade, actor=actor, db=db)
+
+class AdminParentCreateRequest(BaseModel):
+    email: str
+    password: str
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+
+
+class AdminParentUpdateRequest(BaseModel):
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    password: Optional[str] = None
+    weekly_report_email: Optional[bool] = None
+
+
+@router.get('/parents')
+def list_parents(q: Optional[str] = None, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    return admin_parents.list_parents(q, actor=actor, db=db)
+
+
+@router.post('/parents')
+def create_parent(payload: AdminParentCreateRequest, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    return admin_parents.create_parent(payload, actor=actor, db=db)
+
+
+@router.get('/parents/{parent_id}')
+def get_parent(parent_id: str, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    return admin_parents.get_parent(parent_id, actor=actor, db=db)
+
+
+@router.patch('/parents/{parent_id}')
+def update_parent(parent_id: str, payload: AdminParentUpdateRequest, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    return admin_parents.update_parent(parent_id, payload, actor=actor, db=db)
+
+
+@router.delete('/parents/{parent_id}')
+def delete_parent(parent_id: str, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    return admin_parents.delete_parent(parent_id, actor=actor, db=db)
+
+
+@router.get('/payments')
+def list_payments(
+    q: Optional[str] = None, method: Optional[str] = None, status: Optional[str] = None,
+    parent_id: Optional[str] = None, days: Optional[int] = None,
+    actor: Principal = Depends(get_current_user), db: Session = Depends(get_db),
+):
+    return admin_payments.list_payments(actor=actor, db=db, q=q, method=method, status=status, parent_id=parent_id, days=days)
+
+
+@router.get('/system-health')
+def system_health(actor: Principal = Depends(get_current_user)):
+    require_roles(actor, ('admin',))
+    from backend import alerts
+    from backend.redis_client import cache_get
+    return {
+        **alerts.status_report(),
+        "last_gemini_check": cache_get("scheduler:last:gemini_probe"),
+        "last_weekly_reports": cache_get("scheduler:last:weekly_reports"),
+    }
+
+
+@router.post('/system-health/check-gemini')
+def check_gemini(actor: Principal = Depends(get_current_user)):
+    require_roles(actor, ('admin',))
+    from backend import scheduler
+    return scheduler.run_gemini_probe()
+
+
+@router.post('/system-health/test-alert')
+def send_test_alert(actor: Principal = Depends(get_current_user)):
+    require_roles(actor, ('admin',))
+    from backend import alerts
+    return alerts.send_alert(
+        "server",
+        "[JISR alert] Test alert",
+        "This is a test alert from Admin > System health. If you received it, failure alerts will reach you.",
+    )
+
+
+@router.post('/system-health/send-weekly-reports')
+def send_weekly_reports_now(actor: Principal = Depends(get_current_user)):
+    """Send this week's progress email now to every opted-in parent who hasn't had it yet."""
+    require_roles(actor, ('admin',))
+    from backend import scheduler
+    return scheduler.run_weekly_reports()
+
 
 @router.get('/coverage-report')
 def get_coverage_report():

@@ -46,10 +46,24 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
                                                      "status": response.status_code,
                                                      "duration_ms": round((time.perf_counter()-started)*1000, 2)})
             response.headers["X-Request-ID"] = request_id
+            _note_failed_response(request.method, request.url.path, response.status_code)
             return response
         except Exception as exc:
             logger.exception("request failed", extra={"method": request.method, "path": request.url.path,
                                                         "status": 500, "error": type(exc).__name__})
+            _note_failed_response(request.method, request.url.path, 500, type(exc).__name__)
             raise
         finally:
             request_id_var.reset(token)
+
+
+# Payment-provider webhooks that are rejected (e.g. a wrong signing secret) leave paid
+# families locked out, so those count as payment failures even though they are 4xx.
+_PAYMENT_WEBHOOKS = ("/api/payments/webhook", "/api/payments/provider-webhook")
+
+
+def _note_failed_response(method: str, path: str, status: int, error: str = "") -> None:
+    if status < 500 and not (path in _PAYMENT_WEBHOOKS and status >= 400):
+        return
+    from backend.alerts import component_for_path, record_failure
+    record_failure(component_for_path(path), f"{method} {path} returned {status} {error}".strip())

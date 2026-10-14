@@ -60,6 +60,8 @@ def _gemini_gloss(word: str, context: str) -> Optional[dict]:
         return {"translation": translation, "part_of_speech": pos if pos in _PARTS_OF_SPEECH else None, "source": "gemini"}
     except Exception as exc:
         logger.warning("Gemini word gloss failed for %r: %s", word, exc)
+        from backend.alerts import record_failure
+        record_failure("gemini", f"Word meanings ({GEMINI_MODEL}): {exc}")
         return None
 
 

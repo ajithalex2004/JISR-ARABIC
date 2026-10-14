@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.api.dependencies import get_current_user
-from backend.modules.identity.access import Principal, require_child, PARENT_ROLES
+from backend.modules.identity.access import Principal, require_child, require_roles, PARENT_ROLES
 """HTTP adapter: request parsing, dependency injection, and service delegation."""
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from backend.schemas import WeeklyDigestResponse, SendWeeklyDigestRequest, SendWeeklyDigestResponse, ActionableGuidanceResponse
 from backend.modules.progress import reporting as service
 router = APIRouter(prefix='/api/parent', tags=['Parent Dashboard'])
@@ -69,3 +70,20 @@ def get_actionable_guidance(child_id: str, db: Session=Depends(get_db), actor: P
     """
     require_child(db, actor, child_id, PARENT_ROLES)
     return service.get_actionable_guidance(child_id=child_id, db=db)
+
+
+class ReportPreferencesRequest(BaseModel):
+    weekly_email: bool
+
+
+@router.get('/report-preferences')
+def get_report_preferences(db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """Whether the parent receives the weekly progress report by email."""
+    require_roles(actor, PARENT_ROLES)
+    return service.get_report_preferences(actor=actor, db=db)
+
+
+@router.put('/report-preferences')
+def set_report_preferences(req: ReportPreferencesRequest, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    require_roles(actor, PARENT_ROLES)
+    return service.set_report_preferences(req.weekly_email, actor=actor, db=db)

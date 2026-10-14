@@ -17,6 +17,7 @@ class User(Base):
     role = Column(String(50), default="parent")  # parent, tutor, admin, learner, school_admin
     school_id = Column(String(100), ForeignKey("schools.id"), nullable=True, index=True)
     is_verified = Column(Boolean, default=False)
+    weekly_report_email = Column(Boolean, default=False)  # parent opted in to the weekly progress email
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     children = relationship("ChildProfile", back_populates="parent", cascade="all, delete-orphan")

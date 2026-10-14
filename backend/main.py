@@ -274,12 +274,16 @@ def configure_runtime():
     if os.getenv("FAHIM_DISABLE_IN_PROCESS_WORKER", "").lower() not in ("1", "true", "yes"):
         from backend.tasks.worker import start_in_process_worker
         start_in_process_worker()
+    from backend import scheduler
+    scheduler.start()
 
 
 @app.on_event("shutdown")
 def on_shutdown():
     from backend.tasks.worker import stop_in_process_worker
     stop_in_process_worker()
+    from backend import scheduler
+    scheduler.stop()
 
 
 @app.get("/api/metrics")

@@ -633,6 +633,17 @@ class WeeklyDigestResponse(BaseModel):
     active_gaps_summary: List[Dict[str, str]]
     tutor_feedback_summary_en: str
     parent_tips: List[str]
+    # This week's activity (last 7 days), from the learner's own records.
+    period_start: Optional[str] = None
+    period_end: Optional[str] = None
+    lessons_practised: int = 0
+    activities_answered: int = 0
+    accuracy_pct: Optional[float] = None
+    capsules_this_week: int = 0
+    quizzes_this_week: List[Dict[str, Any]] = []
+    quiz_avg_this_week: Optional[float] = None
+    words_learned: int = 0
+    activity_vs_last_week_pct: Optional[float] = None
 
 class SendWeeklyDigestRequest(BaseModel):
     channel: str = "in_app_notification"  # in_app_notification, email

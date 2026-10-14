@@ -24,8 +24,10 @@ from backend.schemas import (
 
 logger = logging.getLogger("fahim.ai")
 
-# Model configuration: defaults to gemini-2.0-flash (fast, stable, officially supported)
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+# Model configuration. gemini-2.0-flash has been retired by Google: a valid key gets a
+# "model not found" error for it, which silently sent every request to the local fallback.
+# gemini-3.5-flash-lite is the model the textbook model-answer and dictionary tools use.
+GEMINI_MODEL = os.getenv("GEMINI_MODEL") or "gemini-3.5-flash-lite"
 
 
 def _child_safety_settings(types):
@@ -440,7 +442,7 @@ Respond ONLY with a valid JSON object matching this structure:
       "escalation_reason": null
     }
   ],
-  "model_used": "gemini-2.0-flash",
+  "model_used": "<model name>",
   "escalation_summary": "<Summary statement indicating autonomous resolution>"
 }
 """

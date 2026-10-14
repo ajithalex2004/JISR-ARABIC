@@ -56,7 +56,7 @@ class TestGeminiAssistant(unittest.TestCase):
             self.assertIn("رِيَاضَةٌ", res["answer_ar"])
             self.assertFalse(res["escalated_to_tutor"])
             mock_client.models.generate_content.assert_called_once()
-            # Verify model used is gemini-2.0-flash
+            # Verify the configured model is the one requested
             call_kwargs = mock_client.models.generate_content.call_args.kwargs
             self.assertEqual(call_kwargs["model"], assistant.GEMINI_MODEL)
 

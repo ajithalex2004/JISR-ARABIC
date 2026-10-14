@@ -423,7 +423,7 @@ class QuestionPaperSolveResponse(BaseModel):
     term: int
     total_questions: int
     questions: List[SolvedQuestion]
-    model_used: str = "gemini-2.0-flash"
+    model_used: str = "gemini-3.5-flash-lite"
     escalation_summary: str = "All questions resolved autonomously using MoE curriculum grounding"
 
 class SpeechEvaluationRequest(BaseModel):

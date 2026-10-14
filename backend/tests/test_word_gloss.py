@@ -28,14 +28,26 @@ class TestWordGloss(unittest.TestCase):
 
     def test_falls_back_to_machine_translation(self):
         with patch("backend.modules.tutoring.assistant._get_gemini_client", return_value=None), \
-             patch("backend.modules.curriculum.authoring._translate_ar_to_en", return_value="provision"):
-            self.assertEqual(glossary.gloss_word("توفير")["translation"], "provision")
+             patch.object(glossary, "_google_word_translation", return_value="Necessities"):
+            self.assertEqual(glossary.gloss_word("الضروريات")["translation"], "Necessities")
 
     def test_rejects_untranslated_or_failed_results(self):
         p, _ = self._gemini('{"translation": "وسيلة"}')
-        with p, patch("backend.modules.curriculum.authoring._translate_ar_to_en", return_value="Lesson text: توفير"):
+        with p, patch.object(glossary, "_google_word_translation", return_value=None):
             self.assertIsNone(glossary.gloss_word("توفير"))
         self.assertIsNone(glossary.gloss_word("hello"))
+
+    def test_hides_misleading_machine_translations(self):
+        # Real outputs seen in production before this filter existed.
+        for bad in ("TO THE", "mean, contrivance, instrument, connection", "the", "وسيلة", ""):
+            with self.subTest(bad=bad):
+                self.assertIsNone(glossary._acceptable_machine_translation(bad))
+        self.assertEqual(glossary._acceptable_machine_translation("ESSENTIALS."), "essentials")
+        self.assertEqual(glossary._acceptable_machine_translation("to achieve"), "to achieve")
+
+    def test_default_model_is_not_the_retired_one(self):
+        from backend.modules.tutoring import assistant
+        self.assertNotEqual(assistant.GEMINI_MODEL, "gemini-2.0-flash")
 
     def test_endpoint(self):
         with patch.object(glossary, "gloss_word", return_value={"translation": "saving", "part_of_speech": "noun", "source": "gemini"}):

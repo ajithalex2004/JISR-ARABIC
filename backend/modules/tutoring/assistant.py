@@ -278,6 +278,19 @@ def _load_db_lesson(db, lesson_id: Optional[str]):
     return lesson if isinstance(getattr(lesson, "grade", None), int) else None
 
 
+def _child_grade(db, child_id: Optional[str]) -> Optional[int]:
+    """The student's saved grade, or None."""
+    if db is None or not child_id:
+        return None
+    try:
+        from backend.models import ChildProfile
+        child = db.get(ChildProfile, child_id)
+    except Exception:
+        return None
+    grade = getattr(child, "default_grade", None)
+    return grade if isinstance(grade, int) else None
+
+
 def _lesson_grade(context_lesson_id: Optional[str], db_lesson=None) -> Optional[int]:
     lesson = _get_all_curriculum_lessons().get(context_lesson_id or "lesson_01_ball_games")
     if lesson and isinstance(lesson.get("grade"), int):
@@ -322,10 +335,11 @@ def _get_lesson_rag_context(context_lesson_id: Optional[str], db_lesson=None) ->
 
 # --- Prompt Guardrails & Personas ---
 
-ASK_FAHIM_SYSTEM_PROMPT = """You are Ustadh Fahim (الأستاذ فاهم), an expert conversational Arabic language tutor and curriculum specialist for UAE Ministry of Education (MoE) Grade 5 students.
+ASK_FAHIM_SYSTEM_PROMPT = """You are Ustadh Fahim (الأستاذ فاهم), an expert conversational Arabic language tutor and curriculum specialist for UAE Ministry of Education (MoE) Arabic students in Grades 1-12.
 
 Your role:
-- Answer student questions authoritatively and comprehensively about all 10 lessons of the UAE Grade 5 Arabic curriculum (Ball Games, Horse Riding, Running, Arts, Reading, At My School, At My Home, My Food, My Clothes, Fun Time) and any attached study sheets, revision worksheets, or exam papers.
+- Answer student questions authoritatively and comprehensively for the student's own grade and lesson, which are given with each question, and about any attached study sheets, revision worksheets, or exam papers.
+- Never assume a lesson the student did not mention: do not bring in lessons or topics from other grades.
 - Ground your answers in authentic UAE curriculum vocabulary, grammar rules (verbal sentences, nominal sentences, subject/fa'il, direct object/maf'ul, prepositions, gender agreement), and UAE cultural heritage values.
 
 CRITICAL MANDATORY INSTRUCTIONS:
@@ -341,7 +355,7 @@ CRITICAL MANDATORY INSTRUCTIONS:
    - [Arabic Solution with full diacritics / tashkeel]
      🇬🇧 [Exact, clear English translation of the solution with reasoning]
 
-2. Tone Calibration: Friendly, warm, encouraging (e.g. "أهلاً بك يا بطل!"). Clear Modern Standard Arabic suitable for 10-11 year old learners.
+2. Tone Calibration: Friendly, warm, encouraging (e.g. "أهلاً بك يا بطل!"). Clear Modern Standard Arabic pitched at the student's grade.
 3. Escalation: Minimize escalation. Resolve standard curriculum questions autonomously without sending to a human tutor unless the student explicitly asks to speak to their private teacher.
 
 You must respond ONLY with a valid JSON object with the following fields:
@@ -829,8 +843,18 @@ def _ask_fahim_gemini(req: AskFahimRequest, client, doc_text: str = "", db=None)
         from google.genai import types
 
         db_lesson = _load_db_lesson(db, req.context_lesson_id)
-        rag_context = _get_lesson_rag_context(req.context_lesson_id, db_lesson)
-        grade = _lesson_grade(req.context_lesson_id, db_lesson)
+        if req.context_lesson_id:
+            rag_context = _get_lesson_rag_context(req.context_lesson_id, db_lesson)
+            grade = _lesson_grade(req.context_lesson_id, db_lesson)
+        else:
+            # No lesson open: answer for the student's own grade rather than
+            # defaulting to the Grade 5 "Ball Games" lesson.
+            grade = _child_grade(db, req.child_id) or req.grade
+            rag_context = (
+                _get_lesson_rag_context(None) if grade in (None, 5)
+                else f"UAE Ministry of Education Arabic curriculum, Grade {grade}. "
+                     "No specific lesson is open; answer the student's question directly at this grade level."
+            )
         grade_line = f"Target Grade: {grade} (UAE Ministry of Education Curriculum)" if grade else "Curriculum: UAE Ministry of Education Arabic"
         clean_q, att_type, att_name = _clean_attachment_tag(req.question)
 

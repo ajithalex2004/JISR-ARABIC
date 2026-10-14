@@ -50,7 +50,8 @@ export function App() {
     if (viewParam === 'admin' || viewParam === 'admin-upload' || viewParam === 'upload-pdf') return 'admin';
     return hash || viewParam || 'catalogue';
   });
-  const [selectedLessonId, setSelectedLessonId] = useState<string>('lesson_01_ball_games');
+  // Empty until the student opens a lesson; Ask Fahim then answers for their grade.
+  const [selectedLessonId, setSelectedLessonId] = useState<string>('');
 
   useEffect(() => {
     const onHashChange = () => {
@@ -274,7 +275,7 @@ export function App() {
 
         {currentView === 'lesson' && (
           <LessonViewer
-            lessonId={selectedLessonId}
+            lessonId={selectedLessonId || 'lesson_01_ball_games'}
             activeChild={activeChild}
             onBack={() => setCurrentView('catalogue')}
             onOpenPaywall={() => handleOpenPaywall(paywallGrade, paywallTerm)}
@@ -411,8 +412,9 @@ export function App() {
       <AskFahimModal
         isOpen={isAskFahimOpen}
         onClose={() => setIsAskFahimOpen(false)}
-        contextLessonId={selectedLessonId}
+        contextLessonId={selectedLessonId || undefined}
         childId={activeChild?.id}
+        grade={appGrade}
       />
     </div>
   );

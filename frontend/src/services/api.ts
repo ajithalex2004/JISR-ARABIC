@@ -554,11 +554,11 @@ export const api = {
   },
 
   // Ask Fahim AI
-  async askFahim(question: string, contextLessonId?: string, childId?: string) {
+  async askFahim(question: string, contextLessonId?: string, childId?: string, grade?: number) {
     const res = await authenticatedFetch(`${API_BASE}/api/ai/ask-fahim`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, context_lesson_id: contextLessonId, child_id: childId })
+      body: JSON.stringify({ question, context_lesson_id: contextLessonId, child_id: childId, grade })
     });
     return res.json();
   },

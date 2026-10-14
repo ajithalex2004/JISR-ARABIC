@@ -261,9 +261,43 @@ class AdminStudentGradeRequest(BaseModel):
     grade: int
 
 
+class AdminStudentCreateRequest(BaseModel):
+    parent_email: str
+    name: str
+    grade: int
+    school_name: Optional[str] = None
+    gender: Optional[str] = None
+    age: Optional[int] = None
+    access_pin: Optional[str] = None
+
+
+class AdminStudentUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    grade: Optional[int] = None
+    school_name: Optional[str] = None
+    gender: Optional[str] = None
+    age: Optional[int] = None
+    access_pin: Optional[str] = None
+
+
 @router.get('/students')
 def search_students(q: Optional[str] = None, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
     return admin_students.search_students(q, actor=actor, db=db)
+
+
+@router.post('/students')
+def create_student(payload: AdminStudentCreateRequest, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    return admin_students.create_student(payload, actor=actor, db=db)
+
+
+@router.patch('/students/{child_id}')
+def update_student(child_id: str, payload: AdminStudentUpdateRequest, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    return admin_students.update_student(child_id, payload, actor=actor, db=db)
+
+
+@router.delete('/students/{child_id}')
+def delete_student(child_id: str, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    return admin_students.delete_student(child_id, actor=actor, db=db)
 
 
 @router.put('/students/{child_id}/grade')

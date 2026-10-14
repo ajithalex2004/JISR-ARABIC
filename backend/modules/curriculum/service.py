@@ -58,8 +58,10 @@ def list_grades(actor: Optional[object] = None, db: Optional[Session] = None):
                     {"grade": child.default_grade, "name_en": f"Class {child.default_grade}", "name_ar": f"الصف {child.default_grade}", "has_content": True}
                 ]
         elif getattr(actor, "role", None) == "parent":
+            from backend.modules.curriculum.entitlements import entitled_grades
             children = db.query(ChildProfile).filter(ChildProfile.parent_id == getattr(actor, "id", None)).all()
-            enrolled_grades = sorted(list(set(c.default_grade for c in children if c.default_grade)))
+            # Registered grades plus grades paid for; other grades need payment first.
+            enrolled_grades = sorted({g for c in children for g in entitled_grades(c, db)})
             if enrolled_grades:
                 return [
                     {"grade": g, "name_en": f"Class {g}", "name_ar": f"الصف {g}", "has_content": True}
@@ -395,7 +397,21 @@ def get_learning_plan(child_id: str, *, db: Session):
         }
 
 
-def update_onboarding_profile(payload: OnboardingProfileUpdateRequest, *, db: Session):
+def set_active_grade(child_id: str, grade: int, *, db: Session, actor=None):
+    """Switch a child's grade; the grade must be registered or already paid for."""
+    from backend.modules.curriculum.entitlements import require_grade_change_allowed
+    from backend.modules.identity.service import serialize_child
+    child = db.query(ChildProfile).filter(ChildProfile.id == child_id).first()
+    if not child:
+        raise ApplicationError(status_code=404, detail="Child profile not found.")
+    require_grade_change_allowed(child, grade, actor, db)
+    child.default_grade = grade
+    db.commit()
+    db.refresh(child)
+    return serialize_child(child)
+
+
+def update_onboarding_profile(payload: OnboardingProfileUpdateRequest, *, db: Session, actor=None):
     """
     Update student demographic details, grade, curriculum stream, term, avatar, and PIN
     during Steps 1 & 2 of the Onboarding Wizard.
@@ -416,6 +432,8 @@ def update_onboarding_profile(payload: OnboardingProfileUpdateRequest, *, db: Se
     if payload.school_name is not None:
         child.school_name = payload.school_name.strip()
     if payload.default_grade is not None:
+        from backend.modules.curriculum.entitlements import require_grade_change_allowed
+        require_grade_change_allowed(child, payload.default_grade, actor, db)
         child.default_grade = payload.default_grade
     if payload.selected_term is not None:
         child.selected_term = payload.selected_term

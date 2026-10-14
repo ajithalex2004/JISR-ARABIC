@@ -18,6 +18,7 @@ interface CatalogueViewProps {
   onOpenAskFahim?: () => void;
   initialGrade?: number;
   onSelectGrade?: (grade: number) => void;
+  onChildUpdated?: (child: ChildProfile) => void;
 }
 
 export const CatalogueView: React.FC<CatalogueViewProps> = ({
@@ -29,7 +30,8 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
   onSelectView,
   onOpenAskFahim,
   initialGrade,
-  onSelectGrade
+  onSelectGrade,
+  onChildUpdated
 }) => {
   const availableGrades = React.useMemo(() => {
     if (user?.role === 'admin') {
@@ -37,6 +39,12 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
     }
     if (user?.role === 'learner' && activeChild?.default_grade) {
       return [activeChild.default_grade];
+    }
+    // Parents see the selected child's registered and paid-for grades; they switch
+    // between children from the header. Other grades have to be unlocked (paid) first.
+    if (user?.role === 'parent' && activeChild) {
+      const grades = activeChild.entitled_grades?.length ? activeChild.entitled_grades : [activeChild.default_grade];
+      return [...grades].sort((a, b) => a - b);
     }
     if (user?.role === 'parent' && user.children && user.children.length > 0) {
       const grades = Array.from(new Set(user.children.map((c) => c.default_grade).filter(Boolean))).sort((a, b) => a - b);
@@ -58,6 +66,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
   const [terms, setTerms] = useState<TermSummary[]>([]);
   const [lessons, setLessons] = useState<LessonSummary[]>([]);
   const [loadError, setLoadError] = useState('');
+  const [isSwitchingGrade, setIsSwitchingGrade] = useState(false);
 
   // Keep the app-wide grade (used by Textbook, Mindmaps, Booklets, Capsules) in sync.
   const setSelectedGrade = (g: number) => {
@@ -193,6 +202,47 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
             );
           })}
         </div>
+
+        {user?.role === 'parent' && activeChild && (
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+            {selectedGrade !== activeChild.default_grade && (
+              <button
+                type="button"
+                disabled={isSwitchingGrade}
+                onClick={async () => {
+                  setIsSwitchingGrade(true);
+                  try {
+                    const updated = await api.setActiveGrade(activeChild.id, selectedGrade);
+                    onChildUpdated?.(updated);
+                  } catch (err: any) {
+                    setLoadError(err.message || 'Could not change the grade');
+                  } finally {
+                    setIsSwitchingGrade(false);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold disabled:opacity-60"
+              >
+                Make Grade {selectedGrade} {activeChild.name}'s current grade · اجعل الصف {selectedGrade} صفّه الحالي
+              </button>
+            )}
+            <label className="flex items-center gap-2 text-slate-600 font-semibold">
+              <span>Unlock another grade · فتح صف آخر:</span>
+              <select
+                value=""
+                onChange={(e) => {
+                  const g = Number(e.target.value);
+                  if (g) onOpenPaywall(g, 1);
+                }}
+                className="border border-slate-300 rounded-lg px-2 py-1 bg-white text-slate-800"
+              >
+                <option value="">Choose…</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter((g) => !availableGrades.includes(g)).map((g) => (
+                  <option key={g} value={g}>Grade {g} · الصف {g}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
       </div>
 
       {/* Term Selector Tabs */}

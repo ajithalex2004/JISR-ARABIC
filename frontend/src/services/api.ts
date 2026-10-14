@@ -214,6 +214,17 @@ export const api = {
     return res.json();
   },
 
+  // Move a child to another grade the parent has already paid for.
+  async setActiveGrade(childId: string, grade: number): Promise<ChildProfile> {
+    const res = await authenticatedFetch(`${API_BASE}/api/curriculum/active-grade`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ child_id: childId, grade })
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not change the grade'));
+    return res.json();
+  },
+
   async switchChild(childId: string): Promise<AuthResponse> {
     const res = await authenticatedFetch(`${API_BASE}/api/auth/switch-child/${childId}`, {
       method: 'POST',

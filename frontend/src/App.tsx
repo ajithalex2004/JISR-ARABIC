@@ -73,7 +73,7 @@ export function App() {
   const [isPaywallOpen, setIsPaywallOpen] = useState<boolean>(false);
   const [paywallGrade, setPaywallGrade] = useState<number>(5);
   const [paywallTerm, setPaywallTerm] = useState<number>(1);
-  const [paywallChapterName, setPaywallChapterName] = useState<string>('Ball Games / ألعاب الكرة');
+  const [paywallChapterName, setPaywallChapterName] = useState<string | undefined>(undefined);
   const [isAskFahimOpen, setIsAskFahimOpen] = useState<boolean>(false);
   const [isMobileSimulator, setIsMobileSimulator] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
@@ -175,10 +175,18 @@ export function App() {
     setCurrentView('lesson');
   };
 
+  const handleChildUpdated = (updatedChild: ChildProfile) => {
+    setActiveChild(updatedChild);
+    if (updatedChild.default_grade) setAppGrade(updatedChild.default_grade);
+    if (user?.children) {
+      setUser({ ...user, children: user.children.map(c => c.id === updatedChild.id ? updatedChild : c) });
+    }
+  };
+
   const handleOpenPaywall = (grade?: number, term?: number, chapterName?: string) => {
     setPaywallGrade(grade ?? activeChild?.default_grade ?? 5);
     setPaywallTerm(term ?? activeChild?.selected_term ?? 1);
-    if (chapterName) setPaywallChapterName(chapterName);
+    setPaywallChapterName(chapterName);
     setIsPaywallOpen(true);
   };
 
@@ -265,6 +273,7 @@ export function App() {
             activeChild={activeChild}
             initialGrade={appGrade}
             onSelectGrade={setAppGrade}
+            onChildUpdated={handleChildUpdated}
             onSelectLesson={handleSelectLesson}
             onOpenPaywall={handleOpenPaywall}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
@@ -278,7 +287,7 @@ export function App() {
             lessonId={selectedLessonId || 'lesson_01_ball_games'}
             activeChild={activeChild}
             onBack={() => setCurrentView('catalogue')}
-            onOpenPaywall={() => handleOpenPaywall(paywallGrade, paywallTerm)}
+            onOpenPaywall={() => handleOpenPaywall(appGrade)}
             onOpenReader={(page) => {
               if (page) setReaderInitialPage(page);
               setCurrentView('reader');
@@ -403,8 +412,18 @@ export function App() {
         term={paywallTerm}
         chapterName={paywallChapterName}
         activeChild={activeChild}
-        onPaymentSuccess={() => {
-          // Re-trigger view refresh
+        onPaymentSuccess={async () => {
+          // Reload the account so newly paid grades appear in the grade picker.
+          try {
+            const u = await api.getMe();
+            if (u) {
+              setUser(u);
+              const refreshed = u.children?.find((c: ChildProfile) => c.id === activeChild?.id);
+              if (refreshed) setActiveChild(refreshed);
+            }
+          } catch {
+            // Keep the current state; a page reload will pick the new grade up.
+          }
           setCurrentView('catalogue');
         }}
       />

@@ -14,6 +14,8 @@ export interface ChildProfile {
   diagnostic_score?: number;
   diagnostic_details?: string;
   learning_plan?: string;
+  // Registered grade plus grades the parent has paid for; only these can be opened.
+  entitled_grades?: number[];
 }
 
 export interface DiagnosticOption {

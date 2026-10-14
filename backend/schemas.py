@@ -91,6 +91,8 @@ class ChildProfileSchema(BaseModel):
     learning_plan: Optional[str] = None
     unlocked_terms: List[str] = []
     is_unlocked: bool = False
+    # Registered grade plus grades the parent has paid for; only these can be opened.
+    entitled_grades: List[int] = []
 
 class DiagnosticOptionSchema(BaseModel):
     id: int
@@ -157,6 +159,11 @@ class SubmitDiagnosticResponse(BaseModel):
     competency_breakdown: Dict[str, Any]
     item_evaluations: List[Dict[str, Any]]
     learning_plan: LearningPlanSchema
+
+class ActiveGradeRequest(BaseModel):
+    child_id: str
+    grade: int = Field(..., ge=1, le=12)
+
 
 class OnboardingProfileUpdateRequest(BaseModel):
     child_id: str

@@ -181,7 +181,9 @@ def checkout_term(req: PaymentCheckoutRequest, *, db: Session, is_verified_provi
                 access.unlocked_at = datetime.datetime.utcnow()
                 access.transaction_ref = receipt_num
 
-        if req.grade and child.default_grade != req.grade:
+        # Paying unlocks this grade; it does not move the child to it. A parent
+        # switches grades explicitly (POST /api/curriculum/active-grade).
+        if req.grade and not child.default_grade:
             child.default_grade = req.grade
 
     db.commit()
@@ -453,7 +455,8 @@ def redeem_voucher(req: VoucherRedeemRequest, *, db: Session):
             access.unlocked_at = datetime.datetime.utcnow()
             access.transaction_ref = receipt_num
 
-    if req.grade and child.default_grade != req.grade:
+    # Redeeming unlocks this grade; it does not move the child to it.
+    if req.grade and not child.default_grade:
         child.default_grade = req.grade
 
     db.commit()

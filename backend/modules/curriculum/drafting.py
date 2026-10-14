@@ -9,6 +9,7 @@ import copy
 import datetime
 import hashlib
 import json
+import re
 import logging
 import os
 import secrets
@@ -100,6 +101,70 @@ Rules:
 """
 
 
+DRAFT_ATTEMPTS = 3
+
+
+def parse_model_json(text: str) -> Any:
+    """json.loads, tolerating the slips models make in long JSON replies.
+
+    Tries the text as-is first; then strips a Markdown fence and // or /* */ comments and drops
+    trailing commas before } or ]. Raises ValueError when it still isn't valid JSON.
+    """
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    cleaned = text.strip()
+    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", cleaned)
+    # Twice: removing a comment can expose a trailing comma that sat in front of it.
+    cleaned = _strip_outside_strings(_strip_outside_strings(cleaned))
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError as exc:
+        raise ValueError(str(exc)) from exc
+
+
+def _strip_outside_strings(text: str) -> str:
+    """Remove comments and trailing commas, leaving the contents of JSON strings untouched."""
+    out, i, n = [], 0, len(text)
+    in_string = False
+    while i < n:
+        ch = text[i]
+        if in_string:
+            out.append(ch)
+            if ch == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            out.append(ch)
+            i += 1
+        elif text.startswith("//", i):
+            while i < n and text[i] != "\n":
+                i += 1
+        elif text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            i = n if end == -1 else end + 2
+        elif ch == ",":
+            j = i + 1
+            while j < n and text[j] in " \t\r\n":
+                j += 1
+            if j < n and text[j] in "}]":
+                i += 1  # trailing comma
+            else:
+                out.append(ch)
+                i += 1
+        else:
+            out.append(ch)
+            i += 1
+    return "".join(out)
+
+
 def gemini_generator() -> Generator:
     """Default generator: uploads page images and asks Gemini for a JSON section group."""
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -119,19 +184,29 @@ def gemini_generator() -> Generator:
             if path not in uploaded:
                 uploaded[path] = client.files.upload(file=str(path))
             files.append(uploaded[path])
-        response = client.models.generate_content(
-            model=model,
-            contents=[*files, prompt],
-            config=types.GenerateContentConfig(
-                temperature=0.4,
-                max_output_tokens=8192,
-                response_mime_type="application/json",
-                safety_settings=_child_safety_settings(types),
-            ),
-        )
-        if not response or not response.text:
-            raise ApplicationError(502, "Gemini returned an empty draft")
-        return json.loads(response.text)
+        last_error = None
+        # Long Arabic drafts occasionally come back as slightly malformed JSON; repair what can be
+        # repaired and otherwise ask again, so one bad reply doesn't fail the whole chapter.
+        for attempt in range(DRAFT_ATTEMPTS):
+            response = client.models.generate_content(
+                model=model,
+                contents=[*files, prompt],
+                config=types.GenerateContentConfig(
+                    temperature=0.4 if attempt == 0 else 0.2,
+                    max_output_tokens=16384,
+                    response_mime_type="application/json",
+                    safety_settings=_child_safety_settings(types),
+                ),
+            )
+            if not response or not response.text:
+                last_error = "Gemini returned an empty draft"
+                continue
+            try:
+                return parse_model_json(response.text)
+            except ValueError as exc:
+                last_error = f"Gemini returned malformed JSON ({exc})"
+                logger.warning("Draft attempt %s/%s unreadable: %s", attempt + 1, DRAFT_ATTEMPTS, exc)
+        raise ApplicationError(502, f"{last_error} after {DRAFT_ATTEMPTS} attempts")
 
     generate.model = model  # type: ignore[attr-defined]
     return generate

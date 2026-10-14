@@ -69,12 +69,21 @@ export const TextbookPdfUploader: React.FC<TextbookPdfUploaderProps> = ({ onUplo
     }
   };
 
-  const pollTask = async (taskId: string) => {
+  // A redeploy or a busy moment can make a status check fail; keep checking for a few minutes
+  // instead of reporting failure while the book is still being processed.
+  const MAX_POLL_FAILURES = 60;
+  // Each page takes seconds; progress frozen this long means the server stopped the job.
+  const STALL_MS = 10 * 60 * 1000;
+  const lastProgress = useRef<{ value: number; since: number }>({ value: -1, since: Date.now() });
+  const INTERRUPTED_MESSAGE = 'Processing was interrupted because the server restarted. Click "Upload & Process" again with the same PDF: pages already read are kept and it continues from where it stopped.';
+
+  const pollTask = async (taskId: string, failures = 0) => {
     try {
       const task = await api.getTask(taskId);
       if (task.status === 'completed' || task.status === 'succeeded') {
         setIsUploading(false);
         setUploadProgress(100);
+        setErrorMessage('');
         setStatusMessage('Textbook successfully processed and indexed into PostgreSQL!');
         setUploadResult(task.result || { status: 'completed' });
         if (onUploadComplete) {
@@ -83,15 +92,32 @@ export const TextbookPdfUploader: React.FC<TextbookPdfUploaderProps> = ({ onUplo
       } else if (task.status === 'failed') {
         setIsUploading(false);
         setErrorMessage(`Task failed: ${task.error || 'Unknown indexing error'}`);
+      } else if (task.status === 'missing') {
+        setIsUploading(false);
+        setErrorMessage(INTERRUPTED_MESSAGE);
       } else {
         // still processing
+        const progress = Number(task.progress || 0);
+        if (progress !== lastProgress.current.value) {
+          lastProgress.current = { value: progress, since: Date.now() };
+        } else if (Date.now() - lastProgress.current.since > STALL_MS) {
+          setIsUploading(false);
+          setErrorMessage(INTERRUPTED_MESSAGE);
+          return;
+        }
+        setErrorMessage('');
         setUploadProgress(task.progress || 50);
         setStatusMessage(`Processing textbook OCR & rendering pages (${task.progress || 50}%)...`);
-        setTimeout(() => pollTask(taskId), 1500);
+        setTimeout(() => pollTask(taskId), 3000);
       }
     } catch (err: any) {
-      setIsUploading(false);
-      setErrorMessage(`Error polling indexing task: ${err.message}`);
+      if (failures + 1 >= MAX_POLL_FAILURES) {
+        setIsUploading(false);
+        setErrorMessage(`${INTERRUPTED_MESSAGE} (Last error: ${err.message})`);
+        return;
+      }
+      setStatusMessage('Server is busy or restarting. Still checking on the textbook processing...');
+      setTimeout(() => pollTask(taskId, failures + 1), 5000);
     }
   };
 
@@ -115,6 +141,7 @@ export const TextbookPdfUploader: React.FC<TextbookPdfUploaderProps> = ({ onUplo
       if (res.task_id) {
         setStatusMessage('PDF staged. Background OCR and page rendering in progress...');
         setUploadProgress(30);
+        lastProgress.current = { value: -1, since: Date.now() };
         pollTask(res.task_id);
       } else {
         setIsUploading(false);

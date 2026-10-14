@@ -21,6 +21,7 @@ type Health = {
   components: Component[];
   last_gemini_check?: { ok: boolean; model: string; error?: string | null; latency_ms?: number; at: string } | null;
   schema?: { missing_columns: string[]; error?: string };
+  models?: { assistant: string; drafting: string };
   last_weekly_reports?: { week: string; sent: number; skipped: number; failed: number; error?: string; at: string } | null;
 };
 
@@ -79,6 +80,7 @@ export function SystemHealth() {
             {gemini.ok ? 'Working' : 'Failing'} · {formatDate(gemini.at)}
             {!gemini.ok && gemini.error && <div className="text-xs font-normal break-words">{gemini.error}</div>}
           </div> : <div>{health.gemini_configured ? 'Not checked yet' : 'GEMINI_API_KEY is not set'}</div>}
+          {health.models && <div className="text-xs text-slate-500 mt-1">Ask Fahim: {health.models.assistant} · Lesson drafting: {health.models.drafting}</div>}
         </div>
         <div className="border border-slate-200 bg-slate-50 p-3">
           <div className="text-xs text-slate-500">Last weekly parent emails</div>

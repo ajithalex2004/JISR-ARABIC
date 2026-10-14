@@ -63,6 +63,23 @@ class TestAskFahimRouting(unittest.TestCase):
         prompt = client.models.generate_content.call_args.kwargs["contents"]
         self.assertIn("Target Grade: 6", prompt)
 
+    def test_no_open_lesson_uses_the_students_grade_not_ball_games(self):
+        client = self._client()
+        with patch.object(assistant, "_child_grade", return_value=6):
+            assistant._ask_fahim_gemini(AskFahimRequest(question="ما معنى وسيلة؟", child_id="c1"), client, db=MagicMock())
+        prompt = client.models.generate_content.call_args.kwargs["contents"]
+        self.assertIn("Target Grade: 6", prompt)
+        self.assertNotIn("Ball", prompt)
+
+    def test_request_grade_is_used_when_the_child_has_none(self):
+        client = self._client()
+        assistant._ask_fahim_gemini(AskFahimRequest(question="ما معنى وسيلة؟", grade=7), client)
+        self.assertIn("Target Grade: 7", client.models.generate_content.call_args.kwargs["contents"])
+
+    def test_system_prompt_is_not_tied_to_grade_5(self):
+        self.assertNotIn("Ball Games", assistant.ASK_FAHIM_SYSTEM_PROMPT)
+        self.assertNotIn("Grade 5", assistant.ASK_FAHIM_SYSTEM_PROMPT)
+
 
 if __name__ == "__main__":
     unittest.main()

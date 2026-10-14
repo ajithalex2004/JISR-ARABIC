@@ -13,28 +13,31 @@ interface AskFahimModalProps {
   onClose: () => void;
   contextLessonId?: string;
   childId?: string;
+  // The grade being studied; sent with questions so answers fit the student's level.
+  grade?: number;
 }
 
 export const AskFahimModal: React.FC<AskFahimModalProps> = ({
   isOpen,
   onClose,
-  contextLessonId = 'lesson_01_ball_games',
-  childId
+  contextLessonId,
+  childId,
+  grade = 5
 }) => {
   const [activeTab, setActiveTab] = useState<'chat' | 'paper'>('chat');
   const [question, setQuestion] = useState<string>('');
   const [messages, setMessages] = useState<Array<{ sender: 'user' | 'fahim'; text_ar: string; text_en?: string; escalated?: boolean }>>([
     {
       sender: 'fahim',
-      text_ar: 'مَرْحَبًا بِكَ! أَنَا مُعَلِّمُكَ (فَهِيم). كَيْفَ أُسَاعِدُكَ فِي دَرْسِ أَلْعَابِ الكُرَةِ أَوِ القَوَاعِدِ اليَوْمَ؟',
-      text_en: "Hello! I am your conversational teacher, Ask Fahim. How can I assist you with Ball Games or grammar rules today?"
+      text_ar: 'مَرْحَبًا بِكَ! أَنَا مُعَلِّمُكَ (فَهِيم). كَيْفَ أُسَاعِدُكَ فِي دُرُوسِكَ أَوِ المُفْرَدَاتِ أَوِ القَوَاعِدِ اليَوْمَ؟',
+      text_en: "Hello! I am your conversational teacher, Ask Fahim. How can I help you with your lessons, vocabulary or grammar today?"
     }
   ]);
   const [isSending, setIsSending] = useState<boolean>(false);
 
   // Question Paper Exam Assistant State
-  const [paperTitle, setPaperTitle] = useState<string>('ورقة اختبار اللغة العربية - الصف الخامس');
-  const [paperText, setPaperText] = useState<string>('كم عدد اللاعبين في فريق كرة القدم؟ وما هو إعراب كلمة (اللاعبُ) في جملة (سجل اللاعبُ الهدفَ)؟');
+  const [paperTitle, setPaperTitle] = useState<string>('ورقة اختبار اللغة العربية');
+  const [paperText, setPaperText] = useState<string>('');
   const [paperFileBase64, setPaperFileBase64] = useState<string | null>(null);
   const [paperFileName, setPaperFileName] = useState<string | null>(null);
   const [paperMimeType, setPaperMimeType] = useState<string>('application/pdf');
@@ -54,7 +57,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
     setIsSending(true);
 
     try {
-      const res = await api.askFahim(userText, contextLessonId, childId);
+      const res = await api.askFahim(userText, contextLessonId, childId, grade);
       setMessages((prev) => [
         ...prev,
         {
@@ -104,7 +107,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
         document_base64: paperFileBase64 || undefined,
         mime_type: paperMimeType,
         text_content: paperText,
-        grade: 5,
+        grade,
         term: 1,
         child_id: childId,
       });
@@ -124,7 +127,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
       await api.solveQuestionPaper({
         paper_title: `${paperTitle} - Question ${qNumber}`,
         text_content: `Question ${qNumber} needs human tutor certification.`,
-        grade: 5,
+        grade,
         term: 1,
         child_id: childId,
         force_escalation: true
@@ -158,7 +161,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
             <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
               <span>Ask Fahim · اسْأَلْ فَهِيْم</span>
               <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">
-                Gemini 2.0 Flash
+                Gemini AI
               </span>
             </h2>
             <p className="text-[11px] text-slate-500">
@@ -252,7 +255,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
                 type="text"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask about ball games, words, or grammar (اسأل عن المفردات أو القواعد)..."
+                placeholder="Ask about your lesson, words, or grammar (اسأل عن الدرس أو المفردات أو القواعد)..."
                 className="sharp-input flex-1 text-xs rounded-xl"
               />
               <button
@@ -352,7 +355,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
                 {isSolvingPaper ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Gemini 2.0 Flash is analyzing & solving questions...</span>
+                    <span>Gemini is analyzing & solving questions...</span>
                   </>
                 ) : (
                   <>

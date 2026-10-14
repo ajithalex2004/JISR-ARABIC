@@ -367,8 +367,10 @@ class AdminUpdateEditionRequest(BaseModel):
 
 class AskFahimRequest(BaseModel):
     question: str = Field(..., max_length=2000)
-    context_lesson_id: Optional[str] = "lesson_01_ball_games"
+    context_lesson_id: Optional[str] = None
     child_id: Optional[str] = None
+    # The student's grade, used when no lesson is open (the child's saved grade wins).
+    grade: Optional[int] = Field(None, ge=1, le=12)
     voice_input: Optional[bool] = False
     attachment_base64: Optional[str] = Field(None, max_length=7000000)
     attachment_name: Optional[str] = Field(None, max_length=255)

@@ -641,19 +641,46 @@ def get_current_user_profile(*, user: User, db: Session):
     )
 
 
+def purge_children(child_ids, *, db: Session, anonymized_parent_id: Optional[str] = None):
+    """Delete learner profiles with all their learning records and sign them out (caller commits).
+
+    Payment transactions are anonymised rather than deleted, for UAE FTA 5-year VAT retention.
+    """
+    from backend.models import (
+        ClassMembership, LearnerAttempt, LearnerMistake, TutorSubmission, CapsuleProgress,
+        AssessmentSession, ExamSimulationResult, GamificationProfile, LearnerBadge, ConceptMastery,
+        SpacedReviewLog, TutorAssignment, WeeklyDigestNotification, PaymentTransaction, UserFeedback,
+    )
+    child_ids = list(child_ids)
+    if not child_ids:
+        return
+    for model in (
+        ClassMembership, TermAccess, LearnerAttempt, LearnerMistake, TutorSubmission, CapsuleProgress,
+        AssessmentSession, ExamSimulationResult, GamificationProfile, LearnerBadge, ConceptMastery,
+        SpacedReviewLog, TutorAssignment, WeeklyDigestNotification,
+    ):
+        db.query(model).filter(model.child_id.in_(child_ids)).delete(synchronize_session=False)
+    db.query(UserFeedback).filter(UserFeedback.child_id.in_(child_ids)).update(
+        {UserFeedback.child_id: None}, synchronize_session=False)
+    for payment in db.query(PaymentTransaction).filter(PaymentTransaction.child_id.in_(child_ids)).all():
+        payment.anonymized_parent_id = anonymized_parent_id or payment.parent_id
+        payment.parent_id = None
+        payment.child_id = None
+        payment.promo_code = None
+    for session in db.query(UserSession).filter(UserSession.child_id.in_(child_ids)).all():
+        record_revoked_token(session.id)
+        db.delete(session)
+    db.flush()
+    db.query(ChildProfile).filter(ChildProfile.id.in_(child_ids)).delete(synchronize_session=False)
+
+
 def delete_account(*, user: User, db: Session):
     """
     Permanently deletes a user account and cascades all associated learner data,
     sessions, gamification records, and educational history.
     Mandated by Apple App Store Review Guideline 5.1.1(v) & GDPR / UAE Data Law.
     """
-    from backend.models import (
-        ChildProfile, ClassMembership, TermAccess, LearnerMistake,
-        TutorSubmission, CapsuleProgress, AssessmentSession,
-        ExamSimulationResult, GamificationProfile, LearnerBadge,
-        ConceptMastery, SpacedReviewLog, TutorAssignment, WeeklyDigestNotification,
-        PaymentTransaction, UserSession, OtpCode
-    )
+    from backend.models import TutorAssignment, WeeklyDigestNotification, PaymentTransaction
     user_id = user.id
     user_email = user.email
 
@@ -662,31 +689,8 @@ def delete_account(*, user: User, db: Session):
     child_ids = [c.id for c in children]
 
     if child_ids:
-        # 2. Delete all child-associated educational and progress records
-        db.query(ClassMembership).filter(ClassMembership.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(TermAccess).filter(TermAccess.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(LearnerMistake).filter(LearnerMistake.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(TutorSubmission).filter(TutorSubmission.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(CapsuleProgress).filter(CapsuleProgress.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(AssessmentSession).filter(AssessmentSession.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(ExamSimulationResult).filter(ExamSimulationResult.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(GamificationProfile).filter(GamificationProfile.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(LearnerBadge).filter(LearnerBadge.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(ConceptMastery).filter(ConceptMastery.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(SpacedReviewLog).filter(SpacedReviewLog.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(TutorAssignment).filter(TutorAssignment.child_id.in_(child_ids)).delete(synchronize_session=False)
-        db.query(WeeklyDigestNotification).filter(WeeklyDigestNotification.child_id.in_(child_ids)).delete(synchronize_session=False)
-
-        # Anonymize rather than delete PaymentTransactions to satisfy UAE FTA 5-year VAT statutory retention
-        db.query(PaymentTransaction).filter(PaymentTransaction.child_id.in_(child_ids)).update({
-            PaymentTransaction.anonymized_parent_id: user_id,
-            PaymentTransaction.parent_id: None,
-            PaymentTransaction.child_id: None,
-            PaymentTransaction.promo_code: None,
-        }, synchronize_session=False)
-
-        # 3. Delete children profiles
-        db.query(ChildProfile).filter(ChildProfile.id.in_(child_ids)).delete(synchronize_session=False)
+        # 2-3. Delete all child-associated records and the profiles themselves
+        purge_children(child_ids, db=db, anonymized_parent_id=user_id)
 
     # 4. Delete user-level records
     db.query(WeeklyDigestNotification).filter(WeeklyDigestNotification.parent_id == user_id).delete(synchronize_session=False)

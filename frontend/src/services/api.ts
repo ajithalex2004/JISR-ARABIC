@@ -91,6 +91,29 @@ export const api = {
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load students'));
     return res.json();
   },
+  async adminCreateStudent(student: { parent_email: string; name: string; grade: number; school_name?: string; gender?: string; age?: number; access_pin?: string }) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/students`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(student)
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not add student'));
+    return res.json();
+  },
+  async adminUpdateStudent(childId: string, changes: { name?: string; grade?: number; school_name?: string; gender?: string; age?: number; access_pin?: string }) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/students/${encodeURIComponent(childId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(changes)
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not update student'));
+    return res.json();
+  },
+  async adminDeleteStudent(childId: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/students/${encodeURIComponent(childId)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not delete student'));
+    return res.json();
+  },
   async adminSetStudentGrade(childId: string, grade: number) {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/students/${encodeURIComponent(childId)}/grade`, {
       method: 'PUT',

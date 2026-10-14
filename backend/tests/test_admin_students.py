@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.database import Base, get_db
 from backend.main import app
-from backend.models import ChildProfile, TermAccess, User
+from backend.models import ChildProfile, GamificationProfile, PaymentTransaction, TermAccess, User
 from backend.redis_client import _fallback_cache, _fallback_rate_buckets, _fallback_revoked_tokens
 from backend.security import hash_password
 
@@ -89,6 +89,62 @@ class TestAdminStudents(unittest.TestCase):
         res = self.client.put("/api/admin/students/child_ann/grade", json={"grade": 6}, headers=headers)
         self.assertEqual(res.status_code, 403)
         self.assertEqual(self.client.get("/api/admin/students").status_code, 401)
+
+    def test_admin_adds_student_under_existing_parent(self):
+        headers = self._headers("admin@test.local")
+        res = self.client.post("/api/admin/students", json={
+            "parent_email": "Parent.Ann@test.local", "name": "  Lina ", "grade": 4,
+            "school_name": "Abu Dhabi School", "gender": "Girl", "age": 9, "access_pin": "4321"}, headers=headers)
+        self.assertEqual(res.status_code, 200, res.text)
+        body = res.json()
+        self.assertEqual((body["name"], body["default_grade"], body["parent_email"], body["has_pin"]),
+                         ("Lina", 4, "parent.ann@test.local", True))
+        pin_login = self.client.post("/api/auth/student-pin-login", json={
+            "parent_email": "parent.ann@test.local", "pin": "4321", "child_id": body["id"]})
+        self.assertEqual(pin_login.status_code, 200, pin_login.text)
+
+        missing = self.client.post("/api/admin/students", json={
+            "parent_email": "nobody@test.local", "name": "X", "grade": 4}, headers=headers)
+        self.assertEqual(missing.status_code, 404)
+        bad_pin = self.client.post("/api/admin/students", json={
+            "parent_email": "parent.ann@test.local", "name": "X", "grade": 4, "access_pin": "12"}, headers=headers)
+        self.assertEqual(bad_pin.status_code, 400)
+
+    def test_admin_edits_student(self):
+        headers = self._headers("admin@test.local")
+        res = self.client.patch("/api/admin/students/child_ann", json={
+            "name": "Ann Maria Joseph", "grade": 6, "school_name": "New School", "age": 12}, headers=headers)
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual((res.json()["name"], res.json()["default_grade"], res.json()["school_name"], res.json()["age"]),
+                         ("Ann Maria Joseph", 6, "New School", 12))
+        self.assertEqual(self.client.patch("/api/admin/students/child_ann", json={"name": " "}, headers=headers).status_code, 400)
+        self.assertEqual(self.client.patch("/api/admin/students/nobody", json={"name": "A"}, headers=headers).status_code, 404)
+
+    def test_admin_deletes_student_and_their_records(self):
+        with self.session() as db:
+            db.add(GamificationProfile(child_id="child_sam"))
+            db.add(PaymentTransaction(id="pay_sam", parent_id="parent_ann", child_id="child_sam",
+                                      grade=3, term=1, receipt_number="RCPT-SAM", tax_invoice_number="INV-SAM"))
+            db.commit()
+        headers = self._headers("admin@test.local")
+        res = self.client.delete("/api/admin/students/child_sam", headers=headers)
+        self.assertEqual(res.status_code, 200, res.text)
+        with self.session() as db:
+            self.assertIsNone(db.get(ChildProfile, "child_sam"))
+            self.assertEqual(db.query(GamificationProfile).filter_by(child_id="child_sam").count(), 0)
+            payment = db.get(PaymentTransaction, "pay_sam")
+            self.assertIsNotNone(payment)
+            self.assertIsNone(payment.child_id)
+            self.assertEqual(payment.anonymized_parent_id, "parent_ann")
+            self.assertIsNotNone(db.get(ChildProfile, "child_ann"))
+        self.assertEqual(self.client.delete("/api/admin/students/child_sam", headers=headers).status_code, 404)
+
+    def test_parents_cannot_add_edit_or_delete(self):
+        headers = self._headers("parent.ann@test.local")
+        self.assertEqual(self.client.post("/api/admin/students", json={
+            "parent_email": "parent.ann@test.local", "name": "X", "grade": 4}, headers=headers).status_code, 403)
+        self.assertEqual(self.client.patch("/api/admin/students/child_ann", json={"grade": 9}, headers=headers).status_code, 403)
+        self.assertEqual(self.client.delete("/api/admin/students/child_ann", headers=headers).status_code, 403)
 
 
 if __name__ == "__main__":

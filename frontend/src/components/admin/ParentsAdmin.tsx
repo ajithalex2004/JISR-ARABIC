@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../../services/api';
 import { Payment, PaymentsTable, formatDate, usd } from './PaymentsAdmin';
 
@@ -91,21 +91,31 @@ function ParentDetails({ parentId }: { parentId: string }) {
   </div>;
 }
 
-export function ParentsAdmin() {
-  const [query, setQuery] = useState('');
+export function ParentsAdmin({ initialQuery = '' }: { initialQuery?: string }) {
+  const [query, setQuery] = useState(initialQuery);
+  const [students, setStudents] = useState('');
   const [parents, setParents] = useState<Parent[]>([]);
+  const [total, setTotal] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [formFor, setFormFor] = useState<Parent | 'new' | null>(null);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  const search = async (q: string) => {
+  // Only the latest search may update the list (an earlier, slower one must not overwrite it).
+  const latest = useRef(0);
+  const search = async (q: string, more = false) => {
     setError('');
-    try { setParents(await api.adminListParents(q)); }
-    catch (e: any) { setError(e.message); }
+    const seq = ++latest.current;
+    try {
+      const res = await api.adminListParents({ q, students, offset: more ? parents.length : 0 });
+      if (seq !== latest.current) return;
+      setParents(list => (more ? [...list, ...res.parents] : res.parents));
+      setTotal(res.total);
+    } catch (e: any) { setError(e.message); }
   };
-  useEffect(() => { search(''); }, []);
+  useEffect(() => { setQuery(initialQuery); }, [initialQuery]);
+  useEffect(() => { search(initialQuery || query); }, [students, initialQuery]);
 
   const run = async (key: string, action: () => Promise<string>) => {
     setBusy(key);
@@ -141,6 +151,7 @@ export function ParentsAdmin() {
     run(p.id, async () => {
       const res = await api.adminDeleteParent(p.id);
       setParents(list => list.filter(x => x.id !== p.id));
+      setTotal(t => t - 1);
       return res.message;
     });
   };
@@ -156,11 +167,14 @@ export function ParentsAdmin() {
     {formFor && <ParentForm key={formFor === 'new' ? 'new' : formFor.id} editing={formFor === 'new' ? null : formFor} busy={busy === 'form'} onCancel={() => setFormFor(null)} onSubmit={submitForm} />}
     <form className="flex flex-wrap gap-2" onSubmit={e => { e.preventDefault(); search(query); }}>
       <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="e.g. Alex or parent@email.com" aria-label="Search parents" className="border border-slate-400 p-2 flex-1 min-w-[12rem]" />
+      <select aria-label="Show" value={students} onChange={e => setStudents(e.target.value)} className="border border-slate-400 p-2">
+        <option value="">All parents</option><option value="with">With students</option><option value="without">Without students</option>
+      </select>
       <button className="bg-emerald-900 text-white px-4 py-2">Search</button>
     </form>
     {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
     {notice && <p role="status" className="text-emerald-800 text-sm font-semibold">{notice}</p>}
-    <p className="text-xs text-slate-500">{parents.length} parent{parents.length === 1 ? '' : 's'} · {totals.students} student{totals.students === 1 ? '' : 's'} · {usd(totals.paid)} paid</p>
+    <p className="text-xs text-slate-500">Showing {parents.length} of {total} parent{total === 1 ? '' : 's'} (families with students first) · {totals.students} student{totals.students === 1 ? '' : 's'} · {usd(totals.paid)} paid</p>
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
@@ -203,5 +217,6 @@ export function ParentsAdmin() {
         </tbody>
       </table>
     </div>
+    {parents.length < total && <button type="button" onClick={() => search(query, true)} className="border border-slate-400 px-4 py-2 text-sm">Load more ({total - parents.length} more)</button>}
   </section>;
 }

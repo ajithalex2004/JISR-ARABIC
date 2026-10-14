@@ -321,8 +321,11 @@ class AdminParentUpdateRequest(BaseModel):
 
 
 @router.get('/parents')
-def list_parents(q: Optional[str] = None, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
-    return admin_parents.list_parents(q, actor=actor, db=db)
+def list_parents(
+    q: Optional[str] = None, students: Optional[str] = None, offset: int = 0, limit: int = 100,
+    actor: Principal = Depends(get_current_user), db: Session = Depends(get_db),
+):
+    return admin_parents.list_parents(q, actor=actor, db=db, students=students, offset=offset, limit=limit)
 
 
 @router.post('/parents')

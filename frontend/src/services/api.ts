@@ -114,8 +114,10 @@ export const api = {
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not delete student'));
     return res.json();
   },
-  async adminListParents(q: string) {
-    const res = await authenticatedFetch(`${API_BASE}/api/admin/parents?q=${encodeURIComponent(q)}`);
+  async adminListParents(filters: { q?: string; students?: string; offset?: number }) {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== '') params.set(k, String(v)); });
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/parents?${params.toString()}`);
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load parents'));
     return res.json();
   },

@@ -82,7 +82,8 @@ class TestAdminParentsAndPayments(unittest.TestCase):
     def test_parent_list_shows_students_grades_and_payments(self):
         res = self.client.get("/api/admin/parents", params={"q": "alex"}, headers=self._headers())
         self.assertEqual(res.status_code, 200, res.text)
-        [alex] = res.json()
+        self.assertEqual(res.json()["total"], 1)
+        [alex] = res.json()["parents"]
         self.assertEqual(alex["students_count"], 2)
         ann = next(s for s in alex["students"] if s["name"] == "Ann Maria")
         self.assertEqual(ann["entitled_grades"], [6, 7])
@@ -91,7 +92,27 @@ class TestAdminParentsAndPayments(unittest.TestCase):
         self.assertEqual(alex["voucher_redemptions"], 1)
 
         by_child = self.client.get("/api/admin/parents", params={"q": "lina"}, headers=self._headers()).json()
-        self.assertEqual([p["id"] for p in by_child], ["parent_sara"])
+        self.assertEqual([p["id"] for p in by_child["parents"]], ["parent_sara"])
+
+    def test_families_with_students_listed_first_with_total_and_paging(self):
+        # Many newer sign-ups without students must not push an older family off the first page.
+        with self.session() as db:
+            for i in range(120):
+                db.add(User(id=f"signup_{i}", email=f"signup{i}@test.local", role="parent", password_hash="x",
+                            created_at=datetime.datetime.utcnow() + datetime.timedelta(minutes=i)))
+            db.commit()
+        headers = self._headers()
+        first = self.client.get("/api/admin/parents", headers=headers).json()
+        families = first["total"] - 120  # the two parents, plus the admin if signing in gave it a learner
+        self.assertEqual(len(first["parents"]), 100)
+        self.assertTrue({"parent_alex", "parent_sara"} <= {p["id"] for p in first["parents"][:families]})
+        self.assertTrue(all(p["students_count"] > 0 for p in first["parents"][:families]))
+        rest = self.client.get("/api/admin/parents", params={"offset": 100}, headers=headers).json()
+        self.assertEqual(len(rest["parents"]), first["total"] - 100)
+        with_students = self.client.get("/api/admin/parents", params={"students": "with"}, headers=headers).json()
+        self.assertEqual(with_students["total"], families)
+        without = self.client.get("/api/admin/parents", params={"students": "without"}, headers=headers).json()
+        self.assertEqual(without["total"], 120)
 
     def test_parent_detail_lists_payments_newest_first(self):
         res = self.client.get("/api/admin/parents/parent_alex", headers=self._headers())

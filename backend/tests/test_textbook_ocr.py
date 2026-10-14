@@ -38,11 +38,12 @@ class TestTextbookOcr(unittest.TestCase):
         self.engine.dispose()
         self.tmp.cleanup()
 
-    def _run(self, ocr_result):
+    def _run(self, ocr_result, start_page=1, page_count=2):
         with patch.dict(os.environ, {"FAHIM_CONTENT_DIR": str(self.content)}), \
                 patch("backend.modules.curriculum.page_ocr.transcribe_page_image", return_value=ocr_result) as ocr:
             handlers.handle_process_textbook_ocr(
-                {"pdf_path": str(self.pdf), "book_edition_id": "moe_gr1_vol1_2023", "start_page": 1, "page_count": 2},
+                {"pdf_path": str(self.pdf), "book_edition_id": "moe_gr1_vol1_2023",
+                 "start_page": start_page, "page_count": page_count},
                 lambda _pct: None,
             )
         return ocr
@@ -64,6 +65,20 @@ class TestTextbookOcr(unittest.TestCase):
         self._run(None)
         with self.session() as db:
             self.assertEqual({p.review_status for p in db.query(ScannedPage).all()}, {"extraction_failed"})
+
+    def test_reupload_of_same_pdf_resumes_and_new_pdf_is_redone(self):
+        self._run("نَصٌّ عَرَبِيٌّ طَوِيلٌ لِلصَّفْحَةِ الْأُولَى مِنَ الْكِتَابِ")
+        again = self._run("نص آخر")
+        self.assertEqual(again.call_count, 0)  # nothing re-sent to OCR
+        # A different PDF for the same book is processed from scratch.
+        Image.new("RGB", (200, 280), "black").save(self.pdf)
+        changed = self._run("نَصٌّ جَدِيدٌ لِلْكِتَابِ الْمُعَدَّلِ بَعْدَ التَّصْحِيحِ")
+        self.assertEqual(changed.call_count, 1)
+
+    def test_start_page_never_runs_past_the_last_page(self):
+        self._run("نَصٌّ عَرَبِيٌّ طَوِيلٌ لِلصَّفْحَةِ الثَّانِيَةِ مِنَ الْكِتَابِ", start_page=2, page_count=None)
+        with self.session() as db:
+            self.assertEqual([p.pdf_page for p in db.query(ScannedPage).all()], [2])
 
 
 if __name__ == "__main__":

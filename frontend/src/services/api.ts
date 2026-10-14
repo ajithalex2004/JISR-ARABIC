@@ -636,6 +636,7 @@ export const api = {
 
   async getTask(taskId: string) {
     const res = await authenticatedFetch(`${API_BASE}/api/tasks/${taskId}`);
+    if (res.status === 404) return { status: 'missing' };
     if (!res.ok) throw new Error('Failed to fetch task status');
     return res.json();
   },

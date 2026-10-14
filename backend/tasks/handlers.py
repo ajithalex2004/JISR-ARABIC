@@ -173,6 +173,41 @@ def handle_send_weekly_digest(params: Dict[str, Any], update_progress: Callable[
         }
 
 
+_READ_STATUSES = ("ai_ocr", "automatic_extracted", "verified", "reviewed", "approved")
+
+
+def _file_sha256(path) -> str:
+    import hashlib
+    import os
+    if not path or not os.path.exists(path):
+        return ""
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _render_page_png(pdfium_doc, zero_idx, img_path):
+    """Render one PDF page to PNG at 2x, releasing the native buffers straight away."""
+    page = bitmap = image = None
+    try:
+        page = pdfium_doc[zero_idx]
+        bitmap = page.render(scale=2.0)
+        image = bitmap.to_pil()
+        image.save(img_path)
+        return img_path.read_bytes()
+    except Exception:
+        return None
+    finally:
+        for obj in (image, bitmap, page):
+            try:
+                if obj is not None:
+                    obj.close()
+            except Exception:
+                pass
+
+
 def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callable[[int], None]) -> Dict[str, Any]:
     """
     Asynchronously process and index an uploaded textbook PDF for OCR inspection.
@@ -185,7 +220,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
     pdf_path = params.get("pdf_path")
     book_edition_id = params.get("book_edition_id", "moe_gr5_vol1_2023")
     start_page = int(params.get("start_page", 1))
-    page_count = int(params.get("page_count", 5))
+    page_count = int(params.get("page_count") or 0)  # 0: every page from start_page to the end
 
     update_progress(5)
 
@@ -194,8 +229,6 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
         try:
             import pypdf
             reader = pypdf.PdfReader(pdf_path)
-            if not page_count or page_count > len(reader.pages):
-                page_count = len(reader.pages)
         except Exception:
             reader = None
 
@@ -208,6 +241,14 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
             pdfium_doc = pdfium.PdfDocument(pdf_path)
     except Exception:
         pdfium_doc = None
+
+    # Never run past the last page: starting at page 6 of a 100-page book leaves 95 pages.
+    total_pages = len(pdfium_doc) if pdfium_doc else (len(reader.pages) if reader else 0)
+    if total_pages:
+        remaining = max(0, total_pages - start_page + 1)
+        page_count = min(page_count, remaining) if page_count else remaining
+
+    source_hash = _file_sha256(pdf_path)
 
     update_progress(15)
 
@@ -222,10 +263,28 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
         sample_dir = content_root() / "pdf_pages_sample" / book_edition_id
         sample_dir.mkdir(parents=True, exist_ok=True)
 
+        # Re-uploading the same PDF (e.g. after a restart cut processing short) resumes: pages
+        # already read are kept instead of being sent to OCR again. A different PDF is redone.
+        marker = sample_dir / ".source_sha256"
+        same_source = bool(source_hash) and marker.is_file() and marker.read_text().strip() == source_hash
+        if source_hash:
+            marker.write_text(source_hash)
+
         created_pages = []
         for i in range(page_count):
             p_num = start_page + i
             zero_idx = p_num - 1
+
+            img_path = sample_dir / f"page_{p_num}.png"
+            if same_source and img_path.is_file():
+                done = db.query(ScannedPage).filter(
+                    ScannedPage.book_edition_id == book_edition_id,
+                    ScannedPage.pdf_page == p_num,
+                    ScannedPage.review_status.in_(_READ_STATUSES),
+                ).first()
+                if done:
+                    update_progress(min(98, int(15 + ((i + 1) / max(1, page_count)) * 80)))
+                    continue
 
             # 1. Extract Arabic text
             extracted_text = ""
@@ -239,13 +298,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
             # 2. Render the page image (scanned textbooks have no text layer; the picture is the page)
             png_bytes = None
             if pdfium_doc and 0 <= zero_idx < len(pdfium_doc):
-                img_path = sample_dir / f"page_{p_num}.png"
-                try:
-                    bitmap = pdfium_doc.get_page(zero_idx).render(scale=2.0)
-                    bitmap.to_pil().save(img_path)
-                    png_bytes = img_path.read_bytes()
-                except Exception:
-                    png_bytes = None
+                png_bytes = _render_page_png(pdfium_doc, zero_idx, img_path)
 
             # 3. No usable text in the PDF itself: read it off the page image with Gemini
             if has_usable_text(extracted_text):
@@ -283,6 +336,8 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
                 existing.confidence = confidence
                 existing.review_status = review_status
 
+            # Save each page as it is done, so a restart never loses finished pages.
+            db.commit()
             pct = int(15 + ((i + 1) / max(1, page_count)) * 80)
             update_progress(min(98, pct))
 

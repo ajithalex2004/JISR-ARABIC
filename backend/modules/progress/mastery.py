@@ -443,6 +443,9 @@ def get_gap_review_session(child_id: str, *, db: Session):
     )
 
 
+MAX_REVIEW_INTERVAL_DAYS = 365
+
+
 def record_drill_answer(req: RecordDrillAnswerRequest, *, db: Session):
     """
     Records an answer in the gap recovery drill using SM-2 spaced repetition,
@@ -486,6 +489,7 @@ def record_drill_answer(req: RecordDrillAnswerRequest, *, db: Session):
     # SM-2 Algorithm Implementation
     if cm.interval_days is None or cm.interval_days < 1:
         cm.interval_days = 1
+    cm.interval_days = min(cm.interval_days, MAX_REVIEW_INTERVAL_DAYS)
     if cm.ease_factor is None or cm.ease_factor < 1.3:
         cm.ease_factor = 2.5
     if cm.repetition_count is None:
@@ -501,7 +505,8 @@ def record_drill_answer(req: RecordDrillAnswerRequest, *, db: Session):
         elif cm.repetition_count == 2:
             cm.interval_days = 3
         else:
-            cm.interval_days = max(1, int(round(cm.interval_days * cm.ease_factor)))
+            # Cap at a year: an uncapped interval keeps multiplying and overflows the review date.
+            cm.interval_days = min(MAX_REVIEW_INTERVAL_DAYS, max(1, int(round(cm.interval_days * cm.ease_factor))))
         cm.ease_factor = min(3.0, round(cm.ease_factor + 0.1, 2))
         attempt_pct = round((cm.correct_attempts / cm.total_attempts) * 100.0, 1)
         cm.mastery_percentage = min(100.0, max(round(cm.mastery_percentage + 6.0, 1), attempt_pct))

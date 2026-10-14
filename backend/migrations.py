@@ -80,6 +80,9 @@ MIGRATIONS = [
     ("0009_weekly_report_email", [
         ("users", "weekly_report_email", "BOOLEAN DEFAULT 0"),
     ]),
+    ("0010_payment_anonymized_parent", [
+        ("payment_transactions", "anonymized_parent_id", "VARCHAR(36)"),
+    ]),
 ]
 
 
@@ -130,6 +133,72 @@ def upgrade():
                         normalized = normalized.replace("BOOLEAN DEFAULT 0", "BOOLEAN DEFAULT FALSE") if conn.dialect.name == "postgresql" else normalized
                         conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {normalized}"))
             conn.execute(text("INSERT INTO schema_migrations(revision, checksum) VALUES (:revision, :checksum)"), {"revision": revision, "checksum": expected_checksum})
+    # Separately from the ledger, so a column that can't be added never blocks the migrations above.
+    with engine.connect() as conn:
+        added, skipped = reconcile_columns(conn)
+        conn.commit()
+    for column in added:
+        print(f"Added missing column {column}")
+    for column in skipped:
+        print(f"WARNING: could not add column {column}; add it by hand")
+
+
+def missing_columns(conn):
+    """Model columns absent from existing tables (tables created by older code keep old shapes)."""
+    from backend.database import Base
+    import backend.models  # noqa: F401 register metadata
+    inspector = inspect(conn)
+    tables = set(inspector.get_table_names())
+    missing = []
+    for table in Base.metadata.sorted_tables:
+        if table.name not in tables:
+            continue
+        existing = {column["name"] for column in inspector.get_columns(table.name)}
+        missing.extend((table.name, column) for column in table.columns if column.name not in existing)
+    return missing
+
+
+def _literal(value, dialect):
+    if isinstance(value, bool):
+        return ("TRUE" if value else "FALSE") if dialect.name == "postgresql" else ("1" if value else "0")
+    if isinstance(value, (int, float)):
+        return repr(value)
+    if isinstance(value, str):
+        return "'" + value.replace("'", "''") + "'"
+    return None
+
+
+def _column_ddl(column, dialect):
+    """ALTER TABLE ... ADD COLUMN definition for a model column, or None when it can't be added safely."""
+    ddl = column.type.compile(dialect=dialect)
+    default = None
+    if column.default is not None and getattr(column.default, "is_scalar", False):
+        default = _literal(column.default.arg, dialect)
+    if default is not None:
+        ddl += f" DEFAULT {default}"
+    if not column.nullable and not column.primary_key:
+        if default is None:
+            return None
+        ddl += " NOT NULL"
+    return ddl
+
+
+def reconcile_columns(conn):
+    """Add every missing model column that can be added without data loss; returns (added, skipped)."""
+    added, skipped = [], []
+    for table, column in missing_columns(conn):
+        name = f"{table}.{column.name}"
+        ddl = _column_ddl(column, conn.dialect)
+        if ddl is None:
+            skipped.append(name)
+            continue
+        try:
+            with conn.begin_nested():
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column.name} {ddl}"))
+            added.append(name)
+        except Exception as exc:
+            skipped.append(f"{name} ({type(exc).__name__})")
+    return added, skipped
 
 
 def pending_revisions():

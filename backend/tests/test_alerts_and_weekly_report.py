@@ -176,3 +176,19 @@ class TestWeeklyReport(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestResendErrors(unittest.TestCase):
+    def test_resend_rejection_reason_is_kept(self):
+        from backend import email_delivery
+
+        def reject():
+            raise RuntimeError("403 Client Error: Forbidden for url: https://api.resend.com/emails")
+        response = SimpleNamespace(raise_for_status=reject, text="",
+                                   json=lambda: {"message": "The jisrarabic.com domain is not verified."})
+        with patch.dict(os.environ, {"RESEND_API_KEY": "k", "FAHIM_SMTP_FROM": "JISR <noreply@jisrarabic.com>"}), \
+                patch("requests.post", return_value=response):
+            with self.assertRaises(RuntimeError) as ctx:
+                email_delivery.send_email("a@b.com", "s", "b", record_failures=False)
+        self.assertIn("domain is not verified", str(ctx.exception))
+        self.assertIn("noreply@jisrarabic.com", str(ctx.exception))

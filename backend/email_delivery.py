@@ -38,7 +38,16 @@ def _send_via_resend(recipient: str, subject: str, body_text: str) -> None:
         json={"from": _sender(), "to": [recipient], "subject": subject, "text": body_text},
         timeout=15,
     )
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except Exception as exc:
+        # Resend explains rejections (unverified domain, malformed "from", ...) in the body;
+        # keep that message so admins can see why an email wasn't sent.
+        try:
+            reason = response.json().get("message") or response.text
+        except Exception:
+            reason = getattr(response, "text", "") or exc
+        raise RuntimeError(f"Resend rejected the email: {' '.join(str(reason).split())[:300]} [from: {_sender()}]") from exc
 
 
 def _send_via_smtp(recipient: str, subject: str, body_text: str) -> None:

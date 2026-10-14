@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   BookOpen, Lock, Unlock, Play, CheckCircle2, Clock, Sparkles,
   ChevronRight, FlaskConical, BookText, Mic, Volume2, ArrowRight,
@@ -83,14 +83,27 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
     }
   }, [activeChild, availableGrades, user?.role]);
 
+  // Each load gets an id; a response that arrives after a newer load started is dropped.
+  // Without this, the Grade 5 request made before the student's profile loads could
+  // finish after the Grade 6 one and show Grade 5 lessons under a "Grade 6" heading.
+  const loadSeq = useRef(0);
+
   const loadData = async () => {
+    const seq = ++loadSeq.current;
+    const isCurrent = () => seq === loadSeq.current;
     setLoadError('');
+    setTerms([]);
+    setLessons([]);
     try {
-      const tList = await api.getTerms(selectedGrade, activeChild?.id);
+      const [tList, lList] = await Promise.all([
+        api.getTerms(selectedGrade, activeChild?.id),
+        api.getLessons(selectedGrade, selectedTerm, activeChild?.id),
+      ]);
+      if (!isCurrent()) return;
       setTerms(tList || []);
-      const lList = await api.getLessons(selectedGrade, selectedTerm, activeChild?.id);
       setLessons(lList || []);
     } catch (err) {
+      if (!isCurrent()) return;
       setTerms([]);
       setLessons([]);
       setLoadError('Curriculum data is unavailable. Please try again when the curriculum service is online.');

@@ -2,7 +2,8 @@
 
 The web and mobile word tooltips ship a static dictionary; any word missing from it
 is looked up here. Gemini gives a short, context-aware gloss; Google Translate is the
-fallback when Gemini is unavailable. Results are cached in-process.
+fallback when Gemini is unavailable; machine translations that would mislead (lists of
+alternatives, bare function words) are dropped. Results are cached in-process.
 """
 import json
 import logging
@@ -62,12 +63,49 @@ def _gemini_gloss(word: str, context: str) -> Optional[dict]:
         return None
 
 
-def _machine_translation(word: str) -> Optional[dict]:
-    from backend.modules.curriculum.authoring import _translate_ar_to_en
+# Function words a lone-word machine translation sometimes returns on its own ("TO THE").
+_FUNCTION_WORDS = {
+    "a", "an", "the", "to", "of", "for", "in", "on", "at", "by", "with", "from", "and", "or",
+    "so", "as", "is", "it", "be", "will", "that", "this",
+}
 
-    translation = _clean(_translate_ar_to_en(word), 80)
-    # _translate_ar_to_en returns "Lesson text: ..." when every provider fails.
-    if not translation or translation.startswith("Lesson text:") or _ARABIC.search(translation):
+
+def _acceptable_machine_translation(text: str) -> Optional[str]:
+    """Return a cleaned single-word translation, or None when it would mislead a learner."""
+    text = _clean(text, 80).strip(" .")
+    if not text or _ARABIC.search(text):
+        return None
+    # Dictionary-style lists of alternatives ("mean, contrivance, instrument, ...").
+    if re.search(r"[,;/|]", text):
+        return None
+    words = text.split()
+    if len(words) > 4 or all(w.lower() in _FUNCTION_WORDS for w in words):
+        return None
+    if text.isupper():
+        text = text.lower()
+    return text
+
+
+def _google_word_translation(word: str) -> Optional[str]:
+    import urllib.parse
+    import urllib.request
+
+    url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=" + urllib.parse.quote(word)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        with urllib.request.urlopen(req, timeout=2.5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return "".join(seg[0] for seg in data[0] if seg and seg[0])
+    except Exception as exc:
+        logger.warning("Google word translation failed for %r: %s", word, exc)
+        return None
+
+
+def _machine_translation(word: str) -> Optional[dict]:
+    # Google only: the MyMemory fallback used for paragraphs returns lists of
+    # alternatives or bare function words for single words, which is worse than nothing.
+    translation = _acceptable_machine_translation(_google_word_translation(word) or "")
+    if translation is None:
         return None
     return {"translation": translation, "part_of_speech": None, "source": "machine_translation"}
 

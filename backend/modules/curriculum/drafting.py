@@ -107,10 +107,10 @@ def gemini_generator() -> Generator:
         raise ApplicationError(503, "GEMINI_API_KEY is not configured; AI drafting is unavailable")
     from google import genai
     from google.genai import types
-    from backend.modules.tutoring.assistant import _child_safety_settings
+    from backend.modules.tutoring.assistant import GEMINI_MODEL, _child_safety_settings
 
     client = genai.Client(api_key=api_key)
-    model = os.getenv("FAHIM_DRAFT_MODEL") or os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    model = os.getenv("FAHIM_DRAFT_MODEL") or GEMINI_MODEL
     uploaded: Dict[Path, Any] = {}
 
     def generate(prompt: str, images: List[Path]) -> Dict[str, Any]:

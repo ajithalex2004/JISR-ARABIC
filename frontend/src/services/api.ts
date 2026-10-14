@@ -86,6 +86,21 @@ export const api = {
     return res.json();
   },
 
+  async adminSearchStudents(q: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/students?q=${encodeURIComponent(q)}`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load students'));
+    return res.json();
+  },
+  async adminSetStudentGrade(childId: string, grade: number) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/students/${encodeURIComponent(childId)}/grade`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grade })
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not update grade'));
+    return res.json();
+  },
+
   // Auth
   async signup(email: string) {
     const res = await authenticatedFetch(`${API_BASE}/api/auth/signup`, {

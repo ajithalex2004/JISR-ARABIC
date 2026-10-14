@@ -25,6 +25,15 @@ def require_lesson(db, actor, lesson_id, child_id=None, is_reviewer=False):
         raise ApplicationError(404, "Lesson not found")
     if getattr(actor, "role", None) == "admin" or child_id == "admin_supervisor":
         return lesson
+    # A learner may only open lessons (free first chapters included) in grades they are
+    # registered in or have paid for; another grade has to be unlocked first.
+    learner_id = child_id or getattr(actor, "child_id", None)
+    if learner_id and not is_reviewer:
+        from backend.models import ChildProfile
+        from backend.modules.curriculum.entitlements import entitled_grades
+        child = db.get(ChildProfile, learner_id)
+        if child is not None and lesson.grade not in entitled_grades(child, db):
+            raise ApplicationError(402, f"Grade {lesson.grade} is not unlocked for this learner. Unlock it to continue.")
     is_demo = lesson.is_first_chapter_demo and lesson.term == 1
     if not is_reviewer and not is_demo:
         require_roles(actor)

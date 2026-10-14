@@ -21,7 +21,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   onClose,
   grade,
   term,
-  chapterName = 'Ball Games / ألعاب الكرة',
+  chapterName,
   activeChild,
   onPaymentSuccess
 }) => {
@@ -157,7 +157,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
             <span>Freemium Preview Active (النسخة التجريبية المجانية):</span>
           </div>
           <p className="leading-relaxed">
-            Chapter 1 (<strong>{chapterName}</strong>) is 100% free with vocabulary cards, socratic tutor, and diagnostic checks. 
+            Chapter 1{chapterName ? <> (<strong>{chapterName}</strong>)</> : null} of your enrolled grade is 100% free with vocabulary cards, socratic tutor, and diagnostic checks. 
             Upgrade to a Term, Annual Pass, or School Voucher to unlock Chapters 2–10, all 5 Microlearning Capsules, Study Booklets (الملازم), and MoE practice exam models.
           </p>
         </div>

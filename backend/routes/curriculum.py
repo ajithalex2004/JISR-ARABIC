@@ -5,7 +5,7 @@ from backend.api.dependencies import get_current_user, get_optional_user
 from backend.modules.identity.access import Principal, require_child, optional_child, require_roles, FAMILY_ROLES, PARENT_ROLES, STAFF_ROLES
 """HTTP adapter: request parsing, dependency injection, and service delegation."""
 from fastapi import APIRouter, Depends, Query
-from backend.schemas import SubmitDiagnosticRequest, OnboardingProfileUpdateRequest
+from backend.schemas import SubmitDiagnosticRequest, OnboardingProfileUpdateRequest, ActiveGradeRequest
 from backend.modules.curriculum import service as service
 router = APIRouter(prefix='/api/curriculum', tags=['Curriculum'])
 
@@ -78,7 +78,13 @@ def update_onboarding_profile(payload: OnboardingProfileUpdateRequest, db: Sessi
     during Steps 1 & 2 of the Onboarding Wizard.
     """
     require_child(db, actor, payload.child_id, PARENT_ROLES)
-    return service.update_onboarding_profile(payload=payload, db=db)
+    return service.update_onboarding_profile(payload=payload, db=db, actor=actor)
+
+@router.post('/active-grade')
+def set_active_grade(payload: ActiveGradeRequest, db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
+    """Move a child to another grade the parent has already paid for (parents and admins only)."""
+    require_child(db, actor, payload.child_id, PARENT_ROLES)
+    return service.set_active_grade(child_id=payload.child_id, grade=payload.grade, db=db, actor=actor)
 
 @router.get('/word-gloss')
 def word_gloss(word: str=Query(..., max_length=40), context: str=Query('', max_length=300)):

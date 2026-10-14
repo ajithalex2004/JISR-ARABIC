@@ -4,6 +4,7 @@ import os
 import secrets
 import bcrypt
 import jwt
+from backend.modules.curriculum.entitlements import entitled_grades, require_grade_change_allowed
 from sqlalchemy.orm import Session
 from typing import Optional
 from backend.models import User, OtpCode, ChildProfile, TermAccess, UserSession
@@ -47,6 +48,7 @@ def serialize_child(c: ChildProfile) -> ChildProfileSchema:
         diagnostic_level=c.diagnostic_level or "standard",
         unlocked_terms=unlocked_list,
         is_unlocked=len(unlocked_list) > 0,
+        entitled_grades=entitled_grades(c),
     )
 
 
@@ -524,7 +526,9 @@ def update_child(child_id: str, req: UpdateChildRequest, *, user: User, db: Sess
     if req.gender is not None: child.gender = req.gender
     if req.age is not None: child.age = req.age
     if req.school_name is not None: child.school_name = req.school_name
-    if req.default_grade is not None: child.default_grade = req.default_grade
+    if req.default_grade is not None:
+        require_grade_change_allowed(child, req.default_grade, user, db)
+        child.default_grade = req.default_grade
     if req.avatar_id is not None: child.avatar_id = req.avatar_id
     if req.curriculum_stream is not None: child.curriculum_stream = req.curriculum_stream
     if req.access_pin is not None:

@@ -92,10 +92,13 @@ export const TextbookPdfLibrary: React.FC = () => {
     academic_year: '2023–2024',
     total_pages: pages.length || 100,
     scanned_pages_count: pages.length,
-    rendered_images_count: pages.length,
-    is_complete: true,
+    rendered_images_count: 0,
+    is_complete: false,
     pdf_filename: `Grade${selectedGrade}_Vol${selectedTerm}.pdf`
   };
+
+  // Pages whose Arabic text was read (from the PDF, by OCR, or curated); failed pages don't count.
+  const readablePages = pages.filter((p) => p.review_status !== 'extraction_failed' && p.ocr_text_ar).length;
 
   const currentPage = pages[currentPageIndex] || {
     pdf_page: 1,
@@ -241,20 +244,20 @@ export const TextbookPdfLibrary: React.FC = () => {
           </div>
           <div>
             <span className="text-slate-400 block text-[10px] uppercase">Total Book Pages</span>
-            <span className="font-bold text-slate-800">{pages.length || activeBook.total_pages} Pages</span>
+            <span className="font-bold text-slate-800">{activeBook.total_pages || pages.length} Pages</span>
           </div>
           <div>
             <span className="text-slate-400 block text-[10px] uppercase">OCR Indexed</span>
             <span className="font-bold text-emerald-700 flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>{pages.length} Pages (100%)</span>
+              <span>{readablePages} Pages ({activeBook.total_pages ? Math.round((100 * readablePages) / activeBook.total_pages) : 0}%)</span>
             </span>
           </div>
           <div>
             <span className="text-slate-400 block text-[10px] uppercase">2x PNG Images</span>
             <span className="font-bold text-purple-700 flex items-center gap-1">
               <Layers className="w-3.5 h-3.5" />
-              <span>{pages.length} Ready</span>
+              <span>{activeBook.rendered_images_count ?? 0} Ready</span>
             </span>
           </div>
         </div>

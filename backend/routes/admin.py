@@ -125,12 +125,6 @@ def upload_curriculum_pdf(
     filename = Path(file.filename or '').name
     if not filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail='Only PDF files are accepted')
-    upload_dir = Path(__file__).resolve().parents[2] / 'tmp' / 'admin_curriculum_uploads'
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    target = upload_dir / filename
-    with target.open('wb') as output:
-        shutil.copyfileobj(file.file, output)
-
     # Auto-detect grade and term from filename if not explicitly supplied
     import re
     if grade is None:
@@ -141,6 +135,15 @@ def upload_curriculum_pdf(
         term = int(t_match.group(1)) if t_match else 1
 
     book_edition_id = f"moe_gr{grade}_vol{term}_2023"
+
+    # Keep the PDF in the content folder (the persistent volume in production), one file per
+    # edition, so it survives redeploys and can be processed again.
+    from backend.config import content_root
+    upload_dir = content_root() / 'uploads'
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    target = upload_dir / f'{book_edition_id}.pdf'
+    with target.open('wb') as output:
+        shutil.copyfileobj(file.file, output)
 
     # Auto-detect total page count from PDF if not provided
     if not page_count:

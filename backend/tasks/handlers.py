@@ -199,8 +199,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
         except Exception:
             reader = None
 
-    sample_dir = content_root() / "pdf_pages_sample"
-    sample_dir.mkdir(parents=True, exist_ok=True)
+    from backend.modules.curriculum.page_ocr import has_usable_text, transcribe_page_image
 
     pdfium_doc = None
     try:
@@ -219,6 +218,10 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
             if edition:
                 book_edition_id = edition.id
 
+        # Each edition keeps its own page images, so page 6 of one book never replaces another's.
+        sample_dir = content_root() / "pdf_pages_sample" / book_edition_id
+        sample_dir.mkdir(parents=True, exist_ok=True)
+
         created_pages = []
         for i in range(page_count):
             p_num = start_page + i
@@ -233,27 +236,32 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
                 except Exception:
                     pass
 
-            # If text could not be extracted from PDF
-            if not extracted_text:
-                review_status = "extraction_failed"
-                confidence = 0.0
-            else:
-                review_status = "automatic_extracted"
-                confidence = 0.95 if (reader and len(extracted_text) >= 20) else 0.75
-
-            # 2. Render page image to PNG
+            # 2. Render the page image (scanned textbooks have no text layer; the picture is the page)
+            png_bytes = None
             if pdfium_doc and 0 <= zero_idx < len(pdfium_doc):
                 img_path = sample_dir / f"page_{p_num}.png"
-                if not img_path.exists():
-                    try:
-                        p_obj = pdfium_doc.get_page(zero_idx)
-                        bitmap = p_obj.render(scale=2.0)
-                        pil_img = bitmap.to_pil()
-                        pil_img.save(img_path)
-                    except Exception:
-                        pass
+                try:
+                    bitmap = pdfium_doc.get_page(zero_idx).render(scale=2.0)
+                    bitmap.to_pil().save(img_path)
+                    png_bytes = img_path.read_bytes()
+                except Exception:
+                    png_bytes = None
 
-            # 3. Store in ScannedPage table
+            # 3. No usable text in the PDF itself: read it off the page image with Gemini
+            if has_usable_text(extracted_text):
+                review_status = "automatic_extracted"
+                confidence = 0.95
+            else:
+                ocr_text = transcribe_page_image(png_bytes, page_label=f"{book_edition_id} p{p_num}") if png_bytes else None
+                if ocr_text:
+                    extracted_text = ocr_text
+                    review_status = "ai_ocr"
+                    confidence = 0.85
+                else:
+                    review_status = "extraction_failed"
+                    confidence = 0.0
+
+            # 4. Store in ScannedPage table
             existing = db.query(ScannedPage).filter(
                 ScannedPage.book_edition_id == book_edition_id,
                 ScannedPage.pdf_page == p_num

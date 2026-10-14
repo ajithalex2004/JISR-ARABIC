@@ -13,6 +13,7 @@ from backend.schemas import AdminAddTermRequest, AdminAddClassRequest, AdminAddL
 from fastapi.responses import FileResponse
 from backend.modules.curriculum import authoring as service
 from backend.modules.tutoring import assignments
+from backend.modules.identity import admin_students
 from backend.modules import school
 from backend.schemas import ClassCreateRequest, ClassMembershipRequest, TutorClassRequest
 from backend.redis_client import invalidate_lesson_cache, invalidate_school_cache
@@ -255,6 +256,19 @@ def assign_tutor(tutor_id: str, child_id: str, actor: Principal = Depends(get_cu
 @router.delete('/tutor-assignments/{tutor_id}/{child_id}')
 def unassign_tutor(tutor_id: str, child_id: str, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
     return assignments.revoke_assignment(tutor_id, child_id, actor=actor, db=db)
+
+class AdminStudentGradeRequest(BaseModel):
+    grade: int
+
+
+@router.get('/students')
+def search_students(q: Optional[str] = None, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    return admin_students.search_students(q, actor=actor, db=db)
+
+
+@router.put('/students/{child_id}/grade')
+def set_student_grade(child_id: str, payload: AdminStudentGradeRequest, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    return admin_students.set_student_grade(child_id, payload.grade, actor=actor, db=db)
 
 @router.get('/coverage-report')
 def get_coverage_report():

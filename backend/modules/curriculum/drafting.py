@@ -102,6 +102,7 @@ Rules:
 
 
 DRAFT_ATTEMPTS = 3
+GROUP_ATTEMPTS = 2  # a section that fails validation is drafted once more with the problems listed
 
 
 def parse_model_json(text: str) -> Any:
@@ -178,7 +179,9 @@ def gemini_generator() -> Generator:
     model = os.getenv("FAHIM_DRAFT_MODEL") or GEMINI_MODEL
     uploaded: Dict[Path, Any] = {}
 
-    def generate(prompt: str, images: List[Path]) -> Dict[str, Any]:
+    schema_supported = [True]
+
+    def generate(prompt: str, images: List[Path], schema: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         files = []
         for path in images:
             if path not in uploaded:
@@ -188,16 +191,25 @@ def gemini_generator() -> Generator:
         # Long Arabic drafts occasionally come back as slightly malformed JSON; repair what can be
         # repaired and otherwise ask again, so one bad reply doesn't fail the whole chapter.
         for attempt in range(DRAFT_ATTEMPTS):
-            response = client.models.generate_content(
-                model=model,
-                contents=[*files, prompt],
-                config=types.GenerateContentConfig(
-                    temperature=0.4 if attempt == 0 else 0.2,
-                    max_output_tokens=16384,
-                    response_mime_type="application/json",
-                    safety_settings=_child_safety_settings(types),
-                ),
+            config = dict(
+                temperature=0.4 if attempt == 0 else 0.2,
+                max_output_tokens=16384,
+                response_mime_type="application/json",
+                safety_settings=_child_safety_settings(types),
             )
+            if schema and schema_supported[0]:
+                config["response_schema"] = schema
+            try:
+                response = client.models.generate_content(
+                    model=model, contents=[*files, prompt], config=types.GenerateContentConfig(**config),
+                )
+            except Exception as exc:
+                # A model or API version that can't take this schema still drafts without it.
+                if "response_schema" in config and "schema" in str(exc).lower():
+                    logger.warning("Gemini rejected the response schema, drafting without it: %s", exc)
+                    schema_supported[0] = False
+                    continue
+                raise
             if not response or not response.text:
                 last_error = "Gemini returned an empty draft"
                 continue
@@ -209,6 +221,7 @@ def gemini_generator() -> Generator:
         raise ApplicationError(502, f"{last_error} after {DRAFT_ATTEMPTS} attempts")
 
     generate.model = model  # type: ignore[attr-defined]
+    generate.accepts_schema = True  # type: ignore[attr-defined]
     return generate
 
 
@@ -254,6 +267,61 @@ def _shape_errors(candidate: Any, reference: Any, path: str) -> List[str]:
     if isinstance(reference, (int, float)) and not isinstance(reference, bool):
         return [] if isinstance(candidate, (int, float)) and not isinstance(candidate, bool) else [f"{path}: expected a number"]
     return []
+
+
+_ARABIC_LETTER = re.compile(r"[\u0600-\u06FF]")
+
+
+def _schema_for(reference: Any, key: str = "") -> Optional[Dict[str, Any]]:
+    """Gemini response schema mirroring what _shape_errors checks: every reference key required,
+    lists non-empty, and *_ar text described as Arabic script."""
+    if isinstance(reference, dict):
+        properties = {}
+        for name, value in reference.items():
+            sub = _schema_for(value, name)
+            if sub is not None:
+                properties[name] = sub
+        return {"type": "OBJECT", "properties": properties, "required": list(properties)}
+    if isinstance(reference, list):
+        template = _list_template(reference)
+        if template is None and reference:
+            template = reference[0]
+        items = _schema_for(template, key) if template is not None else {"type": "STRING"}
+        return {"type": "ARRAY", "items": items or {"type": "STRING"}, "minItems": 1}
+    if isinstance(reference, bool):
+        return {"type": "BOOLEAN"}
+    if isinstance(reference, int):
+        return {"type": "INTEGER"}
+    if isinstance(reference, float):
+        return {"type": "NUMBER"}
+    if isinstance(reference, str):
+        schema = {"type": "STRING"}
+        if key.endswith("_ar"):
+            schema["description"] = "Arabic script (Modern Standard Arabic), never Latin letters or digits only"
+        elif key.endswith("_en"):
+            schema["description"] = "English"
+        return schema
+    return None
+
+
+def response_schema(sections: List[str]) -> Dict[str, Any]:
+    reference = _reference_package()
+    return _schema_for({key: reference[key] for key in sections})
+
+
+def _arabic_errors(node: Any, path: str = "") -> List[str]:
+    """Every *_ar text must contain Arabic letters (the publishing quality gate's rule)."""
+    errors = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            child = f"{path}.{key}" if path else key
+            if key.endswith("_ar") and isinstance(value, str) and not _ARABIC_LETTER.search(value):
+                errors.append(f"{child}: must be Arabic text")
+            errors.extend(_arabic_errors(value, child))
+    elif isinstance(node, list):
+        for i, item in enumerate(node):
+            errors.extend(_arabic_errors(item, f"{path}[{i}]"))
+    return errors
 
 
 def _answer_errors(node: Any, path: str = "") -> List[str]:
@@ -315,16 +383,32 @@ def draft_lesson_package(lesson: Lesson, db: Session, generate: Optional[Generat
 
     errors: List[str] = []
     for group, sections in SECTION_GROUPS.items():
-        drafted = generate(_build_prompt(lesson, group, sections, page_numbers), images)
-        if not isinstance(drafted, dict):
-            raise ApplicationError(502, f"Gemini returned a non-object for the {group} sections")
+        prompt = _build_prompt(lesson, group, sections, page_numbers)
+        group_errors: List[str] = []
+        for attempt in range(GROUP_ATTEMPTS):
+            if getattr(generate, "accepts_schema", False):
+                drafted = generate(prompt, images, response_schema(sections))
+            else:
+                drafted = generate(prompt, images)
+            if not isinstance(drafted, dict):
+                raise ApplicationError(502, f"Gemini returned a non-object for the {group} sections")
+            values = {key: copy.deepcopy(drafted.get(key)) for key in sections}
+            group_errors = []
+            for key in sections:
+                group_errors.extend(_shape_errors(values[key], reference[key], key))
+            group_errors.extend(_answer_errors(values))
+            group_errors.extend(_arabic_errors(values))
+            if not group_errors:
+                break
+            # Ask again, telling the model exactly what to fix.
+            prompt = (_build_prompt(lesson, group, sections, page_numbers)
+                      + "\nYour previous reply had these problems; fix every one of them:\n- "
+                      + "\n- ".join(group_errors[:20]))
+        errors.extend(group_errors)
         for key in sections:
-            value = copy.deepcopy(drafted.get(key))
-            errors.extend(_shape_errors(value, reference[key], key))
-            _assign_ids(key, value, lesson.id, [0])
-            package[key] = value
+            _assign_ids(key, values[key], lesson.id, [0])
+            package[key] = values[key]
 
-    errors.extend(_answer_errors(package))
     if errors:
         raise ApplicationError(422, "Draft failed validation: " + "; ".join(errors[:8]))
 

@@ -360,6 +360,12 @@ def list_payments(
     return admin_payments.list_payments(actor=actor, db=db, q=q, method=method, status=status, parent_id=parent_id, days=days)
 
 
+def _ai_models() -> dict:
+    import os
+    from backend.modules.tutoring.assistant import GEMINI_MODEL
+    return {"assistant": GEMINI_MODEL, "drafting": os.getenv("FAHIM_DRAFT_MODEL") or GEMINI_MODEL}
+
+
 @router.get('/system-health')
 def system_health(actor: Principal = Depends(get_current_user)):
     require_roles(actor, ('admin',))
@@ -375,6 +381,7 @@ def system_health(actor: Principal = Depends(get_current_user)):
     return {
         **alerts.status_report(),
         "schema": schema,
+        "models": _ai_models(),
         "last_gemini_check": cache_get("scheduler:last:gemini_probe"),
         "last_weekly_reports": cache_get("scheduler:last:weekly_reports"),
     }

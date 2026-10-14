@@ -129,6 +129,61 @@ class TestContentDrafting(unittest.TestCase):
         self.assertEqual(result["summary"]["failed"], 2)
         self.assertIn("No textbook page images", result["lessons"][0]["detail"])
 
+    def test_sections_with_latin_arabic_fields_are_redrafted_with_the_problems_listed(self):
+        prompts, schemas = [], []
+
+        def generate(prompt, images, schema=None):
+            prompts.append(prompt)
+            schemas.append(schema)
+            keys = prompt.split("exactly these keys: ")[1].split(".\n")[0].split(", ")
+            sections = {k: copy.deepcopy(BALL_GAMES_CONTENT_V02[k]) for k in keys}
+            first_try = "previous reply had these problems" not in prompt
+            if first_try and "practice_activities" in sections:
+                sections["practice_activities"][0]["options"][0]["label_ar"] = "A"
+            return sections
+        generate.model = "schema-model"
+        generate.accepts_schema = True
+
+        lesson = self.db.get(Lesson, "lesson_g6_t1_ch01")
+        package = drafting.draft_lesson_package(lesson, self.db, generate=generate)
+        self.assertNotEqual(package["practice_activities"][0]["options"][0]["label_ar"], "A")
+        retry = [p for p in prompts if "previous reply had these problems" in p]
+        self.assertEqual(len(retry), 1)
+        self.assertIn("practice_activities[0].options[0].label_ar: must be Arabic text", retry[0])
+        # Every call carried a schema that requires Arabic option labels.
+        assessment = next(s for s in schemas if "practice_activities" in s["properties"])
+        option = assessment["properties"]["practice_activities"]["items"]["properties"]["options"]["items"]
+        self.assertIn("label_ar", option["required"])
+        self.assertIn("Arabic script", option["properties"]["label_ar"]["description"])
+
+    def test_still_invalid_after_redraft_fails_with_field_names(self):
+        def generate(prompt, images, schema=None):
+            keys = prompt.split("exactly these keys: ")[1].split(".\n")[0].split(", ")
+            sections = {k: copy.deepcopy(BALL_GAMES_CONTENT_V02[k]) for k in keys}
+            if "practice_activities" in sections:
+                sections["practice_activities"][0]["options"][0]["label_ar"] = "A"
+            return sections
+        generate.accepts_schema = True
+        with self.assertRaises(ApplicationError) as ctx:
+            drafting.draft_lesson_package(self.db.get(Lesson, "lesson_g6_t1_ch01"), self.db, generate=generate)
+        self.assertIn("label_ar: must be Arabic text", ctx.exception.detail)
+
+    def test_gemini_generator_sends_schema_and_falls_back_if_rejected(self):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+        client = MagicMock()
+        client.files.upload.return_value = "uploaded"
+        client.models.generate_content.side_effect = [
+            RuntimeError("400 INVALID_ARGUMENT: response_schema is too complex"),
+            SimpleNamespace(text='{"ok": true}'),
+        ]
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "k"}), patch("google.genai.Client", return_value=client):
+            generate = drafting.gemini_generator()
+            self.assertEqual(generate("p", [], {"type": "OBJECT", "properties": {}}), {"ok": True})
+        first, second = client.models.generate_content.call_args_list
+        self.assertIsNotNone(first.kwargs["config"].response_schema)
+        self.assertIsNone(second.kwargs["config"].response_schema)
+
 
 class TestContentDraftEndpoints(unittest.TestCase):
     def test_endpoints_require_admin(self):

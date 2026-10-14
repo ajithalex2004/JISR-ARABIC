@@ -70,7 +70,7 @@ function StudentForm({ editing, initial, busy, onCancel, onSubmit }: {
   </form>;
 }
 
-export function StudentsAdmin() {
+export function StudentsAdmin({ onOpenParent }: { onOpenParent?: (email: string) => void } = {}) {
   const [query, setQuery] = useState('');
   const [students, setStudents] = useState<Student[]>([]);
   const [pending, setPending] = useState<Record<string, number>>({});
@@ -190,7 +190,9 @@ export function StudentsAdmin() {
             const changed = pending[s.id] !== undefined && pending[s.id] !== s.default_grade;
             return <tr key={s.id} className="border-b border-slate-100 align-top">
               <td className="py-2 pr-3 font-semibold text-slate-900">{s.name}<div className="text-xs font-normal text-slate-500">{s.school_name}</div></td>
-              <td className="py-2 pr-3">{s.parent_name || '—'}<div className="text-xs text-slate-500 break-all">{s.parent_email}</div></td>
+              <td className="py-2 pr-3">{s.parent_name || '—'}{s.parent_email && (onOpenParent
+                ? <button type="button" onClick={() => onOpenParent(s.parent_email!)} className="block text-left text-xs text-emerald-900 underline break-all" title="Open this parent's profile">{s.parent_email}</button>
+                : <div className="text-xs text-slate-500 break-all">{s.parent_email}</div>)}</td>
               <td className="py-2 pr-3 font-bold">{s.default_grade ? `Grade ${s.default_grade}` : '—'}</td>
               <td className="py-2 pr-3">
                 {s.entitled_grades.length ? s.entitled_grades.map(g => `G${g}`).join(', ') : '—'}

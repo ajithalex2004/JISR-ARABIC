@@ -5,9 +5,11 @@ import { PaymentsAdmin } from './PaymentsAdmin';
 import { SystemHealth } from './SystemHealth';
 import { TutorAssignments } from './TutorAssignments';
 
+type TabProps = { openParent: (email: string) => void; parentQuery: string };
+
 const TABS = [
-  { key: 'students', label: 'Students', render: () => <StudentsAdmin /> },
-  { key: 'parents', label: 'Parents', render: () => <ParentsAdmin /> },
+  { key: 'students', label: 'Students', render: ({ openParent }: TabProps) => <StudentsAdmin onOpenParent={openParent} /> },
+  { key: 'parents', label: 'Parents', render: ({ parentQuery }: TabProps) => <ParentsAdmin initialQuery={parentQuery} /> },
   { key: 'payments', label: 'Payments', render: () => <PaymentsAdmin /> },
   { key: 'health', label: 'System health', render: () => <SystemHealth /> },
   { key: 'tutors', label: 'Tutors', render: () => <TutorAssignments /> },
@@ -26,7 +28,9 @@ function initialTab(): TabKey {
 
 export function AdminManagement() {
   const [tab, setTab] = useState<TabKey>(initialTab);
+  const [parentQuery, setParentQuery] = useState('');
   const choose = (key: TabKey) => {
+    if (key !== 'parents') setParentQuery('');
     setTab(key);
     try { localStorage.setItem(STORAGE_KEY, key); } catch {}
   };
@@ -41,6 +45,6 @@ export function AdminManagement() {
         className={`px-4 py-2 text-sm font-bold ${tab === t.key ? 'bg-emerald-900 text-white' : 'bg-white text-emerald-950 hover:bg-emerald-50 border border-b-0 border-slate-300'}`}
       >{t.label}</button>)}
     </div>
-    {TABS.find(t => t.key === tab)!.render()}
+    {TABS.find(t => t.key === tab)!.render({ openParent: email => { setParentQuery(email); setTab('parents'); }, parentQuery })}
   </div>;
 }

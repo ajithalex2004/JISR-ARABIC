@@ -3,7 +3,7 @@ import datetime
 import re
 from collections import defaultdict
 
-from sqlalchemy import or_
+from sqlalchemy import case, or_, select
 
 from backend.errors import ApplicationError
 from backend.models import ChildProfile, PaymentTransaction, TermAccess, User
@@ -70,26 +70,43 @@ def _serialize_parent(user: User, children: list, payments: list) -> dict:
 
 def _family_query(db):
     # Parent accounts, plus any other account (e.g. an admin) that has learners of its own.
-    has_children = db.query(ChildProfile.parent_id)
-    return db.query(User).filter(or_(User.role == "parent", User.id.in_(has_children)))
+    return db.query(User).filter(or_(User.role == "parent", User.id.in_(select(ChildProfile.parent_id))))
 
 
-def list_parents(q=None, *, actor, db) -> list:
+def list_parents(q=None, *, actor, db, students=None, offset=0, limit=LIST_LIMIT) -> dict:
+    """Families matching the search, those with students first, newest first; paged."""
     require_roles(actor, ADMIN_ONLY)
     query = _family_query(db)
     term = (q or "").strip()
     if term:
         like = f"%{term}%"
-        matching_children = db.query(ChildProfile.parent_id).filter(ChildProfile.name.ilike(like))
+        matching_children = select(ChildProfile.parent_id).where(ChildProfile.name.ilike(like))
         query = query.filter(or_(
             User.full_name.ilike(like), User.email.ilike(like), User.phone_number.ilike(like),
             User.id.in_(matching_children),
         ))
-    users = query.order_by(User.created_at.desc()).limit(LIST_LIMIT).all()
+    has_students = User.id.in_(select(ChildProfile.parent_id))
+    if students == "with":
+        query = query.filter(has_students)
+    elif students == "without":
+        query = query.filter(~has_students)
+
+    total = query.count()
+    offset = max(0, int(offset or 0))
+    limit = min(max(1, int(limit or LIST_LIMIT)), LIST_LIMIT)
+    users = (
+        query.order_by(case((has_students, 0), else_=1), User.created_at.desc().nulls_last(), User.email)
+        .offset(offset).limit(limit).all()
+    )
     ids = [u.id for u in users]
     children = _children_by_parent(ids, db)
     payments = _payments_by_parent(ids, db)
-    return [_serialize_parent(u, children[u.id], payments[u.id]) for u in users]
+    return {
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "parents": [_serialize_parent(u, children[u.id], payments[u.id]) for u in users],
+    }
 
 
 def _get_family_account(parent_id: str, db) -> User:

@@ -690,6 +690,10 @@ class CatalogueScreen extends StatelessWidget {
             final isSel = currentTerm == t;
             final labelAr = t == 1 ? 'الفصل الأول' : (t == 2 ? 'الفصل الثاني' : 'الفصل الثالث');
             final labelEn = 'Term $t';
+            // Distinct dark colour per term (matches the web catalogue tabs).
+            final termColor = t == 1
+                ? const Color(0xFF0F5E4A)
+                : (t == 2 ? const Color(0xFF1E3A8A) : const Color(0xFF58337E));
             return Expanded(
               child: Padding(
                 padding: EdgeInsets.only(right: t < 3 ? 6.0 : 0.0),
@@ -699,19 +703,16 @@ class CatalogueScreen extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      gradient: isSel
-                          ? const LinearGradient(colors: [Color(0xFF58337E), Color(0xFF6C5CE7)])
-                          : null,
-                      color: isSel ? null : Colors.white,
+                      color: isSel ? termColor : termColor.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isSel ? const Color(0xFF6C5CE7) : const Color(0xFFE2E8F0),
-                        width: isSel ? 1.5 : 1.0,
+                        color: isSel ? const Color(0xFFFBBF24) : Colors.transparent,
+                        width: isSel ? 2.0 : 1.0,
                       ),
                       boxShadow: isSel
                           ? [
                               BoxShadow(
-                                color: const Color(0xFF6C5CE7).withValues(alpha: 0.25),
+                                color: termColor.withValues(alpha: 0.35),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -722,8 +723,8 @@ class CatalogueScreen extends StatelessWidget {
                     child: Text(
                       isArabic ? labelAr : labelEn,
                       style: TextStyle(
-                        color: isSel ? Colors.white : const Color(0xFF475569),
-                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontWeight: isSel ? FontWeight.w900 : FontWeight.bold,
                         fontSize: 11,
                       ),
                     ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../api_service.dart';
-import '../arabic_dict.dart';
 import '../auth_service.dart';
 import '../arab_english_service.dart';
+import '../widgets/interactive_arabic_text.dart';
 import '../models/curriculum_models.dart';
 
 class LessonPlayerScreen extends StatefulWidget {
@@ -179,87 +179,6 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
         .trim();
   }
 
-  String _lookupArabicWord(String rawWord, [int depth = 0]) {
-    String clean = rawWord.replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '');
-    clean = clean.replaceAll(RegExp(r'[؟!\.,،؛:\x27"()\[\]\-—/\\«»<>]'), '').trim();
-    if (clean.isEmpty) return '';
-
-    if (kArabicMobileDict.containsKey(clean)) {
-      return kArabicMobileDict[clean]!;
-    }
-
-    final norm = _normalizeArabic(clean);
-    if (kArabicMobileDict.containsKey(norm)) {
-      return kArabicMobileDict[norm]!;
-    }
-
-    if (depth > 2) return 'Curriculum Term';
-
-    const suffixes = [
-      'ها', 'هم', 'هما', 'هن', 'كم', 'نا', 'ي', 'ك', 'ه', 'ون', 'ين', 'ات', 'ة', 'ان', 'تان', 'تين', 'ية', 'ا'
-    ];
-    for (final s in suffixes) {
-      if (norm.endsWith(s) && norm.length > s.length + 2) {
-        final stem = norm.substring(0, norm.length - s.length);
-        if (stem.endsWith('ت')) {
-          final stemTaa = '${stem.substring(0, stem.length - 1)}ة';
-          if (kArabicMobileDict.containsKey(stemTaa)) {
-            return kArabicMobileDict[stemTaa]!;
-          }
-          final subTaa = _lookupArabicWord(stemTaa, depth + 1);
-          if (subTaa.isNotEmpty && !subTaa.contains(RegExp(r'[\u0600-\u06FF]'))) {
-            return subTaa;
-          }
-        }
-        if (kArabicMobileDict.containsKey(stem)) {
-          return kArabicMobileDict[stem]!;
-        }
-        final subStem = _lookupArabicWord(stem, depth + 1);
-        if (subStem.isNotEmpty && !subStem.contains(RegExp(r'[\u0600-\u06FF]'))) {
-          return subStem;
-        }
-      }
-    }
-
-    const prefixes = [
-      MapEntry('ولل', 'and for the'),
-      MapEntry('وبال', 'and with the'),
-      MapEntry('وكال', 'and like the'),
-      MapEntry('وفال', 'and so the'),
-      MapEntry('وال', 'and the'),
-      MapEntry('فال', 'so the'),
-      MapEntry('بال', 'with the'),
-      MapEntry('كال', 'like the'),
-      MapEntry('لل', 'for the'),
-      MapEntry('ال', 'the'),
-      MapEntry('و', 'and'),
-      MapEntry('ف', 'so'),
-      MapEntry('ب', 'with'),
-      MapEntry('ل', 'for'),
-      MapEntry('ك', 'like'),
-      MapEntry('س', 'will'),
-    ];
-
-    for (final p in prefixes) {
-      if (norm.startsWith(p.key) && norm.length > p.key.length + 2) {
-        final rem = norm.substring(p.key.length);
-        if (kArabicMobileDict.containsKey(rem)) {
-          final baseTrans = kArabicMobileDict[rem]!;
-          if (baseTrans.toLowerCase().startsWith('the ') && p.value.endsWith('the')) {
-            return '${p.value.replaceAll(RegExp(r'the$'), '').trim()} $baseTrans'.trim();
-          }
-          return '${p.value} $baseTrans'.trim();
-        }
-        final subRem = _lookupArabicWord(rem, depth + 1);
-        if (subRem.isNotEmpty && !subRem.contains(RegExp(r'[\u0600-\u06FF]'))) {
-          return '${p.value} $subRem'.trim();
-        }
-      }
-    }
-
-    return 'Curriculum Term';
-  }
-
   Widget _buildInteractiveArabicText(
     String text, {
     TextStyle? style,
@@ -267,7 +186,9 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   }) {
     final words = text.split(RegExp(r'\s+')).where((w) => w.trim().isNotEmpty).toList();
 
-    return Wrap(
+    return ValueListenableBuilder<int>(
+      valueListenable: WordGloss.revision,
+      builder: (context, _, _) => Wrap(
       alignment: textAlign == TextAlign.right
           ? WrapAlignment.end
           : textAlign == TextAlign.center
@@ -279,12 +200,13 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       runSpacing: 4,
       children: words.map((word) {
         final cleanWord = word.replaceAll(RegExp(r'[؟!\.,،؛:\x27"()\[\]\-—]'), '').trim();
-        final translation = _lookupArabicWord(word);
+        final translation = WordGloss.meaning(word, text);
         final isPlaying = widget.activeWord.isNotEmpty &&
             (cleanWord == widget.activeWord || word.contains(widget.activeWord));
 
         return Tooltip(
           message: '$cleanWord: $translation\n🔊 Click to Pronounce',
+          onTriggered: () => WordGloss.ensure(word, text),
           preferBelow: false,
           verticalOffset: 16,
           decoration: BoxDecoration(
@@ -300,6 +222,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
             borderRadius: BorderRadius.circular(6),
             onTap: () {
               widget.onVocalize(cleanWord);
+              WordGloss.ensure(word, text).then((translation) {
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -335,6 +259,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                   ),
                 ),
               );
+              });
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -356,6 +281,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
           ),
         );
       }).toList(),
+    ),
     );
   }
 

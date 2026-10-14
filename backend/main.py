@@ -68,12 +68,16 @@ async def distributed_rate_limit(request: Request, call_next):
     # Protect auth, checkout, AI, and TTS endpoints from abuse
     is_auth_checkout = (path.startswith("/api/auth/") or path.startswith("/api/payments/checkout")) and request.method == "POST"
     is_heavy_ai_audio = path.startswith(("/api/ai/", "/api/audio/synthesize"))
+    # Word tooltips call this on hover, so it gets a higher per-IP budget than the AI tutor.
+    is_word_gloss = path == "/api/curriculum/word-gloss"
 
-    if is_auth_checkout or is_heavy_ai_audio:
+    if is_auth_checkout or is_heavy_ai_audio or is_word_gloss:
         client_ip = _extract_real_client_ip(request)
 
         if is_auth_checkout:
             limit = 10 if path.endswith(("/login", "/student-pin-login")) else 5
+        elif is_word_gloss:
+            limit = 120
         else:
             limit = 30  # Max 30 requests/minute for heavy AI & TTS endpoints per IP
 

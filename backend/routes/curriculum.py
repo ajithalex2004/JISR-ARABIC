@@ -79,3 +79,9 @@ def update_onboarding_profile(payload: OnboardingProfileUpdateRequest, db: Sessi
     """
     require_child(db, actor, payload.child_id, PARENT_ROLES)
     return service.update_onboarding_profile(payload=payload, db=db)
+
+@router.get('/word-gloss')
+def word_gloss(word: str=Query(..., max_length=40), context: str=Query('', max_length=300)):
+    """English meaning of one Arabic word, for tooltips when the client dictionary has no entry."""
+    from backend.modules.curriculum.glossary import gloss_word
+    return gloss_word(word, context) or {"translation": None, "part_of_speech": None, "source": None}

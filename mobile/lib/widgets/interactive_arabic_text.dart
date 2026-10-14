@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../api_service.dart';
 import '../arabic_dict.dart';
 import '../arab_english_service.dart';
 
@@ -27,7 +30,7 @@ String lookupArabicWord(String rawWord, [int depth = 0]) {
     return kArabicMobileDict[norm]!;
   }
 
-  if (depth > 2) return 'Curriculum Term';
+  if (depth > 2) return '';
 
   const suffixes = [
     'ها', 'هم', 'هما', 'هن', 'كم', 'نا', 'ي', 'ك', 'ه', 'ون', 'ين', 'ات', 'ة', 'ان', 'تان', 'تين', 'ية', 'ا'
@@ -91,7 +94,75 @@ String lookupArabicWord(String rawWord, [int depth = 0]) {
     }
   }
 
-  return 'Curriculum Term';
+  // Not in the dictionary: an empty result tells callers to use WordGloss, and makes
+  // the affix-stripping recursion above treat it as a miss.
+  return '';
+}
+
+/// Meanings for words missing from [kArabicMobileDict], fetched from the backend
+/// (/api/curriculum/word-gloss, which uses the surrounding passage as context).
+/// Widgets rebuild on [revision] so a tooltip fills in once its meaning arrives.
+class WordGloss {
+  static const loadingText = 'Looking up meaning…';
+  static const unavailableText = 'Meaning not available';
+
+  static final ValueNotifier<int> revision = ValueNotifier<int>(0);
+  static final Map<String, String?> _results = {};
+  static final Map<String, Future<String?>> _pending = {};
+  static ApiService api = ApiService();
+
+  static String _clean(String word) =>
+      word.replaceAll(RegExp(r'[؟!\.,،؛:\x27"()\[\]\-—/\\«»<>]'), '').trim();
+
+  static String _key(String word, String context) =>
+      '${_clean(word)}\u0000${context.replaceAll(RegExp(r'\s+'), ' ').trim()}';
+
+  /// Text to show right now: dictionary meaning, fetched meaning, or a status message.
+  static String meaning(String word, String context) {
+    final local = lookupArabicWord(word);
+    if (local.isNotEmpty) return local;
+    final key = _key(word, context);
+    if (_results.containsKey(key)) return _results[key] ?? unavailableText;
+    return loadingText;
+  }
+
+  /// Fetches the meaning if the dictionary lacks it; resolves to the text to display.
+  static Future<String> ensure(String word, String context) async {
+    final local = lookupArabicWord(word);
+    if (local.isNotEmpty) return local;
+    final key = _key(word, context);
+    if (_results.containsKey(key)) return _results[key] ?? unavailableText;
+
+    final ctx = context.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final request = _pending[key] ??= _fetch(
+      _clean(word),
+      ctx.length > 300 ? ctx.substring(0, 300) : ctx,
+    );
+    final result = await request;
+    _pending.remove(key);
+    _results[key] = result;
+    revision.value++;
+    if (result == null) {
+      // Don't pin a network failure for the whole session; a later tap can retry.
+      Timer(const Duration(seconds: 30), () => _results.remove(key));
+    }
+    return result ?? unavailableText;
+  }
+
+  static Future<String?> _fetch(String word, String context) async {
+    try {
+      final data = await api.get(
+        '/api/curriculum/word-gloss',
+        query: {'word': word, if (context.isNotEmpty) 'context': context},
+        timeout: const Duration(seconds: 10),
+      );
+      final translation = data is Map ? (data['translation'] ?? '').toString().trim() : '';
+      if (translation.isEmpty || RegExp(r'[\u0600-\u06FF]').hasMatch(translation)) return null;
+      return translation;
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 /// A shared, interactive Arabic text widget that parses Arabic text into individual
@@ -122,7 +193,9 @@ class InteractiveArabicText extends StatelessWidget {
 
     final words = text.split(RegExp(r'\s+')).where((w) => w.trim().isNotEmpty).toList();
 
-    return ValueListenableBuilder<bool>(
+    return ValueListenableBuilder<int>(
+      valueListenable: WordGloss.revision,
+      builder: (context, _, _) => ValueListenableBuilder<bool>(
       valueListenable: ArabEnglishState.notifier,
       builder: (context, isArabEnglishOn, _) {
         return Directionality(
@@ -138,7 +211,7 @@ class InteractiveArabicText extends StatelessWidget {
         runSpacing: 5,
         children: words.map((word) {
           final cleanWord = word.replaceAll(RegExp(r'[؟!\.,،؛:\x27"()\[\]\-—/\\«»<>]'), '').trim();
-          final translation = lookupArabicWord(word);
+          final translation = WordGloss.meaning(word, text);
           final isPlaying = activeWord.isNotEmpty &&
               cleanWord.isNotEmpty &&
               (cleanWord == activeWord || word.contains(activeWord));
@@ -152,6 +225,7 @@ class InteractiveArabicText extends StatelessWidget {
 
           return Tooltip(
             message: tooltipMessage,
+            onTriggered: () => WordGloss.ensure(word, text),
             preferBelow: false,
             verticalOffset: 16,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -176,6 +250,8 @@ class InteractiveArabicText extends StatelessWidget {
                   onVocalize!(cleanWord);
                 }
                 if (showSnackBarOnTap && cleanWord.isNotEmpty) {
+                  WordGloss.ensure(word, text).then((translation) {
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -236,6 +312,7 @@ class InteractiveArabicText extends StatelessWidget {
                       ),
                     ),
                   );
+                  });
                 }
               },
               child: AnimatedContainer(
@@ -312,6 +389,7 @@ class InteractiveArabicText extends StatelessWidget {
       ),
     );
   },
+),
 );
   }
 }

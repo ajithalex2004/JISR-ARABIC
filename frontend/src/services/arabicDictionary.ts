@@ -5,6 +5,8 @@
  * Extended to 3,280+ fully verified bilingual entries covering all textbook and quiz passages.
  */
 
+import { createApiUrl } from './api';
+
 export interface WordDefinition {
   translation: string;
   root?: string;
@@ -3727,11 +3729,7 @@ export function getWordTranslation(rawWord: string, depth = 0): WordDefinition {
   }
 
   if (depth > 2) {
-    // Never return raw Arabic!
-    return {
-      translation: 'Curriculum Term',
-      partOfSpeech: 'noun'
-    };
+    return { translation: '' };
   }
 
   // 3. Morphological Suffix Stripping (with Taa Marbutah reconstitution & recursion)
@@ -3790,10 +3788,37 @@ export function getWordTranslation(rawWord: string, depth = 0): WordDefinition {
     }
   }
 
-  // 5. Intelligent Fallback — NEVER prints raw Arabic words or '(Vocabulary)'!
-  return {
-    translation: 'Curriculum Term',
-    category: 'curriculum',
-    partOfSpeech: 'noun'
-  };
+  // 5. Not in the dictionary: an empty translation tells the caller to ask the server
+  // (fetchWordGloss), and makes the affix-stripping recursion above treat it as a miss.
+  return { translation: '' };
+}
+
+const glossCache = new Map<string, Promise<WordDefinition | null>>();
+
+/**
+ * Looks up a word the local dictionary does not cover via the backend, which uses the
+ * surrounding sentence for a context-aware meaning. Results (including misses) are cached.
+ */
+export function fetchWordGloss(rawWord: string, context = ''): Promise<WordDefinition | null> {
+  const word = rawWord.replace(/[؟!\.,،؛:\'\"()[\]\-—/\\«»<>]/g, '').trim();
+  const ctx = context.replace(/\s+/g, ' ').trim().slice(0, 300);
+  const key = `${word}\u0000${ctx}`;
+  const cached = glossCache.get(key);
+  if (cached) return cached;
+
+  const url = createApiUrl('/api/curriculum/word-gloss');
+  url.searchParams.set('word', word);
+  if (ctx) url.searchParams.set('context', ctx);
+  const request = fetch(url.toString())
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => {
+      const translation = typeof data?.translation === 'string' ? data.translation.trim() : '';
+      if (!translation || hasArabicLetters(translation)) return null;
+      return { translation, partOfSpeech: data.part_of_speech || undefined } as WordDefinition;
+    })
+    .catch(() => null);
+  glossCache.set(key, request);
+  // Don't pin network failures for the whole session; a later hover can retry.
+  request.then((def) => { if (!def) setTimeout(() => glossCache.delete(key), 30000); });
+  return request;
 }

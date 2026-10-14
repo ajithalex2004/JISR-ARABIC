@@ -20,6 +20,7 @@ type Health = {
   gemini_configured: boolean;
   components: Component[];
   last_gemini_check?: { ok: boolean; model: string; error?: string | null; latency_ms?: number; at: string } | null;
+  schema?: { missing_columns: string[]; error?: string };
   last_weekly_reports?: { week: string; sent: number; skipped: number; failed: number; error?: string; at: string } | null;
 };
 
@@ -86,6 +87,13 @@ export function SystemHealth() {
             : <div>Sent every Sunday at 08:00 UAE time</div>}
         </div>
       </div>
+      {health.schema && <div className={`border p-3 text-sm ${health.schema.missing_columns.length || health.schema.error ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
+        <span className="text-xs text-slate-500 block">Database</span>
+        {health.schema.error ? <span className="text-red-700">Could not check: {health.schema.error}</span>
+          : health.schema.missing_columns.length
+            ? <span className="text-red-700 font-semibold">Missing columns: {health.schema.missing_columns.join(', ')}. They are added automatically on the next deploy.</span>
+            : <span className="text-emerald-800 font-semibold">Matches the app (no missing columns)</span>}
+      </div>}
       <div className="flex flex-wrap gap-2">
         <button type="button" disabled={!!busy} onClick={() => act('check-gemini')} className="bg-emerald-900 text-white px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'check-gemini' ? 'Checking…' : 'Check Gemini now'}</button>
         <button type="button" disabled={!!busy} onClick={() => act('test-alert')} className="border border-slate-400 px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'test-alert' ? 'Sending…' : 'Send test alert'}</button>

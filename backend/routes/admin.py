@@ -362,8 +362,16 @@ def system_health(actor: Principal = Depends(get_current_user)):
     require_roles(actor, ('admin',))
     from backend import alerts
     from backend.redis_client import cache_get
+    from backend.database import engine
+    from backend.migrations import missing_columns
+    try:
+        with engine.connect() as conn:
+            schema = {"missing_columns": [f"{table}.{column.name}" for table, column in missing_columns(conn)]}
+    except Exception as exc:
+        schema = {"missing_columns": [], "error": f"{type(exc).__name__}: {exc}"[:300]}
     return {
         **alerts.status_report(),
+        "schema": schema,
         "last_gemini_check": cache_get("scheduler:last:gemini_probe"),
         "last_weekly_reports": cache_get("scheduler:last:weekly_reports"),
     }

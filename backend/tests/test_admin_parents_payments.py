@@ -1,6 +1,7 @@
 """Admins can list and manage parent accounts and see every payment and voucher redemption."""
 import datetime
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -176,6 +177,18 @@ class TestAdminParentsAndPayments(unittest.TestCase):
         for path in ("/api/admin/parents", "/api/admin/payments", "/api/admin/system-health"):
             self.assertEqual(self.client.get(path, headers=headers).status_code, 403, path)
         self.assertEqual(self.client.delete("/api/admin/parents/parent_sara", headers=headers).status_code, 403)
+
+    def test_unexpected_server_error_is_readable_and_recorded(self):
+        from backend import alerts
+        headers = {**self._headers(), "Origin": "http://localhost:3000"}
+        with patch("backend.routes.admin.admin_parents.list_parents", side_effect=RuntimeError("column users.foo does not exist")):
+            res = self.client.get("/api/admin/parents", headers=headers)
+        self.assertEqual(res.status_code, 500)
+        self.assertIn("reference", res.json()["detail"])
+        self.assertEqual(res.headers.get("access-control-allow-origin"), "http://localhost:3000")
+        detail = alerts.recent_failures("server")[0]["detail"]
+        self.assertIn("/api/admin/parents", detail)
+        self.assertIn("column users.foo does not exist", detail)
 
 
 if __name__ == "__main__":

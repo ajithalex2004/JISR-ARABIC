@@ -5,6 +5,7 @@ import logging
 import time
 import uuid
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
 
 request_id_var = contextvars.ContextVar("request_id", default="-")
 
@@ -51,8 +52,17 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             logger.exception("request failed", extra={"method": request.method, "path": request.url.path,
                                                         "status": 500, "error": type(exc).__name__})
-            _note_failed_response(request.method, request.url.path, 500, type(exc).__name__)
-            raise
+            message = " ".join(str(exc).split())[:300]
+            _note_failed_response(request.method, request.url.path, 500,
+                                  f"{type(exc).__name__}: {message} (reference {request_id[:12]})")
+            # Answer here rather than re-raising: this middleware sits inside CORS, so the browser can
+            # read the reply and show the reference instead of a bare "Failed to fetch".
+            return JSONResponse(
+                status_code=500,
+                content={"detail": f"Something went wrong on the server (reference {request_id[:12]}). "
+                                   "Admins can see the details under Admin > System health."},
+                headers={"X-Request-ID": request_id},
+            )
         finally:
             request_id_var.reset(token)
 

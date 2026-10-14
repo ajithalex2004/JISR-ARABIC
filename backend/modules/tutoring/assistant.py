@@ -265,11 +265,41 @@ def _build_curriculum_rag_index() -> Dict[str, Dict[str, str]]:
 CURRICULUM_RAG_INDEX = _build_curriculum_rag_index()
 
 
-def _get_lesson_rag_context(context_lesson_id: Optional[str]) -> str:
+def _load_db_lesson(db, lesson_id: Optional[str]):
+    """The lesson row for lessons outside the bundled Grade 5 catalog (e.g. Grade 6), or None."""
+    if db is None or not lesson_id:
+        return None
+    try:
+        from backend.models import Lesson
+        lesson = db.get(Lesson, lesson_id)
+    except Exception:
+        return None
+    # Test doubles return mocks for any attribute; only trust a real row.
+    return lesson if isinstance(getattr(lesson, "grade", None), int) else None
+
+
+def _lesson_grade(context_lesson_id: Optional[str], db_lesson=None) -> Optional[int]:
+    lesson = _get_all_curriculum_lessons().get(context_lesson_id or "lesson_01_ball_games")
+    if lesson and isinstance(lesson.get("grade"), int):
+        return lesson["grade"]
+    return db_lesson.grade if db_lesson is not None else None
+
+
+def _get_lesson_rag_context(context_lesson_id: Optional[str], db_lesson=None) -> str:
     """Format structured context string for Gemini prompt injection."""
     lessons = _get_all_curriculum_lessons()
     target_id = context_lesson_id or "lesson_01_ball_games"
-    lesson = lessons.get(target_id) or lessons.get("lesson_01_ball_games")
+    lesson = lessons.get(target_id)
+    if not lesson and db_lesson is not None:
+        return (
+            f"Lesson: {db_lesson.title_ar} ({db_lesson.title_en})\n"
+            f"UAE Ministry of Education Arabic curriculum, Grade {db_lesson.grade}, Term {db_lesson.term}, "
+            f"textbook page {db_lesson.start_page} onwards."
+        )
+    if not lesson and context_lesson_id:
+        # Unknown lesson: don't substitute the Grade 5 "Ball Games" lesson as context.
+        return "UAE Ministry of Education Arabic curriculum. Answer the student's question directly."
+    lesson = lesson or lessons.get("lesson_01_ball_games")
     if not lesson:
         return "UAE Ministry of Education Grade 5 Arabic Curriculum (Term 1)."
 
@@ -793,12 +823,15 @@ def _ensure_bilingual_qa_interleaving(ans_ar: str, ans_en: str, question_en: str
     return "\n\n".join(parts)
 
 
-def _ask_fahim_gemini(req: AskFahimRequest, client, doc_text: str = "") -> Optional[Dict[str, Any]]:
-    """Query Gemini 2.0 Flash with uploaded document or UAE Grade 5 prompt guardrails."""
+def _ask_fahim_gemini(req: AskFahimRequest, client, doc_text: str = "", db=None) -> Optional[Dict[str, Any]]:
+    """Query Gemini with the uploaded document or the student's lesson as context."""
     try:
         from google.genai import types
 
-        rag_context = _get_lesson_rag_context(req.context_lesson_id)
+        db_lesson = _load_db_lesson(db, req.context_lesson_id)
+        rag_context = _get_lesson_rag_context(req.context_lesson_id, db_lesson)
+        grade = _lesson_grade(req.context_lesson_id, db_lesson)
+        grade_line = f"Target Grade: {grade} (UAE Ministry of Education Curriculum)" if grade else "Curriculum: UAE Ministry of Education Arabic"
         clean_q, att_type, att_name = _clean_attachment_tag(req.question)
 
         contents = []
@@ -849,7 +882,7 @@ CRITICAL DIRECTIVE - UPLOADED DOCUMENT / AI SKILLS:
         user_prompt = f"""
 Student Question: {clean_q if clean_q else req.question}
 Attachment Info: {effective_doc_name} (Type: {req.attachment_type or att_type or 'None'})
-Target Grade: 5 (UAE Ministry of Education Curriculum)
+{grade_line}
 
 CRITICAL FORMATTING REQUIREMENT (BILINGUAL INTERLEAVING):
 - You MUST provide BOTH the question and the provided answer in English directly beneath each Arabic Question and Answer.
@@ -1964,7 +1997,8 @@ def _generate_admin_fahim_answer(
     norm_query: str,
     query_lower: str,
     clean_q: Optional[str] = None,
-    doc_text: str = ""
+    doc_text: str = "",
+    db=None,
 ) -> Dict[str, Any]:
     """Provide comprehensive, authoritative pedagogical solutions for Admin access across all interactions."""
     question = (clean_q if clean_q is not None else req.question).strip()
@@ -1975,7 +2009,7 @@ def _generate_admin_fahim_answer(
     if req.attachment_base64 or req.attachment_name or doc_text:
         client = _get_gemini_client()
         if client:
-            gem_ans = _ask_fahim_gemini(req, client, doc_text=doc_text)
+            gem_ans = _ask_fahim_gemini(req, client, doc_text=doc_text, db=db)
             if gem_ans:
                 gem_ans["teacher_name"] = "Ask Fahim (إشراف أكاديمي معتمد)"
                 return gem_ans
@@ -1993,6 +2027,16 @@ def _generate_admin_fahim_answer(
             "escalated_to_tutor": False,
             "tutor_escalation_message": None
         }
+
+    # 0.5. Gemini first for text questions too; the keyword handlers below are fixed
+    # Grade 5 "Ball Games" answers and only serve as the fallback.
+    if question:
+        client = _get_gemini_client()
+        if client:
+            gem_ans = _ask_fahim_gemini(req, client, db=db)
+            if gem_ans:
+                gem_ans["teacher_name"] = "Ask Fahim (إشراف أكاديمي معتمد)"
+                return gem_ans
 
     # 1. Question Paper / Exam solving for Admin (fallback only if no attachment or client unavailable)
     if any(k in q_lower for k in [
@@ -2205,7 +2249,8 @@ def ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None)
             norm_query=norm_query,
             query_lower=query_lower,
             clean_q=clean_q,
-            doc_text=doc_text
+            doc_text=doc_text,
+            db=db,
         ), effective_query, has_attachment=bool(effective_att_type or effective_att_name or req.attachment_base64 or doc_text))
 
     # 2. Check L1 Memory & L2 Database Cache for attached documents
@@ -2240,7 +2285,7 @@ def ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None)
     if has_attachment:
         client = _get_gemini_client()
         if client:
-            gemini_result = _ask_fahim_gemini(req, client, doc_text=doc_text)
+            gemini_result = _ask_fahim_gemini(req, client, doc_text=doc_text, db=db)
             if gemini_result:
                 if gemini_result.get("escalated_to_tutor") and db and req.child_id:
                     _persist_tutor_escalation(req, db)
@@ -2283,6 +2328,23 @@ def ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None)
             "tutor_escalation_message": None,
         }, effective_query, has_attachment=True)
 
+    is_tutor_request = any(k in query_lower for k in [
+        "قصيدة البردة", "معلمك الخاص", "معلم خاص", "يشرح لي الأستاذ", "أستاذ خاص", "البلاغية المعقدة",
+        "محرك الطائرة", "طائرة نفاثة", "طائره نفاثه", "محرك الطائره"
+    ])
+
+    # 2.9. Gemini first. The keyword handlers below (paper solver, grammar, vocabulary,
+    # summary) return fixed Grade 5 "Ball Games" answers whatever the question or lesson,
+    # so they are only the fallback for when Gemini is unavailable or fails.
+    if not is_tutor_request:
+        client = _get_gemini_client()
+        if client:
+            gemini_result = _ask_fahim_gemini(req, client, db=db)
+            if gemini_result:
+                if gemini_result.get("escalated_to_tutor") and db and req.child_id:
+                    _persist_tutor_escalation(req, db)
+                return _enrich_fahim_response(gemini_result, effective_query)
+
     # 3. Check for Question Paper solving queries (e.g. solve full paper, Q1 to Q13, camera exercises)
     # Fallback to deterministic curriculum solver only when no Gemini client or no attachment
     is_paper_query = (
@@ -2315,10 +2377,6 @@ def ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None)
         return _enrich_fahim_response(study_res, effective_query)
 
     # 6. Check for explicit human tutor escalation requests
-    is_tutor_request = any(k in query_lower for k in [
-        "قصيدة البردة", "معلمك الخاص", "معلم خاص", "يشرح لي الأستاذ", "أستاذ خاص", "البلاغية المعقدة",
-        "محرك الطائرة", "طائرة نفاثة", "طائره نفاثه", "محرك الطائره"
-    ])
     if is_tutor_request:
         if db and req.child_id:
             _persist_tutor_escalation(req, db)
@@ -2334,15 +2392,6 @@ def ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None)
             "escalated_to_tutor": True,
             "tutor_escalation_message": "تم إرسال السؤال إلى الأستاذ للمتابعة الشخصية."
         }, effective_query)
-
-    # 7. Try Gemini if API client is active (for general conversation or custom open-ended queries)
-    client = _get_gemini_client()
-    if client:
-        gemini_result = _ask_fahim_gemini(req, client)
-        if gemini_result:
-            if gemini_result.get("escalated_to_tutor") and db and req.child_id:
-                _persist_tutor_escalation(req, db)
-            return _enrich_fahim_response(gemini_result, effective_query)
 
     # 7. Multi-lesson RAG matching on effective query
     matched_entry = None

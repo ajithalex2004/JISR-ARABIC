@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { audioManager } from '../../services/audio';
-import { getWordTranslation, WordDefinition } from '../../services/arabicDictionary';
+import { getWordTranslation, fetchWordGloss, WordDefinition } from '../../services/arabicDictionary';
 import { ArabEnglishHelper, useArabEnglish } from '../../services/arabEnglishService';
 
 interface ArabicWordSpansProps {
@@ -16,6 +16,8 @@ interface TooltipState {
   index: number;
   token: string;
   definition: WordDefinition;
+  // True while a word missing from the local dictionary is being looked up on the server.
+  loading?: boolean;
   rect: {
     top: number;
     bottom: number;
@@ -64,6 +66,29 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
     return () => window.removeEventListener('scroll', handleScroll, true);
   }, [tooltipState]);
 
+  // Words the local dictionary doesn't know: ask the server, using this passage as context.
+  // The short delay avoids a request for every word the pointer merely passes over.
+  const pendingIndex = tooltipState?.loading ? tooltipState.index : null;
+  const pendingToken = tooltipState?.loading ? tooltipState.token : '';
+  useEffect(() => {
+    if (pendingIndex === null) return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      fetchWordGloss(pendingToken, text).then((definition) => {
+        if (cancelled) return;
+        setTooltipState((current) =>
+          current && current.index === pendingIndex && current.token === pendingToken
+            ? { ...current, loading: false, definition: definition ?? { translation: '' } }
+            : current
+        );
+      });
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [pendingIndex, pendingToken, text]);
+
   if (!text) return null;
 
   // Split text by whitespace, preserving Arabic characters, diacritics and ligatures intact
@@ -81,6 +106,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
       index: idx,
       token,
       definition,
+      loading: !definition.translation,
       rect: {
         top: domRect.top,
         bottom: domRect.bottom,
@@ -128,6 +154,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
           index,
           token: word,
           definition,
+          loading: !definition.translation,
           rect: {
             top: domRect.top,
             bottom: domRect.bottom,
@@ -245,9 +272,11 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
 
             {/* Exact English Translation */}
             <span className="font-sans font-extrabold text-white text-xs mt-1.5 leading-snug tracking-wide">
-              {tooltipState.definition.translation && !/[\u0600-\u06FF]/.test(tooltipState.definition.translation)
+              {tooltipState.loading
+                ? 'Looking up meaning…'
+                : tooltipState.definition.translation && !/[\u0600-\u06FF]/.test(tooltipState.definition.translation)
                 ? tooltipState.definition.translation
-                : 'Curriculum Term'}
+                : 'Meaning not available'}
             </span>
 
             {/* Grammatical Tag Only */}

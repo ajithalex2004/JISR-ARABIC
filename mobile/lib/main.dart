@@ -19,6 +19,7 @@ import 'screens/learning_views.dart';
 import 'screens/lesson_player_screen.dart';
 import 'screens/mindmap_screen.dart';
 import 'screens/textbook_reader_screen.dart';
+import 'grade_access.dart';
 
 void main() {
   runApp(const JisrArabicApp());
@@ -1862,6 +1863,7 @@ class _MainScreenState extends State<MainScreen> {
       onOpenAuth: _showAuthDialog,
       onSwitchProfile: _showChildSwitcherSheet,
       onOpenPaywall: () => _showPaywallDialog(_currentGrade, _currentTerm),
+      onUnlockGrade: (grade) => _showPaywallDialog(grade, 1),
       onVocalize: _vocalizeText,
       onOpenReader: () => setState(() => _activeView = 'reader'),
       onOpenMindmaps: () => setState(() => _activeView = 'mindmaps'),
@@ -1880,6 +1882,9 @@ class _MainScreenState extends State<MainScreen> {
           api: _api,
           initialGrade: _currentGrade,
           initialTerm: _currentTerm,
+          allowedGrades: _user == null || _user?['role'] == 'admin'
+              ? const [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+              : allowedGrades(_user, _activeChild),
           initialPage: ((_currentGrade == 5 || _currentGrade == 6 || _currentGrade == 7) && _currentTerm == 1) ? 8 : 7,
           onGradeTermChanged: (grade, term) {
             setState(() {
@@ -1968,12 +1973,12 @@ class _MainScreenState extends State<MainScreen> {
           initialGrade: _currentGrade,
           api: _api,
           token: _token,
+          allowedGrades: allowedGrades(_user, _activeChild),
           onGradeChanged: (g) {
+            // Only changes the grade being viewed; the child's saved grade
+            // changes only through the server (and only to a paid grade).
             setState(() {
               _currentGrade = g;
-              if (_activeChild != null) {
-                _activeChild!['default_grade'] = g;
-              }
             });
             _auth.storage.write(key: 'active_child_grade', value: g.toString());
           },

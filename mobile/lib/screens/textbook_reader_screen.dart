@@ -19,6 +19,8 @@ class TextbookReaderScreen extends StatefulWidget {
   final int initialTerm;
   final int initialPage;
   final void Function(int grade, int term)? onGradeTermChanged;
+  // Grades this account may open; defaults to Grades 1-10 for admins and visitors.
+  final List<int> allowedGrades;
 
   const TextbookReaderScreen({
     super.key,
@@ -30,6 +32,7 @@ class TextbookReaderScreen extends StatefulWidget {
     this.initialTerm = 1,
     this.initialPage = 8,
     this.onGradeTermChanged,
+    this.allowedGrades = const [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   });
 
   @override
@@ -464,9 +467,9 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
                   height: 36,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: 10,
+                    itemCount: widget.allowedGrades.length,
                     itemBuilder: (_, i) {
-                      final g = i + 1;
+                      final g = widget.allowedGrades[i];
                       final isSel = g == _currentGrade;
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),

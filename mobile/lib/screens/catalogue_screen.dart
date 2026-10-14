@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../grade_access.dart';
 
 import '../models/curriculum_models.dart';
 
@@ -32,6 +33,8 @@ class CatalogueScreen extends StatelessWidget {
   final VoidCallback? onOpenAuth;
   final VoidCallback? onSwitchProfile;
   final VoidCallback? onOpenMindmaps;
+  // Parents: open payment for a grade the child doesn't have yet.
+  final ValueChanged<int>? onUnlockGrade;
 
   const CatalogueScreen({
     super.key,
@@ -57,7 +60,43 @@ class CatalogueScreen extends StatelessWidget {
     this.onOpenAuth,
     this.onSwitchProfile,
     this.onOpenMindmaps,
+    this.onUnlockGrade,
   });
+
+  void _showUnlockGradeSheet(BuildContext context) {
+    final owned = allowedGrades(user, activeChild);
+    final others = [for (var g = 1; g <= 12; g++) if (!owned.contains(g)) g];
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isArabic ? 'اختر الصف الذي تريد فتحه' : 'Choose a grade to unlock',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: others.map((g) => ActionChip(
+                  label: Text(isArabic ? 'الصف $g' : 'Grade $g'),
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    onUnlockGrade?.call(g);
+                  },
+                )).toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -753,8 +792,8 @@ class CatalogueScreen extends StatelessWidget {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: List.generate(12, (index) {
-              final g = index + 1;
+            children: [
+              ...allowedGrades(user, activeChild).map((g) {
               final isSel = currentGrade == g;
               return Padding(
                 padding: const EdgeInsets.only(right: 6),
@@ -791,6 +830,24 @@ class CatalogueScreen extends StatelessWidget {
                 ),
               );
             }),
+              if (user?['role'] == 'parent' && activeChild != null && onUnlockGrade != null)
+                InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _showUnlockGradeSheet(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFF59E0B)),
+                    ),
+                    child: Text(
+                      isArabic ? '🔒 فتح صف آخر' : '🔒 Unlock another grade',
+                      style: const TextStyle(color: Color(0xFF92400E), fontWeight: FontWeight.bold, fontSize: 11),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 20),

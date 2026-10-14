@@ -10,6 +10,8 @@ class MindmapsScreen extends StatefulWidget {
   final dynamic api;
   final String? token;
   final ValueChanged<int>? onGradeChanged;
+  // Grades this account may open; defaults to all for admins and visitors.
+  final List<int> allowedGrades;
   final Function(String text)? onVocalize;
   final Function(String query)? onAskFahim;
   final VoidCallback onBack;
@@ -21,6 +23,7 @@ class MindmapsScreen extends StatefulWidget {
     this.api,
     this.token,
     this.onGradeChanged,
+    this.allowedGrades = const [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     this.onVocalize,
     this.onAskFahim,
     required this.onBack,
@@ -1063,7 +1066,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) {
+                children: widget.allowedGrades.map((g) {
                   final isSel = g == _selectedGrade;
                   return ChoiceChip(
                     label: Text(widget.isArabic ? 'الصف $g' : 'Grade $g'),

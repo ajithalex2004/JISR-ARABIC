@@ -449,6 +449,16 @@ export interface WeeklyDigestData {
   active_gaps_summary: Array<{ concept_ar: string; concept_en: string; mastery: string }>;
   tutor_feedback_summary_en: string;
   parent_tips: string[];
+  period_start?: string | null;
+  period_end?: string | null;
+  lessons_practised?: number;
+  activities_answered?: number;
+  accuracy_pct?: number | null;
+  capsules_this_week?: number;
+  quizzes_this_week?: Array<{ date: string; grade: number; term: number; score: number; correct: number; total: number }>;
+  quiz_avg_this_week?: number | null;
+  words_learned?: number;
+  activity_vs_last_week_pct?: number | null;
 }
 
 // --- Monetization & Invoicing Interfaces ---

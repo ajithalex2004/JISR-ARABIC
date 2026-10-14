@@ -22,6 +22,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
   const [dispatchStatus, setDispatchStatus] = useState<string | null>(null);
   const [isDispatching, setIsDispatching] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [weeklyEmail, setWeeklyEmail] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (activeChild) {
@@ -43,6 +44,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
       setReceipts(recs);
       setWeeklyDigest(digest);
       setActionableGuidance(guidance);
+      api.getReportPreferences().then(p => setWeeklyEmail(p.weekly_email)).catch(() => setWeeklyEmail(null));
     } catch (e) {
       console.error(e);
     } finally {
@@ -64,6 +66,21 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
     }
   };
 
+
+  const toggleWeeklyEmail = async (enabled: boolean) => {
+    setWeeklyEmail(enabled);
+    try {
+      const res = await api.setReportPreferences(enabled);
+      setWeeklyEmail(res.weekly_email);
+      setDispatchStatus(res.weekly_email
+        ? `The weekly report will be emailed to ${res.email} every Sunday.`
+        : 'Weekly report emails are turned off.');
+      setTimeout(() => setDispatchStatus(null), 6000);
+    } catch (e) {
+      setWeeklyEmail(!enabled);
+      console.error('Failed to save report preference', e);
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -353,6 +370,60 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
             </div>
           )}
 
+          {/* This week's activity (last 7 days) */}
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                This week{weeklyDigest.period_start ? ` · ${weeklyDigest.period_start} to ${weeklyDigest.period_end}` : ''}
+              </span>
+              {weeklyEmail !== null && (
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                  <input type="checkbox" checked={weeklyEmail} onChange={e => toggleWeeklyEmail(e.target.checked)} />
+                  Email me this report every week
+                </label>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 border border-emerald-200 bg-emerald-50">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Lessons Practised</span>
+                <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">{weeklyDigest.lessons_practised ?? 0}</div>
+                <span className="text-[10px] text-slate-500">
+                  {weeklyDigest.activities_answered ?? 0} questions
+                  {weeklyDigest.accuracy_pct != null ? ` · ${weeklyDigest.accuracy_pct}% correct` : ''}
+                </span>
+              </div>
+              <div className="p-3 border border-emerald-200 bg-emerald-50">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Words Learned</span>
+                <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">{weeklyDigest.words_learned ?? 0}</div>
+                <span className="text-[10px] text-slate-500">Vocabulary answered correctly</span>
+              </div>
+              <div className="p-3 border border-emerald-200 bg-emerald-50">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Quizzes This Week</span>
+                <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">
+                  {weeklyDigest.quiz_avg_this_week != null ? `${weeklyDigest.quiz_avg_this_week}%` : '—'}
+                </div>
+                <span className="text-[10px] text-slate-500">{weeklyDigest.quizzes_this_week?.length ?? 0} quiz{(weeklyDigest.quizzes_this_week?.length ?? 0) === 1 ? '' : 'zes'} · average score</span>
+              </div>
+              <div className="p-3 border border-emerald-200 bg-emerald-50">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Capsules This Week</span>
+                <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">{weeklyDigest.capsules_this_week ?? 0}</div>
+                <span className="text-[10px] text-slate-500">
+                  {weeklyDigest.activity_vs_last_week_pct != null
+                    ? `${weeklyDigest.activity_vs_last_week_pct >= 0 ? '+' : ''}${weeklyDigest.activity_vs_last_week_pct}% activity vs. last week`
+                    : 'No activity last week to compare'}
+                </span>
+              </div>
+            </div>
+            {(weeklyDigest.quizzes_this_week?.length ?? 0) > 0 && (
+              <ul className="text-xs text-slate-600 space-y-0.5">
+                {weeklyDigest.quizzes_this_week!.map((q, i) => (
+                  <li key={i}>{q.date}: Grade {q.grade} Term {q.term} quiz · <span className="font-bold">{q.score}%</span> ({q.correct}/{q.total})</li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">Overall</span>
           {/* Digest KPI cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3 border border-slate-200 bg-slate-50">
@@ -360,9 +431,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
               <div className="text-xl font-black text-slate-900 font-mono mt-0.5">
                 {weeklyDigest.study_minutes} mins
               </div>
-              <span className="text-[10px] text-emerald-700 font-bold">
-                +{weeklyDigest.study_minutes_vs_last_week_pct}% vs. last week
-              </span>
+              <span className="text-[10px] text-slate-500">Study time logged this week</span>
             </div>
 
             <div className="p-3 border border-slate-200 bg-slate-50">

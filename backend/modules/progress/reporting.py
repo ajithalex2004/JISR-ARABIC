@@ -4,7 +4,10 @@ import logging
 import json
 import datetime
 from sqlalchemy.orm import Session
-from backend.models import ChildProfile, LearnerAttempt, LearnerMistake, LessonVersion, GamificationProfile, ConceptMastery, WeeklyDigestNotification, User
+from backend.models import (
+    ChildProfile, LearnerAttempt, LearnerMistake, LessonVersion, GamificationProfile, ConceptMastery,
+    WeeklyDigestNotification, User, CapsuleProgress, ExamSimulationResult, SpacedReviewLog,
+)
 from backend.schemas import WeeklyDigestResponse, SendWeeklyDigestRequest, SendWeeklyDigestResponse, ActionableGuidanceResponse, ActionableGuidanceItem
 from backend.errors import ApplicationError
 from backend.redis_client import cache_get, cache_set
@@ -149,6 +152,151 @@ def get_parent_dashboard(child_id: str, *, db: Session):
     return res
 
 
+def _utcnow():
+    return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+
+
+def _is_vocab_activity(activity_id: str) -> bool:
+    key = (activity_id or "").lower()
+    return "vocab" in key or "word" in key
+
+
+def _activity_counts(child_id: str, start, end, db: Session) -> dict:
+    attempts = db.query(LearnerAttempt).filter(
+        LearnerAttempt.child_id == child_id, LearnerAttempt.created_at >= start, LearnerAttempt.created_at < end
+    ).all()
+    capsules = db.query(CapsuleProgress).filter(
+        CapsuleProgress.child_id == child_id, CapsuleProgress.completed_at >= start, CapsuleProgress.completed_at < end
+    ).all()
+    quizzes = db.query(ExamSimulationResult).filter(
+        ExamSimulationResult.child_id == child_id, ExamSimulationResult.submitted_at >= start, ExamSimulationResult.submitted_at < end
+    ).order_by(ExamSimulationResult.submitted_at).all()
+    reviews = db.query(SpacedReviewLog).filter(
+        SpacedReviewLog.child_id == child_id, SpacedReviewLog.review_date >= start, SpacedReviewLog.review_date < end
+    ).all()
+    return {"attempts": attempts, "capsules": capsules, "quizzes": quizzes, "reviews": reviews}
+
+
+def weekly_activity(child_id: str, *, db: Session, now=None) -> dict:
+    """What the child did in the last 7 days, from their own attempt, capsule, quiz and review records."""
+    end = now or _utcnow()
+    start = end - datetime.timedelta(days=7)
+    this_week = _activity_counts(child_id, start, end, db)
+    last_week = _activity_counts(child_id, start - datetime.timedelta(days=7), start, db)
+
+    attempts = this_week["attempts"]
+    correct = [a for a in attempts if a.is_correct]
+    words = {("lesson", a.lesson_id, a.activity_id) for a in correct if _is_vocab_activity(a.activity_id)}
+    words |= {("review", r.question_id) for r in this_week["reviews"]
+              if r.is_correct and (r.concept_key or "").startswith("vocab")}
+    quizzes = [
+        {"date": q.submitted_at.date().isoformat(), "grade": q.grade, "term": q.term,
+         "score": round(q.score_percentage or 0.0, 1), "correct": q.correct_count, "total": q.total_questions}
+        for q in this_week["quizzes"]
+    ]
+
+    def total(counts):
+        return len(counts["attempts"]) + len(counts["capsules"]) + len(counts["quizzes"]) + len(counts["reviews"])
+
+    this_total, last_total = total(this_week), total(last_week)
+    return {
+        "period_start": start.date().isoformat(),
+        "period_end": end.date().isoformat(),
+        "lessons_practised": len({a.lesson_id for a in attempts}),
+        "activities_answered": len(attempts) + len(this_week["reviews"]),
+        "accuracy_pct": round(100.0 * len(correct) / len(attempts), 1) if attempts else None,
+        "capsules_this_week": len(this_week["capsules"]),
+        "quizzes_this_week": quizzes,
+        "quiz_avg_this_week": round(sum(q["score"] for q in quizzes) / len(quizzes), 1) if quizzes else None,
+        "words_learned": len(words),
+        "activity_vs_last_week_pct": round(100.0 * (this_total - last_total) / last_total, 1) if last_total else None,
+    }
+
+
+def week_key(now=None) -> str:
+    year, week, _ = (now or _utcnow()).isocalendar()
+    return f"{year}-W{week:02d}"
+
+
+def weekly_report_email(child: ChildProfile, activity: dict) -> tuple:
+    """Subject and plain-text body of the weekly progress email for one child."""
+    name = child.name
+    lines = [
+        "Dear parent,",
+        "",
+        f"Here is {name}'s Arabic progress on JISR for {activity['period_start']} to {activity['period_end']}:",
+        "",
+        f"- Lessons practised: {activity['lessons_practised']}",
+        f"- Questions answered: {activity['activities_answered']}"
+        + (f" ({activity['accuracy_pct']}% correct)" if activity["accuracy_pct"] is not None else ""),
+        f"- Words learned: {activity['words_learned']}",
+        f"- Learning capsules completed: {activity['capsules_this_week']}",
+    ]
+    if activity["quizzes_this_week"]:
+        lines.append(f"- Quizzes taken: {len(activity['quizzes_this_week'])}, average score {activity['quiz_avg_this_week']}%")
+        for q in activity["quizzes_this_week"]:
+            lines.append(f"    {q['date']}: Grade {q['grade']} Term {q['term']} quiz, {q['score']}% ({q['correct']}/{q['total']})")
+    else:
+        lines.append("- Quizzes taken: none this week")
+    change = activity["activity_vs_last_week_pct"]
+    if change is not None:
+        lines.append(f"- Activity compared with last week: {'+' if change >= 0 else ''}{change}%")
+    lines += [""]
+    if activity["activities_answered"] or activity["capsules_this_week"] or activity["quizzes_this_week"]:
+        lines.append(f"Well done to {name}! A few minutes of practice each day keeps the progress going.")
+    else:
+        lines.append(f"{name} did not practise this week. Encouraging a short 5-minute lesson today is a great way to restart.")
+    lines += [
+        "",
+        "See the full report in the Parent Dashboard on JISR.",
+        "To stop these emails, turn off \"Email me this report every week\" in the Parent Dashboard.",
+        "",
+        "JISR Arabic | منصة جسر لتعليم اللغة العربية",
+    ]
+    subject = f"{name}'s weekly Arabic progress | التقرير الأسبوعي للطالب {name}"
+    return subject, "\n".join(lines)
+
+
+def send_scheduled_weekly_reports(*, db: Session, now=None) -> dict:
+    """Email this week's report to every parent who opted in, once per child per week."""
+    from backend.email_delivery import email_configured, send_email
+
+    now = now or _utcnow()
+    label = f"Weekly email {week_key(now)}"
+    summary = {"week": week_key(now), "sent": 0, "skipped": 0, "failed": 0}
+    if not email_configured():
+        summary["error"] = "Email is not configured"
+        return summary
+    parents = db.query(User).filter(User.weekly_report_email == True).all()  # noqa: E712
+    for parent in parents:
+        for child in db.query(ChildProfile).filter(ChildProfile.parent_id == parent.id).all():
+            already = db.query(WeeklyDigestNotification).filter(
+                WeeklyDigestNotification.child_id == child.id,
+                WeeklyDigestNotification.week_label == label,
+                WeeklyDigestNotification.delivery_status == "delivered",
+            ).first()
+            if already:
+                summary["skipped"] += 1
+                continue
+            activity = weekly_activity(child.id, db=db, now=now)
+            subject, body = weekly_report_email(child, activity)
+            status, error = "delivered", None
+            try:
+                send_email(parent.email, subject, body)
+                summary["sent"] += 1
+            except Exception as exc:
+                status, error = "failed", str(exc)[:500]
+                summary["failed"] += 1
+            db.add(WeeklyDigestNotification(
+                child_id=child.id, parent_id=parent.id, week_label=label,
+                study_minutes=0, completed_capsules=activity["capsules_this_week"],
+                avg_score=activity["quiz_avg_this_week"] or 0.0, sent_channel="email",
+                delivery_status=status, error_message=error, digest_json=json.dumps(activity),
+            ))
+            db.commit()
+    return summary
+
+
 def get_weekly_digest(child_id: str, *, db: Session):
     """
     Returns a concise weekly digest summarizing study minutes, completed capsules,
@@ -206,12 +354,14 @@ def get_weekly_digest(child_id: str, *, db: Session):
             "Use the plain-English talking points below to spark confidence and curiosity at home."
         ]
 
+    activity = weekly_activity(child.id, db=db)
     res = WeeklyDigestResponse(
+        **activity,
         child_id=child.id,
         child_name=child.name,
         week_label=datetime.datetime.now(datetime.UTC).strftime("Week %W · الأسبوع الحالي"),
         study_minutes=study_mins,
-        study_minutes_vs_last_week_pct=0.0,
+        study_minutes_vs_last_week_pct=activity["activity_vs_last_week_pct"] or 0.0,
         completed_capsules_count=caps_count,
         quizzes_taken=quizzes_taken,
         avg_quiz_score=avg_score,
@@ -256,14 +406,8 @@ def send_weekly_digest(child_id: str, req: SendWeeklyDigestRequest, *, db: Sessi
         from backend.email_delivery import email_configured, send_email
         if email_configured():
             try:
-                send_email(
-                    recipient,
-                    f"التقرير الأسبوعي للطالب {child.name} | Weekly Learning Digest",
-                    f"مرحباً ولي الأمر،\n\nإليكم ملخص الأداء الأسبوعي للطالب {child.name}:\n"
-                    f"- دقائق الدراسة: {study_mins} دقيقة\n"
-                    f"- الكبسولات المكتملة: {caps_count}\n"
-                    f"- متوسط الدرجات: {avg_score}%\n\nمنصة جسر لتعليم اللغة العربية",
-                )
+                subject, body = weekly_report_email(child, weekly_activity(child.id, db=db))
+                send_email(recipient, subject, body)
                 delivery_status = "delivered"
             except Exception as e:
                 delivery_status = "failed"
@@ -385,3 +529,19 @@ def get_actionable_guidance(child_id: str, *, db: Session):
     )
     cache_set(f"actionable_guidance:{child_id}", res.model_dump(), ttl_seconds=60)
     return res
+
+
+def get_report_preferences(*, actor, db: Session) -> dict:
+    user = db.get(User, actor.id)
+    if user is None:
+        raise ApplicationError(status_code=404, detail="Account not found")
+    return {"weekly_email": bool(user.weekly_report_email), "email": user.email}
+
+
+def set_report_preferences(weekly_email: bool, *, actor, db: Session) -> dict:
+    user = db.get(User, actor.id)
+    if user is None:
+        raise ApplicationError(status_code=404, detail="Account not found")
+    user.weekly_report_email = bool(weekly_email)
+    db.commit()
+    return {"weekly_email": bool(user.weekly_report_email), "email": user.email}

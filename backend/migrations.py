@@ -77,6 +77,9 @@ MIGRATIONS = [
         ("user_sessions", "child_id", "VARCHAR(36)"),
         ("user_sessions", "ix_user_sessions_child_id", "CREATE INDEX IF NOT EXISTS ix_user_sessions_child_id ON user_sessions (child_id)"),
     ]),
+    ("0009_weekly_report_email", [
+        ("users", "weekly_report_email", "BOOLEAN DEFAULT 0"),
+    ]),
 ]
 
 

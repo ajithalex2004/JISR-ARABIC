@@ -114,6 +114,70 @@ export const api = {
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not delete student'));
     return res.json();
   },
+  async adminListParents(q: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/parents?q=${encodeURIComponent(q)}`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load parents'));
+    return res.json();
+  },
+  async adminGetParent(parentId: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/parents/${encodeURIComponent(parentId)}`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load parent'));
+    return res.json();
+  },
+  async adminCreateParent(parent: { email: string; password: string; full_name?: string; phone_number?: string }) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/parents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parent)
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not add parent'));
+    return res.json();
+  },
+  async adminUpdateParent(parentId: string, changes: { email?: string; full_name?: string; phone_number?: string; password?: string; weekly_report_email?: boolean }) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/parents/${encodeURIComponent(parentId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(changes)
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not update parent'));
+    return res.json();
+  },
+  async adminDeleteParent(parentId: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/parents/${encodeURIComponent(parentId)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not delete parent'));
+    return res.json();
+  },
+  async adminListPayments(filters: { q?: string; method?: string; status?: string; days?: number; parent_id?: string }) {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== '' && v !== null) params.set(k, String(v)); });
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/payments?${params.toString()}`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load payments'));
+    return res.json();
+  },
+  async adminSystemHealth() {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/system-health`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load system health'));
+    return res.json();
+  },
+  async adminSystemAction(action: 'check-gemini' | 'test-alert' | 'send-weekly-reports') {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/system-health/${action}`, { method: 'POST' });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Action failed'));
+    return res.json();
+  },
+  async getReportPreferences() {
+    const res = await authenticatedFetch(`${API_BASE}/api/parent/report-preferences`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load report settings'));
+    return res.json();
+  },
+  async setReportPreferences(weeklyEmail: boolean) {
+    const res = await authenticatedFetch(`${API_BASE}/api/parent/report-preferences`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weekly_email: weeklyEmail })
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not save report settings'));
+    return res.json();
+  },
   async adminSetStudentGrade(childId: string, grade: number) {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/students/${encodeURIComponent(childId)}/grade`, {
       method: 'PUT',

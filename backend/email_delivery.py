@@ -64,12 +64,18 @@ def _send_via_smtp(recipient: str, subject: str, body_text: str) -> None:
         smtp.send_message(message)
 
 
-def send_email(recipient: str, subject: str, body_text: str) -> None:
+def send_email(recipient: str, subject: str, body_text: str, *, record_failures: bool = True) -> None:
     """Send a plain-text email through the configured transport; raises on failure."""
-    if os.getenv("RESEND_API_KEY", "").strip():
-        _send_via_resend(recipient, subject, body_text)
-    else:
-        _send_via_smtp(recipient, subject, body_text)
+    try:
+        if os.getenv("RESEND_API_KEY", "").strip():
+            _send_via_resend(recipient, subject, body_text)
+        else:
+            _send_via_smtp(recipient, subject, body_text)
+    except Exception as exc:
+        if record_failures:
+            from backend.alerts import record_failure
+            record_failure("email", f"Sending an email to {_mask_email(recipient)} failed: {exc}")
+        raise
 
 
 def send_otp_email(recipient: str, code: str, purpose: str) -> bool:

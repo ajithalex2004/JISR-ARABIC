@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Plus, Upload, CheckCircle2, AlertTriangle, FileCode, Layers } from 'lucide-react';
 import { api } from '../../services/api';
-import { StudentsAdmin } from './StudentsAdmin';
-import { TutorAssignments } from './TutorAssignments';
+import { AdminManagement } from './AdminManagement';
 import { CurriculumReview } from './CurriculumReview';
 import { TextbookPdfUploader } from './TextbookPdfUploader';
 import { TextbookPdfLibrary } from './TextbookPdfLibrary';
@@ -146,8 +145,7 @@ export const AdminWorkflow: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      <StudentsAdmin />
-      <TutorAssignments />
+      <AdminManagement />
       {/* Top Banner */}
       <div className="sharp-card p-5 border-l-4 border-l-slate-900 bg-white flex justify-between items-center">
         <div>

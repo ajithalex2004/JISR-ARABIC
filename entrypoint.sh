@@ -18,6 +18,10 @@ if [ "${RUN_MIGRATIONS:-1}" = "1" ] && [ "$1" = "api" ]; then
         fi
     }
     echo ">> [JISR Entrypoint] Database schema verified."
+    # Demo/test accounts have published passwords: keep them off the live site.
+    if [ "${FAHIM_ENV:-production}" = "production" ] && [ "${KEEP_DEMO_ACCOUNTS:-0}" != "1" ]; then
+        python -m backend.demo_accounts || echo ">> [JISR Entrypoint] Warning: could not remove demo accounts."
+    fi
 fi
 
 # Service launcher

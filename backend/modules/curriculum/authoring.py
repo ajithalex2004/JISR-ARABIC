@@ -764,13 +764,10 @@ def update_edition(req: AdminUpdateEditionRequest, *, db: Session):
 
 def solve_curriculum_question(question_ar: str, context_ar: str | None = None, grade: int | None = 6) -> dict:
     """Generates a pedagogical model answer with Arabic (vowels), Arabzi transliteration, and English explanation."""
-    import os
     import json
-    from google import genai
-    from google.genai import types
+    from backend.ai import gateway
 
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if not api_key:
+    if not gateway.available():
         return {
             "text_ar": "نَمُوذَجُ الإِجَابَةِ: ارْجِعْ لِتَوْجِيهَاتِ الدَّرْسِ.",
             "arabzi": "Namūdhaj al-ijābah: Irji' li-tawjeehāt ad-dars.",
@@ -778,7 +775,6 @@ def solve_curriculum_question(question_ar: str, context_ar: str | None = None, g
             "explanation_en": "Curriculum model solution."
         }
 
-    client = genai.Client(api_key=api_key)
     prompt = f"""
 You are an expert UAE Ministry of Education Arabic curriculum teacher and pedagogical tutor for Grade {grade}.
 A student or parent is asking for the solution/answer to this curriculum question or exercise:
@@ -800,11 +796,7 @@ Format as JSON:
 }}
 """
     try:
-        response = client.models.generate_content(
-            model='gemini-3.5-flash-lite',
-            contents=prompt,
-            config=types.GenerateContentConfig(response_mime_type="application/json")
-        )
+        response = gateway.generate(gateway.AIRequest(feature="model_answer", prompt=prompt, json=True, child_safe=False))
         return json.loads(response.text)
     except Exception as e:
         return {

@@ -33,35 +33,30 @@ def _clean(text: str, limit: int) -> str:
 
 
 def _gemini_gloss(word: str, context: str) -> Optional[dict]:
-    from backend.modules.tutoring.assistant import GEMINI_MODEL, _child_safety_settings, _get_gemini_client
+    from backend.ai import gateway
+    from backend.ai.errors import AIUnavailable
 
-    client = _get_gemini_client()
-    if client is None:
+    if not gateway.available():
         return None
     try:
-        from google.genai import types
-
         prompt = f"Word: {word}" + (f"\nSentence: {context}" if context else "")
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=_SYSTEM_PROMPT,
-                temperature=0.0,
-                response_mime_type="application/json",
-                safety_settings=_child_safety_settings(types),
-            ),
-        )
+        response = gateway.generate(gateway.AIRequest(
+            feature="word_meaning", prompt=prompt, system=_SYSTEM_PROMPT, temperature=0.0, json=True,
+        ))
         data = json.loads(response.text or "{}")
         translation = _clean(str(data.get("translation", "")), 80)
         if not translation or _ARABIC.search(translation):
             return None
         pos = str(data.get("part_of_speech", "")).lower()
-        return {"translation": translation, "part_of_speech": pos if pos in _PARTS_OF_SPEECH else None, "source": "gemini"}
+        return {"translation": translation, "part_of_speech": pos if pos in _PARTS_OF_SPEECH else None,
+                "source": response.provider}
+    except AIUnavailable as exc:
+        logger.warning("AI word gloss unavailable for %r: %s", word, exc)  # already recorded by the gateway
+        return None
     except Exception as exc:
-        logger.warning("Gemini word gloss failed for %r: %s", word, exc)
+        logger.warning("AI word gloss failed for %r: %s", word, exc)
         from backend.alerts import record_failure
-        record_failure("gemini", f"Word meanings ({GEMINI_MODEL}): {exc}")
+        record_failure("gemini", f"Word meanings: {exc}")
         return None
 
 

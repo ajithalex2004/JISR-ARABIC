@@ -23,6 +23,7 @@ COMPONENTS = {
     "payments": "Payments",
     "email": "Email delivery",
     "server": "Server errors",
+    "ai": "AI providers (switching and spending)",
 }
 RECENT_LIMIT = 20
 _RECENT_TTL = 7 * 24 * 3600
@@ -112,6 +113,14 @@ def alert_now(component: str, summary: str, detail="", *, background: bool = Tru
         return False
     _dispatch(component, summary, _short(detail), background)
     return True
+
+
+def notify(component: str, subject: str, body: str, *, background: bool = True) -> None:
+    """Send a one-off notice (no failure counting or cooldown; the caller decides when)."""
+    if background:
+        threading.Thread(target=send_alert, args=(component, subject, body), daemon=True).start()
+    else:
+        send_alert(component, subject, body)
 
 
 def _dispatch(component: str, summary: str, detail: str, background: bool) -> None:

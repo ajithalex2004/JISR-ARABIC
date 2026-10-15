@@ -667,6 +667,9 @@ def purge_children(child_ids, *, db: Session, anonymized_parent_id: Optional[str
         db.query(model).filter(model.child_id.in_(child_ids)).delete(synchronize_session=False)
     db.query(UserFeedback).filter(UserFeedback.child_id.in_(child_ids)).update(
         {UserFeedback.child_id: None}, synchronize_session=False)
+    from backend.models import AIUsage
+    db.query(AIUsage).filter(AIUsage.learner_id.in_(child_ids)).update(
+        {AIUsage.learner_id: None}, synchronize_session=False)
     for payment in db.query(PaymentTransaction).filter(PaymentTransaction.child_id.in_(child_ids)).all():
         payment.anonymized_parent_id = anonymized_parent_id or payment.parent_id
         payment.parent_id = None

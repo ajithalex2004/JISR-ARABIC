@@ -551,3 +551,30 @@ class DocumentSolutionCache(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     last_accessed_at = Column(DateTime, default=datetime.datetime.utcnow)
 
+
+
+class AIUsage(Base):
+    """One AI call: which feature, which provider and model, tokens used and what it cost.
+
+    Feeds the per-learner daily limits, the monthly budget alerts and the cost panel on
+    Admin > System health. learner_id is a plain column (no foreign key) so usage history
+    never blocks deleting an account; account deletion clears it.
+    """
+    __tablename__ = "ai_usage"
+    __table_args__ = (
+        Index("ix_ai_usage_created", "created_at"),
+        Index("ix_ai_usage_learner_created", "learner_id", "created_at"),
+    )
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    feature = Column(String(40), nullable=False)
+    provider = Column(String(20), nullable=False)
+    model = Column(String(80), nullable=True)
+    input_tokens = Column(Integer, default=0, nullable=False)
+    output_tokens = Column(Integer, default=0, nullable=False)
+    cost_usd = Column(Float, nullable=True)
+    ok = Column(Boolean, default=True, nullable=False)
+    fallback = Column(Boolean, default=False, nullable=False)
+    latency_ms = Column(Integer, nullable=True)
+    learner_id = Column(String(36), nullable=True)
+    error = Column(String(300), nullable=True)

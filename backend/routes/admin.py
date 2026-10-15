@@ -386,7 +386,16 @@ def system_health(actor: Principal = Depends(get_current_user)):
         "last_gemini_check": cache_get("scheduler:last:gemini_probe"),
         "last_weekly_reports": cache_get("scheduler:last:weekly_reports"),
         "last_demo_cleanup": cache_get("scheduler:last:demo_cleanup"),
+        "ai": _ai_section(),
     }
+
+
+def _ai_section():
+    from backend.ai import gateway, usage
+    try:
+        return {"providers": gateway.status(), "usage": usage.report()}
+    except Exception as exc:
+        return {"providers": [], "usage": None, "error": f"{type(exc).__name__}: {exc}"[:300]}
 
 
 @router.post('/system-health/check-gemini')

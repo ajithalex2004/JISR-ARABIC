@@ -9,6 +9,8 @@ import logging
 import time
 from typing import Callable, Sequence, TypeVar
 
+from backend.ai.errors import AIUnavailable
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
@@ -18,8 +20,8 @@ QUOTA_RETRY_DELAYS: Sequence[int] = (30, 60)
 _sleep = time.sleep
 
 
-class GeminiQuotaExhausted(RuntimeError):
-    """Gemini refuses calls until billing or quota is fixed; the message says what to do."""
+class GeminiQuotaExhausted(AIUnavailable):
+    """AI refuses calls until billing or quota is fixed; the message says what to do."""
 
 
 def _code(exc: BaseException):

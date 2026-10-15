@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 import { formatDate } from './PaymentsAdmin';
+import { AICostPanel, AISection } from './AICostPanel';
 
 type Failure = { at: string; detail: string };
 type Component = {
@@ -24,6 +25,7 @@ type Health = {
   models?: { assistant: string; drafting: string };
   last_weekly_reports?: { week: string; sent: number; skipped: number; failed: number; error?: string; at: string } | null;
   last_demo_cleanup?: { removed: string[]; error?: string | null; at: string } | null;
+  ai?: AISection;
 };
 
 export function SystemHealth() {
@@ -100,6 +102,7 @@ export function SystemHealth() {
             : <span className="text-emerald-800 font-semibold">Matches the app (no missing columns)</span>}
         {!!health.schema.stricter_columns?.length && <span className="text-red-700 block">Required in the database but optional in the app: {health.schema.stricter_columns.join(', ')}. Fixed automatically on the next deploy.</span>}
       </div>}
+      {health.ai && <AICostPanel ai={health.ai} />}
       {health.last_demo_cleanup && <div className={`border p-3 text-sm ${health.last_demo_cleanup.error ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
         <span className="text-xs text-slate-500 block">Demo accounts · last checked {formatDate(health.last_demo_cleanup.at)}</span>
         {health.last_demo_cleanup.error ? <span className="text-red-700">Could not remove them: {health.last_demo_cleanup.error}</span>

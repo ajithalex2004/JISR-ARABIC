@@ -156,6 +156,13 @@ export const api = {
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load payments'));
     return res.json();
   },
+  async adminExport(kind: 'students' | 'parents' | 'payments', filters: Record<string, string | number | undefined> = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== '' && v !== null) params.set(k, String(v)); });
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/export/${kind}?${params.toString()}`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not export'));
+    return res.json() as Promise<{ title: string; columns: string[]; rows: (string | number | null)[][] }>;
+  },
   async adminSystemHealth() {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/system-health`);
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load system health'));

@@ -1,7 +1,7 @@
 """
 Microlearning Units (كبسولات تعليمية) — Capsules Bank
 Bite-sized 3–5 minute hyper-focused lessons breaking down critical Arabic rules
-for UAE MoE & CBSE non-native learners.
+for CBSE Curriculum non-native learners.
 """
 
 from typing import List, Dict, Any
@@ -514,7 +514,7 @@ CAPSULES_DATA: List[Dict[str, Any]] = [
         "summary_ar": "لا الناهية تطلب الكف عن الفعل وتجزم بالسكون، بينما لا النافية تخبر ويبقى الفعل مرفوعاً بالضمة.",
         "summary_en": "Prohibitive Laa commands stopping and governs Sukun; negative Laa merely reports leaving Dammah.",
         "audio_script_ar": "فرق دقيق وهام جداً في الاختبار الوزاري! (لَا النَّاهِيَةُ) تفيد طلباً: (يَا أَحْمَدُ، لَا تُهْمِلْ دُرُوسَكَ!) فهنا تجزم بالسكون. أما (لَا النَّافِيَةُ) فتخبرك فقط دون أمر أو طلب: (أَحْمَدُ لَا يُهْمِلُ دُرُوسَهُ) فيبقى الفعل مرفوعاً بالضمة!",
-        "audio_script_en": "A pivotal distinction in MoE exams! Prohibitive 'Laa' directs a command to desist: 'Ya Ahmad, laa tuhmil duroosaka!' governing Sukun. Negative 'Laa' merely states a fact: 'Ahmad laa yuhmilu duroosahu' retaining the nominative Dammah!",
+        "audio_script_en": "A pivotal distinction in CBSE Curriculum exams! Prohibitive 'Laa' directs a command to desist: 'Ya Ahmad, laa tuhmil duroosaka!' governing Sukun. Negative 'Laa' merely states a fact: 'Ahmad laa yuhmilu duroosahu' retaining the nominative Dammah!",
         "rule_steps": [
             {
                 "step_number": 1,

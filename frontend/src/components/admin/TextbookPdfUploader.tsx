@@ -174,7 +174,7 @@ export const TextbookPdfUploader: React.FC<TextbookPdfUploaderProps> = ({ onUplo
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Upload official UAE MoE Arabic student textbooks (Volumes 1, 2, 3) for automated page slicing, OCR Arabic transcription, and Reader integration.
+            Upload official CBSE Curriculum Arabic student textbooks (Volumes 1, 2, 3) for automated page slicing, OCR Arabic transcription, and Reader integration.
           </p>
         </div>
         <span className="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-3 py-1 border border-slate-300 self-start sm:self-auto">

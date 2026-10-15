@@ -49,7 +49,7 @@ class _AuthDialogState extends State<AuthDialog> {
   String _gender = 'Boy';
   final int _age = 10;
   String _selectedAvatar = 'avatar_falcon';
-  final String _curriculumStream = 'MoE / CBSE Arabic (Non-Arabs)';
+  final String _curriculumStream = 'CBSE Curriculum Arabic (Non-Arabs)';
   final _accessPinCtrl = TextEditingController();
 
   final List<Map<String, String>> _uaeAvatars = [

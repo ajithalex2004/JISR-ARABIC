@@ -1140,7 +1140,7 @@ const Map<String, String> kArabicMobileDict = {
   'الوثائقية': 'Documentary',
   'الوحدات': 'units / chapters',
   'الوحدة': 'unit / chapter',
-  'الوزارة': 'Ministry of Education (MoE)',
+  'الوزارة': 'The Ministry (of Education)',
   'الوزاري': 'ministerial / official exam',
   'الوزارية': 'ministerial (exam model)',
   'الوزن': 'weight / meter',

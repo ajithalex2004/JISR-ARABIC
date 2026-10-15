@@ -6,7 +6,7 @@ import '../auth_service.dart';
 import '../chapter1_data.dart';
 import '../models/curriculum_models.dart';
 
-/// Full-featured Scanned Textbook Reader for the UAE MoE Arabic Curriculum
+/// Full-featured Scanned Textbook Reader for the CBSE Curriculum Arabic
 /// Supporting all 10 grades (Grades 1-10) and all terms (Terms 1-3)
 /// with authentic Google Cloud Vision OCR, paragraph-by-paragraph TTS audio,
 /// split / text / image view modes, full-screen zoom, and chapter jumping.
@@ -687,7 +687,7 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
                     Text(
                       widget.isArabic
                           ? 'كتاب وزارة التربية والتعليم · الصف $_currentGrade (الفصل $_currentTerm)'
-                          : 'UAE MoE Student Book · Grade $_currentGrade (Term $_currentTerm)',
+                          : 'CBSE Curriculum Student Book · Grade $_currentGrade (Term $_currentTerm)',
                       style: const TextStyle(color: Color(0xFFA7F3D0), fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                     InkWell(

@@ -92,10 +92,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'tests',
-      titleEn: 'MoE Exam Simulation',
+      titleEn: 'CBSE Curriculum Exam Simulation',
       titleAr: 'محاكاة الامتحانات',
       icon: FlaskConical,
-      badge: 'MoE Model',
+      badge: 'CBSE Curriculum Model',
       isView: (v: string) => v === 'tests'
     },
     ...(user?.role === 'learner' ? [] : [{
@@ -118,20 +118,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Trophy,
       isView: (v: string) => v === 'ranks'
     }]),
-    {
+    // The student profile (plans, settings, child details) is for the parent account only.
+    ...(user?.role === 'parent' ? [{
       id: 'profile',
       titleEn: 'Student Profile',
       titleAr: 'الملف الشخصي',
       icon: UserIcon,
       isView: (v: string) => v === 'profile'
-    },
+    }] : []),
     // Only administrators see the admin panel (not students, parents or signed-out visitors).
     ...(user?.role === 'admin' ? [{
       id: 'admin',
       titleEn: 'Admin & PDF Library',
       titleAr: 'لوحة الإدارة ومكتبة الكتب',
       icon: Settings,
-      badge: 'MoE 30 Books',
+      badge: 'CBSE Curriculum 30 Books',
       isView: (v: string) => v === 'admin'
     }] : [])
   ];
@@ -191,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               </div>
             </div>
-            <div className="flex items-center text-[#22C55E]" title="Verified UAE MoE Curriculum">
+            <div className="flex items-center text-[#22C55E]" title="Verified CBSE Curriculum">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>

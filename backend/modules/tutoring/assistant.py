@@ -136,7 +136,7 @@ def _build_curriculum_rag_index() -> Dict[str, Dict[str, str]]:
         if lesson_key and lesson_key not in index:
             index[lesson_key] = {
                 "text_ar": f"درس ({title_ar}) في كتاب اللغة العربية (العربية تجمعنا - الصف الخامس). يبدأ من الصفحة {start_page}.",
-                "text_en": f"Lesson '{title_en}' in UAE MoE Grade 5 Arabic curriculum, starting on page {start_page}.",
+                "text_en": f"Lesson '{title_en}' in CBSE Curriculum Grade 5 Arabic curriculum, starting on page {start_page}.",
                 "page_ref": f"Page {start_page}, Unit {lesson.get('unit_title_ar', '')}",
                 "lesson_title": lesson_label
             }
@@ -335,7 +335,7 @@ def _get_lesson_rag_context(context_lesson_id: Optional[str], db_lesson=None) ->
 
 # --- Prompt Guardrails & Personas ---
 
-ASK_FAHIM_SYSTEM_PROMPT = """You are Ustadh Fahim (الأستاذ فاهم), an expert conversational Arabic language tutor and curriculum specialist for UAE Ministry of Education (MoE) Arabic students in Grades 1-12.
+ASK_FAHIM_SYSTEM_PROMPT = """You are Ustadh Fahim (الأستاذ فاهم), an expert conversational Arabic language tutor and curriculum specialist for CBSE Curriculum Arabic students in Grades 1-12.
 
 Your role:
 - Answer student questions authoritatively and comprehensively for the student's own grade and lesson, which are given with each question, and about any attached study sheets, revision worksheets, or exam papers.
@@ -438,12 +438,12 @@ You must respond ONLY with a valid JSON object with the following fields:
 
 QUESTION_PAPER_SYSTEM_PROMPT = """You are Ustadh Fahim (الأستاذ فاهم), Chief Examiner and Arabic Curriculum Expert for the UAE Ministry of Education (وزارة التربية والتعليم بدولة الإمارات العربية المتحدة) Grade 5 Arabic curriculum.
 
-Your mission is to examine the provided Question Paper (which may be an uploaded document/image/PDF or raw text), identify and segment each individual question, and provide the official Model Answer, step-by-step reasoning/explanation, grammatical analysis (I'rab/Nahw/Sarf), and exact UAE MoE textbook page citation.
+Your mission is to examine the provided Question Paper (which may be an uploaded document/image/PDF or raw text), identify and segment each individual question, and provide the official Model Answer, step-by-step reasoning/explanation, grammatical analysis (I'rab/Nahw/Sarf), and exact CBSE Curriculum textbook page citation.
 
 MINIMAL ESCALATION DIRECTIVE:
 - Your primary objective is to resolve ALL standard questions authoritatively and autonomously without escalating to a human teacher.
 - Do NOT escalate to a human teacher for normal curriculum questions, multiple-choice questions, grammar parsing, reading comprehension, or vocabulary matching.
-- Set "escalated": false for all questions you can answer using UAE MoE curriculum standards.
+- Set "escalated": false for all questions you can answer using CBSE Curriculum standards.
 - ONLY set "escalated": true in extreme edge cases (e.g. if the image is completely blank, unreadable, illegible, or if the question explicitly refers to a private unattached school document).
 
 For each detected question, output:
@@ -453,9 +453,9 @@ For each detected question, output:
 4. question_type: One of ["mcq", "grammar_parsing", "reading_comprehension", "vocabulary", "fill_in_blank", "creative_writing"].
 5. model_answer_ar: The official, definitive model answer in Arabic with accurate tashkeel (diacritics).
 6. model_answer_en: Clear English translation of the model answer.
-7. explanation_ar: Clear, step-by-step grammatical or factual explanation of why this answer is correct according to UAE MoE curriculum rules.
+7. explanation_ar: Clear, step-by-step grammatical or factual explanation of why this answer is correct according to CBSE Curriculum rules.
 8. explanation_en: English explanation of the rule or concept.
-9. textbook_reference: Specific citation to the MoE textbook (e.g. "كتاب الطالب ص 8 - ألعاب الكرة").
+9. textbook_reference: Specific citation to the CBSE Curriculum textbook (e.g. "كتاب الطالب ص 8 - ألعاب الكرة").
 10. lesson_id: The relevant lesson ID (e.g. "lesson_01_ball_games", "lesson_02_horse_riding", etc.).
 11. rule_summary_ar: Concise linguistic or grammatical rule (e.g. "الفاعل: اسم مرفوع يدل على من قام بالفعل وعلامة رفعه الضمة الظاهرة").
 12. confidence: "high", "medium", or "low".
@@ -662,7 +662,7 @@ def _extract_question_and_subquestion(query: str) -> Tuple[Optional[int], Option
             except Exception:
                 pass
 
-    # Pass 2: Semantic question & sub-question detection (UAE MoE Worksheet Structure)
+    # Pass 2: Semantic question & sub-question detection (CBSE Curriculum Worksheet Structure)
     # Question 1 Sub-questions (Reading Comprehension / فهم المقروء):
     if any(k in q_str for k in [
         "عادت الكرة إليه", "عادت الكره اليه", "عادت الكرة", "عادت الكره",
@@ -1144,13 +1144,13 @@ def _solve_question_paper_gemini(req: QuestionPaperSolveRequest, client) -> Opti
         doc_text_section = f"\n\nEXTRACTED DOCUMENT TEXT:\n{doc_text[:6000]}" if doc_text else ""
 
         text_prompt = f"""
-Exam Paper Title: {req.paper_title or 'UAE MoE Arabic Examination'}
+Exam Paper Title: {req.paper_title or 'CBSE Curriculum Arabic Examination'}
 Target Grade: {req.grade} (Term {req.term})
 Content / Specific Questions:
 {req.text_content or 'Analyze the attached exam paper document and provide comprehensive solutions for all detected questions.'}{doc_text_section}
 
 Instructions:
-- Provide high quality, authoritative solutions matching the UAE MoE curriculum.
+- Provide high quality, authoritative solutions matching the CBSE Curriculum.
 - Minimize escalation: resolve all normal questions with high confidence without escalating to a human tutor.
 """.strip()
         from backend.ai.errors import AILimitReached, AIUnavailable
@@ -1412,7 +1412,7 @@ def _solve_question_paper_query(
                     "• الإِجَابَةُ النَّمُوذَجِيَّةُ: عِنْدَمَا عَادَتِ الكُرَةُ إِلَى سَامِي، سَيْطَرَ عَلَيْهَا بِبَرَاعَةٍ وَتَمَرْكَزَ بِذَكَاءٍ دَاخِلَ مِنْطَقَةِ الجَزَاءِ، ثُمَّ سَدَّدَهَا بِقُوَّةٍ وَدِقَّةٍ فِي شِبَاكِ المَرْمَى مُعْلِنًا تَسْجِيلَ هَدَفِ الفَوْزِ الثَّمِينَ لِفَرِيقِهِ!\n"
                     "  🇬🇧 Model Answer: When the ball returned to Sami, he skillfully controlled it, smartly positioned himself in the penalty box, and shot it powerfully and accurately into the net, scoring the precious winning goal for his team!\n\n"
                     "📖 الشَّرْحُ وَالتَّعْلِيلُ: يُوَضِّحُ نَصُّ القِرَاءَةِ فِي مِنْهَاجِ الصَّفِّ الخَامِسِ (ص 8) أَنَّ سَامِي اسْتَغَلَّ ارْتِدَادَ الكُرَةِ بَعْدَ تَمْرِيرَةِ زَمِيلِهِ، وَبِفَضْلِ تَمَرْكُزِهِ السَّلِيمِ وَرُوحِ التَّعَاوُنِ سَدَّدَ مُبَاشَرَةً نَحْوَ المَرْمَى فِي اللَّحَظَاتِ الأَخِيرَةِ مِنَ المُبَارَاةِ.\n"
-                    "  🇬🇧 Explanation: The UAE MoE Grade 5 reading passage (p. 8) clarifies that Sami capitalized on the ball's rebound after his teammate's pass. Thanks to his smart positioning and team spirit, he shot directly into the net in the match's final moments.\n\n"
+                    "  🇬🇧 Explanation: The CBSE Curriculum Grade 5 reading passage (p. 8) clarifies that Sami capitalized on the ball's rebound after his teammate's pass. Thanks to his smart positioning and team spirit, he shot directly into the net in the match's final moments.\n\n"
                     "🎯 مَرْجِعُ الكِتَابِ: كِتَابُ الطَّالِبِ ص 8 - فَهْمُ المَقْرُوءِ (السُّؤَالُ 1 - الفَقْرَةُ 5).\n"
                     "  🇬🇧 Reference: Student Book Page 8 - Reading Comprehension (Question 1, Item 5)."
                 ),
@@ -1544,7 +1544,7 @@ def _solve_question_paper_query(
                 "  🇬🇧 Model Answer: 11 starting players (including the goalkeeper).\n\n"
                 "📖 الشَّرْحُ وَالتَّعْلِيلُ: يُوَضِّحُ نَصُّ الكِتَابِ المَدْرَسِيِّ لِلصَّفِّ الخَامِسِ (ص 8) أَنَّ لُعْبَةَ كُرَةِ القَدَمِ تُقَامُ بَيْنَ فَرِيقَيْنِ، "
                 "يَضُمُّ كُلُّ فَرِيقٍ 11 لَاعِبًا يُوَزَّعُونَ حَسَبَ مَرَاكِزِ اللَّعِبِ (حِرَاسَةُ المَرْمَى، الدِّفَاعُ، الوَسَطُ، الهُجُومُ).\n"
-                "  🇬🇧 Explanation: The UAE MoE Grade 5 textbook (p. 8) clarifies that football is played between two teams of 11 players each distributed across playing positions.\n\n"
+                "  🇬🇧 Explanation: The CBSE Curriculum Grade 5 textbook (p. 8) clarifies that football is played between two teams of 11 players each distributed across playing positions.\n\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 "📋 جَدْوَلُ حَلِّ جَمِيعِ الأَسْئِلَةِ الفَرْعِيَّةِ لِلسُّؤَالِ الأَوَّلِ (فَهْمُ المَقْرُوءِ):\n"
                 "  🇬🇧 Indexed Sub-Questions Breakdown for Question 1:\n\n"
@@ -1565,7 +1565,7 @@ def _solve_question_paper_query(
                 "🎯 مَرْجِعُ الكِتَابِ: كِتَابُ الطَّالِبِ ص 8 - أَلْعَابُ الكُرَةِ (السُّؤَالُ الأَوَّلُ كَامِلاً).\n"
                 "  🇬🇧 Reference: Student Book Page 8 - Ball Games (Complete Question 1)."
             ),
-            "answer_en": "Question 1 Solution: Football consists of 11 starting players per team (including goalkeeper), according to MoE textbook p. 8. Sub-questions 1.1-1.7 solved in full.",
+            "answer_en": "Question 1 Solution: Football consists of 11 starting players per team (including goalkeeper), according to CBSE Curriculum textbook p. 8. Sub-questions 1.1-1.7 solved in full.",
             "page_reference": "كتاب الطالب ص 8 - السؤال 1",
             "lesson_title": "حل ورقة الاختبار: السؤال الأول (Exam Paper - Q1)",
             "escalated_to_tutor": False,
@@ -1593,7 +1593,7 @@ def _solve_question_paper_query(
                 "🎯 مَرْجِعُ الكِتَابِ: كِتَابُ الطَّالِبِ ص 10 - أَنْشِطَةُ القَوَاعِدِ (الجُمْلَةُ الفِعْلِيَّةُ).\n"
                 "  🇬🇧 Reference: Student Book Page 10 - Grammar Activities (Verbal Sentence)."
             ),
-            "answer_en": "Question 2 Solution: In 'sajjala al-la'ibu al-hadaf', al-la'ib is nominative subject (Fa'il marfu' with damma). MoE textbook p. 10.",
+            "answer_en": "Question 2 Solution: In 'sajjala al-la'ibu al-hadaf', al-la'ib is nominative subject (Fa'il marfu' with damma). CBSE Curriculum textbook p. 10.",
             "page_reference": "كتاب الطالب ص 10 - السؤال 2",
             "lesson_title": "حل ورقة الاختبار: السؤال الثاني (Exam Paper - Q2)",
             "escalated_to_tutor": False,
@@ -1619,7 +1619,7 @@ def _solve_question_paper_query(
                 "🎯 مَرْجِعُ الكِتَابِ: كِتَابُ الطَّالِبِ ص 7 - جَدْوَلُ المُفْرَدَاتِ وَالتَّرَاكِيبِ.\n"
                 "  🇬🇧 Reference: Student Book Page 7 - Vocabulary Table."
             ),
-            "answer_en": "Question 3 Solution: Synonym of jama'iyyah is collaborative/shared; antonym is fardiyyah (individual). MoE textbook p. 7.",
+            "answer_en": "Question 3 Solution: Synonym of jama'iyyah is collaborative/shared; antonym is fardiyyah (individual). CBSE Curriculum textbook p. 7.",
             "page_reference": "كتاب الطالب ص 7 - السؤال 3",
             "lesson_title": "حل ورقة الاختبار: السؤال الثالث (Exam Paper - Q3)",
             "escalated_to_tutor": False,
@@ -1638,11 +1638,11 @@ def _solve_question_paper_query(
                 "• يُقَامُ عَلَى مِضْمَارِ (مَيْدَان) العَالَمِيِّ فِي إِمَارَةِ دُبَيَّ بِدَوْلَةِ الإِمَارَاتِ العَرَبِيَّةِ المُتَّحِدَةِ.\n"
                 "  🇬🇧 It is held at the world-renowned Meydan Racecourse in Dubai, United Arab Emirates.\n\n"
                 "📖 الشَّرْحُ وَالتَّعْلِيلُ: يُوَضِّحُ كِتَابُ المِنْهَاجِ الوِزَارِيِّ (الدَّرْسُ الثَّانِي: رُكُوبُ الخَيْلِ، ص 14) أَنَّ كَأْسَ دُبَيَّ العَالَمِيَّ يُعَدُّ وَاحِدًا مِنْ أَرْقَى وَأَغْلَى سِبَاقَاتِ الخُيُولِ فِي العَالَمِ.\n"
-                "  🇬🇧 Explanation: The UAE MoE textbook (Lesson 2: Horse Riding, p. 14) explains that the Dubai World Cup is one of the world's premier equestrian racing events.\n\n"
+                "  🇬🇧 Explanation: The CBSE Curriculum textbook (Lesson 2: Horse Riding, p. 14) explains that the Dubai World Cup is one of the world's premier equestrian racing events.\n\n"
                 "🎯 مَرْجِعُ الكِتَابِ: كِتَابُ الطَّالِبِ ص 14 - رُكُوبُ الخَيْلِ.\n"
                 "  🇬🇧 Reference: Student Book Page 14 - Horse Riding."
             ),
-            "answer_en": "Question 4 Solution: The annual Dubai World Cup is hosted at the world-renowned Meydan Racecourse in Dubai, UAE (MoE textbook p. 14).",
+            "answer_en": "Question 4 Solution: The annual Dubai World Cup is hosted at the world-renowned Meydan Racecourse in Dubai, UAE (CBSE Curriculum textbook p. 14).",
             "page_reference": "كتاب الطالب ص 14 - السؤال 4",
             "lesson_title": "حل ورقة الاختبار: السؤال الرابع (Exam Paper - Q4)",
             "escalated_to_tutor": False,
@@ -1668,7 +1668,7 @@ def _solve_question_paper_query(
                 "🎯 مَرْجِعُ الكِتَابِ: كِتَابُ الطَّالِبِ ص 12 - الظَّوَاهِرُ الإِمْلائِيَّةُ.\n"
                 "  🇬🇧 Reference: Student Book Page 12 - Spelling Phenomena."
             ),
-            "answer_en": "Question 5 Solution: Taa Marbutah is pronounced /t/ with vowels and /h/ on sukoon pause, taking two dots. Haa is pronounced /h/ in all cases without dots (MoE textbook p. 12).",
+            "answer_en": "Question 5 Solution: Taa Marbutah is pronounced /t/ with vowels and /h/ on sukoon pause, taking two dots. Haa is pronounced /h/ in all cases without dots (CBSE Curriculum textbook p. 12).",
             "page_reference": "كتاب الطالب ص 12 - السؤال 5",
             "lesson_title": "حل ورقة الاختبار: السؤال الخامس (Exam Paper - Q5)",
             "escalated_to_tutor": False,
@@ -1694,7 +1694,7 @@ def _solve_question_paper_query(
                 "🎯 مَرْجِعُ الكِتَابِ: كِتَابُ الطَّالِبِ ص 10 - نَمَاذِجُ الإِعْرَابِ.\n"
                 "  🇬🇧 Reference: Student Book Page 10 - Parsing Models."
             ),
-            "answer_en": "Question 6 Solution: 'yarkudu al-farisu fi al-maydan' is a verbal sentence starting with present verb 'yarkudu'; 'al-farisu' is the nominative subject (Fa'il) with damma (MoE textbook p. 10).",
+            "answer_en": "Question 6 Solution: 'yarkudu al-farisu fi al-maydan' is a verbal sentence starting with present verb 'yarkudu'; 'al-farisu' is the nominative subject (Fa'il) with damma (CBSE Curriculum textbook p. 10).",
             "page_reference": "كتاب الطالب ص 10 - السؤال 6",
             "lesson_title": "حل ورقة الاختبار: السؤال السادس (Exam Paper - Q6)",
             "escalated_to_tutor": False,
@@ -1921,7 +1921,7 @@ def _solve_question_paper_query(
             "answer_ar": (
                 f"📝 حَلُّ وَرَقَةِ الأَسْئِلَةِ كَامِلَةً وِفْقَ مِنْهَاجِ وِزَارَةِ التَّرْبِيَةِ وَالتَّعْلِيمِ (الصَّفُّ الخَامِسُ):\n"
                 f"📄 الوَثِيقَةُ المُعْتَمَدَةُ: {paper_label}\n"
-                f"🇬🇧 Full Exam Paper Solution (Questions 1 to 13) - UAE MoE Grade 5 Curriculum:\n\n"
+                f"🇬🇧 Full Exam Paper Solution (Questions 1 to 13) - CBSE Curriculum Grade 5 Curriculum:\n\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 "📌 السُّؤَالُ الأَوَّلُ (1) (فَهْمُ المَقْرُوءِ):\n"
                 "  🇬🇧 Question 1 (Reading Comprehension):\n"
@@ -2005,7 +2005,7 @@ def _solve_question_paper_query(
                 "- Q11: Tri-literal roots: (l-'-b) and (s-b-q) (p. 11).\n"
                 "- Q12: Prepositions and genitive case markings (p. 12).\n"
                 "- Q13: Educational values, teamwork, and fair play ethics (p. 8).\n"
-                "All 13 solutions fully grounded in the UAE MoE curriculum."
+                "All 13 solutions fully grounded in the CBSE Curriculum."
             ),
             "page_reference": "كتاب الطالب ص 7-14 (حل الامتحان كاملاً من س1 إلى س13)",
             "lesson_title": "حل ورقة الامتحان كاملة: الأسئلة 1-13 (Full Paper Solved Q1-Q13)",
@@ -2055,7 +2055,7 @@ def _solve_textbook_study_query(clean_q: str, query_lower: str, target_lesson: s
                 "• كِفَاحٌ: سَعْيٌ مُتَوَاصِلٌ وَبَذْلُ الجُهْدِ لِتَحْقِيقِ الفَوْزِ.\n"
                 "• اللَّعِبُ النَّظِيفُ: الِالْتِزَامُ بِالقَوَانِينِ وَالرُّوحِ الرِّيَاضِيَّةِ العَالِيَةِ."
             ),
-            "answer_en": "MoE Approved Vocabulary: The Round Witch (football), jama'iyyah (collective/team), spherical vs oval, kifah (striving/determination), fair play.",
+            "answer_en": "CBSE Curriculum Approved Vocabulary: The Round Witch (football), jama'iyyah (collective/team), spherical vs oval, kifah (striving/determination), fair play.",
             "page_reference": "كتاب الطالب ص 7 - جدول المفردات",
             "lesson_title": "المفردات والتراكيب اللغوية (Vocabulary & Structures)",
             "escalated_to_tutor": False,
@@ -2172,11 +2172,11 @@ def _generate_admin_fahim_answer(
                 "محلولة ومدققة أكاديمياً وفق معايير وزارة التربية والتعليم."
             ),
             "answer_en": (
-                f"Welcome Academic Administrator! Based on the attached UAE MoE document ({att_name}), "
+                f"Welcome Academic Administrator! Based on the attached CBSE Curriculum document ({att_name}), "
                 "this section presents core concepts, standard reading passages, and linguistic analysis "
                 "aligned with Ministry of Education curriculum benchmarks. All questions are fully verified."
             ),
-            "page_reference": "MoE Textbook PDF Analysis",
+            "page_reference": "CBSE Curriculum Textbook PDF Analysis",
             "lesson_title": "تحليل وثيقة المنهاج (Curriculum Document Review)",
             "escalated_to_tutor": False,
             "tutor_escalation_message": None
@@ -2193,7 +2193,7 @@ def _generate_admin_fahim_answer(
                 "الإجابة مكتملة وصحيحة 100% وجاهزة للتطبيق."
             ),
             "answer_en": (
-                "Snapshot analyzed successfully. The verified MoE solution is to apply complete vowel diacritics "
+                "Snapshot analyzed successfully. The verified CBSE Curriculum solution is to apply complete vowel diacritics "
                 "and correct grammatical agreement (nominative subject, accusative object). The solution is 100% verified."
             ),
             "page_reference": "Textbook Exercise Scanner",
@@ -2213,10 +2213,10 @@ def _generate_admin_fahim_answer(
         ),
         "answer_en": (
             f"Welcome Academic Administrator! Regarding your inquiry ({question[:45]}): "
-            "The official UAE MoE curriculum standard confirms complete alignment with intended learning outcomes "
+            "The official CBSE Curriculum standard confirms complete alignment with intended learning outcomes "
             "across reading comprehension, syntax, and expressive eloquence, fostering proud Emirati national identity."
         ),
-        "page_reference": "UAE MoE Curriculum Framework",
+        "page_reference": "CBSE Curriculum Framework",
         "lesson_title": "إشراف المنهاج الوزاري (Curriculum Supervisor Resolution)",
         "escalated_to_tutor": False,
         "tutor_escalation_message": None
@@ -2597,7 +2597,7 @@ def _ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None
         ),
         "answer_en": (
             f"Pedagogical solution regarding '{effective_query}':\n"
-            "Follow UAE MoE Grade 5 standard rules: Verbal sentences start with verbs having nominative subjects with damma; "
+            "Follow CBSE Curriculum Grade 5 standard rules: Verbal sentences start with verbs having nominative subjects with damma; "
             "Nominal sentences have Mubtada and Khabar both with damma. You can also use 'Open & Select Question' for direct step-by-step solutions."
         ),
         "page_reference": "كتاب الطالب - المنهاج الوزاري المعتمد",
@@ -2740,7 +2740,7 @@ def socratic_learn(req: SocraticLearnRequest):
 
 
 def _solve_question_paper_fallback(req: QuestionPaperSolveRequest) -> QuestionPaperSolveResponse:
-    """Deterministic fallback solution engine grounded in UAE MoE Grade 5 curriculum."""
+    """Deterministic fallback solution engine grounded in CBSE Curriculum Grade 5 curriculum."""
     query = (req.text_content or req.paper_title or "").lower()
     questions: List[SolvedQuestion] = []
 
@@ -2754,7 +2754,7 @@ def _solve_question_paper_fallback(req: QuestionPaperSolveRequest) -> QuestionPa
             model_answer_ar="يُقَامُ كَأْسُ دُبَيِّ العَالَمِيُّ عَلَى مِضْمَارِ (مَيْدَان) العَالَمِيِّ فِي إِمَارَةِ دُبَيَّ.",
             model_answer_en="The Dubai World Cup is hosted annually at the iconic Meydan Racecourse in Dubai.",
             explanation_ar="وَفْقَ نَصِّ كِتَابِ الوِزَارَةِ (الدَّرْسُ الثَّانِي: رُكُوبُ الخَيْلِ، ص 14)، يُعَدُّ مِضْمَارُ مَيْدَان المَقَرَّ الرَّسْمِيَّ لِهَذَا السِّبَاقِ العَالَمِيِّ.",
-            explanation_en="According to the MoE textbook (Lesson 2: Horse Riding, p. 14), Meydan Racecourse is the official venue.",
+            explanation_en="According to the CBSE Curriculum textbook (Lesson 2: Horse Riding, p. 14), Meydan Racecourse is the official venue.",
             textbook_reference="كتاب الطالب ص 14 - ركوب الخيل",
             lesson_id="lesson_02_horse_riding",
             rule_summary_ar="فهم المقروء: استخراج الحقائق المباشرة من النص المعلوماتي.",
@@ -2850,7 +2850,7 @@ def _solve_question_paper_fallback(req: QuestionPaperSolveRequest) -> QuestionPa
         model_answer_ar="المُرَادِفُ: (تَعَاوُنِيَّةٌ / مُشْتَرَكَةٌ)، والضِّدُّ: (فَرْدِيَّةٌ).",
         model_answer_en="Synonym: collaborative/shared; Antonym: individual (fardiyyah).",
         explanation_ar="تُعَرِّفُ المُفْرَدَاتُ الوِزَارِيَّةُ (ص 7) أَنَّ اللُّعْبَةَ الجَمَاعِيَّةَ تَحْتَاجُ إِلَى فَرِيقٍ يَتَعَاوَنُ مَعًا، بِعَكْسِ الرِّيَاضَةِ الفَرْدِيَّةِ.",
-        explanation_en="MoE vocabulary definitions (p. 7) explain that collective games require teamwork, in contrast to individual sports.",
+        explanation_en="CBSE Curriculum vocabulary definitions (p. 7) explain that collective games require teamwork, in contrast to individual sports.",
         textbook_reference="كتاب الطالب ص 7 - جدول المفردات والتراكيب",
         lesson_id="lesson_01_ball_games",
         rule_summary_ar="المفردات: الترادف والتضاد في المعجم المدرسي الإماراتي.",
@@ -2869,7 +2869,7 @@ def _solve_question_paper_fallback(req: QuestionPaperSolveRequest) -> QuestionPa
         model_answer_ar="يُقَامُ كَأْسُ دُبَيِّ العَالَمِيُّ عَلَى مِضْمَارِ (مَيْدَان) العَالَمِيِّ فِي إِمَارَةِ دُبَيَّ.",
         model_answer_en="The Dubai World Cup is hosted annually at the iconic Meydan Racecourse in Dubai.",
         explanation_ar="وَفْقَ نَصِّ كِتَابِ الوِزَارَةِ (الدَّرْسُ الثَّانِي: رُكُوبُ الخَيْلِ، ص 14)، يُعَدُّ مِضْمَارُ مَيْدَان المَقَرَّ الرَّسْمِيَّ لِهَذَا السِّبَاقِ العَالَمِيِّ.",
-        explanation_en="According to the MoE textbook (Lesson 2: Horse Riding, p. 14), Meydan Racecourse is the official venue.",
+        explanation_en="According to the CBSE Curriculum textbook (Lesson 2: Horse Riding, p. 14), Meydan Racecourse is the official venue.",
         textbook_reference="كتاب الطالب ص 14 - ركوب الخيل",
         lesson_id="lesson_02_horse_riding",
         rule_summary_ar="فهم المقروء: استخراج الحقائق المباشرة من النص المعلوماتي.",
@@ -2888,7 +2888,7 @@ def _solve_question_paper_fallback(req: QuestionPaperSolveRequest) -> QuestionPa
         model_answer_ar="التَّاءُ المَرْبُوطَةُ تُنْطَقُ تَاءً عِنْدَ التَّحْرِيكِ وَتَأْخُذُ نُقْطَتَيْنِ، بَيْنَمَا الهَاءُ تُنْطَقُ هَاءً فِي الوَصْلِ وَالوَقْفِ دُونَ نِقَاطٍ.",
         model_answer_en="Taa Marbutah is pronounced as /t/ with vowels and takes two dots; Haa is pronounced /h/ in all cases without dots.",
         explanation_ar="يُوَضِّحُ كِتَابُ الصَّفِّ الخَامِسِ (ص 12) أَنَّ التَّنْوِينَ هُوَ المِعْيَارُ لِلتَّمْيِيزِ بَيْنَهُمَا نُطْقًا وَكِتَابَةً.",
-        explanation_en="MoE Grade 5 textbook (p. 12) clarifies that tanween or vowels distinguish pronunciation and spelling.",
+        explanation_en="CBSE Curriculum Grade 5 textbook (p. 12) clarifies that tanween or vowels distinguish pronunciation and spelling.",
         textbook_reference="كتاب الطالب ص 12 - الظواهر الإملائية",
         lesson_id="lesson_01_ball_games",
         rule_summary_ar="الإملاء: التمييز بين التاء المربوطة والهاء.",

@@ -165,7 +165,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
               </span>
             </h2>
             <p className="text-[11px] text-slate-500">
-              UAE MoE Curriculum Arabic Tutor · Autonomous Exam Paper Assistant
+              CBSE Curriculum Arabic Tutor · Autonomous Exam Paper Assistant
             </p>
           </div>
         </div>
@@ -297,7 +297,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
                   }}
                   className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-medium"
                 >
-                  📝 Sample: Term 1 MoE Exam Paper
+                  📝 Sample: Term 1 CBSE Curriculum Exam Paper
                 </button>
                 <button
                   type="button"

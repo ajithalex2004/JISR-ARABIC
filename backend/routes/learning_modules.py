@@ -82,7 +82,7 @@ def get_adaptive_assessment(lesson_id: str, child_id: Optional[str]=None, is_rev
 @router.get('/assessments/exam-simulation/{grade}/{term}')
 def get_exam_simulation(grade: int=5, term: int=1, child_id: Optional[str]=None, db: Session=Depends(get_db), actor: Optional[Principal]=Depends(get_optional_user)):
     """
-    Retrieve full-length official UAE Ministry of Education (MoE) practice exam.
+    Retrieve full-length official CBSE Curriculum practice exam.
     Includes 20-minute countdown limit, Bloom-tagged items, and marks weighting.
     """
     return exams.get_exam_simulation(grade=grade, term=term, child_id=child_id, db=db, actor=actor)

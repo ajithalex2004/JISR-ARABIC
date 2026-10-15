@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="bg-[#58337E] text-white text-xs px-4 py-1.5 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <span className="bg-[#22C55E] text-white font-bold px-2 py-0.5 rounded-full uppercase text-[10px] tracking-wider shadow-xs">
-            UAE MoE & CBSE Aligned
+            CBSE Curriculum Aligned
           </span>
           <span className="hidden sm:inline text-purple-200">
             <ArabicWordSpans text="العَرَبِيَّةُ تَجْمَعُنَا" tooltipPlacement="bottom" className="text-purple-200 font-semibold" /> · Modern Standard Arabic for Non-Native Learners
@@ -136,7 +136,7 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
             <span className="text-slate-300">|</span>
             <span className="text-slate-500 font-medium">
-              Class {selectedGrade || activeChild?.default_grade || 5} · {activeChild?.curriculum_stream ? activeChild.curriculum_stream.split('/')[0].trim() : 'MoE Arabic'}
+              Class {selectedGrade || activeChild?.default_grade || 5} · CBSE Curriculum
             </span>
           </div>
         </div>
@@ -261,8 +261,8 @@ export const Header: React.FC<HeaderProps> = ({
                   )}
 
 
-                  {/* Open Profile View */}
-                  <button
+                  {/* Open Profile View (parent accounts only) */}
+                  {user.role === 'parent' && <button
                     type="button"
                     onClick={() => {
                       setIsDropdownOpen(false);
@@ -272,7 +272,7 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <span>عرض الملف الشخصي والإعدادات</span>
                     <UserIcon className="w-4 h-4 text-[#6C5CE7]" />
-                  </button>
+                  </button>}
 
 
                   {/* Add Child Profile Option */}

@@ -65,7 +65,7 @@ class ChildProfile(Base):
     default_grade = Column(Integer, default=5)
     selected_term = Column(Integer, default=1)
     avatar_id = Column(String(50), default="avatar_falcon")  # falcon, gazelle, palm, oryx, camel
-    curriculum_stream = Column(String(100), default="MoE / CBSE Arabic (Non-Arabs)")
+    curriculum_stream = Column(String(100), default="CBSE Curriculum Arabic (Non-Arabs)")
     access_pin = Column(String(128), nullable=True)
     diagnostic_completed = Column(Boolean, default=False)
     diagnostic_level = Column(String(50), default="intermediate")

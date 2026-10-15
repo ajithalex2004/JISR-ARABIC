@@ -33,8 +33,7 @@ def _serialize(child: ChildProfile, parent: User | None, db) -> dict:
     }
 
 
-def search_students(q: str | None, *, actor, db) -> list[dict]:
-    require_roles(actor, ADMIN_ONLY)
+def _students_query(q, db):
     query = db.query(ChildProfile, User).outerjoin(User, User.id == ChildProfile.parent_id)
     term = (q or "").strip()
     if term:
@@ -44,8 +43,19 @@ def search_students(q: str | None, *, actor, db) -> list[dict]:
             User.full_name.ilike(like),
             User.email.ilike(like),
         ))
-    rows = query.order_by(ChildProfile.name).limit(SEARCH_LIMIT).all()
+    return query.order_by(ChildProfile.name)
+
+
+def search_students(q: str | None, *, actor, db) -> list[dict]:
+    require_roles(actor, ADMIN_ONLY)
+    rows = _students_query(q, db).limit(SEARCH_LIMIT).all()
     return [_serialize(child, parent, db) for child, parent in rows]
+
+
+def export_students(q: str | None, *, actor, db) -> list[dict]:
+    """Every matching student (no list limit), for the admin Excel / PDF export."""
+    require_roles(actor, ADMIN_ONLY)
+    return [_serialize(child, parent, db) for child, parent in _students_query(q, db).all()]
 
 
 def _require_grade(grade) -> int:

@@ -64,7 +64,7 @@ def evaluate_speech(
     actor: Principal = Depends(get_optional_user)
 ):
     """
-    Evaluates student pronunciation against curriculum target phrase with MoE phoneme analysis.
+    Evaluates student pronunciation against curriculum target phrase with CBSE Curriculum phoneme analysis.
     """
     if actor and req.child_id:
         optional_child(db, actor, req.child_id)

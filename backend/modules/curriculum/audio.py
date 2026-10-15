@@ -224,7 +224,7 @@ def _levenshtein_distance(s1: str, s2: str) -> int:
 
 def evaluate_pronunciation(req, db=None) -> dict:
     """
-    Evaluates student spoken Arabic against target phrase using UAE MoE phonological rubric.
+    Evaluates student spoken Arabic against target phrase using CBSE Curriculum phonological rubric.
     Analyses key phoneme confusions:
       - ث / س (Tha / Seen)
       - ت / ط (Taa / Taa')
@@ -265,7 +265,7 @@ def evaluate_pronunciation(req, db=None) -> dict:
     matched_words = sum(1 for w in target_words if w in spoken_words)
     word_accuracy = matched_words / max(1, len(target_words))
 
-    # 3. Phoneme-specific confusion checks (UAE MoE priority distinctions)
+    # 3. Phoneme-specific confusion checks (CBSE Curriculum priority distinctions)
     phoneme_pairs = [
         ("ث/س", "ث", ["س"]),
         ("ت/ط", "ط", ["ت"]),

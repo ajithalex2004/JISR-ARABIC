@@ -370,7 +370,7 @@ def _get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | No
 
             # Derive pedagogical title
             title_ar = f"صفحة كتاب الوزارة {calc_printed}"
-            title_en = f"MoE Textbook Page {calc_printed}"
+            title_en = f"CBSE Curriculum Textbook Page {calc_printed}"
             if paras:
                 first_line = paras[0].strip()
                 if "الدرس:" in first_line or "الوحدة:" in first_line:
@@ -422,7 +422,7 @@ def get_page_image(pdf_page: int, edition_id: str | None = None):
 
 
 def get_textbook_library(db: Session):
-    """Retrieve full catalog of official UAE MoE textbooks with indexing and render telemetry."""
+    """Retrieve full catalog of official CBSE Curriculum textbooks with indexing and render telemetry."""
     from pathlib import Path
     from backend.models import BookEdition, ScannedPage
     base_dir = content_root() / "pdf_pages_sample"
@@ -899,7 +899,7 @@ def solve_curriculum_question(question_ar: str, context_ar: str | None = None, g
 You are an expert UAE Ministry of Education Arabic curriculum teacher and pedagogical tutor for Grade {grade}.
 A student or parent is asking for the solution/answer to this curriculum question or exercise:
 Question: {question_ar}
-Context/Theme: {context_ar or 'UAE MoE Curriculum'}
+Context/Theme: {context_ar or 'CBSE Curriculum'}
 
 Provide the ideal model answer in JSON with:
 1. text_ar: Clear, student-friendly Arabic answer with FULL tashkeel diacritics.

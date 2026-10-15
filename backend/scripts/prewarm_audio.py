@@ -1,6 +1,6 @@
 """
 Production Audio Pre-Warming CLI Utility.
-Pre-synthesizes and caches all MoE curriculum vocabulary words, lesson readings,
+Pre-synthesizes and caches all CBSE Curriculum vocabulary words, lesson readings,
 and quiz audio prompts before school term launch.
 
 Ensures that 10,000 students and 1,000 CCU hit 100% pre-cached CDN audio files,

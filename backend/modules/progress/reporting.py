@@ -131,7 +131,7 @@ def get_parent_dashboard(child_id: str, *, db: Session):
             "school_name": child.school_name,
             "default_grade": child.default_grade,
             "avatar_id": getattr(child, "avatar_id", "avatar_falcon"),
-            "curriculum_stream": getattr(child, "curriculum_stream", "MoE / CBSE Arabic (Non-Arabs)"),
+            "curriculum_stream": getattr(child, "curriculum_stream", "CBSE Curriculum Arabic (Non-Arabs)"),
             "access_pin": None,
             "diagnostic_completed": getattr(child, "diagnostic_completed", False),
             "diagnostic_level": getattr(child, "diagnostic_level", "intermediate"),

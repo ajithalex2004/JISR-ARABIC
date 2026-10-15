@@ -183,7 +183,7 @@ def get_diagnostic_questions_for_student(grade: int = 5, stream: str = None) -> 
     return safe_questions
 
 
-def evaluate_diagnostic_submission(answers: Dict[str, int], grade: int = 5, stream: str = "MoE / CBSE Arabic (Non-Arabs)") -> Dict[str, Any]:
+def evaluate_diagnostic_submission(answers: Dict[str, int], grade: int = 5, stream: str = "CBSE Curriculum Arabic (Non-Arabs)") -> Dict[str, Any]:
     """
     Server-side evaluation of diagnostic responses.
     Prevents client tampering, computes granular competency breakdowns,

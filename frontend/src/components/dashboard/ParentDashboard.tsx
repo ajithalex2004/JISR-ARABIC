@@ -145,7 +145,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
                 <span className="font-arabic font-bold text-xs text-emerald-900">· المسار التعليمي المخصص</span>
               </div>
               <p className="text-xs text-slate-600">
-                Calibrates AI content difficulty according to UAE MoE & CBSE baseline diagnostic benchmarks.
+                Calibrates AI content difficulty according to CBSE Curriculum baseline diagnostic benchmarks.
               </p>
             </div>
           </div>
@@ -190,7 +190,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
               {child.diagnostic_level === 'independent' ? 'Independent (متمكن)' : child.diagnostic_level === 'guided' ? 'Guided (متوسط)' : 'Foundation (مبتدئ)'}
             </div>
             <span className="text-[10px] text-slate-500 font-arabic truncate block">
-              {child.curriculum_stream || 'MoE / CBSE Arabic (Non-Arabs)'}
+              {child.curriculum_stream || 'CBSE Curriculum Arabic (Non-Arabs)'}
             </span>
           </div>
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../arab_english_service.dart';
 
-/// Interactive Mindmaps and Grammar Flowcharts for UAE MoE Arabic Curriculum.
+/// Interactive Mindmaps and Grammar Flowcharts for CBSE Curriculum Arabic.
 /// Includes visual concept trees for each lesson and syntax decision flowcharts for grammar topics.
 /// Grounded for non-native Arabic learners with bilingual Arabic-English translations below every concept.
 class MindmapsScreen extends StatefulWidget {
@@ -39,7 +39,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
   int _selectedChapterIndex = 0;
   String _selectedGrammarTopicKey = 'sentence_types';
 
-  // UAE MoE Class 5 Term 1 Chapters
+  // CBSE Curriculum Class 5 Term 1 Chapters
   static final List<Map<String, dynamic>> _grade5Chapters = [
     {
       'id': 'chapter_1',
@@ -697,7 +697,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
 ];
 
 
-// UAE MoE Class 1 Term 1 Chapters
+// CBSE Curriculum Class 1 Term 1 Chapters
   static final List<Map<String, dynamic>> _grade1Chapters = [
     {
       'id': 'chapter_1',
@@ -735,7 +735,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
     },
   ];
 
-  // UAE MoE Class 2 Term 1 Chapters
+  // CBSE Curriculum Class 2 Term 1 Chapters
   static final List<Map<String, dynamic>> _grade2Chapters = [
     {
       'id': 'chapter_1',
@@ -763,7 +763,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
     },
   ];
 
-  // UAE MoE Class 3 Term 1 Chapters
+  // CBSE Curriculum Class 3 Term 1 Chapters
   static final List<Map<String, dynamic>> _grade3Chapters = [
     {
       'id': 'chapter_1',
@@ -791,7 +791,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
     },
   ];
 
-  // UAE MoE Class 4 Term 1 Chapters
+  // CBSE Curriculum Class 4 Term 1 Chapters
   static final List<Map<String, dynamic>> _grade4Chapters = [
     {
       'id': 'chapter_1',
@@ -819,7 +819,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
     },
   ];
 
-  // UAE MoE Class 9 Term 1 Chapters
+  // CBSE Curriculum Class 9 Term 1 Chapters
   static final List<Map<String, dynamic>> _grade9Chapters = [
     {
       'id': 'chapter_1',
@@ -847,7 +847,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
     },
   ];
 
-  // UAE MoE Class 10 Term 1 Chapters
+  // CBSE Curriculum Class 10 Term 1 Chapters
   static final List<Map<String, dynamic>> _grade10Chapters = [
     {
       'id': 'chapter_1',
@@ -875,7 +875,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
     },
   ];
 
-  // UAE MoE Class 11 Term 1 Chapters
+  // CBSE Curriculum Class 11 Term 1 Chapters
   static final List<Map<String, dynamic>> _grade11Chapters = [
     {
       'id': 'chapter_1',
@@ -902,7 +902,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
     },
   ];
 
-  // UAE MoE Class 12 Term 1 Chapters
+  // CBSE Curriculum Class 12 Term 1 Chapters
   static final List<Map<String, dynamic>> _grade12Chapters = [
     {
       'id': 'chapter_1',
@@ -1156,7 +1156,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
                   Text(
                     widget.isArabic
                         ? 'منهاج وزارة التربية والتعليم - دراسة بصرية ذكية'
-                        : 'UAE MoE Syllabus • Visual Concept & Syntax Trees',
+                        : 'CBSE Curriculum Syllabus • Visual Concept & Syntax Trees',
                     style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xFF64748B),
@@ -1298,7 +1298,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  widget.isArabic ? '• منهاج الإمارات الرسمي' : '• UAE MoE Official Curriculum',
+                  widget.isArabic ? '• منهاج الإمارات الرسمي' : '• CBSE Curriculum (Official)',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                 ),
               ],

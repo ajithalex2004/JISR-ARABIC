@@ -120,7 +120,7 @@ def generate_booklet(grade: int, term: int = 1, order: int = 1) -> Optional[Dict
         "title_en": f"{title_en} Smart Booklet — Grade {grade} Term {term}",
         "grade": grade,
         "term": term,
-        "pages_reference": f"Pages {start_page}–{start_page + 9} (UAE MoE Student Book Grade {grade})",
+        "pages_reference": f"Pages {start_page}–{start_page + 9} (CBSE Curriculum Student Book Grade {grade})",
         "curriculum_alignment": f"UAE Ministry of Education Arabic Grade {grade}",
         "is_generated": True,
         "study_mode": {
@@ -260,7 +260,7 @@ def generate_booklet(grade: int, term: int = 1, order: int = 1) -> Optional[Dict
             "exam_pitfall_warnings": [
                 {
                     "warning_ar": "انتبه إلى الحركات الإعرابية في أواخر الكلمات عند الضبط بالشكل في الاختبار الوزاري.",
-                    "warning_en": "Pay attention to case endings when vowelling words in MoE exam questions.",
+                    "warning_en": "Pay attention to case endings when vowelling words in CBSE Curriculum exam questions.",
                 },
                 {
                     "warning_ar": f"لا تخلط بين أمثلة قاعدة ({gram['rule_ar']}) والقواعد المشابهة لها.",

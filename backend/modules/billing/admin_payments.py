@@ -65,7 +65,8 @@ def summarize(transactions) -> dict:
     }
 
 
-def list_payments(*, actor, db, q=None, method=None, status=None, parent_id=None, days=None) -> dict:
+def list_payments(*, actor, db, q=None, method=None, status=None, parent_id=None, days=None, limit=LIST_LIMIT) -> dict:
+    """Matching payments, newest first; limit=None returns all of them (used by the export)."""
     require_roles(actor, ADMIN_ONLY)
     query = (
         db.query(PaymentTransaction, User, ChildProfile)
@@ -96,6 +97,6 @@ def list_payments(*, actor, db, q=None, method=None, status=None, parent_id=None
     rows = query.order_by(PaymentTransaction.created_at.desc()).all()
     return {
         "summary": summarize([txn for txn, _, _ in rows]),
-        "payments": [serialize_payment(txn, parent, child) for txn, parent, child in rows[:LIST_LIMIT]],
-        "truncated": len(rows) > LIST_LIMIT,
+        "payments": [serialize_payment(txn, parent, child) for txn, parent, child in (rows if limit is None else rows[:limit])],
+        "truncated": limit is not None and len(rows) > limit,
     }

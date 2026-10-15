@@ -1,4 +1,4 @@
-"""AI-assisted lesson drafting from scanned MoE textbook pages.
+"""AI-assisted lesson drafting from scanned CBSE Curriculum textbook pages.
 
 For each lesson, Gemini reads the chapter's page images and drafts a lesson package in
 the same schema as the hand-authored Grade 5 lessons. Drafts are stored as

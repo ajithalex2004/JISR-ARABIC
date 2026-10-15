@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ExportButtons } from './ExportButtons';
 import { api } from '../../services/api';
 
 type Student = {
@@ -148,7 +149,10 @@ export function StudentsAdmin({ onOpenParent }: { onOpenParent?: (email: string)
   return <section className="border border-slate-300 bg-white p-4 space-y-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="font-bold text-emerald-950">Students</h2>
-      <button type="button" onClick={() => setFormFor('new')} className="bg-emerald-900 text-white px-4 py-2">+ Add student</button>
+      <span className="flex flex-wrap items-center gap-3">
+        <ExportButtons kind="students" filters={{ q: query.trim() }} subtitle={query.trim() ? `Search: ${query.trim()}` : 'All students'} />
+        <button type="button" onClick={() => setFormFor('new')} className="bg-emerald-900 text-white px-4 py-2">+ Add student</button>
+      </span>
     </div>
     <p className="text-sm text-slate-600">Search by student or parent name or email. Changing a grade here does not need payment; the student sees the new grade the next time they open the app.</p>
     {formFor && <StudentForm

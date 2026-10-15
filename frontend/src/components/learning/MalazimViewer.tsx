@@ -151,7 +151,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
           </div>
         </div>
         <div className="text-xs text-slate-500 font-sans flex items-center gap-2">
-          <span>{bookletData?.curriculum_alignment || 'UAE MoE & CBSE Aligned'}</span>
+          <span>{bookletData?.curriculum_alignment || 'CBSE Curriculum Aligned'}</span>
           <span className="text-slate-300">|</span>
           <span className="font-semibold text-emerald-800">{bookletData?.pages_reference || `Grade ${selectedGrade}`}</span>
         </div>

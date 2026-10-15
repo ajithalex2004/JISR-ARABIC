@@ -1,6 +1,6 @@
 """
 Interactive Study Booklets (الملازم الذكية) — Malazim Hub
-Authentic curriculum consolidation for UAE MoE & CBSE Grade 5 Arabic.
+Authentic curriculum consolidation for CBSE Curriculum Grade 5 Arabic.
 Offers two distinct modes:
 1. Study Mode (وضع المذاكرة): Deep conceptual breakdown with step-by-step explanations and inline exercises.
 2. Notes / Quick Review Mode (وضع الملاحظات): 15-minute high-yield cheat sheets, flashcards, and exam memory anchors.
@@ -15,7 +15,7 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
         "title_en": "Ball Games Smart Booklet — Unit 1",
         "grade": 5,
         "term": 1,
-        "pages_reference": "Pages 6–15 (UAE MoE Student Book)",
+        "pages_reference": "Pages 6–15 (CBSE Curriculum Student Book)",
         "curriculum_alignment": "UAE Ministry of Education & CBSE Arabic (Non-Arabs)",
         
         # -------------------------------------------------------------
@@ -236,7 +236,7 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
         "title_en": "Needs, Desires & Sentence Styles Smart Booklet — Grade 6 Unit 1",
         "grade": 6,
         "term": 1,
-        "pages_reference": "Pages 8–18 (UAE MoE Student Book Grade 6)",
+        "pages_reference": "Pages 8–18 (CBSE Curriculum Student Book Grade 6)",
         "curriculum_alignment": "UAE Ministry of Education & CBSE Arabic Grade 6",
 
         # -------------------------------------------------------------
@@ -415,7 +415,7 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
         "title_en": "How I Spent My Vacation, Jazam Particles & Vocabulary Smart Booklet — Grade 7 Unit 1",
         "grade": 7,
         "term": 1,
-        "pages_reference": "Pages 6–16 (UAE MoE Student Book Grade 7)",
+        "pages_reference": "Pages 6–16 (CBSE Curriculum Student Book Grade 7)",
         "curriculum_alignment": "UAE Ministry of Education & CBSE Arabic Grade 7",
 
         # -------------------------------------------------------------
@@ -579,7 +579,7 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
                 },
                 {
                     "warning_ar": "تأكد من وضع السكون فوق الحرف الأخير للفعل بعد أدوات الجزم عند الضبط بالشكل في الاختبار الوزاري.",
-                    "warning_en": "Ensure placing the Sukun diacritic distinctly above the terminal consonant in MoE exam vocalization questions."
+                    "warning_en": "Ensure placing the Sukun diacritic distinctly above the terminal consonant in CBSE Curriculum exam vocalization questions."
                 }
             ]
         }

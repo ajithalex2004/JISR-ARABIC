@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ExportButtons } from './ExportButtons';
 import { api } from '../../services/api';
 
 export type Payment = {
@@ -121,7 +122,10 @@ export function PaymentsAdmin() {
   return <section className="border border-slate-300 bg-white p-4 space-y-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="font-bold text-emerald-950">Payments</h2>
-      <button type="button" disabled={!data?.payments.length} onClick={() => data && downloadCsv(data.payments)} className="border border-slate-400 px-3 py-1.5 text-sm disabled:opacity-40">Download CSV</button>
+      <span className="flex flex-wrap items-center gap-2">
+        <ExportButtons kind="payments" filters={{ q: query.trim(), method, status, days }} subtitle={[query.trim() && `Search: ${query.trim()}`, method, status, days && `Last ${days} days`].filter(Boolean).join(' · ') || 'All payments'} />
+        <button type="button" disabled={!data?.payments.length} onClick={() => data && downloadCsv(data.payments)} className="border border-slate-400 px-3 py-1.5 text-sm disabled:opacity-40">CSV</button>
+      </span>
     </div>
     <p className="text-sm text-slate-600">Every card payment and voucher redemption, newest first. Search by parent, student, receipt number or voucher code.</p>
     <form className="flex flex-wrap gap-2" onSubmit={e => { e.preventDefault(); load(); }}>

@@ -158,7 +158,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           </div>
           <p className="leading-relaxed">
             Chapter 1{chapterName ? <> (<strong>{chapterName}</strong>)</> : null} of your enrolled grade is 100% free with vocabulary cards, socratic tutor, and diagnostic checks. 
-            Upgrade to a Term, Annual Pass, or School Voucher to unlock Chapters 2–10, all 5 Microlearning Capsules, Study Booklets (الملازم), and MoE practice exam models.
+            Upgrade to a Term, Annual Pass, or School Voucher to unlock Chapters 2–10, all 5 Microlearning Capsules, Study Booklets (الملازم), and CBSE Curriculum practice exam models.
           </p>
         </div>
 

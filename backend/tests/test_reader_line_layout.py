@@ -33,12 +33,12 @@ class ReaderLineLayoutTest(unittest.TestCase):
             "طعام:\nكل ما يؤكل.\nمثال: الاعتدال مهم.",
         ])
 
-    def test_reading_passage_lines_that_wrap_are_joined(self):
+    def test_reading_passage_keeps_printed_lines_and_numbered_items_stand_alone(self):
         text = ("الدرس الأول: الماء\nكان الماء يجري في النهر وكانت الأشجار تشرب منه\n"
                 "حتى جاء الصيف الحار.\nماذا حدث في الصيف؟\n1. اقرأ النص.\n2. أجب عن الأسئلة.")
         self.assertEqual(_clean_ocr_paragraphs(text, 9), [
             "الدرس الأول: الماء",
-            "كان الماء يجري في النهر وكانت الأشجار تشرب منه حتى جاء الصيف الحار.",
+            "كان الماء يجري في النهر وكانت الأشجار تشرب منه\nحتى جاء الصيف الحار.",
             "ماذا حدث في الصيف؟",
             "1. اقرأ النص.",
             "2. أجب عن الأسئلة.",
@@ -72,6 +72,26 @@ class ReaderLineLayoutTest(unittest.TestCase):
         page = {"paragraphs": ["أَكْمِلْ كَمَا فِي الْمِثَالِ: أَنَا أُحِبُّ.", "قرأتُ الكتاب."],
                 "paragraphs_en": ["Complete as in the example: I love.", "I read the book."]}
         self.assertEqual(authoring.layout_card_lines(page), page)
+
+    def test_arabic_numbered_items_get_their_own_lines(self):
+        text = "قبل الاستماع:\n١ - أتأمل الصورة.\n٢ - أتناقش مع معلمي.\nأ- أقرأ النص. ب- أجيب عن الأسئلة."
+        self.assertEqual(_clean_ocr_paragraphs(text, 19), [
+            "قبل الاستماع:", "١ - أتأمل الصورة.", "٢ - أتناقش مع معلمي.", "أ- أقرأ النص.\nب- أجيب عن الأسئلة.",
+        ])
+
+    def test_inline_numbered_list_is_split_in_both_languages(self):
+        page = {"paragraphs": ["قَبْلَ الِاسْتِمَاعِ: ١ - أَتَأَمَّلُ الصُّورَةَ. ٢ - أَتَنَاقَشُ فِي المَوْضُوعِ."],
+                "paragraphs_en": ["Before Listening: 1 - I observe the picture. 2 - I discuss the topic."]}
+        out = authoring.layout_lines(page)
+        self.assertEqual(out["paragraphs"][0].split("\n"),
+                         ["قَبْلَ الِاسْتِمَاعِ:", "١ - أَتَأَمَّلُ الصُّورَةَ.", "٢ - أَتَنَاقَشُ فِي المَوْضُوعِ."])
+        self.assertEqual(out["paragraphs_en"][0].split("\n"),
+                         ["Before Listening:", "1 - I observe the picture.", "2 - I discuss the topic."])
+
+    def test_numbers_inside_sentences_are_not_split(self):
+        page = {"paragraphs": ["تَتَكَوَّنُ المُبَارَاةُ مِنْ فَرِيقَيْنِ فِي كُلٍّ مِنْهُمَا 11 لاعِبًا، عام 2009 م."],
+                "paragraphs_en": ["Two teams of 11 players, in 2009."]}
+        self.assertEqual(authoring.layout_lines(page), page)
 
 
 if __name__ == "__main__":

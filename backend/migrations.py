@@ -141,6 +141,13 @@ def upgrade():
         print(f"Added missing column {column}")
     for column in skipped:
         print(f"WARNING: could not add column {column}; add it by hand")
+    with engine.connect() as conn:
+        relaxed, skipped = relax_not_null(conn)
+        conn.commit()
+    for column in relaxed:
+        print(f"Made column optional to match the app: {column}")
+    for column in skipped:
+        print(f"WARNING: column {column} is required in the database but optional in the app")
 
 
 def missing_columns(conn):
@@ -199,6 +206,43 @@ def reconcile_columns(conn):
         except Exception as exc:
             skipped.append(f"{name} ({type(exc).__name__})")
     return added, skipped
+
+
+def stricter_columns(conn):
+    """Columns the app treats as optional that the database still requires (NOT NULL).
+
+    Tables created by older code keep their old constraints; e.g. payment_transactions.parent_id
+    was NOT NULL, so payments could not be anonymised when a parent account was deleted.
+    """
+    from backend.database import Base
+    import backend.models  # noqa: F401 register metadata
+    inspector = inspect(conn)
+    tables = set(inspector.get_table_names())
+    stricter = []
+    for table in Base.metadata.sorted_tables:
+        if table.name not in tables:
+            continue
+        required = {column["name"] for column in inspector.get_columns(table.name) if not column["nullable"]}
+        stricter.extend((table.name, column) for column in table.columns
+                        if column.nullable and not column.primary_key and column.name in required)
+    return stricter
+
+
+def relax_not_null(conn):
+    """Drop NOT NULL where the app allows empty values; returns (relaxed, skipped)."""
+    relaxed, skipped = [], []
+    for table, column in stricter_columns(conn):
+        name = f"{table}.{column.name}"
+        if conn.dialect.name != "postgresql":  # SQLite can't alter a column; dev databases are rebuilt
+            skipped.append(name)
+            continue
+        try:
+            with conn.begin_nested():
+                conn.execute(text(f'ALTER TABLE {table} ALTER COLUMN "{column.name}" DROP NOT NULL'))
+            relaxed.append(name)
+        except Exception as exc:
+            skipped.append(f"{name} ({type(exc).__name__})")
+    return relaxed, skipped
 
 
 def pending_revisions():

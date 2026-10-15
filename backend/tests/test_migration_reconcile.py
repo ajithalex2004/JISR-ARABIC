@@ -43,3 +43,14 @@ class TestReconcileColumns(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestStricterColumns(unittest.TestCase):
+    def test_required_in_database_but_optional_in_app_is_found(self):
+        engine = create_engine("sqlite://")
+        with engine.begin() as conn:  # an old table: user_id was NOT NULL, the app now allows NULL
+            conn.execute(text("CREATE TABLE user_feedbacks (id VARCHAR(36) PRIMARY KEY, user_id VARCHAR(36) NOT NULL, comment TEXT NOT NULL)"))
+        with engine.connect() as conn:
+            self.assertEqual([f"{t}.{c.name}" for t, c in migrations.stricter_columns(conn)], ["user_feedbacks.user_id"])
+            self.assertEqual(migrations.relax_not_null(conn), ([], ["user_feedbacks.user_id"]))  # SQLite can't alter
+        engine.dispose()

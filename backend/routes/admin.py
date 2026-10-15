@@ -435,8 +435,12 @@ def get_quality_report(db: Session = Depends(get_db), actor: Principal = Depends
     return service.get_quality_report(db=db)
 
 @router.get('/ocr-page/{pdf_page}')
-def get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session = Depends(get_db)):
-    """Fetch OCR transcription, image reference, and confidence for a book page."""
+def get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session = Depends(get_db),
+                 actor: Principal = Depends(get_current_user)):
+    """Fetch OCR transcription, image reference, and confidence for a book page (any signed-in user).
+
+    The processed text and translations are the platform's own work, so they need a login;
+    page images stay public (scans of the published Ministry books, shown in the mobile player)."""
     return service.get_ocr_page(pdf_page=pdf_page, edition_id=edition_id, db=db)
 
 class SolveQuestionPayload(BaseModel):

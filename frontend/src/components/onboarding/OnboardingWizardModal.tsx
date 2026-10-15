@@ -66,7 +66,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
   // Step 2: Stream & Term
   const [stream, setStream] = useState(child?.curriculum_stream || 'MoE / CBSE Arabic (Non-Arabs)');
   const [selectedTerm, setSelectedTerm] = useState<number>(child?.selected_term || 1);
-  const [accessPin, setAccessPin] = useState(child?.access_pin || '1234');
+  const [accessPin, setAccessPin] = useState('');
 
   // Step 3: Diagnostic Assessment
   const [questions, setQuestions] = useState<DiagnosticQuestion[]>([]);
@@ -91,7 +91,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
       setGrade(child.default_grade || 5);
       setStream(child.curriculum_stream || 'MoE / CBSE Arabic (Non-Arabs)');
       setSelectedTerm(child.selected_term || 1);
-      setAccessPin(child.access_pin || '1234');
+      setAccessPin('');
       setCurrentStep(1);
       setErrorMsg('');
       setAnswers({});
@@ -128,7 +128,8 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
       setErrorMsg('Please enter student full name.');
       return false;
     }
-    if (accessPin.length !== 4) {
+    // Leave the PIN empty to keep the one already set; a new PIN must be 4 digits.
+    if (accessPin ? accessPin.length !== 4 : !child?.has_pin) {
       setErrorMsg('Student PIN must be exactly 4 digits.');
       return false;
     }
@@ -146,7 +147,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
         default_grade: grade,
         selected_term: selectedTerm,
         curriculum_stream: stream,
-        access_pin: accessPin
+        access_pin: accessPin || undefined
       });
       return true;
     } catch (err: any) {
@@ -208,7 +209,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
         default_grade: grade,
         selected_term: selectedTerm,
         curriculum_stream: stream,
-        access_pin: accessPin,
+        access_pin: accessPin || undefined,
         diagnostic_completed: true,
         diagnostic_level: diagnosticResult.calibrated_level,
         diagnostic_score: diagnosticResult.score,
@@ -569,6 +570,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                     </label>
                     <p className="text-xs text-slate-600 mb-2">
                       Allows your child to log in quickly from school or tablet without needing your parent password.
+                      {child?.has_pin ? ' A PIN is already set: leave this empty to keep it.' : ''} Avoid obvious PINs like 1234 or 1111.
                     </p>
                     <input
                       type="text"

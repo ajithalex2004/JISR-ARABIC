@@ -106,10 +106,12 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
       final res = await (widget.api?.get(
             '/api/admin/ocr-page/$page',
             query: {'edition_id': _currentEditionId},
+            token: widget.token,
           ) ??
           ApiService().get(
             '/api/admin/ocr-page/$page',
             query: {'edition_id': _currentEditionId},
+            token: widget.token,
           ));
       if (mounted && res is Map) {
         setState(() {

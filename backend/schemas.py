@@ -27,7 +27,7 @@ class CreatePasswordAndEnrollRequest(BaseModel):
     child_grade: int = 5
     avatar_id: Optional[str] = "avatar_falcon"
     curriculum_stream: Optional[str] = "MoE / CBSE Arabic (Non-Arabs)"
-    access_pin: Optional[str] = "1234"
+    access_pin: Optional[str] = None
 
 class LoginRequest(BaseModel):
     email: str
@@ -53,7 +53,7 @@ class AddChildRequest(BaseModel):
     default_grade: int = 5
     avatar_id: Optional[str] = "avatar_falcon"
     curriculum_stream: Optional[str] = "MoE / CBSE Arabic (Non-Arabs)"
-    access_pin: Optional[str] = "1234"
+    access_pin: Optional[str] = None
 
 class UpdateChildRequest(BaseModel):
     name: Optional[str] = None
@@ -82,7 +82,7 @@ class ChildProfileSchema(BaseModel):
     default_grade: int
     avatar_id: Optional[str] = "avatar_falcon"
     curriculum_stream: Optional[str] = "MoE / CBSE Arabic (Non-Arabs)"
-    access_pin: Optional[str] = "1234"
+    access_pin: Optional[str] = None
     diagnostic_completed: bool = False
     diagnostic_level: str = "intermediate"
     selected_term: int = 1
@@ -91,6 +91,7 @@ class ChildProfileSchema(BaseModel):
     learning_plan: Optional[str] = None
     unlocked_terms: List[str] = []
     is_unlocked: bool = False
+    has_pin: bool = False
     # Registered grade plus grades the parent has paid for; only these can be opened.
     entitled_grades: List[int] = []
 

@@ -1,6 +1,5 @@
 """Admin management of learners: find a student by their own or their parent's name, add,
 edit or delete them, and correct their grade."""
-import re
 
 import bcrypt
 from sqlalchemy import or_
@@ -56,9 +55,10 @@ def _require_grade(grade) -> int:
 
 
 def _hash_pin(pin: str) -> str:
-    pin = (pin or "").strip()
-    if not re.fullmatch(r"\d{4}", pin):
-        raise ApplicationError(400, "PIN must be exactly 4 digits.")
+    from backend.modules.identity.pins import checked_pin
+    pin = checked_pin(pin)
+    if not pin:
+        raise ApplicationError(400, "The student PIN must be exactly 4 digits.")
     return bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
 
 

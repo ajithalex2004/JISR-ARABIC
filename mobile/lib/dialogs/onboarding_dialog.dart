@@ -199,7 +199,8 @@ class _OnboardingWizardDialogState extends State<OnboardingWizardDialog> {
     updated['default_grade'] = _grade;
     updated['curriculum_stream'] = _stream;
     updated['selected_term'] = _selectedTerm;
-    updated['access_pin'] = _pinCtrl.text.trim();
+    // Blank keeps the PIN already set.
+    if (_pinCtrl.text.trim().isNotEmpty) updated['access_pin'] = _pinCtrl.text.trim();
     updated['diagnostic_completed'] = true;
     updated['diagnostic_level'] = _calibratedLevel;
     updated['diagnostic_score'] = _scorePct;
@@ -583,7 +584,7 @@ class _OnboardingWizardDialogState extends State<OnboardingWizardDialog> {
           controller: _pinCtrl,
           maxLength: 4,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(hintText: '1234'),
+          decoration: const InputDecoration(hintText: 'e.g. 4826'),
         ),
         const SizedBox(height: 16),
 

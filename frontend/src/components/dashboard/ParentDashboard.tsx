@@ -199,7 +199,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
               Student Quick PIN
             </span>
             <div className="text-sm font-mono font-black text-slate-900 mt-1">
-              {child.access_pin || '1234'}
+              {child.has_pin ? '•••• (set)' : 'Not set'}
             </div>
             <span className="text-[10px] text-slate-400">Direct student login code</span>
           </div>

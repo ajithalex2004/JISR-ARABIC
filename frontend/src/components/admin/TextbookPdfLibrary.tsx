@@ -118,7 +118,7 @@ export const TextbookPdfLibrary: React.FC = () => {
       setActiveTranslation(currentPage.translation_en);
       return;
     }
-    fetch(`${API_BASE}/api/admin/ocr-page/${currentPage.pdf_page}?edition_id=${currentEditionId}`)
+    authenticatedFetch(`${API_BASE}/api/admin/ocr-page/${currentPage.pdf_page}?edition_id=${currentEditionId}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.paragraphs_en && data.paragraphs_en.length > 0) {

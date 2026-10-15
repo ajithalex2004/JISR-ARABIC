@@ -54,6 +54,25 @@ class ReaderLineLayoutTest(unittest.TestCase):
             self.assertEqual(translate_paragraphs(["الإنسان:", card])[0], "Human:")
             self.assertEqual(translate.call_count, 7)
 
+    def test_curated_one_line_cards_get_three_lines_in_both_languages(self):
+        from backend.ocr_reader import GRADE_6_TEXTBOOK_PAGES_DATA
+        source = (GRADE_6_TEXTBOOK_PAGES_DATA.get(9) or GRADE_6_TEXTBOOK_PAGES_DATA["9"])["paragraphs"][0]
+        word = source.split(": ", 1)[0]
+        page = authoring.get_ocr_page(9, edition_id="gr6_vol1")
+        lines = page["paragraphs"][0].split("\n")
+        self.assertEqual(len(lines), 3)
+        self.assertEqual(lines[0], word + ":")
+        self.assertEqual(" ".join(lines), source.replace(": ", ":\n", 1).replace("\n", " "))
+        self.assertTrue(lines[2].startswith("مِ"))
+        self.assertEqual(page["paragraphs_en"][0].split("\n"),
+                         ["Human:", "The living, thinking being.", "Example: Every human has a name."])
+        self.assertEqual(page["paragraphs_en"][4].split("\n")[0], "Essential / Necessary:")
+
+    def test_text_without_an_example_is_left_alone(self):
+        page = {"paragraphs": ["أَكْمِلْ كَمَا فِي الْمِثَالِ: أَنَا أُحِبُّ.", "قرأتُ الكتاب."],
+                "paragraphs_en": ["Complete as in the example: I love.", "I read the book."]}
+        self.assertEqual(authoring.layout_card_lines(page), page)
+
 
 if __name__ == "__main__":
     unittest.main()

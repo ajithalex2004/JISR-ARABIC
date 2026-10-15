@@ -146,7 +146,13 @@ def _translate_ar_to_en(text_ar: str) -> str:
 
 _EXAMPLE_PREFIXES = ("مثال", "مِثال", "مِثَال", "مثَال")
 _TERMINAL = (".", "؟", "?", "!", ":", "؛", "۔")
-_NUMBERED = ("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "-", "•")
+# An exercise / list item: "1." "١ -" "(2)" "أ-" "ب)" "*" "•" ...
+_ITEM = r"(?:[0-9٠-٩]{1,2}\s*[-–.)ـ]|\(\s*[0-9٠-٩]{1,2}\s*\)|[أبجده]\s*[-–)]|[*•])"
+_ITEM_START = re.compile(rf"^{_ITEM}\s")
+_ITEM_INSIDE = re.compile(rf"\s+(?={_ITEM}\s)")
+_EN_ITEM = r"(?:\d{1,2}\s*[-–.)]|\(\d{1,2}\)|[a-e]\)|[*•])"
+_EN_ITEM_START = re.compile(rf"^{_EN_ITEM}\s")
+_EN_ITEM_INSIDE = re.compile(rf"\s+(?={_EN_ITEM}\s)")
 
 
 def _is_example(line: str) -> bool:
@@ -162,11 +168,11 @@ def _split_headword(line: str) -> list[str]:
 
 
 def _group_lines(lines: list[str]) -> list[str]:
-    """Group a block's lines into paragraphs, keeping printed line breaks as '\n'.
+    """Group a block's lines into paragraphs, keeping every printed line as its own line ('\n').
 
     A word card (headword, meaning, 'مثال: ...' example) becomes one paragraph, ending at its
-    example; headings, questions and numbered exercise lines stand alone; a line that only
-    continues the previous one (no closing punctuation) is joined to it.
+    example; headings, questions and numbered exercise items stand alone (so each can have its
+    own model answer); a short line ending in ':' starts a new paragraph.
     """
     paragraphs: list[str] = []
     current: list[str] = []
@@ -182,21 +188,14 @@ def _group_lines(lines: list[str]) -> list[str]:
             flush()  # an example closes its word card
             continue
         if len(line) < 50 and (line.endswith("؟") or "الوحدة" in line or "الدرس" in line or "الصفحة" in line) \
-                or line.startswith(_NUMBERED):
+                or _ITEM_START.match(line):
             flush()
             paragraphs.append(line)
             continue
-        pieces = _split_headword(line)
-        if len(pieces) == 2 or (len(line) < 50 and line.endswith(":")):
-            flush()  # a new headword starts a new card
-            current.extend(pieces)
-            continue
-        last = current[-1] if current else ""
-        if last and not last.endswith(_TERMINAL) and not (len(current) == 1 and len(last.split()) <= 3):
-            current[-1] = f"{last} {line}"  # the printed line wrapped
-        else:
-            current.append(line)
-        if len(" ".join(current)) > 180:
+        if len(_split_headword(line)) == 2 or (len(line) < 50 and line.endswith(":")):
+            flush()  # a new headword / heading starts a new paragraph
+        current.append(line)
+        if len(" ".join(current)) > 300:
             flush()
     flush()
     return paragraphs
@@ -257,6 +256,7 @@ def _clean_ocr_paragraphs(raw_text: str, printed_page: int) -> list[str]:
     if cleaned_parts:
         parts = cleaned_parts
 
+    parts = [layout_arabic(p) for p in parts]
     if not parts:
         parts = [f"درس الصفحة {printed_page}: استمع وتدرب على قراءة النصوص ومفردات الدرس."]
     return parts
@@ -267,37 +267,62 @@ _AR_EXAMPLE = re.compile(rf"\s+(?=م{_HARAKAT}ث{_HARAKAT}ا{_HARAKAT}ل{_HARAKA
 _EN_EXAMPLE = re.compile(r"\s+(?=(?:e\.g\.|Example)\s*:)", re.IGNORECASE)
 
 
-def _split_card(text: str, example: "re.Pattern", max_head_words: int) -> str:
-    """'word: meaning. example: …' on one line -> 'word:\nmeaning.\nexample: …'."""
-    if not text or "\n" in text or not example.search(text):
+def _split_items(line: str, start: "re.Pattern", inside: "re.Pattern") -> list[str]:
+    """'قبل الاستماع: ١ - أتأمل. ٢ - أتناقش.' -> one line for the label and one per item."""
+    parts = [p.strip() for p in inside.split(line) if p.strip()]
+    items = sum(1 for p in parts if start.match(p))
+    return parts if items >= 2 else [line]
+
+
+def _layout(text: str, *, english: bool) -> str:
+    """Put each printed line, numbered item and word-card part (word / meaning / example) on its own line."""
+    if not isinstance(text, str) or not text.strip():
         return text
-    head, sep, rest = text.partition(":")
-    lines = [f"{head.strip()}:", rest.strip()] if sep and rest.strip() and len(head.split()) <= max_head_words \
-        and not example.match(" " + text) else [text]
-    out = []
-    for line in lines:
-        out.extend(part.strip() for part in example.split(line) if part.strip())
+    example = _EN_EXAMPLE if english else _AR_EXAMPLE
+    start, inside = (_EN_ITEM_START, _EN_ITEM_INSIDE) if english else (_ITEM_START, _ITEM_INSIDE)
+    is_card = bool(example.search(" " + text))
+    out: list[str] = []
+    for index, line in enumerate(l.strip() for l in text.split("\n") if l.strip()):
+        pieces = [p.strip() for p in example.split(line) if p.strip()] if is_card else [line]
+        if is_card and index == 0 and not out:
+            head, sep, rest = pieces[0].partition(":")
+            if sep and rest.strip() and len(head.split()) <= (5 if english else 3) and not example.match(" " + pieces[0]):
+                pieces = [f"{head.strip()}:", rest.strip()] + pieces[1:]
+        for piece in pieces:
+            out.extend(_split_items(piece, start, inside))
     return "\n".join(out)
 
 
-def layout_card_lines(page: dict) -> dict:
-    """Give one-line word cards (e.g. the curated pages) the printed word / meaning / example lines."""
+def layout_arabic(text: str) -> str:
+    return _layout(text, english=False)
+
+
+def layout_lines(page: dict) -> dict:
+    """Line-for-line layout for every reader page (curated or scanned), Arabic and English alike.
+
+    The English is only re-split when it then has as many lines as the Arabic, so lines always match.
+    """
     if not isinstance(page, dict) or not isinstance(page.get("paragraphs"), list):
         return page
-    paragraphs = [_split_card(p, _AR_EXAMPLE, 3) if isinstance(p, str) else p for p in page["paragraphs"]]
+    arabic = [layout_arabic(p) if isinstance(p, str) else p for p in page["paragraphs"]]
     english = page.get("paragraphs_en")
     if isinstance(english, list):
-        english = [
-            _split_card(en, _EN_EXAMPLE, 5) if isinstance(en, str) and i < len(paragraphs)
-            and isinstance(paragraphs[i], str) and "\n" in paragraphs[i] else en
-            for i, en in enumerate(english)
-        ]
+        english = list(english)
+        for i, (before, after) in enumerate(zip(page["paragraphs"], arabic)):
+            if i >= len(english) or not isinstance(english[i], str) or before == after:
+                continue
+            split = _layout(english[i], english=True)
+            if split.count("\n") == after.count("\n"):
+                english[i] = split
         page = {**page, "paragraphs_en": english}
-    return {**page, "paragraphs": paragraphs}
+    return {**page, "paragraphs": arabic}
+
+
+layout_card_lines = layout_lines
 
 
 def get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | None = None):
-    return layout_card_lines(_get_ocr_page(pdf_page, edition_id=edition_id, db=db))
+    return layout_lines(_get_ocr_page(pdf_page, edition_id=edition_id, db=db))
 
 
 def _get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | None = None):

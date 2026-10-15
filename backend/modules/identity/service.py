@@ -680,7 +680,10 @@ def delete_account(*, user: User, db: Session):
     sessions, gamification records, and educational history.
     Mandated by Apple App Store Review Guideline 5.1.1(v) & GDPR / UAE Data Law.
     """
-    from backend.models import TutorAssignment, WeeklyDigestNotification, PaymentTransaction
+    from backend.models import (
+        CurriculumAuditEvent, MembershipAuditEvent, PaymentTransaction, TutorAssignment,
+        TutorClassAssignment, TutorSubmission, UserFeedback, WeeklyDigestNotification,
+    )
     user_id = user.id
     user_email = user.email
 
@@ -704,6 +707,17 @@ def delete_account(*, user: User, db: Session):
     }, synchronize_session=False)
 
     db.query(TutorAssignment).filter(TutorAssignment.tutor_id == user_id).delete(synchronize_session=False)
+
+    # Rows that only point at this user: PostgreSQL refuses to delete the account while they do.
+    # Feedback and curriculum history are kept without the name; per-user audit/assignment rows go.
+    db.query(UserFeedback).filter(UserFeedback.user_id == user_id).update(
+        {UserFeedback.user_id: None}, synchronize_session=False)
+    db.query(CurriculumAuditEvent).filter(CurriculumAuditEvent.actor_id == user_id).update(
+        {CurriculumAuditEvent.actor_id: None}, synchronize_session=False)
+    db.query(TutorSubmission).filter(TutorSubmission.tutor_id == user_id).update(
+        {TutorSubmission.tutor_id: None}, synchronize_session=False)
+    db.query(MembershipAuditEvent).filter(MembershipAuditEvent.actor_id == user_id).delete(synchronize_session=False)
+    db.query(TutorClassAssignment).filter(TutorClassAssignment.tutor_id == user_id).delete(synchronize_session=False)
     record_revoked_user(user_id)
     db.query(UserSession).filter(UserSession.user_id == user_id).delete(synchronize_session=False)
     db.query(OtpCode).filter(OtpCode.email == user_email).delete(synchronize_session=False)

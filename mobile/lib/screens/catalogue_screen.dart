@@ -905,7 +905,7 @@ class CatalogueScreen extends StatelessWidget {
                 onPressed: onOpenPaywall,
                 icon: const Icon(Icons.lock_open, size: 13, color: Color(0xFF6C5CE7)),
                 label: Text(
-                  isArabic ? 'فتح الفصل كامل (USD 20)' : r'Unlock (USD 20)',
+                  isArabic ? 'فتح الفصل كامل (USD 10)' : r'Unlock (USD 10)',
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF6C5CE7)),
                 ),
                 style: TextButton.styleFrom(
@@ -1237,7 +1237,7 @@ class CatalogueScreen extends StatelessWidget {
                         elevation: 0,
                       ),
                       label: Text(
-                        isArabic ? 'فتح الدرس (USD 20 للفصل)' : r'Unlock Lesson (USD 20/term)',
+                        isArabic ? 'فتح الدرس (USD 10 للفصل)' : r'Unlock Lesson (USD 10/term)',
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ),

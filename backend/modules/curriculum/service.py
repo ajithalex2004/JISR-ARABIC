@@ -193,7 +193,7 @@ def list_lessons(grade: int=5, term: int=1, child_id: Optional[str]=None, *, db:
             "is_accessible": is_accessible,
             "status": status,
             "lock_reason": None if is_accessible else (
-                "Content pending review" if raw_status == "content_pending" else "Subscription required (USD 20/term)"
+                "Content pending review" if raw_status == "content_pending" else "Subscription required (USD 10/term)"
             )
         })
     return result

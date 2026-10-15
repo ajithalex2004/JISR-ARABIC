@@ -897,8 +897,8 @@ class _MainScreenState extends State<MainScreen> {
         lockReason: accessible
             ? null
             : (_currentTerm == 1
-                ? r'Subscription required (USD 20/term)'
-                : r'Term subscription required (USD 20/term)'),
+                ? r'Subscription required (USD 10/term)'
+                : r'Term subscription required (USD 10/term)'),
       );
     }).toList();
   }

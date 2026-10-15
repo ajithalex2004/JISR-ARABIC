@@ -153,6 +153,28 @@ def upgrade():
         conn.commit()
     if renamed:
         print(f"Renamed the curriculum stream of {renamed} learner profile(s) to CBSE Curriculum")
+    with engine.connect() as conn:
+        seeded = seed_promo_codes(conn)
+        conn.commit()
+    if seeded:
+        print("Created promo code JISR10 (10% off, first 10 families, valid 30 days; edit it in Admin > Promo codes)")
+
+
+def seed_promo_codes(conn) -> bool:
+    """Create the JISR10 test promo code once; admins change its discount, limit and validity afterwards."""
+    import datetime
+    import uuid
+    if "promo_codes" not in inspect(conn).get_table_names():
+        return False
+    if conn.execute(text("SELECT 1 FROM promo_codes WHERE UPPER(code) = 'JISR10'")).first():
+        return False
+    now = datetime.datetime.utcnow()
+    conn.execute(text(
+        "INSERT INTO promo_codes (id, code, discount_pct, max_users, valid_from, valid_until, is_active, notes, created_at) "
+        "VALUES (:id, 'JISR10', 10, 10, :valid_from, :valid_until, :active, :notes, :created_at)"),
+        {"id": str(uuid.uuid4()), "valid_from": now, "valid_until": now + datetime.timedelta(days=30), "active": True,
+         "notes": "Test promo code for the first 10 families", "created_at": now})
+    return True
 
 
 # Learner curriculum streams were once named after "MoE"; they are now "CBSE Curriculum".

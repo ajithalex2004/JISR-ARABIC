@@ -126,6 +126,8 @@ class PaymentTransaction(Base):
     idempotency_key = Column(String(128), unique=True, nullable=True)
     provider_event_id = Column(String(128), unique=True, nullable=True)
     refunded_at = Column(DateTime, nullable=True)
+    terms_purchased = Column(String(20), nullable=True)   # e.g. "1,2,3"
+    subscription_id = Column(String(36), nullable=True, index=True)
 
 
 class School(Base):
@@ -578,3 +580,53 @@ class AIUsage(Base):
     latency_ms = Column(Integer, nullable=True)
     learner_id = Column(String(36), nullable=True)
     error = Column(String(300), nullable=True)
+
+
+class PromoCode(Base):
+    """A discount code set up by an admin, e.g. JISR10: a percentage off for the first N families."""
+    __tablename__ = "promo_codes"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    code = Column(String(50), unique=True, nullable=False, index=True)
+    discount_pct = Column(Float, nullable=False, default=10.0)
+    max_users = Column(Integer, nullable=True, default=10)      # distinct parents; None = unlimited
+    valid_from = Column(DateTime, nullable=True)
+    valid_until = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class PromoRedemption(Base):
+    """One use of a promo code by one parent (each parent can use a code once)."""
+    __tablename__ = "promo_redemptions"
+    __table_args__ = (UniqueConstraint("promo_code_id", "parent_id", name="uq_promo_parent"),)
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    promo_code_id = Column(String(36), nullable=False, index=True)
+    code = Column(String(50), nullable=False)
+    parent_id = Column(String(36), nullable=False)
+    payment_id = Column(String(36), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class Subscription(Base):
+    """An auto-renewing plan: a term (renews every 4 months) or a year (renews every 12 months)."""
+    __tablename__ = "subscriptions"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    parent_id = Column(String(36), nullable=True, index=True)
+    child_id = Column(String(36), nullable=True, index=True)
+    grade = Column(Integer, nullable=False)
+    plan = Column(String(20), nullable=False)                    # term | annual
+    next_term = Column(Integer, nullable=True)                   # term plan: the term the next renewal unlocks
+    status = Column(String(30), default="active")                # active | past_due | canceled | incomplete
+    provider = Column(String(20), default="stripe")              # stripe | simulated
+    provider_subscription_id = Column(String(128), unique=True, nullable=True)
+    provider_customer_id = Column(String(128), nullable=True)
+    amount_usd = Column(Numeric(10, 2), nullable=True)           # renewal price
+    promo_code = Column(String(50), nullable=True)               # applied to the first payment only
+    current_period_end = Column(DateTime, nullable=True)
+    cancel_at_period_end = Column(Boolean, default=False)
+    canceled_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

@@ -7,6 +7,10 @@ from backend.observability import audit_event
 from fastapi import APIRouter, Depends, Header, Request
 from backend.schemas import PaymentCheckoutRequest, PaymentResponse, AnnualCheckoutRequest, VoucherRedeemRequest, VoucherRedeemResponse, TaxInvoiceResponse
 from backend.modules.billing import service as service
+from backend.modules.billing import pricing, subscriptions
+from backend.models import User
+from pydantic import BaseModel
+from typing import List, Optional
 router = APIRouter(prefix='/api/payments', tags=['Payments'])
 
 @router.post('/webhook')
@@ -26,7 +30,7 @@ async def stripe_webhook(
 @router.post('/checkout', response_model=PaymentResponse)
 def checkout_term(req: PaymentCheckoutRequest, db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
     """
-    Unlock a Single Term for USD 20 (or USD 50 if package_type='annual').
+    Unlock a single term for USD 10 (or the full year, USD 25.50, if package_type='annual').
     Supports card details and promo code.
     Immediately updates TermAccess to True upon successful checkout.
     """
@@ -38,7 +42,7 @@ def checkout_term(req: PaymentCheckoutRequest, db: Session=Depends(get_db), acto
 @router.post('/checkout-annual', response_model=PaymentResponse)
 def checkout_annual_pass(req: AnnualCheckoutRequest, db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
     """
-    Unlock Full Academic Year (Terms 1, 2, and 3) for USD 50 (15% discount).
+    Unlock the full academic year (Terms 1, 2 and 3): USD 30 less 15% = USD 25.50.
     """
     require_child(db, actor, req.child_id, PARENT_ROLES)
     return service.checkout_annual_pass(req=req, db=db)
@@ -79,3 +83,61 @@ def list_receipts(child_id: str, db: Session=Depends(get_db), actor: Principal=D
 def refund_payment(receipt_number: str, db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
     require_roles(actor, ("admin",))
     return service.refund_transaction(receipt_number, db=db)
+
+
+class CheckoutStartRequest(BaseModel):
+    child_id: str
+    grade: int = 5
+    plan: str = "term"                  # term | annual
+    terms: Optional[List[int]] = None   # term plan: [1], [2] or two terms like [1, 2]
+    term: Optional[int] = None
+    promo_code: Optional[str] = None
+    auto_renew: bool = False
+
+
+@router.get('/prices')
+def prices():
+    """Current prices (USD, VAT included): per term, the annual plan and its discount."""
+    return pricing.price_list()
+
+
+@router.post('/quote')
+def quote(req: CheckoutStartRequest, db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
+    """Price of a purchase with any promo code applied (also validates the code)."""
+    require_child(db, actor, req.child_id, PARENT_ROLES)
+    return subscriptions.get_quote(child_id=req.child_id, plan=req.plan, terms=req.terms, term=req.term,
+                                   promo_code=req.promo_code or "", auto_renew=req.auto_renew, db=db)
+
+
+@router.post('/start-checkout')
+def start_checkout(req: CheckoutStartRequest, db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
+    """Start paying: returns Stripe's secure checkout page URL (or completes a simulated payment outside production)."""
+    require_child(db, actor, req.child_id, PARENT_ROLES)
+    parent = db.get(User, actor.id)
+    result = subscriptions.start_checkout(child_id=req.child_id, grade=req.grade, plan=req.plan, terms=req.terms,
+                                          term=req.term, promo_code=req.promo_code or "", auto_renew=req.auto_renew,
+                                          parent=parent, db=db)
+    audit_event("payment.checkout_started", user_id=getattr(actor, "id", None), child_id=req.child_id, status=result.get("provider"))
+    return result
+
+
+@router.get('/subscriptions')
+def my_subscriptions(db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
+    """The parent's auto-renewing subscriptions."""
+    require_roles(actor, ("parent", "admin"))
+    return subscriptions.list_for_parent(actor.id, db)
+
+
+@router.post('/subscriptions/{subscription_id}/cancel')
+def cancel_subscription(subscription_id: str, db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
+    """Turn off auto-renew: access stays until the end of the paid period."""
+    require_roles(actor, ("parent", "admin"))
+    return subscriptions.set_auto_renew(subscription_id, renew=False, actor_id=actor.id,
+                                        is_admin=getattr(actor, "role", None) == "admin", db=db)
+
+
+@router.post('/subscriptions/{subscription_id}/resume')
+def resume_subscription(subscription_id: str, db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
+    require_roles(actor, ("parent", "admin"))
+    return subscriptions.set_auto_renew(subscription_id, renew=True, actor_id=actor.id,
+                                        is_admin=getattr(actor, "role", None) == "admin", db=db)

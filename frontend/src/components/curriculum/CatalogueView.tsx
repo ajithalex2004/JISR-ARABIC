@@ -586,7 +586,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
               className="text-xs font-bold text-[#6c5ce7] hover:text-[#5b47fb] flex items-center gap-1.5 bg-purple-50 px-3.5 py-2 rounded-xl transition-colors border border-purple-200 self-start sm:self-auto"
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>Unlock All Chapters (from USD {currentTermInfo?.price_usd ?? 20})</span>
+              <span>Unlock All Chapters (from USD {currentTermInfo?.price_usd ?? 10})</span>
             </button>
           )}
         </div>

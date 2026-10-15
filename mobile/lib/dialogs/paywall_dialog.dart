@@ -53,16 +53,18 @@ class _PaywallDialogState extends State<PaywallDialog> {
   double get _totalUsd {
     final count = _selectedTerms.length;
     if (count >= 3) {
-      return 50.0; // 3 Terms together (Full Academic Year): USD 50 (15% discount)
+      return 25.5; // 3 terms together (full academic year): USD 30 less 15% = USD 25.50
     } else if (count == 2) {
-      return 40.0; // 2 * $20
+      return 20.0; // 2 x USD 10
     } else if (count == 1) {
-      return 20.0; // 1 * $20
+      return 10.0; // USD 10 per term
     }
     return 0.0;
   }
 
-  int get _totalAed => (_totalUsd * 3.6725).round();
+  String get _totalAed => (_totalUsd * 3.6725).toStringAsFixed(2);
+
+  String get _totalUsdText => _totalUsd.toStringAsFixed(2);
 
   void _toggleTerm(int termNumber) {
     setState(() {
@@ -684,7 +686,7 @@ class _PaywallDialogState extends State<PaywallDialog> {
                                 border: Border.all(color: const Color(0xFFA7F3D0)),
                               ),
                               child: Text(
-                                'USD ${_totalUsd.toInt()} (AED $_totalAed)',
+                                'USD $_totalUsdText (AED $_totalAed)',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w900,
@@ -738,8 +740,8 @@ class _PaywallDialogState extends State<PaywallDialog> {
                             _selectedMode == 'voucher'
                                 ? (isAr ? 'تفعيل القسيمة وفتح المنهاج' : 'Redeem Voucher & Unlock Curriculum')
                                 : (isAr
-                                    ? 'دفع USD ${_totalUsd.toInt()} (AED $_totalAed) وتفعيل الفصول المحددة'
-                                    : 'Pay USD ${_totalUsd.toInt()} (AED $_totalAed) & Unlock Terms ${_selectedTerms.join(", ")}'),
+                                    ? 'دفع USD $_totalUsdText (AED $_totalAed) وتفعيل الفصول المحددة'
+                                    : 'Pay USD $_totalUsdText (AED $_totalAed) & Unlock Terms ${_selectedTerms.join(", ")}'),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                           ),
                   ),
@@ -823,7 +825,7 @@ class _PaywallDialogState extends State<PaywallDialog> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          'USD 20 (AED 73.5)',
+                          'USD 10 (AED 36.73)',
                           style: TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,

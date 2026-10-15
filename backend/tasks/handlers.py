@@ -232,6 +232,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
         except Exception:
             reader = None
 
+    from backend.gemini_quota import GeminiQuotaExhausted
     from backend.modules.curriculum.page_ocr import has_usable_text, transcribe_page_image
 
     pdfium_doc = None
@@ -271,6 +272,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
             marker.write_text(source_hash)
 
         created_pages = []
+        paused = None
         for i in range(page_count):
             p_num = start_page + i
             zero_idx = p_num - 1
@@ -305,7 +307,13 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
                 review_status = "automatic_extracted"
                 confidence = 0.95
             else:
-                ocr_text = transcribe_page_image(png_bytes, page_label=f"{book_edition_id} p{p_num}") if png_bytes else None
+                try:
+                    ocr_text = transcribe_page_image(png_bytes, page_label=f"{book_edition_id} p{p_num}") if png_bytes else None
+                except GeminiQuotaExhausted as exc:
+                    # Don't mark this and every later page as failed: stop here, keep what was read,
+                    # and let a re-upload of the same PDF continue from this page.
+                    paused = {"page": p_num, "reason": str(exc)}
+                    break
                 if ocr_text:
                     extracted_text = ocr_text
                     review_status = "ai_ocr"
@@ -344,13 +352,17 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
         db.commit()
         update_progress(100)
 
-    return {
+    result = {
         "book_edition_id": book_edition_id,
         "pdf_path": pdf_path,
         "pages_processed": page_count,
         "newly_indexed_pages": created_pages,
         "status": "completed",
     }
+    if paused:
+        result.update(status="paused", paused_at_page=paused["page"], pages_processed=paused["page"] - start_page,
+                      paused_reason=f"{paused['reason']} Upload the same PDF again to continue from page {paused['page']}.")
+    return result
 
 
 def handle_draft_lessons(params: Dict[str, Any], update_progress: Callable[[int], None]) -> Dict[str, Any]:

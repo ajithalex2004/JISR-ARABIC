@@ -83,8 +83,13 @@ export const TextbookPdfUploader: React.FC<TextbookPdfUploaderProps> = ({ onUplo
       if (task.status === 'completed' || task.status === 'succeeded') {
         setIsUploading(false);
         setUploadProgress(100);
-        setErrorMessage('');
-        setStatusMessage('Textbook successfully processed and indexed into PostgreSQL!');
+        if (task.result?.status === 'paused') {
+          setStatusMessage('');
+          setErrorMessage(`Paused at page ${task.result.paused_at_page}: ${task.result.paused_reason}`);
+        } else {
+          setErrorMessage('');
+          setStatusMessage('Textbook successfully processed and indexed into PostgreSQL!');
+        }
         setUploadResult(task.result || { status: 'completed' });
         if (onUploadComplete) {
           onUploadComplete(task.result?.book_edition_id || `moe_gr${grade}_vol${term}_2023`);

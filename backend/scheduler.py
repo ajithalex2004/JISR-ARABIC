@@ -15,6 +15,9 @@ logger = logging.getLogger("fahim.scheduler")
 
 TICK_SECONDS = 300
 GEMINI_PROBE_EVERY_SECONDS = 20 * 60
+# Scheduled checks failing this many times in a row means Gemini is down, not a blip: alert at once.
+# (The usual "3 failures in 10 minutes" rule can't be met by a check that runs every 20 minutes.)
+GEMINI_PROBE_FAILURES_TO_ALERT = 2
 # Weekly report goes out on Sunday from 04:00 UTC (08:00 UAE time).
 WEEKLY_REPORT_WEEKDAY = 6
 WEEKLY_REPORT_HOUR_UTC = 4
@@ -57,11 +60,26 @@ def weekly_reports_due(now: datetime.datetime) -> bool:
     return now.weekday() == WEEKLY_REPORT_WEEKDAY and now.hour >= WEEKLY_REPORT_HOUR_UTC
 
 
+def run_scheduled_gemini_probe():
+    """The periodic check: alerts when it fails GEMINI_PROBE_FAILURES_TO_ALERT times in a row."""
+    from backend import alerts
+
+    result = run_gemini_probe()
+    streak = 0 if result.get("ok") else int(cache_get("scheduler:gemini_probe_failures") or 0) + 1
+    cache_set("scheduler:gemini_probe_failures", streak, ttl_seconds=86400)
+    if streak >= GEMINI_PROBE_FAILURES_TO_ALERT:
+        minutes = (streak - 1) * GEMINI_PROBE_EVERY_SECONDS // 60
+        alerts.alert_now("gemini", f"The automatic Gemini check has failed {streak} times in a row "
+                                   f"(over about {minutes} minutes). Ask Fahim, word meanings, solving help, "
+                                   "textbook reading and lesson drafting are not working.", result.get("error"))
+    return result
+
+
 def tick(now=None):
     now = now or datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
     if _claim("gemini_probe", GEMINI_PROBE_EVERY_SECONDS - 30):
         try:
-            run_gemini_probe()
+            run_scheduled_gemini_probe()
         except Exception as exc:
             logger.warning("Gemini probe job failed: %s", exc)
     if weekly_reports_due(now) and _claim(f"weekly_reports:{now.date().isoformat()}:{now.hour}", 3600):

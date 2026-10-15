@@ -152,6 +152,22 @@ class TestAdminParentsAndPayments(unittest.TestCase):
             self.assertEqual(kept.anonymized_parent_id, "parent_sara")
         self.assertIn(self.client.delete("/api/admin/parents/admin_user", headers=headers).status_code, (400, 404))
 
+    def test_parent_who_sent_feedback_can_be_deleted(self):
+        from sqlalchemy import text
+        from backend.models import MembershipAuditEvent, UserFeedback
+        with self.engine.connect() as conn:  # enforce foreign keys like PostgreSQL does
+            conn.execute(text("PRAGMA foreign_keys=ON"))
+        with self.session() as db:
+            db.add(UserFeedback(id="fb1", user_id="parent_sara", child_id="child_lina", comment="Great app"))
+            db.add(MembershipAuditEvent(actor_id="parent_sara", action="join", class_id="c1"))
+            db.commit()
+        res = self.client.delete("/api/admin/parents/parent_sara", headers=self._headers())
+        self.assertEqual(res.status_code, 200, res.text)
+        with self.session() as db:
+            self.assertIsNone(db.get(User, "parent_sara"))
+            feedback = db.get(UserFeedback, "fb1")
+            self.assertEqual((feedback.user_id, feedback.child_id, feedback.comment), (None, None, "Great app"))
+
     def test_payments_overview_summary_and_filters(self):
         headers = self._headers()
         res = self.client.get("/api/admin/payments", headers=headers)

@@ -4,7 +4,7 @@ import {
   Search, Eye, FileText, Volume2, Maximize2, RefreshCw, ZoomIn
 } from 'lucide-react';
 import { audioManager } from '../../services/audio';
-import { API_BASE } from '../../services/api';
+import { API_BASE, authenticatedFetch, parseErrorDetail } from '../../services/api';
 
 interface TextbookBook {
   id: string;
@@ -47,7 +47,7 @@ export const TextbookPdfLibrary: React.FC = () => {
   useEffect(() => {
     const fetchLibrary = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/admin/textbook-library`);
+        const res = await authenticatedFetch(`${API_BASE}/api/admin/textbook-library`);
         if (res.ok) {
           const data = await res.json();
           setBooks(data || []);
@@ -65,14 +65,15 @@ export const TextbookPdfLibrary: React.FC = () => {
       setIsLoading(true);
       setErrorMsg('');
       try {
-        const res = await fetch(`${API_BASE}/api/admin/textbook-pages/${currentEditionId}`);
+        const res = await authenticatedFetch(`${API_BASE}/api/admin/textbook-pages/${currentEditionId}`);
         if (res.ok) {
           const data: PageData[] = await res.json();
           setPages(data || []);
           setCurrentPageIndex(0);
+          if (!data?.length) setErrorMsg('No pages have been read for this book yet. Upload its PDF in Upload & OCR.');
         } else {
           setPages([]);
-          setErrorMsg('No indexed pages found for this book edition.');
+          setErrorMsg(await parseErrorDetail(res, 'No indexed pages found for this book edition.'));
         }
       } catch (err: any) {
         setErrorMsg('Error loading textbook pages: ' + err.message);

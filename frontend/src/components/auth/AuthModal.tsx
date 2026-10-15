@@ -73,7 +73,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [childGrade, setChildGrade] = useState(5);
   const [selectedAvatar, setSelectedAvatar] = useState('avatar_falcon');
   const [curriculumStream, setCurriculumStream] = useState('MoE / CBSE Arabic (Non-Arabs)');
-  const [accessPin, setAccessPin] = useState('1234');
+  const [accessPin, setAccessPin] = useState('');
 
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
@@ -979,11 +979,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     type="text"
                     required
                     maxLength={4}
+                    inputMode="numeric"
+                    pattern="\d{4}"
                     value={accessPin}
-                    onChange={(e) => setAccessPin(e.target.value)}
-                    placeholder="1234"
+                    onChange={(e) => setAccessPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder="e.g. 4826"
                     className="faheem-input w-full text-xs font-mono font-bold tracking-widest text-center"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">Your child signs in with this. Avoid obvious PINs like 1234 or 1111.</p>
                 </div>
               </div>
 

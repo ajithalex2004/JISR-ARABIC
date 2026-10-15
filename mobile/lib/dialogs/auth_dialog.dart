@@ -111,7 +111,7 @@ class _AuthDialogState extends State<AuthDialog> {
           'avatar_id': _selectedAvatar,
           'curriculum_stream': _curriculumStream,
           'access_pin': _accessPinCtrl.text.trim().isEmpty
-              ? '1234'
+              ? null
               : _accessPinCtrl.text.trim(),
         });
         widget.onSuccess({'child': childData, 'active_child': childData});
@@ -704,7 +704,7 @@ class _AuthDialogState extends State<AuthDialog> {
                     labelText: _dialogIsArabic
                         ? 'رمز دخول الطالب (4 أرقام)'
                         : '4-Digit Student Access PIN',
-                    hintText: '1234',
+                    hintText: 'e.g. 4826',
                     counterText: '',
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -1022,7 +1022,7 @@ class _AuthDialogState extends State<AuthDialog> {
                     labelText: _dialogIsArabic
                         ? 'رمز الطالب السريع (4 أرقام)'
                         : 'Child 4-Digit PIN',
-                    hintText: '1234',
+                    hintText: 'e.g. 4826',
                     counterText: '',
                   ),
                 ),

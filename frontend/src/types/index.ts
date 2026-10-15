@@ -8,6 +8,7 @@ export interface ChildProfile {
   avatar_id?: string;
   curriculum_stream?: string;
   access_pin?: string;
+  has_pin?: boolean;
   diagnostic_completed?: boolean;
   diagnostic_level?: string;
   selected_term?: number;

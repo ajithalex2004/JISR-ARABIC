@@ -248,7 +248,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 <div className="truncate">
                                   <div className="font-semibold truncate">{child.name}</div>
                                   <div className="text-[10px] text-slate-400">
-                                    الصف {child.default_grade} · رمز: <span className="font-mono">{child.access_pin || '1234'}</span>
+                                    الصف {child.default_grade} · رمز: <span className="font-mono">{child.has_pin ? '••••' : '—'}</span>
                                   </div>
                                 </div>
                               </div>

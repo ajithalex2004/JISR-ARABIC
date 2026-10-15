@@ -1880,6 +1880,7 @@ class _MainScreenState extends State<MainScreen> {
           onVocalize: _vocalizeText,
           onBack: () => setState(() => _activeView = 'catalogue'),
           api: _api,
+          token: _token,
           initialGrade: _currentGrade,
           initialTerm: _currentTerm,
           allowedGrades: _user == null || _user?['role'] == 'admin'

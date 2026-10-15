@@ -199,7 +199,7 @@ class TestAccessControl(unittest.TestCase):
         public = {
             "/", "/api/health", "/api/ready", "/api/meta", "/api/curriculum/schools", "/api/curriculum/grades",
             "/api/curriculum/diagnostic-questions", "/api/admin/coverage-report",
-            "/api/admin/ocr-page/{pdf_page}", "/api/admin/page-image/{pdf_page}",
+            "/api/admin/page-image/{pdf_page}",
             "/api/audio/tts-info", "/api/audio/synthesize", "/api/modules/malazim/{lesson_id}",
             "/api/modules/capsules/{capsule_id}", "/api/modules/assessments/adaptive/{lesson_id}",
             "/api/modules/assessments/exam-simulation/{grade}/{term}",

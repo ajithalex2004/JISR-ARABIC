@@ -441,8 +441,10 @@ def update_onboarding_profile(payload: OnboardingProfileUpdateRequest, *, db: Se
         child.avatar_id = payload.avatar_id
     if payload.curriculum_stream is not None:
         child.curriculum_stream = payload.curriculum_stream
-    if payload.access_pin is not None:
-        child.access_pin = bcrypt.hashpw(payload.access_pin.strip().encode(), bcrypt.gensalt()).decode() if payload.access_pin.strip() else None
+    # A blank PIN on the onboarding form keeps the one already set.
+    if payload.access_pin is not None and payload.access_pin.strip():
+        from backend.modules.identity.pins import checked_pin
+        child.access_pin = bcrypt.hashpw(checked_pin(payload.access_pin).encode(), bcrypt.gensalt()).decode()
 
     db.commit()
     db.refresh(child)

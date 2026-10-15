@@ -94,13 +94,13 @@ class TestAdminStudents(unittest.TestCase):
         headers = self._headers("admin@test.local")
         res = self.client.post("/api/admin/students", json={
             "parent_email": "Parent.Ann@test.local", "name": "  Lina ", "grade": 4,
-            "school_name": "Abu Dhabi School", "gender": "Girl", "age": 9, "access_pin": "4321"}, headers=headers)
+            "school_name": "Abu Dhabi School", "gender": "Girl", "age": 9, "access_pin": "4826"}, headers=headers)
         self.assertEqual(res.status_code, 200, res.text)
         body = res.json()
         self.assertEqual((body["name"], body["default_grade"], body["parent_email"], body["has_pin"]),
                          ("Lina", 4, "parent.ann@test.local", True))
         pin_login = self.client.post("/api/auth/student-pin-login", json={
-            "parent_email": "parent.ann@test.local", "pin": "4321", "child_id": body["id"]})
+            "parent_email": "parent.ann@test.local", "pin": "4826", "child_id": body["id"]})
         self.assertEqual(pin_login.status_code, 200, pin_login.text)
 
         missing = self.client.post("/api/admin/students", json={
@@ -109,6 +109,11 @@ class TestAdminStudents(unittest.TestCase):
         bad_pin = self.client.post("/api/admin/students", json={
             "parent_email": "parent.ann@test.local", "name": "X", "grade": 4, "access_pin": "12"}, headers=headers)
         self.assertEqual(bad_pin.status_code, 400)
+        for obvious in ("1234", "0000", "4321", "1212"):
+            weak = self.client.post("/api/admin/students", json={
+                "parent_email": "parent.ann@test.local", "name": "X", "grade": 4, "access_pin": obvious}, headers=headers)
+            self.assertEqual(weak.status_code, 400, obvious)
+            self.assertIn("less obvious", weak.json()["detail"])
 
     def test_admin_edits_student(self):
         headers = self._headers("admin@test.local")

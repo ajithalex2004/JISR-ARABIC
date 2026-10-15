@@ -389,7 +389,7 @@ class TestFahimBackend(unittest.TestCase):
         # Update Rashid's avatar and pin
         patch_res = self.client.patch(f"/api/auth/children/{new_child['id']}", headers=headers, json={
             "avatar_id": "avatar_camel",
-            "access_pin": "9876"
+            "access_pin": "3917"
         })
         self.assertEqual(patch_res.status_code, 200)
         updated_child = patch_res.json()
@@ -434,7 +434,7 @@ class TestFahimBackend(unittest.TestCase):
             "selected_term": 1,
             "avatar_id": "avatar_gazelle",
             "curriculum_stream": "MoE / UAE Advanced Stream",
-            "access_pin": "5555"
+            "access_pin": "7395"
         })
         self.assertEqual(prof_res.status_code, 200)
         p_data = prof_res.json()

@@ -15,6 +15,7 @@ class TextbookReaderScreen extends StatefulWidget {
   final Function(String text) onVocalize;
   final VoidCallback onBack;
   final ApiService? api;
+  final String? token;
   final int initialGrade;
   final int initialTerm;
   final int initialPage;
@@ -28,6 +29,7 @@ class TextbookReaderScreen extends StatefulWidget {
     required this.onVocalize,
     required this.onBack,
     this.api,
+    this.token,
     this.initialGrade = 5,
     this.initialTerm = 1,
     this.initialPage = 8,
@@ -106,10 +108,12 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
       final res = await (widget.api?.get(
             '/api/admin/ocr-page/$page',
             query: {'edition_id': _currentEditionId},
+            token: widget.token,
           ) ??
           ApiService().get(
             '/api/admin/ocr-page/$page',
             query: {'edition_id': _currentEditionId},
+            token: widget.token,
           ));
       if (mounted && res is Map) {
         setState(() {

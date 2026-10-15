@@ -19,6 +19,7 @@ from backend.security import (
     generate_otp_code, SECRET_KEY, ALGORITHM
 )
 from backend.errors import ApplicationError
+from backend.modules.identity.pins import checked_pin
 from backend.modules.identity.access import (
     Principal, visible_children, require_child, require_roles, PARENT_ROLES
 )
@@ -44,6 +45,7 @@ def serialize_child(c: ChildProfile) -> ChildProfileSchema:
         avatar_id=c.avatar_id or "avatar_falcon",
         curriculum_stream=c.curriculum_stream or "MoE / CBSE Arabic (Non-Arabs)",
         access_pin=None,
+        has_pin=bool(c.access_pin),
         diagnostic_completed=True,
         diagnostic_level=c.diagnostic_level or "standard",
         unlocked_terms=unlocked_list,
@@ -250,6 +252,7 @@ def verify_otp(req: OtpVerifyRequest, *, db: Session):
 
 
 def create_password_and_enroll(req: CreatePasswordAndEnrollRequest, *, db: Session):
+    pin = checked_pin(req.access_pin)  # refuse an obvious PIN before creating anything
     email_clean = req.email.strip().lower()
     now = datetime.datetime.utcnow()
     is_dev = os.getenv("FAHIM_ENV", "development").lower() != "production"
@@ -288,7 +291,7 @@ def create_password_and_enroll(req: CreatePasswordAndEnrollRequest, *, db: Sessi
     db.commit()
     db.refresh(user)
 
-    hashed_pin = bcrypt.hashpw(req.access_pin.strip().encode(), bcrypt.gensalt()).decode() if req.access_pin else None
+    hashed_pin = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode() if pin else None
     child = ChildProfile(
         parent_id=user.id,
         name=req.child_name,
@@ -492,7 +495,8 @@ def get_children(*, user: User, db: Session):
 
 def add_child(req: AddChildRequest, *, user: User, db: Session):
     require_roles(user, PARENT_ROLES)
-    hashed_pin = bcrypt.hashpw(req.access_pin.strip().encode(), bcrypt.gensalt()).decode() if req.access_pin else None
+    pin = checked_pin(req.access_pin)
+    hashed_pin = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode() if pin else None
     child = ChildProfile(
         parent_id=user.id,
         name=req.name.strip(),
@@ -532,7 +536,8 @@ def update_child(child_id: str, req: UpdateChildRequest, *, user: User, db: Sess
     if req.avatar_id is not None: child.avatar_id = req.avatar_id
     if req.curriculum_stream is not None: child.curriculum_stream = req.curriculum_stream
     if req.access_pin is not None:
-        child.access_pin = bcrypt.hashpw(req.access_pin.strip().encode(), bcrypt.gensalt()).decode() if req.access_pin else None
+        pin = checked_pin(req.access_pin)
+        child.access_pin = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode() if pin else None
     db.commit()
     db.refresh(child)
     return serialize_child(child)

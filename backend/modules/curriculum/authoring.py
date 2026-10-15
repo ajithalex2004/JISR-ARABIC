@@ -334,6 +334,19 @@ def get_textbook_library(db: Session):
     return results
 
 
+def get_textbook_info(edition_id: str, db: Session):
+    """Page count of a textbook edition for the learner reader (no page content)."""
+    from sqlalchemy import func
+    from backend.models import BookEdition, ScannedPage
+    last_indexed = db.query(func.max(ScannedPage.pdf_page)).filter(ScannedPage.book_edition_id == edition_id).scalar()
+    edition = db.get(BookEdition, edition_id)
+    return {
+        "edition_id": edition_id,
+        "total_pages": last_indexed or (edition.total_pages if edition else None),
+        "indexed": bool(last_indexed),
+    }
+
+
 def get_textbook_pages(edition_id: str, db: Session):
     """Fetch all indexed pages with OCR text preview, English translation, and image references for a specific textbook edition."""
     from backend.models import ScannedPage

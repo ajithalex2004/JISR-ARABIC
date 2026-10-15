@@ -73,12 +73,11 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
   const currentEditionId = `moe_gr${grade}_vol${term}_2023`;
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/admin/textbook-pages/${currentEditionId}`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((pages: any[]) => {
-        if (pages && pages.length > 0) {
-          setTotalPages(pages.length);
-        }
+    // The admin page list needs an admin login; learners read the page count from here.
+    fetch(`${API_BASE}/api/curriculum/textbook-info/${currentEditionId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((info: { total_pages?: number | null } | null) => {
+        if (info?.total_pages) setTotalPages(info.total_pages);
       })
       .catch(() => undefined);
   }, [currentEditionId]);

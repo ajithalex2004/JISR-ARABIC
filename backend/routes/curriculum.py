@@ -86,6 +86,12 @@ def set_active_grade(payload: ActiveGradeRequest, db: Session=Depends(get_db), a
     require_child(db, actor, payload.child_id, PARENT_ROLES)
     return service.set_active_grade(child_id=payload.child_id, grade=payload.grade, db=db, actor=actor)
 
+@router.get('/textbook-info/{edition_id}')
+def textbook_info(edition_id: str, db: Session=Depends(get_db)):
+    """How many pages a textbook edition has, for the reader's page navigation."""
+    from backend.modules.curriculum.authoring import get_textbook_info
+    return get_textbook_info(edition_id, db=db)
+
 @router.get('/word-gloss')
 def word_gloss(word: str=Query(..., max_length=40), context: str=Query('', max_length=300)):
     """English meaning of one Arabic word, for tooltips when the client dictionary has no entry."""

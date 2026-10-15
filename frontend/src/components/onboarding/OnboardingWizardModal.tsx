@@ -530,7 +530,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                     }`}
                   >
                     <div className="flex justify-between items-start mb-1">
-                      <span className="text-xs font-bold text-slate-500">$20 Term Unlock</span>
+                      <span className="text-xs font-bold text-slate-500">$10 Term Unlock</span>
                       {selectedTerm === 2 && <CheckCircle2 className="w-4 h-4 text-emerald-800" />}
                     </div>
                     <div className="font-bold text-sm text-slate-900 font-arabic">الفصل الثاني (Term 2)</div>
@@ -549,7 +549,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                     }`}
                   >
                     <div className="flex justify-between items-start mb-1">
-                      <span className="text-xs font-bold text-slate-500">$20 Term Unlock</span>
+                      <span className="text-xs font-bold text-slate-500">$10 Term Unlock</span>
                       {selectedTerm === 3 && <CheckCircle2 className="w-4 h-4 text-emerald-800" />}
                     </div>
                     <div className="font-bold text-sm text-slate-900 font-arabic">الفصل الثالث (Term 3)</div>

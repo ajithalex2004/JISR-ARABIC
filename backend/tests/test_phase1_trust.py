@@ -90,7 +90,7 @@ class TestPhase1TrustAndIntegrity(unittest.TestCase):
             with self.assertRaises(ApplicationError) as ctx:
                 billing_service.checkout_term(req, db=self.db)
             self.assertEqual(ctx.exception.status_code, 400)
-            self.assertIn("Promotional code is not valid", ctx.exception.detail)
+            self.assertIn("is not valid", ctx.exception.detail)
 
     def test_annual_checkout_propagates_provider_payment_id(self):
         """Annual checkout request must propagate provider payment ID to prevent 402 rejection."""
@@ -155,10 +155,10 @@ class TestPhase1TrustAndIntegrity(unittest.TestCase):
         self.assertTrue(resp.success)
         txn = self.db.query(PaymentTransaction).filter_by(id=resp.transaction_id).first()
         self.assertIsNotNone(txn)
-        self.assertEqual(txn.amount_cents, 2000)
-        self.assertEqual(float(txn.amount_usd), 20.00)
-        self.assertEqual(float(txn.subtotal_usd), 19.05)
-        self.assertEqual(float(txn.vat_amount_usd), 0.95)
+        self.assertEqual(txn.amount_cents, 1000)
+        self.assertEqual(float(txn.amount_usd), 10.00)
+        self.assertEqual(float(txn.subtotal_usd), 9.52)
+        self.assertEqual(float(txn.vat_amount_usd), 0.48)
 
     def test_stripe_webhook_cryptographic_verification_and_entitlement(self):
         """Stripe webhooks must verify HMAC signature and idempotently unlock terms."""

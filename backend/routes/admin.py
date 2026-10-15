@@ -360,6 +360,32 @@ def list_payments(
     return admin_payments.list_payments(actor=actor, db=db, q=q, method=method, status=status, parent_id=parent_id, days=days)
 
 
+@router.get('/promo-codes')
+def list_promo_codes(actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    from backend.modules.billing import admin_promos
+    return admin_promos.list_promos(actor=actor, db=db)
+
+
+@router.post('/promo-codes')
+def create_promo_code(payload: dict, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    from backend.modules.billing import admin_promos
+    return admin_promos.create_promo(payload, actor=actor, db=db)
+
+
+@router.patch('/promo-codes/{promo_id}')
+def update_promo_code(promo_id: str, payload: dict, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    from backend.modules.billing import admin_promos
+    return admin_promos.update_promo(promo_id, payload, actor=actor, db=db)
+
+
+@router.get('/subscriptions')
+def list_subscriptions(actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Every auto-renewing subscription with its family, plan, status and next renewal."""
+    require_roles(actor, ('admin',))
+    from backend.modules.billing import subscriptions
+    return subscriptions.list_all(db)
+
+
 @router.get('/export/{kind}')
 def export_table(
     kind: str, q: Optional[str] = None, students: Optional[str] = None, method: Optional[str] = None,

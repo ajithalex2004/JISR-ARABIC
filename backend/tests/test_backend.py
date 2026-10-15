@@ -232,7 +232,22 @@ class TestFahimBackend(unittest.TestCase):
             "exp_month": "12",
             "exp_year": "2028",
             "cvc": "123",
-            "promo_code": "FAHIM100"  # 100% demo promo
+            "promo_code": "NOSUCHCODE"
+        })
+        # An unknown promo code is refused instead of being silently ignored.
+        self.assertEqual(checkout_res.status_code, 400)
+        self.assertIn("is not valid", checkout_res.json()["detail"])
+
+        checkout_res = self.client.post("/api/payments/checkout", json={
+            "child_id": child_id,
+            "grade": 5,
+            "term": 1,
+            "payment_method": "card",
+            "card_number": "4242424242424242",
+            "exp_month": "12",
+            "exp_year": "2028",
+            "cvc": "123",
+            "promo_code": "DEMOFREE"  # 100% test promo (development only)
         })
         self.assertEqual(checkout_res.status_code, 200)
         data = checkout_res.json()
@@ -726,10 +741,10 @@ class TestFahimBackend(unittest.TestCase):
         a_data = annual_res.json()
         self.assertTrue(a_data["success"])
         self.assertEqual(a_data["package_type"], "annual")
-        self.assertEqual(a_data["amount_usd"], 50.0)
+        self.assertEqual(a_data["amount_usd"], 25.5)  # USD 30 less the 15% annual discount
         self.assertEqual(a_data["unlocked_terms"], [1, 2, 3])
-        self.assertEqual(a_data["subtotal_usd"], 47.62)
-        self.assertEqual(a_data["vat_amount_usd"], 2.38)
+        self.assertEqual(a_data["subtotal_usd"], 24.29)
+        self.assertEqual(a_data["vat_amount_usd"], 1.21)
         receipt_num = a_data["receipt_number"]
 
         # 3. Dynamic Terms status check: All 3 terms must now show is_unlocked == True
@@ -768,10 +783,12 @@ class TestFahimBackend(unittest.TestCase):
         inv_data = inv_res.json()
         self.assertEqual(inv_data["trn"], "100458923100003")
         self.assertEqual(inv_data["status"], "SUCCEEDED")
-        self.assertEqual(inv_data["total_usd"], 50.0)
-        self.assertEqual(inv_data["total_aed"], 183.62)
-        self.assertEqual(inv_data["subtotal_usd"], 47.62)
-        self.assertEqual(inv_data["vat_amount_usd"], 2.38)
+        self.assertEqual(inv_data["total_usd"], 25.5)
+        self.assertEqual(inv_data["total_aed"], 93.65)
+        self.assertEqual(inv_data["subtotal_usd"], 24.29)
+        self.assertEqual(inv_data["vat_amount_usd"], 1.21)
+        self.assertEqual(inv_data["items"][0]["unit_price_usd"], 30.0)
+        self.assertEqual(inv_data["items"][0]["discount_usd"], 4.5)
         self.assertEqual(len(inv_data["items"]), 1)
         self.assertIn("Terms 1, 2, 3", inv_data["items"][0]["description_en"])
 

@@ -40,6 +40,33 @@ export function App() {
     window.addEventListener('fahim:access-denied', onDenied);
     return () => window.removeEventListener('fahim:access-denied', onDenied);
   }, []);
+
+  // Back from Stripe's payment page (?payment=success|cancelled).
+  const [paymentNotice, setPaymentNotice] = useState<{ ok: boolean; text: string } | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get('payment');
+    if (!outcome) return;
+    setPaymentNotice(outcome === 'success'
+      ? { ok: true, text: 'Thank you! Your payment was received. Access unlocks within a minute. Your receipt and UAE tax invoice are in My Subscriptions & Invoices and are emailed to you.' }
+      : { ok: false, text: 'Payment was cancelled. Nothing was charged.' });
+    params.delete('payment');
+    params.delete('session_id');
+    window.history.replaceState(null, '', window.location.pathname + (params.toString() ? `?${params}` : '') + window.location.hash);
+    if (outcome === 'success') {
+      // The payment provider confirms within seconds; reload the account so the unlocked terms show.
+      const timer = window.setTimeout(async () => {
+        try {
+          const u = await api.getMe();
+          if (u) {
+            setUser(u);
+            setActiveChild(current => u.children?.find((c: ChildProfile) => c.id === current?.id) || current);
+          }
+        } catch { /* a page reload picks it up */ }
+      }, 6000);
+      return () => window.clearTimeout(timer);
+    }
+  }, []);
   const [user, setUser] = useState<User | null>(null);
   const [activeChild, setActiveChild] = useState<ChildProfile | null>(null);
   const [currentView, setCurrentView] = useState<string>(() => {
@@ -243,6 +270,7 @@ export function App() {
 
       {/* Main Viewport */}
       <main className="flex-1 pb-16">
+        {paymentNotice && <div role="status" className={`m-4 border p-3 flex justify-between gap-3 ${paymentNotice.ok ? 'border-emerald-500 bg-emerald-50 text-emerald-950' : 'border-amber-500 bg-amber-50 text-amber-950'}`}><span>{paymentNotice.text}</span><button type="button" onClick={() => setPaymentNotice(null)}>Dismiss</button></div>}
         {accessNotice && <div role="alert" className="m-4 border border-amber-500 bg-amber-50 p-3 text-amber-950 flex justify-between gap-3"><span>{accessNotice}</span><button type="button" onClick={() => setAccessNotice('')}>Dismiss</button></div>}
         {currentView === 'admin' && user?.role !== 'admin' && (
           <div role="alert" className="m-6 max-w-lg mx-auto border border-purple-200 bg-white rounded-2xl p-6 text-center shadow-lg">

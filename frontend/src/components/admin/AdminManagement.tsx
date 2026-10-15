@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StudentsAdmin } from './StudentsAdmin';
 import { ParentsAdmin } from './ParentsAdmin';
 import { PaymentsAdmin } from './PaymentsAdmin';
+import { PromoCodesAdmin, SubscriptionsAdmin } from './PromoCodesAdmin';
 import { SystemHealth } from './SystemHealth';
 import { ContentProgress } from './ContentProgress';
 import { TutorAssignments } from './TutorAssignments';
@@ -12,6 +13,8 @@ const TABS = [
   { key: 'students', label: 'Students', render: ({ openParent }: TabProps) => <StudentsAdmin onOpenParent={openParent} /> },
   { key: 'parents', label: 'Parents', render: ({ parentQuery }: TabProps) => <ParentsAdmin initialQuery={parentQuery} /> },
   { key: 'payments', label: 'Payments', render: () => <PaymentsAdmin /> },
+  { key: 'subscriptions', label: 'Subscriptions', render: () => <SubscriptionsAdmin /> },
+  { key: 'promos', label: 'Promo codes', render: () => <PromoCodesAdmin /> },
   { key: 'content', label: 'Content', render: () => <ContentProgress /> },
   { key: 'health', label: 'System health', render: () => <SystemHealth /> },
   { key: 'tutors', label: 'Tutors', render: () => <TutorAssignments /> },

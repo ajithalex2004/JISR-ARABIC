@@ -515,9 +515,60 @@ export interface PaymentReceipt {
   card_last4?: string;
   promo_code?: string;
   voucher_code?: string;
+  terms_purchased?: string | null;
+  subscription_id?: string | null;
   school_name?: string;
   trn: string;
   created_at: string;
+}
+
+export interface PriceQuote {
+  terms: number[];
+  package_type: 'term' | 'annual';
+  list_price_usd: number;
+  annual_discount_usd: number;
+  promo_discount_usd: number;
+  discount_usd: number;
+  total_usd: number;
+  subtotal_usd: number;
+  vat_usd: number;
+  promo_code: string | null;
+  auto_renew: boolean;
+  renewal_price_usd: number | null;
+  renewal_months: number | null;
+  provider: 'stripe' | 'simulated' | 'unavailable';
+}
+
+export interface Subscription {
+  id: string;
+  child_id: string;
+  child_name: string | null;
+  parent_name?: string | null;
+  parent_email?: string | null;
+  grade: number;
+  plan: 'term' | 'annual';
+  next_term: number | null;
+  status: 'active' | 'past_due' | 'canceled' | 'incomplete';
+  provider: string;
+  renewal_price_usd: number;
+  renewal_months: number;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  promo_code: string | null;
+  created_at: string | null;
+}
+
+export interface PromoCodeInfo {
+  id: string;
+  code: string;
+  discount_pct: number;
+  max_users: number | null;
+  used: number;
+  valid_from: string | null;
+  valid_until: string | null;
+  is_active: boolean;
+  notes: string | null;
+  state: string;
 }
 
 export interface VoucherRedeemResult {

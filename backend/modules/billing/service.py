@@ -10,19 +10,60 @@ from backend.models import PaymentTransaction, TermAccess, ChildProfile, User, V
 from backend.schemas import PaymentCheckoutRequest, PaymentResponse, AnnualCheckoutRequest, VoucherRedeemRequest, VoucherRedeemResponse, TaxInvoiceResponse, TaxInvoiceItem
 from backend.errors import ApplicationError
 
-PRICE_PER_TERM_USD = 20.0
-
-
-PRICE_ANNUAL_PASS_USD = 50.0
-
-
-VAT_RATE = 0.05                # 5% UAE VAT
+from backend.modules.billing.pricing import (  # noqa: E402  (prices live in one place)
+    PRICE_PER_TERM_USD, PRICE_ANNUAL_PASS_USD, VAT_RATE, clean_terms, find_promo, quote, record_promo_use,
+)
+# Development-only codes for testing checkout without a real promo code (refused in production).
+DEV_PROMOS = {"DEMOFREE": 100.0, "ADEK100": 100.0, "JISR100": 100.0, "HALFPRICE": 50.0}
 
 
 AED_PEG = 3.6725               # Official UAE Dirham Peg
 
 
 FAHIM_TRN = "100458923100003"  # UAE FTA Tax Registration Number
+
+
+def promo_pct_for(promo: str, *, parent_id, db, is_prod: bool) -> float:
+    """Discount % of a promo code: admin-made codes (e.g. JISR10), or test codes outside production."""
+    if not promo:
+        return 0.0
+    from backend.models import PromoCode
+    from sqlalchemy import func
+    if not is_prod and promo in DEV_PROMOS and not db.query(PromoCode).filter(func.upper(PromoCode.code) == promo).first():
+        return DEV_PROMOS[promo]
+    return float(find_promo(promo, parent_id=parent_id, db=db).discount_pct)
+
+
+def send_receipt_email(txn: PaymentTransaction, *, db: Session) -> None:
+    """Email the parent the receipt and tax invoice summary (best effort; never fails the payment)."""
+    import logging
+    try:
+        from backend.email_delivery import email_configured, send_email
+        parent = db.query(User).filter(User.id == txn.parent_id).first() if txn.parent_id else None
+        if not parent or not parent.email or not email_configured():
+            return
+        invoice = get_tax_invoice(txn.receipt_number, db=db)
+        item = invoice.items[0]
+        body = (
+            f"Thank you for your payment.\n\n"
+            f"Receipt number: {txn.receipt_number}\n"
+            f"Tax invoice number: {invoice.invoice_number}\n"
+            f"Date: {invoice.issue_date}\n\n"
+            f"{item.description_en}\n"
+            f"Student: {invoice.student_name} (Class {invoice.grade})\n"
+            f"Price: USD {item.unit_price_usd:.2f}\n"
+            f"Discount: USD {item.discount_usd:.2f}\n"
+            f"Taxable amount: USD {invoice.subtotal_usd:.2f}\n"
+            f"VAT 5%: USD {invoice.vat_amount_usd:.2f}\n"
+            f"Total paid: USD {invoice.total_usd:.2f} (AED {invoice.total_aed:.2f})\n\n"
+            f"Supplier TRN: {invoice.trn}\n"
+            "You can view and print the full UAE tax invoice in the app under My Subscriptions & Invoices.\n\n"
+            "JISR Arabic"
+        )
+        send_email(parent.email, f"JISR receipt {txn.receipt_number} / Tax invoice {invoice.invoice_number}", body,
+                   record_failures=False)
+    except Exception as exc:
+        logging.getLogger(__name__).warning("Receipt email for %s not sent: %s", txn.receipt_number, exc)
 
 
 def compute_tax_breakdown(total_amount: float):
@@ -36,7 +77,8 @@ def compute_tax_breakdown(total_amount: float):
 
 def checkout_term(req: PaymentCheckoutRequest, *, db: Session, is_verified_provider: bool = False):
     """
-    Unlock Single Term for USD 20, 2 Terms for USD 40, or 3 Terms (Full Academic Year) for USD 50 (15% discount).
+    Unlock one term for USD 10, two terms for USD 20, or all three terms (the annual plan) for
+    USD 30 less 15% = USD 25.50, less any promo code.
     In production: direct client calls create a pending checkout transaction.
     Access is unlocked only when is_verified_provider=True (via signed provider webhook).
     """
@@ -64,23 +106,12 @@ def checkout_term(req: PaymentCheckoutRequest, *, db: Session, is_verified_provi
     txn_status = "succeeded" if is_succeeded else "pending"
 
     is_annual = req.package_type == "annual"
-    if req.terms and len(req.terms) > 0:
-        clean_terms = sorted(list(set(req.terms)))
-        if len(clean_terms) >= 3 or is_annual:
-            terms_to_unlock = [1, 2, 3]
-            base_price = PRICE_ANNUAL_PASS_USD  # USD 50 (15% discount)
-            is_annual = True
-        elif len(clean_terms) == 2:
-            terms_to_unlock = clean_terms
-            base_price = round(PRICE_PER_TERM_USD * 2, 2)  # USD 40
-            is_annual = False
-        else:
-            terms_to_unlock = clean_terms
-            base_price = PRICE_PER_TERM_USD  # USD 20
-            is_annual = False
-    else:
-        terms_to_unlock = [1, 2, 3] if is_annual else [req.term]
-        base_price = PRICE_ANNUAL_PASS_USD if is_annual else PRICE_PER_TERM_USD
+    terms_to_unlock = [1, 2, 3] if is_annual else clean_terms(req.terms, req.term)
+    is_annual = len(terms_to_unlock) == 3
+
+    # An unknown or used-up promo code is refused before anything else.
+    promo = (req.promo_code or "").strip().upper()
+    promo_pct = promo_pct_for(promo, parent_id=child.parent_id, db=db, is_prod=is_prod)
 
     # Check if all selected terms are already unlocked
     if not is_annual and len(terms_to_unlock) == 1:
@@ -91,7 +122,6 @@ def checkout_term(req: PaymentCheckoutRequest, *, db: Session, is_verified_provi
             TermAccess.term == single_term,
             TermAccess.is_unlocked == True
         ).first()
-
         if existing_access:
             return PaymentResponse(
                 success=True,
@@ -109,22 +139,10 @@ def checkout_term(req: PaymentCheckoutRequest, *, db: Session, is_verified_provi
                 message=f"Term {single_term} for Class {req.grade} is already active!"
             )
 
-    # Compute final price
-    final_amount = base_price
-    promo = (req.promo_code or "").strip().upper()
-    is_prod = os.getenv("FAHIM_ENV", "development").lower() == "production"
-
-    if promo:
-        if is_prod:
-            if promo in ["DEMOFREE", "ADEK100", "JISR100", "HALFPRICE"]:
-                raise ApplicationError(400, "Promotional code is not valid in this environment. Use an institutional voucher.")
-        else:
-            if promo in ["DEMOFREE", "ADEK100", "JISR100"]:
-                final_amount = 0.0
-            elif promo == "HALFPRICE":
-                final_amount = round(base_price * 0.5, 2)
-
-    subtotal, vat_amount = compute_tax_breakdown(final_amount)
+    # Price: USD 10 a term; all three terms together get 15% off; then any promo code.
+    price = quote(terms_to_unlock, promo_pct=promo_pct)
+    final_amount = price["total_usd"]
+    subtotal, vat_amount = price["subtotal_usd"], price["vat_usd"]
 
     # Generate transaction reference and receipt
     txn_id = str(uuid.uuid4())
@@ -142,7 +160,7 @@ def checkout_term(req: PaymentCheckoutRequest, *, db: Session, is_verified_provi
         amount_usd=round(final_amount, 2),
         subtotal_usd=subtotal,
         vat_amount_usd=vat_amount,
-        discount_amount_usd=round(base_price - final_amount, 2),
+        discount_amount_usd=price["discount_usd"],
         amount_cents=amount_cents,
         currency="USD",
         package_type="annual" if is_annual else "term",
@@ -153,7 +171,8 @@ def checkout_term(req: PaymentCheckoutRequest, *, db: Session, is_verified_provi
         receipt_number=receipt_num,
         tax_invoice_number=tax_inv_num,
         idempotency_key=req.idempotency_key,
-        provider_event_id=req.provider_payment_id
+        provider_event_id=req.provider_payment_id,
+        terms_purchased=",".join(map(str, terms_to_unlock)),
     )
     db.add(txn)
 
@@ -185,8 +204,12 @@ def checkout_term(req: PaymentCheckoutRequest, *, db: Session, is_verified_provi
         # switches grades explicitly (POST /api/curriculum/active-grade).
         if req.grade and not child.default_grade:
             child.default_grade = req.grade
+        if promo and promo not in DEV_PROMOS:
+            record_promo_use(promo, parent_id=child.parent_id, payment_id=txn_id, db=db)
 
     db.commit()
+    if is_succeeded:
+        send_receipt_email(txn, db=db)
 
     pkg_label = "Annual Pass (All Terms 1, 2, & 3 + Ask Fahim AI)" if is_annual else f"Term(s) {', '.join(map(str, terms_to_unlock))} + Ask Fahim AI"
     return PaymentResponse(
@@ -303,6 +326,12 @@ def handle_stripe_webhook(body: bytes, stripe_signature: str | None, *, db: Sess
     event_type = event.get("type")
     data_obj = event.get("data", {}).get("object", {})
 
+    # Hosted checkout (one-off and auto-renewing) and subscription lifecycle events.
+    from backend.modules.billing import subscriptions
+    handled = subscriptions.handle_event(event_type, data_obj, db)
+    if handled is not None:
+        return handled
+
     if event_type in ("checkout.session.completed", "payment_intent.succeeded"):
         metadata = data_obj.get("metadata", {})
         child_id = metadata.get("child_id")
@@ -312,7 +341,8 @@ def handle_stripe_webhook(body: bytes, stripe_signature: str | None, *, db: Sess
         provider_id = data_obj.get("id") or event_id
 
         if not child_id:
-            raise ApplicationError(400, "Webhook missing child_id in metadata")
+            # e.g. the payment_intent of a hosted checkout, recorded from checkout.session.completed instead
+            return {"received": True, "event_type": event_type, "ignored": True}
 
         # Idempotency check
         prior = db.query(PaymentTransaction).filter(
@@ -341,7 +371,7 @@ def handle_stripe_webhook(body: bytes, stripe_signature: str | None, *, db: Sess
 
 def checkout_annual_pass(req: AnnualCheckoutRequest, *, db: Session, is_verified_provider: bool = False):
     """
-    Unlock Full Academic Year (Terms 1, 2, and 3) for USD 50 (15% discount).
+    Unlock the full academic year (Terms 1, 2 and 3): USD 30 less 15% = USD 25.50.
     """
     checkout_req = PaymentCheckoutRequest(
         child_id=req.child_id,
@@ -420,7 +450,8 @@ def redeem_voucher(req: VoucherRedeemRequest, *, db: Session):
         amount_usd=0.0,
         subtotal_usd=0.0,
         vat_amount_usd=0.0,
-        discount_amount_usd=PRICE_ANNUAL_PASS_USD if is_annual else PRICE_PER_TERM_USD,
+        discount_amount_usd=quote(terms_to_unlock)["list_price_usd"],
+        terms_purchased=",".join(map(str, terms_to_unlock)),
         currency="USD",
         package_type="annual" if is_annual else "term",
         status="succeeded",
@@ -499,17 +530,23 @@ def get_tax_invoice(receipt_number: str, *, db: Session):
     student_name = child.name if child else "Student"
     school_name = child.school_name if child and child.school_name else "Sunrise International School, Abu Dhabi"
 
-    is_annual = txn.package_type == "annual" or txn.term == 0
-    unit_price = float(PRICE_ANNUAL_PASS_USD if is_annual else PRICE_PER_TERM_USD)
-    discount = float(txn.discount_amount_usd or 0.0)
-    taxable_amount = float(txn.subtotal_usd) if txn.subtotal_usd is not None else (round(float(txn.amount_usd or 0) / 1.05, 2) if txn.amount_usd > 0 else 0.0)
-    vat_amt = float(txn.vat_amount_usd) if txn.vat_amount_usd is not None else (round(float(txn.amount_usd or 0) - taxable_amount, 2) if txn.amount_usd > 0 else 0.0)
+    terms = [int(t) for t in (txn.terms_purchased or "").split(",") if t.strip().isdigit()] \
+        or ([1, 2, 3] if (txn.package_type == "annual" or txn.term == 0) else [txn.term])
+    is_annual = len(terms) == 3
     gross_total = float(txn.amount_usd or 0.0)
+    discount = float(txn.discount_amount_usd or 0.0)
+    unit_price = round(gross_total + discount, 2)  # list price before the annual discount and promo
+    taxable_amount = float(txn.subtotal_usd) if txn.subtotal_usd is not None else (round(gross_total / 1.05, 2) if gross_total > 0 else 0.0)
+    vat_amt = float(txn.vat_amount_usd) if txn.vat_amount_usd is not None else (round(gross_total - taxable_amount, 2) if gross_total > 0 else 0.0)
     total_aed = round(gross_total * AED_PEG, 2)
+    renewal = " - auto-renewing subscription" if txn.subscription_id else ""
+    terms_en = ", ".join(map(str, terms))
 
     item = TaxInvoiceItem(
-        description_ar="باقة الاشتراك السنوي الشامل - لغة عربية (الفصول 1، 2، 3)" if is_annual else f"ترخيص الفصل الدراسي {txn.term} - لغة عربية",
-        description_en=f"Annual Full Academic Pass - Arabic Curriculum (Terms 1, 2, 3) - Class {txn.grade}" if is_annual else f"Term {txn.term} Full Arabic Curriculum License - Class {txn.grade}",
+        description_ar=("باقة الاشتراك السنوي الشامل - لغة عربية (الفصول 1، 2، 3)" if is_annual
+                        else f"ترخيص الفصل الدراسي {'، '.join(map(str, terms))} - لغة عربية"),
+        description_en=(f"Annual Full Academic Pass - Arabic Curriculum (Terms 1, 2, 3) - Class {txn.grade}{renewal}" if is_annual
+                        else f"Term{'s' if len(terms) > 1 else ''} {terms_en} Full Arabic Curriculum License - Class {txn.grade}{renewal}"),
         qty=1,
         unit_price_usd=unit_price,
         discount_usd=discount,
@@ -573,6 +610,8 @@ def list_receipts(child_id: str, *, db: Session):
             "card_last4": t.card_last4,
             "promo_code": t.promo_code,
             "voucher_code": t.voucher_code,
+            "terms_purchased": t.terms_purchased,
+            "subscription_id": t.subscription_id,
             "school_name": school_name,
             "trn": FAHIM_TRN,
             "created_at": t.created_at.isoformat()

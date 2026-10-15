@@ -1,8 +1,12 @@
 import type {
   AuthResponse, ChildProfile, LessonSummary, LessonPackage, TermSummary, MistakeEntry,
   DiagnosticQuestion, DiagnosticResult, LearningPlan, TaxInvoiceData, PaymentReceipt, VoucherRedeemResult,
-  SpeechEvaluationResult
+  SpeechEvaluationResult, PriceQuote, Subscription, PromoCodeInfo
 } from '../types';
+
+export type CheckoutBody = {
+  child_id: string; plan: 'term' | 'annual'; terms?: number[]; promo_code?: string; auto_renew?: boolean;
+};
 
 export const API_BASE = ((import.meta as any).env?.VITE_API_URL ?? '');
 
@@ -494,6 +498,50 @@ export const api = {
     return res.json();
   },
 
+  async quotePayment(data: CheckoutBody): Promise<PriceQuote> {
+    const res = await authenticatedFetch(`${API_BASE}/api/payments/quote`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not price this purchase'));
+    return res.json();
+  },
+  async startCheckout(data: CheckoutBody & { grade: number }): Promise<{
+    provider: 'stripe' | 'simulated'; checkout_url?: string; receipt_number?: string;
+    tax_invoice_number?: string; subscription_id?: string | null; amount_usd?: number; status?: string;
+  }> {
+    const res = await authenticatedFetch(`${API_BASE}/api/payments/start-checkout`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Payment could not be started'));
+    return res.json();
+  },
+  async mySubscriptions(): Promise<Subscription[]> {
+    const res = await authenticatedFetch(`${API_BASE}/api/payments/subscriptions`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load subscriptions'));
+    return res.json();
+  },
+  async setAutoRenew(subscriptionId: string, renew: boolean): Promise<Subscription> {
+    const res = await authenticatedFetch(`${API_BASE}/api/payments/subscriptions/${encodeURIComponent(subscriptionId)}/${renew ? 'resume' : 'cancel'}`, { method: 'POST' });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not update the subscription'));
+    return res.json();
+  },
+  async adminPromoCodes(): Promise<PromoCodeInfo[]> {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/promo-codes`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load promo codes'));
+    return res.json();
+  },
+  async adminSavePromoCode(id: string | null, data: Partial<PromoCodeInfo>): Promise<PromoCodeInfo> {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/promo-codes${id ? `/${encodeURIComponent(id)}` : ''}`, {
+      method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not save the promo code'));
+    return res.json();
+  },
+  async adminSubscriptions(): Promise<Subscription[]> {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/subscriptions`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load subscriptions'));
+    return res.json();
+  },
   async getReceipts(childId: string): Promise<PaymentReceipt[]> {
     const res = await authenticatedFetch(`${API_BASE}/api/payments/receipts?child_id=${childId}`);
     if (!res.ok) throw new Error('Failed to load transaction history');

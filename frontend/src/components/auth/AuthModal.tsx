@@ -7,15 +7,6 @@ import { api } from '../../services/api';
 import { AuthResponse, ChildProfile } from '../../types';
 import { FahimRobotMascot } from '../common/FaheemRobotMascot';
 
-const GoogleIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24">
-    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-  </svg>
-);
-
 export const UAE_AVATARS = [
   { id: 'avatar_falcon', nameAr: 'الصقر الشامخ', nameEn: 'Falcon', icon: '🦅', desc: 'Pride & Vision' },
   { id: 'avatar_gazelle', nameAr: 'الغزال الرشيق', nameEn: 'Gazelle', icon: '🦌', desc: 'Grace & Speed' },
@@ -490,7 +481,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder={loginRole === 'parent' ? 'Enter your email' : loginRole === 'admin' ? 'Enter admin email' : 'tutor@fahim.ae'}
+                      placeholder={loginRole === 'parent' ? 'Enter your email' : loginRole === 'admin' ? 'Enter admin email' : 'Enter tutor email'}
                       className="w-full text-xs font-medium text-slate-800 placeholder-slate-400 outline-none bg-transparent"
                     />
                   </div>
@@ -618,10 +609,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   {showStudentPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[10px] text-slate-400 text-center">
-                Demo: Zayed PIN <strong className="text-slate-600 font-mono">1234</strong>, Maryam PIN <strong className="text-slate-600 font-mono">5678</strong>.
-              </p>
-
               <button
                 type="submit"
                 disabled={isLoading || studentPin.length < 4}
@@ -1102,30 +1089,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {isLoading ? 'Resetting...' : 'Reset Password & Sign In'}
               </button>
             </form>
-          )}
-
-          {/* Social Divider & Google Sign-In (Screenshot 2, 3, 4) */}
-          {(mode === 'login' || mode === 'signup_email') && (
-            <>
-              <div className="relative my-4 text-center">
-                <hr className="border-slate-200" />
-                <span className="bg-white px-3 text-xs text-slate-400 -top-2 relative">or</span>
-              </div>
-
-              <div className="flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('parent@fahim.ae');
-                    setPassword('FahimPass2026!');
-                  }}
-                  className="w-12 h-12 rounded-full bg-white shadow-md hover:shadow-lg border border-slate-100 flex items-center justify-center transition-all hover:scale-105"
-                  title="Sign in with Google"
-                >
-                  <GoogleIcon />
-                </button>
-              </div>
-            </>
           )}
 
           {/* Bottom Inspirational Card (Screenshot 2, 3, 4) */}

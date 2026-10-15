@@ -232,7 +232,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
         except Exception:
             reader = None
 
-    from backend.gemini_quota import GeminiQuotaExhausted
+    from backend.ai.errors import AIUnavailable
     from backend.modules.curriculum.page_ocr import has_usable_text, transcribe_page_image
 
     pdfium_doc = None
@@ -309,7 +309,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
             else:
                 try:
                     ocr_text = transcribe_page_image(png_bytes, page_label=f"{book_edition_id} p{p_num}") if png_bytes else None
-                except GeminiQuotaExhausted as exc:
+                except AIUnavailable as exc:
                     # Don't mark this and every later page as failed: stop here, keep what was read,
                     # and let a re-upload of the same PDF continue from this page.
                     paused = {"page": p_num, "reason": str(exc)}

@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from backend.config import content_root
 from backend.errors import ApplicationError
-from backend.gemini_quota import GeminiQuotaExhausted, call_with_quota_retry
+from backend.ai.errors import AIUnavailable
 from backend.models import CurriculumAuditEvent, Lesson, LessonVersion, Unit
 
 logger = logging.getLogger("fahim.drafting")
@@ -167,65 +167,57 @@ def _strip_outside_strings(text: str) -> str:
     return "".join(out)
 
 
-def gemini_generator() -> Generator:
-    """Default generator: uploads page images and asks Gemini for a JSON section group."""
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        raise ApplicationError(503, "GEMINI_API_KEY is not configured; AI drafting is unavailable")
-    from google import genai
-    from google.genai import types
-    from backend.modules.tutoring.assistant import GEMINI_MODEL, _child_safety_settings
+def ai_generator() -> Generator:
+    """Default generator: sends the page images to the AI gateway and asks for a JSON section group."""
+    from backend.ai import gateway
+    from backend.modules.tutoring.assistant import GEMINI_MODEL, _get_gemini_client
 
-    client = genai.Client(api_key=api_key)
+    # One Gemini client for the whole drafting run (None when Gemini isn't configured).
+    gemini_client = _get_gemini_client()
+    if not gateway.available(gemini_client=gemini_client):
+        raise ApplicationError(503, "No AI provider is configured (GEMINI_API_KEY or ANTHROPIC_API_KEY); AI drafting is unavailable")
     model = os.getenv("FAHIM_DRAFT_MODEL") or GEMINI_MODEL
-    uploaded: Dict[Path, Any] = {}
 
     schema_supported = [True]
 
     def generate(prompt: str, images: List[Path], schema: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        files = []
-        for path in images:
-            if path not in uploaded:
-                uploaded[path] = call_with_quota_retry(lambda: client.files.upload(file=str(path)), label="Draft page upload")
-            files.append(uploaded[path])
         last_error = None
         # Long Arabic drafts occasionally come back as slightly malformed JSON; repair what can be
         # repaired and otherwise ask again, so one bad reply doesn't fail the whole chapter.
         for attempt in range(DRAFT_ATTEMPTS):
-            config = dict(
-                temperature=0.4 if attempt == 0 else 0.2,
-                max_output_tokens=16384,
-                response_mime_type="application/json",
-                safety_settings=_child_safety_settings(types),
-            )
-            if schema and schema_supported[0]:
-                config["response_schema"] = schema
+            use_schema = bool(schema and schema_supported[0])
             try:
-                response = call_with_quota_retry(lambda: client.models.generate_content(
-                    model=model, contents=[*files, prompt], config=types.GenerateContentConfig(**config),
-                ), label="Lesson drafting")
-            except GeminiQuotaExhausted:
+                response = gateway.generate(gateway.AIRequest(
+                    feature="lesson_drafting", prompt=prompt, attachments=[(path, "image/png") for path in images],
+                    json=True, schema=schema if use_schema else None, temperature=0.4 if attempt == 0 else 0.2,
+                    max_tokens=16384, tier="strong", gemini_model=model, retry_on_rate_limit=True, timeout=300,
+                ), gemini_client=gemini_client)
+            except AIUnavailable:
                 raise
             except Exception as exc:
                 # A model or API version that can't take this schema still drafts without it.
-                if "response_schema" in config and "schema" in str(exc).lower():
-                    logger.warning("Gemini rejected the response schema, drafting without it: %s", exc)
+                if use_schema and "schema" in str(exc).lower():
+                    logger.warning("The AI rejected the response schema, drafting without it: %s", exc)
                     schema_supported[0] = False
                     continue
                 raise
-            if not response or not response.text:
-                last_error = "Gemini returned an empty draft"
+            generate.model = response.model  # type: ignore[attr-defined]
+            if not response.text:
+                last_error = "The AI returned an empty draft"
                 continue
             try:
                 return parse_model_json(response.text)
             except ValueError as exc:
-                last_error = f"Gemini returned malformed JSON ({exc})"
+                last_error = f"The AI returned malformed JSON ({exc})"
                 logger.warning("Draft attempt %s/%s unreadable: %s", attempt + 1, DRAFT_ATTEMPTS, exc)
         raise ApplicationError(502, f"{last_error} after {DRAFT_ATTEMPTS} attempts")
 
     generate.model = model  # type: ignore[attr-defined]
     generate.accepts_schema = True  # type: ignore[attr-defined]
     return generate
+
+
+gemini_generator = ai_generator  # earlier name, kept for callers and tests
 
 
 def _list_template(reference: list) -> Any:
@@ -363,7 +355,7 @@ def draft_lesson_package(lesson: Lesson, db: Session, generate: Optional[Generat
     images = chapter_images(lesson, db)
     if not images:
         raise ApplicationError(404, f"No textbook page images found for {lesson.id}; upload the scans first")
-    generate = generate or gemini_generator()
+    generate = generate or ai_generator()
     page_numbers = [int(p.stem.split("_")[1]) for p in images]
     reference = _reference_package()
 
@@ -494,13 +486,12 @@ def draft_lessons(grade: int, term: int, *, db: Session, lesson_ids: Optional[Li
                 version = store_draft(lesson, package, db, actor_id=actor_id)
                 results.append({"lesson_id": lesson.id, "status": "drafted", "version_id": version.id,
                                 "pages": package["provenance"]["source_pdf_pages"]})
-            except GeminiQuotaExhausted as exc:
+            except AIUnavailable as exc:
                 # Every later lesson would fail the same way: stop and say what to fix.
+                # (The AI gateway has already recorded the provider failures.)
                 db.rollback()
-                from backend.modules.tutoring.assistant import _record_gemini_failure
-                _record_gemini_failure(f"Lesson drafting {lesson.id}", exc)
                 paused_reason = str(exc)
-                results.append({"lesson_id": lesson.id, "status": "not_started", "detail": "Paused: Gemini quota or credits"})
+                results.append({"lesson_id": lesson.id, "status": "not_started", "detail": "Paused: AI unavailable (credits, quota or outage)"})
             except Exception as exc:  # keep drafting the rest of the term
                 db.rollback()
                 detail = exc.detail if isinstance(exc, ApplicationError) else f"{type(exc).__name__}: {exc}"

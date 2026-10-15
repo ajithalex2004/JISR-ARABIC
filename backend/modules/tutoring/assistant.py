@@ -497,18 +497,34 @@ class GeminiUnavailable(RuntimeError):
 
 
 def _is_gemini_outage(exc: Exception) -> bool:
-    """True when the error comes from the Gemini service, not from our handling of its reply."""
-    from backend.gemini_quota import is_quota_error
-    module = type(exc).__module__ or ""
-    return (is_quota_error(exc) or isinstance(exc, (ConnectionError, TimeoutError))
-            or module.startswith(("google.genai", "google.api_core", "httpx", "httpcore", "requests")))
+    """True when the AI service itself failed, not our handling of its reply."""
+    from backend.ai.gateway import is_outage
+    return is_outage(exc)
 
 
 def _gemini_failed(feature: str, error: Exception) -> None:
-    """Record a failed Gemini call; raise GeminiUnavailable when the service is down."""
+    """Handle a failed AI call: a learner limit goes up to the caller, an outage becomes
+    GeminiUnavailable (the gateway already recorded it), anything else is recorded here."""
+    from backend.ai.errors import AILimitReached, AIUnavailable
+    if isinstance(error, AILimitReached):
+        raise error
+    if isinstance(error, AIUnavailable):
+        raise GeminiUnavailable(str(error)) from error
     _record_gemini_failure(feature, error)
     if _is_gemini_outage(error):
         raise GeminiUnavailable(str(error)) from error
+
+
+def _ai_ready(client) -> bool:
+    """An AI provider can answer: Gemini (this client) or a configured fallback."""
+    from backend.ai import gateway
+    return client is not None or gateway.available(gemini_client=None)
+
+
+def _ai_generate(feature: str, client, **fields):
+    """Call the AI gateway (Gemini first via this client, then any configured fallback)."""
+    from backend.ai import gateway
+    return gateway.generate(gateway.AIRequest(feature=feature, **fields), gemini_client=client)
 
 
 # Shown to learners instead of canned answers while Gemini is down: the keyword fallbacks only
@@ -521,6 +537,24 @@ FAHIM_RESTING_EN = (
     "Fahim is taking a short break and can't answer new questions right now. "
     "Please try again in a little while. Meanwhile, you can keep practising your lesson and exercises."
 )
+
+
+def _limit_text(limit) -> Tuple[str, str]:
+    if getattr(limit, "reason", "") == "budget":
+        return (FAHIM_RESTING_AR, FAHIM_RESTING_EN)
+    return (
+        "لَقَدْ طَرَحْتَ الكَثِيرَ مِنَ الأَسْئِلَةِ الرَّائِعَةِ اليَوْمَ يَا بَطَلُ! 🌟 فَاهِمٌ سَيَعُودُ لِلإِجَابَةِ غَدًا. "
+        "وَحَتَّى ذَلِكَ الحِينِ تَابِعِ التَّدَرُّبَ عَلَى دَرْسِكَ.",
+        "You've asked lots of great questions today! Fahim will be back to answer more tomorrow. "
+        "Meanwhile, keep practising your lesson.",
+    )
+
+
+def _limit_answer(limit) -> Dict[str, Any]:
+    answer = _resting_answer()
+    answer["answer_ar"], answer["answer_en"] = _limit_text(limit)
+    answer["ai_limit_reached"] = True
+    return answer
 
 
 def _resting_answer() -> Dict[str, Any]:
@@ -551,8 +585,9 @@ def probe_gemini() -> dict:
         result["error"] = "GEMINI_API_KEY is not set or the Gemini client could not start"
     else:
         try:
-            response = client.models.generate_content(model=GEMINI_MODEL, contents="Reply with the single word: ok")
-            if not (response.text or "").strip():
+            from backend.ai import gateway
+            reply = gateway.probe_gemini(gemini_client=client)
+            if not (reply.text or "").strip():
                 raise RuntimeError("Gemini returned an empty reply")
             result["ok"] = True
         except Exception as e:
@@ -912,8 +947,6 @@ def _ensure_bilingual_qa_interleaving(ans_ar: str, ans_en: str, question_en: str
 def _ask_fahim_gemini(req: AskFahimRequest, client, doc_text: str = "", db=None) -> Optional[Dict[str, Any]]:
     """Query Gemini with the uploaded document or the student's lesson as context."""
     try:
-        from google.genai import types
-
         db_lesson = _load_db_lesson(db, req.context_lesson_id)
         if req.context_lesson_id:
             rag_context = _get_lesson_rag_context(req.context_lesson_id, db_lesson)
@@ -930,7 +963,7 @@ def _ask_fahim_gemini(req: AskFahimRequest, client, doc_text: str = "", db=None)
         grade_line = f"Target Grade: {grade} (UAE Ministry of Education Curriculum)" if grade else "Curriculum: UAE Ministry of Education Arabic"
         clean_q, att_type, att_name = _clean_attachment_tag(req.question)
 
-        contents = []
+        attachments = []
         pdf_extracted_text = ""
         effective_mime = req.attachment_type or att_type or "application/pdf"
         if req.attachment_base64:
@@ -944,7 +977,7 @@ def _ask_fahim_gemini(req: AskFahimRequest, client, doc_text: str = "", db=None)
                 # Pass Part for images or PDFs under 10MB
                 if len(doc_bytes) < 10 * 1024 * 1024:
                     mime = "application/pdf" if effective_mime in ["pdf", "application/pdf"] else "image/jpeg"
-                    contents.append(types.Part.from_bytes(data=doc_bytes, mime_type=mime))
+                    attachments.append((doc_bytes, mime))
             except Exception as b64_err:
                 logger.warning(f"Failed to decode attachment_base64 for Gemini: {b64_err}")
 
@@ -989,28 +1022,16 @@ CRITICAL FORMATTING REQUIREMENT (BILINGUAL INTERLEAVING):
 {attachment_directives}
 {context_section}
         """.strip()
-        contents.append(user_prompt)
-        payload = contents if len(contents) > 1 else user_prompt
-
-        cfg = types.GenerateContentConfig(
-            system_instruction=ATTACHMENT_SYSTEM_PROMPT if has_attachment else ASK_FAHIM_SYSTEM_PROMPT,
-            temperature=0.3,
-            response_mime_type="application/json",
-            safety_settings=_child_safety_settings(types),
-        )
+        from backend.ai.errors import AILimitReached, AIUnavailable
+        ask = dict(system=ATTACHMENT_SYSTEM_PROMPT if has_attachment else ASK_FAHIM_SYSTEM_PROMPT,
+                   temperature=0.3, json=True, learner_id=req.child_id)
         try:
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=payload,
-                config=cfg
-            )
+            response = _ai_generate("ask_fahim", client, prompt=user_prompt, attachments=attachments, **ask)
+        except (AIUnavailable, AILimitReached):
+            raise
         except Exception as api_err:
-            logger.warning(f"Gemini call with attachment failed ({api_err}), retrying with clean text prompt...")
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=user_prompt,
-                config=cfg
-            )
+            logger.warning(f"AI call with attachment failed ({api_err}), retrying with clean text prompt...")
+            response = _ai_generate("ask_fahim", client, prompt=user_prompt, **ask)
         if response and response.text:
             data = json.loads(response.text)
             ans_ar = data.get("answer_ar", "")
@@ -1059,8 +1080,6 @@ CRITICAL FORMATTING REQUIREMENT (BILINGUAL INTERLEAVING):
 def _socratic_learn_gemini(req: SocraticLearnRequest, client) -> Optional[SocraticLearnResponse]:
     """Execute Socratic dialogue using Gemini 2.0 Flash with tone calibration."""
     try:
-        from google.genai import types
-
         history_str = ""
         if req.conversation_history:
             history_str = "\nConversation History:\n" + "\n".join(
@@ -1075,17 +1094,8 @@ Student Grade: {req.grade}
 {history_str}
         """.strip()
 
-        cfg = types.GenerateContentConfig(
-            system_instruction=SOCRATIC_LEARN_SYSTEM_PROMPT,
-            temperature=0.3,
-            response_mime_type="application/json",
-            safety_settings=_child_safety_settings(types),
-        )
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=user_prompt,
-            config=cfg
-        )
+        response = _ai_generate("learn_with_fahim", client, prompt=user_prompt, system=SOCRATIC_LEARN_SYSTEM_PROMPT,
+                                temperature=0.3, json=True, learner_id=req.child_id)
         if response and response.text:
             data = json.loads(response.text)
             is_mastered = bool(data.get("is_step_mastered", False))
@@ -1114,9 +1124,8 @@ def _solve_question_paper_gemini(req: QuestionPaperSolveRequest, client) -> Opti
     """Query Gemini 2.0 Flash to solve uploaded question paper with multimodal vision or text."""
     try:
         import base64
-        from google.genai import types
 
-        contents = []
+        attachments = []
         doc_text = ""
         if req.document_base64:
             if (req.mime_type or "").lower() == "application/pdf":
@@ -1128,7 +1137,7 @@ def _solve_question_paper_gemini(req: QuestionPaperSolveRequest, client) -> Opti
                 doc_bytes = base64.b64decode(raw_b64)
                 if len(doc_bytes) < 4 * 1024 * 1024:
                     mime = req.mime_type or "application/pdf"
-                    contents.append(types.Part.from_bytes(data=doc_bytes, mime_type=mime))
+                    attachments.append((doc_bytes, mime))
             except Exception as b64_err:
                 logger.warning(f"Failed to decode document_base64 for Gemini vision: {b64_err}")
 
@@ -1144,29 +1153,16 @@ Instructions:
 - Provide high quality, authoritative solutions matching the UAE MoE curriculum.
 - Minimize escalation: resolve all normal questions with high confidence without escalating to a human tutor.
 """.strip()
-        contents.append(text_prompt)
-        payload = contents if len(contents) > 1 else text_prompt
-
-        cfg = types.GenerateContentConfig(
-            system_instruction=QUESTION_PAPER_SYSTEM_PROMPT,
-            temperature=0.2,
-            response_mime_type="application/json",
-            safety_settings=_child_safety_settings(types),
-        )
-
+        from backend.ai.errors import AILimitReached, AIUnavailable
+        ask = dict(system=QUESTION_PAPER_SYSTEM_PROMPT, temperature=0.2, json=True, tier="strong",
+                   learner_id=req.child_id)
         try:
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=payload,
-                config=cfg
-            )
+            response = _ai_generate("paper_solver", client, prompt=text_prompt, attachments=attachments, **ask)
+        except (AIUnavailable, AILimitReached):
+            raise
         except Exception as api_err:
-            logger.warning(f"Gemini solve_question_paper call with attachment failed ({api_err}), retrying with text prompt...")
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=text_prompt,
-                config=cfg
-            )
+            logger.warning(f"AI solve_question_paper call with attachment failed ({api_err}), retrying with text prompt...")
+            response = _ai_generate("paper_solver", client, prompt=text_prompt, **ask)
 
         if response and response.text:
             data = json.loads(response.text)
@@ -2107,7 +2103,7 @@ def _generate_admin_fahim_answer(
     # 0. If an attachment is present, use Gemini AI first to answer from the uploaded document!
     if req.attachment_base64 or req.attachment_name or doc_text:
         client = _get_gemini_client()
-        if client:
+        if _ai_ready(client):
             gem_ans = _ask_fahim_gemini(req, client, doc_text=doc_text, db=db)
             if gem_ans:
                 gem_ans["teacher_name"] = "Ask Fahim (إشراف أكاديمي معتمد)"
@@ -2131,7 +2127,7 @@ def _generate_admin_fahim_answer(
     # Grade 5 "Ball Games" answers and only serve as the fallback.
     if question:
         client = _get_gemini_client()
-        if client:
+        if _ai_ready(client):
             gem_ans = _ask_fahim_gemini(req, client, db=db)
             if gem_ans:
                 gem_ans["teacher_name"] = "Ask Fahim (إشراف أكاديمي معتمد)"
@@ -2280,10 +2276,13 @@ def _enrich_fahim_response(res: Optional[Dict[str, Any]], query: str, has_attach
 
 def ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None):
     """Answer a learner's question; while Gemini is down, say so kindly instead of guessing."""
+    from backend.ai.errors import AILimitReached
     try:
         return _ask_fahim(req, db=db, actor=actor)
     except GeminiUnavailable:
         return _resting_answer()
+    except AILimitReached as limit:
+        return _limit_answer(limit)
 
 
 def _ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None):
@@ -2391,7 +2390,7 @@ def _ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None
     # If student attached a document (PDF or Camera photo), use Gemini AI directly on the uploaded document!
     if has_attachment:
         client = _get_gemini_client()
-        if client:
+        if _ai_ready(client):
             gemini_result = _ask_fahim_gemini(req, client, doc_text=doc_text, db=db)
             if gemini_result:
                 if gemini_result.get("escalated_to_tutor") and db and req.child_id:
@@ -2445,7 +2444,7 @@ def _ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None
     # so they are only the fallback for when Gemini is unavailable or fails.
     if not is_tutor_request:
         client = _get_gemini_client()
-        if client:
+        if _ai_ready(client):
             gemini_result = _ask_fahim_gemini(req, client, db=db)
             if gemini_result:
                 if gemini_result.get("escalated_to_tutor") and db and req.child_id:
@@ -2639,17 +2638,19 @@ def socratic_learn(req: SocraticLearnRequest):
       - Primary (Grades 1-5): Gamified, friendly, encouraging, celebratory badges.
       - Middle / High (Grades 6-12): Structured, academic, analytical linguistic terminology.
     """
-    # 1. Try Gemini 2.0 Flash if API client is active
+    # 1. Try the AI gateway (Gemini, then any configured fallback)
+    from backend.ai.errors import AILimitReached
     client = _get_gemini_client()
-    if client:
+    if _ai_ready(client):
         try:
             gemini_result = _socratic_learn_gemini(req, client)
-        except GeminiUnavailable:
+        except (GeminiUnavailable, AILimitReached) as unavailable:
+            limited = isinstance(unavailable, AILimitReached)
             return SocraticLearnResponse(
                 teacher_name="Ustadh Fahim (معلمك فاهم)",
                 tone="primary_gamified" if req.grade <= 5 else "middle_academic",
-                response_ar=FAHIM_RESTING_AR,
-                response_en=FAHIM_RESTING_EN,
+                response_ar=_limit_text(unavailable)[0] if limited else FAHIM_RESTING_AR,
+                response_en=_limit_text(unavailable)[1] if limited else FAHIM_RESTING_EN,
                 is_step_mastered=False,
             )
         if gemini_result:
@@ -3103,13 +3104,16 @@ def solve_question_paper(req: QuestionPaperSolveRequest, *, db: Session) -> Ques
     # 1. Try Gemini 2.0 Flash
     client = _get_gemini_client()
     result = None
-    if client:
+    if _ai_ready(client):
         try:
             result = _solve_question_paper_gemini(req, client)
         except GeminiUnavailable:
             # The fallback only knows one Grade 5 paper; never serve (or cache) it for this one.
             from backend.errors import ApplicationError
             raise ApplicationError(503, FAHIM_RESTING_EN)
+        except AILimitReached as limit:
+            from backend.errors import ApplicationError
+            raise ApplicationError(429, _limit_text(limit)[1])
 
     # 2. Deterministic Fallback if client is unavailable or failed
     if not result:

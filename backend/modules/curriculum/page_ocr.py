@@ -9,7 +9,7 @@ import logging
 import re
 from typing import Optional
 
-from backend.gemini_quota import GeminiQuotaExhausted, call_with_quota_retry
+from backend.ai.errors import AIUnavailable
 
 logger = logging.getLogger(__name__)
 
@@ -31,30 +31,28 @@ def has_usable_text(text: str) -> bool:
 
 
 def transcribe_page_image(png_bytes: bytes, *, page_label: str = "") -> Optional[str]:
-    """Arabic text of a page image, or None when Gemini is unavailable or fails.
+    """Arabic text of a page image, or None when the AI fails on this page.
 
-    Raises GeminiQuotaExhausted when Gemini is out of credits or quota.
+    Raises AIUnavailable (GeminiQuotaExhausted when out of credits or quota) when no AI provider
+    can answer, so the caller pauses the book instead of failing every remaining page.
     """
-    from backend.modules.tutoring.assistant import GEMINI_MODEL, _get_gemini_client, _record_gemini_failure
+    from backend.ai import gateway
+    from backend.modules.tutoring.assistant import _record_gemini_failure
 
-    client = _get_gemini_client()
-    if client is None or not png_bytes:
+    if not png_bytes or not gateway.available():
         return None
     try:
-        from google.genai import types
-
-        response = call_with_quota_retry(lambda: client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=[types.Part.from_bytes(data=png_bytes, mime_type="image/png"), _PROMPT],
-            config=types.GenerateContentConfig(temperature=0.0),
-        ), label=f"Textbook OCR {page_label}".strip())
+        response = gateway.generate(gateway.AIRequest(
+            feature="textbook_reading", prompt=_PROMPT, attachments=[(png_bytes, "image/png")],
+            temperature=0.0, child_safe=False, tier="strong", retry_on_rate_limit=True,
+        ))
         text = (response.text or "").strip()
         # Drop a Markdown code fence if the model wrapped its answer in one.
         text = re.sub(r"^```[a-z]*\s*|\s*```$", "", text).strip()
         return text or None
-    except GeminiQuotaExhausted as exc:
+    except AIUnavailable:
         # Every further page would fail the same way: the caller pauses the book instead.
-        _record_gemini_failure(f"Textbook OCR {page_label}".strip(), exc)
+        # (The gateway has already recorded each provider's failure.)
         raise
     except Exception as exc:
         logger.warning("Gemini page OCR failed for %s: %s", page_label or "page", exc)

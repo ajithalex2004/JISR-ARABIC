@@ -39,6 +39,27 @@ class TestDemoAccounts(unittest.TestCase):
         self.assertEqual(self.db.query(ChildProfile).count(), 0)
         self.assertEqual(remove_demo_accounts(self.db), [])  # nothing left to do
 
+    def test_scheduler_removes_them_once_and_reports_the_result(self):
+        from unittest.mock import patch
+        from backend import scheduler
+        from backend.redis_client import _fallback_cache, cache_get
+
+        _fallback_cache.clear()
+        seed_database(self.db, include_demo_data=True)
+        factory = sessionmaker(bind=self.engine)
+        with patch("backend.database.SessionLocal", factory), \
+                patch.object(scheduler, "run_gemini_probe", return_value={"ok": True}):
+            scheduler.tick()
+            self.assertIn("parent@fahim.ae", cache_get("scheduler:last:demo_cleanup")["removed"])
+            with patch.object(scheduler, "run_demo_cleanup") as again:
+                scheduler.tick()  # claimed for 6 hours
+            again.assert_not_called()
+            with patch("backend.demo_accounts.remove_demo_accounts", side_effect=RuntimeError("boom")):
+                result = scheduler.run_demo_cleanup()
+        self.assertEqual(result["error"], "RuntimeError: boom")
+        self.assertEqual(cache_get("scheduler:last:demo_cleanup")["error"], "RuntimeError: boom")
+        _fallback_cache.clear()
+
 
 if __name__ == "__main__":
     unittest.main()

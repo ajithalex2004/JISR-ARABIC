@@ -384,6 +384,7 @@ def system_health(actor: Principal = Depends(get_current_user)):
         "models": _ai_models(),
         "last_gemini_check": cache_get("scheduler:last:gemini_probe"),
         "last_weekly_reports": cache_get("scheduler:last:weekly_reports"),
+        "last_demo_cleanup": cache_get("scheduler:last:demo_cleanup"),
     }
 
 
@@ -411,6 +412,14 @@ def send_weekly_reports_now(actor: Principal = Depends(get_current_user)):
     require_roles(actor, ('admin',))
     from backend import scheduler
     return scheduler.run_weekly_reports()
+
+
+@router.post('/system-health/remove-demo-accounts')
+def remove_demo_accounts_now(actor: Principal = Depends(get_current_user)):
+    """Delete the demo and sign-up test accounts now (admins are never removed)."""
+    require_roles(actor, ('admin',))
+    from backend import scheduler
+    return scheduler.run_demo_cleanup()
 
 
 @router.get('/coverage-report')

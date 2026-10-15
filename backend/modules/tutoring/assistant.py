@@ -492,6 +492,50 @@ Respond ONLY with a valid JSON object matching this structure:
 """
 
 
+class GeminiUnavailable(RuntimeError):
+    """Gemini itself is down (out of credits/quota, key or model rejected, unreachable)."""
+
+
+def _is_gemini_outage(exc: Exception) -> bool:
+    """True when the error comes from the Gemini service, not from our handling of its reply."""
+    from backend.gemini_quota import is_quota_error
+    module = type(exc).__module__ or ""
+    return (is_quota_error(exc) or isinstance(exc, (ConnectionError, TimeoutError))
+            or module.startswith(("google.genai", "google.api_core", "httpx", "httpcore", "requests")))
+
+
+def _gemini_failed(feature: str, error: Exception) -> None:
+    """Record a failed Gemini call; raise GeminiUnavailable when the service is down."""
+    _record_gemini_failure(feature, error)
+    if _is_gemini_outage(error):
+        raise GeminiUnavailable(str(error)) from error
+
+
+# Shown to learners instead of canned answers while Gemini is down: the keyword fallbacks only
+# know the Grade 5 "Ball Games" lesson, so they would answer a different question.
+FAHIM_RESTING_AR = (
+    "فَاهِمٌ يَأْخُذُ اسْتِرَاحَةً قَصِيرَةً الآنَ 😴 وَلَا يَسْتَطِيعُ الإِجَابَةَ عَنِ الأَسْئِلَةِ الجَدِيدَةِ فِي هَذِهِ اللَّحْظَةِ.\n"
+    "حَاوِلْ مَرَّةً أُخْرَى بَعْدَ قَلِيلٍ. وَفِي هَذِهِ الأَثْنَاءِ يُمْكِنُكَ مُرَاجَعَةُ دَرْسِكَ وَحَلُّ التَّمَارِينِ. 🌟"
+)
+FAHIM_RESTING_EN = (
+    "Fahim is taking a short break and can't answer new questions right now. "
+    "Please try again in a little while. Meanwhile, you can keep practising your lesson and exercises."
+)
+
+
+def _resting_answer() -> Dict[str, Any]:
+    return {
+        "teacher_name": "Ask Fahim (اسأل فاهم)",
+        "answer_ar": FAHIM_RESTING_AR,
+        "answer_en": FAHIM_RESTING_EN,
+        "page_reference": None,
+        "lesson_title": "فاهم في استراحة (Fahim is resting)",
+        "escalated_to_tutor": False,
+        "tutor_escalation_message": None,
+        "ai_unavailable": True,
+    }
+
+
 def _record_gemini_failure(feature: str, error: Exception) -> None:
     from backend.alerts import record_failure
     record_failure("gemini", f"{feature} ({GEMINI_MODEL}): {error}")
@@ -1008,7 +1052,7 @@ CRITICAL FORMATTING REQUIREMENT (BILINGUAL INTERLEAVING):
             }
     except Exception as e:
         logger.warning(f"Gemini Ask Fahim query failed, falling back to curriculum dictionary: {e}")
-        _record_gemini_failure("Ask Fahim", e)
+        _gemini_failed("Ask Fahim", e)
         return None
 
 
@@ -1062,7 +1106,7 @@ Student Grade: {req.grade}
             )
     except Exception as e:
         logger.warning(f"Gemini Socratic Learn query failed, falling back to local logic: {e}")
-        _record_gemini_failure("Socratic learn", e)
+        _gemini_failed("Socratic learn", e)
         return None
 
 
@@ -1161,7 +1205,7 @@ Instructions:
                 )
     except Exception as e:
         logger.warning(f"Gemini solve_question_paper query failed, falling back: {e}")
-        _record_gemini_failure("Question paper solver", e)
+        _gemini_failed("Question paper solver", e)
         return None
 
 
@@ -2235,6 +2279,14 @@ def _enrich_fahim_response(res: Optional[Dict[str, Any]], query: str, has_attach
 
 
 def ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None):
+    """Answer a learner's question; while Gemini is down, say so kindly instead of guessing."""
+    try:
+        return _ask_fahim(req, db=db, actor=actor)
+    except GeminiUnavailable:
+        return _resting_answer()
+
+
+def _ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None):
     """
     Conversational teacher: 'Ask Fahim' (اسأل فاهم).
     Powered by AI when configured, with seamless fallback
@@ -2590,7 +2642,16 @@ def socratic_learn(req: SocraticLearnRequest):
     # 1. Try Gemini 2.0 Flash if API client is active
     client = _get_gemini_client()
     if client:
-        gemini_result = _socratic_learn_gemini(req, client)
+        try:
+            gemini_result = _socratic_learn_gemini(req, client)
+        except GeminiUnavailable:
+            return SocraticLearnResponse(
+                teacher_name="Ustadh Fahim (معلمك فاهم)",
+                tone="primary_gamified" if req.grade <= 5 else "middle_academic",
+                response_ar=FAHIM_RESTING_AR,
+                response_en=FAHIM_RESTING_EN,
+                is_step_mastered=False,
+            )
         if gemini_result:
             return gemini_result
 
@@ -3043,7 +3104,12 @@ def solve_question_paper(req: QuestionPaperSolveRequest, *, db: Session) -> Ques
     client = _get_gemini_client()
     result = None
     if client:
-        result = _solve_question_paper_gemini(req, client)
+        try:
+            result = _solve_question_paper_gemini(req, client)
+        except GeminiUnavailable:
+            # The fallback only knows one Grade 5 paper; never serve (or cache) it for this one.
+            from backend.errors import ApplicationError
+            raise ApplicationError(503, FAHIM_RESTING_EN)
 
     # 2. Deterministic Fallback if client is unavailable or failed
     if not result:

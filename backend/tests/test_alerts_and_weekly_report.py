@@ -76,6 +76,67 @@ class TestAlerts(unittest.TestCase):
         self.assertEqual(alerts.recent_failures("server"), [])
 
 
+class TestGeminiOutage(unittest.TestCase):
+    def setUp(self):
+        _fallback_cache.clear()
+        _fallback_rate_buckets.clear()
+
+    def tearDown(self):
+        _fallback_cache.clear()
+        _fallback_rate_buckets.clear()
+
+    @patch.dict(os.environ, {"FAHIM_ALERT_EMAILS": "ops@test.local", "RESEND_API_KEY": "test-key"})
+    def test_two_failed_scheduled_checks_in_a_row_alert(self):
+        down = {"ok": False, "model": "m", "error": "402 RESOURCE_EXHAUSTED credits are depleted"}
+        with patch("backend.email_delivery._send_via_resend") as sent, \
+                patch.object(scheduler, "run_gemini_probe", side_effect=[down, {"ok": True}, down, down, down]):
+            scheduler.run_scheduled_gemini_probe()
+            scheduler.run_scheduled_gemini_probe()  # recovered: streak resets
+            scheduler.run_scheduled_gemini_probe()
+            self.assertEqual(sent.call_count, 0)
+            with patch("backend.alerts.threading.Thread", side_effect=lambda target, args, daemon: SimpleNamespace(start=lambda: target(*args))):
+                scheduler.run_scheduled_gemini_probe()
+                scheduler.run_scheduled_gemini_probe()  # within the cooldown: no second email
+        self.assertEqual(sent.call_count, 1)
+        _, subject, body = sent.call_args.args
+        self.assertIn("Gemini", subject)
+        self.assertIn("2 times in a row", body)
+        self.assertIn("credits are depleted", body)
+
+
+class TestGeminiQuota(unittest.TestCase):
+    def test_credits_exhausted_is_not_retried(self):
+        from backend import gemini_quota
+        calls = []
+
+        def out_of_credits():
+            calls.append(1)
+            raise RuntimeError("402 RESOURCE_EXHAUSTED. Your prepayment credits are depleted.")
+
+        with patch.object(gemini_quota, "_sleep") as slept, self.assertRaises(gemini_quota.GeminiQuotaExhausted) as raised:
+            gemini_quota.call_with_quota_retry(out_of_credits)
+        self.assertEqual((len(calls), slept.call_count), (1, 0))
+        self.assertIn("AI Studio", str(raised.exception))
+
+    def test_rate_limit_is_retried_then_paused(self):
+        from backend import gemini_quota
+        attempts = iter([RuntimeError("429 RESOURCE_EXHAUSTED quota"), "ok"])
+
+        def flaky():
+            value = next(attempts)
+            if isinstance(value, Exception):
+                raise value
+            return value
+
+        with patch.object(gemini_quota, "_sleep") as slept:
+            self.assertEqual(gemini_quota.call_with_quota_retry(flaky, delays=(5,)), "ok")
+            slept.assert_called_once_with(5)
+            with self.assertRaises(gemini_quota.GeminiQuotaExhausted):
+                gemini_quota.call_with_quota_retry(lambda: (_ for _ in ()).throw(RuntimeError("429 RESOURCE_EXHAUSTED")), delays=(5,))
+        with self.assertRaises(ValueError):  # other errors pass through untouched
+            gemini_quota.call_with_quota_retry(lambda: (_ for _ in ()).throw(ValueError("bad")))
+
+
 class TestWeeklyReport(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

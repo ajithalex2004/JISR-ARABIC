@@ -94,9 +94,30 @@ def record_failure(component: str, detail="", *, background: bool = True) -> boo
         logger.warning("Could not record %s failure: %s", component, exc)
         return False
 
+    _dispatch(component, f"{COMPONENTS[component]} failed {count} times in the last {window_seconds() // 60} minutes.",
+              detail, background)
+    return True
+
+
+def alert_now(component: str, summary: str, detail="", *, background: bool = True) -> bool:
+    """Alert straight away (still at most once per cooldown), for failures that are certain, not noise."""
+    if component not in COMPONENTS:
+        component = "server"
+    try:
+        if cache_get(f"alerts:cooldown:{component}"):
+            return False
+        cache_set(f"alerts:cooldown:{component}", True, ttl_seconds=cooldown_seconds())
+    except Exception as exc:
+        logger.warning("Could not raise %s alert: %s", component, exc)
+        return False
+    _dispatch(component, summary, _short(detail), background)
+    return True
+
+
+def _dispatch(component: str, summary: str, detail: str, background: bool) -> None:
     subject = f"[JISR alert] {COMPONENTS[component]} is failing"
     body = (
-        f"{COMPONENTS[component]} failed {count} times in the last {window_seconds() // 60} minutes.\n\n"
+        f"{summary}\n\n"
         f"Latest error:\n{detail or '(no details)'}\n\n"
         "Check Admin > System health on the JISR website for recent failures.\n"
         f"You won't get another alert for this for {cooldown_seconds() // 60} minutes."
@@ -105,7 +126,6 @@ def record_failure(component: str, detail="", *, background: bool = True) -> boo
         threading.Thread(target=send_alert, args=(component, subject, body), daemon=True).start()
     else:
         send_alert(component, subject, body)
-    return True
 
 
 def alert_recipients() -> List[str]:

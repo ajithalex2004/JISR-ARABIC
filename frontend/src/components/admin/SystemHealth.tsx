@@ -63,7 +63,7 @@ export function SystemHealth() {
     </div>
     {health && <p className="text-sm text-slate-600">
       An alert is emailed when a service fails {health.threshold} times within {health.window_minutes} minutes, at most once every {health.cooldown_minutes} minutes per service.
-      Gemini is checked automatically every 20 minutes.
+      Gemini is checked automatically every 20 minutes, and two failed checks in a row send an alert straight away.
     </p>}
     {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
     {notice && <p role="status" className="text-emerald-800 text-sm font-semibold">{notice}</p>}

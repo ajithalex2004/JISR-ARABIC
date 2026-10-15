@@ -45,9 +45,12 @@ export const AiDraftPanel: React.FC<Props> = ({ grade, term, lesson, onChanged }
       if (task.status === 'completed' || task.status === 'succeeded') {
         const s = task.result?.summary || {};
         setBusy(false);
-        setMessage(`AI drafting finished: ${s.drafted ?? 0} drafted, ${s.skipped ?? 0} already waiting for review, ${s.failed ?? 0} failed.`);
+        const paused = task.result?.status === 'paused';
+        setMessage(`AI drafting ${paused ? 'paused' : 'finished'}: ${s.drafted ?? 0} drafted, ${s.skipped ?? 0} already waiting for review, ${s.failed ?? 0} failed${paused ? `, ${s.not_started ?? 0} not started` : ''}.`);
         const failed = (task.result?.lessons || []).filter((l: any) => l.status === 'failed');
-        if (failed.length) setError(failed.map((l: any) => `${l.lesson_id}: ${l.detail}`).join('\n'));
+        const problems = failed.map((l: any) => `${l.lesson_id}: ${l.detail}`);
+        if (paused) problems.unshift(`Paused: ${task.result.paused_reason}`);
+        if (problems.length) setError(problems.join('\n'));
         await loadVersions();
         onChanged();
       } else if (task.status === 'failed') {

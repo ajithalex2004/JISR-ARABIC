@@ -109,6 +109,20 @@ class TestContentDrafting(unittest.TestCase):
         failed = [r for r in result["lessons"] if r["status"] == "failed"][0]
         self.assertIn("model timeout", failed["detail"])
 
+    def test_out_of_gemini_credits_pauses_instead_of_failing_every_lesson(self):
+        from backend.gemini_quota import GeminiQuotaExhausted
+        calls = []
+
+        def out_of_credits(prompt, images):
+            calls.append(prompt)
+            raise GeminiQuotaExhausted("Gemini's prepaid credits are used up.")
+
+        result = drafting.draft_lessons(6, 1, db=self.db, generate=out_of_credits)
+        self.assertEqual(result["status"], "paused")
+        self.assertIn("credits", result["paused_reason"])
+        self.assertEqual(result["summary"], {"drafted": 0, "skipped": 0, "failed": 0, "not_started": 2})
+        self.assertEqual(len(calls), 1)  # stopped at the first refusal
+
     def test_invalid_answer_key_is_rejected(self):
         result = drafting.draft_lessons(6, 1, db=self.db, generate=fake_generator(bad_answer=True))
         self.assertEqual(result["summary"]["failed"], 2)

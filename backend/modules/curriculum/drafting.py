@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from backend.config import content_root
 from backend.errors import ApplicationError
+from backend.gemini_quota import GeminiQuotaExhausted, call_with_quota_retry
 from backend.models import CurriculumAuditEvent, Lesson, LessonVersion, Unit
 
 logger = logging.getLogger("fahim.drafting")
@@ -185,7 +186,7 @@ def gemini_generator() -> Generator:
         files = []
         for path in images:
             if path not in uploaded:
-                uploaded[path] = client.files.upload(file=str(path))
+                uploaded[path] = call_with_quota_retry(lambda: client.files.upload(file=str(path)), label="Draft page upload")
             files.append(uploaded[path])
         last_error = None
         # Long Arabic drafts occasionally come back as slightly malformed JSON; repair what can be
@@ -200,9 +201,11 @@ def gemini_generator() -> Generator:
             if schema and schema_supported[0]:
                 config["response_schema"] = schema
             try:
-                response = client.models.generate_content(
+                response = call_with_quota_retry(lambda: client.models.generate_content(
                     model=model, contents=[*files, prompt], config=types.GenerateContentConfig(**config),
-                )
+                ), label="Lesson drafting")
+            except GeminiQuotaExhausted:
+                raise
             except Exception as exc:
                 # A model or API version that can't take this schema still drafts without it.
                 if "response_schema" in config and "schema" in str(exc).lower():
@@ -475,7 +478,11 @@ def draft_lessons(grade: int, term: int, *, db: Session, lesson_ids: Optional[Li
         raise ApplicationError(404, f"No lessons found for Grade {grade} Term {term}")
 
     results = []
+    paused_reason = None
     for index, lesson in enumerate(lessons, start=1):
+        if paused_reason:
+            results.append({"lesson_id": lesson.id, "status": "not_started", "detail": "Paused before this lesson"})
+            continue
         existing = pending_ai_draft(lesson.id, db)
         if existing and not overwrite:
             results.append({"lesson_id": lesson.id, "status": "skipped", "detail": f"AI draft {existing.version_tag} awaits review"})
@@ -487,6 +494,13 @@ def draft_lessons(grade: int, term: int, *, db: Session, lesson_ids: Optional[Li
                 version = store_draft(lesson, package, db, actor_id=actor_id)
                 results.append({"lesson_id": lesson.id, "status": "drafted", "version_id": version.id,
                                 "pages": package["provenance"]["source_pdf_pages"]})
+            except GeminiQuotaExhausted as exc:
+                # Every later lesson would fail the same way: stop and say what to fix.
+                db.rollback()
+                from backend.modules.tutoring.assistant import _record_gemini_failure
+                _record_gemini_failure(f"Lesson drafting {lesson.id}", exc)
+                paused_reason = str(exc)
+                results.append({"lesson_id": lesson.id, "status": "not_started", "detail": "Paused: Gemini quota or credits"})
             except Exception as exc:  # keep drafting the rest of the term
                 db.rollback()
                 detail = exc.detail if isinstance(exc, ApplicationError) else f"{type(exc).__name__}: {exc}"
@@ -495,4 +509,8 @@ def draft_lessons(grade: int, term: int, *, db: Session, lesson_ids: Optional[Li
         progress(int(index / len(lessons) * 95))
 
     summary = {status: sum(1 for r in results if r["status"] == status) for status in ("drafted", "skipped", "failed")}
-    return {"grade": grade, "term": term, "summary": summary, "lessons": results}
+    result = {"grade": grade, "term": term, "summary": summary, "lessons": results}
+    if paused_reason:
+        summary["not_started"] = sum(1 for r in results if r["status"] == "not_started")
+        result.update(status="paused", paused_reason=paused_reason)
+    return result

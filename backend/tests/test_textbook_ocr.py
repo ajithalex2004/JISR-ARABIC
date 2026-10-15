@@ -75,6 +75,24 @@ class TestTextbookOcr(unittest.TestCase):
         changed = self._run("نَصٌّ جَدِيدٌ لِلْكِتَابِ الْمُعَدَّلِ بَعْدَ التَّصْحِيحِ")
         self.assertEqual(changed.call_count, 1)
 
+    def test_out_of_gemini_credits_pauses_and_reupload_continues(self):
+        from backend.gemini_quota import GeminiQuotaExhausted
+        text = "نَصٌّ عَرَبِيٌّ طَوِيلٌ لِلصَّفْحَةِ الْأُولَى مِنَ الْكِتَابِ"
+        params = {"pdf_path": str(self.pdf), "book_edition_id": "moe_gr1_vol1_2023", "start_page": 1, "page_count": 2}
+        with patch.dict(os.environ, {"FAHIM_CONTENT_DIR": str(self.content)}), \
+                patch("backend.modules.curriculum.page_ocr.transcribe_page_image",
+                      side_effect=[text, GeminiQuotaExhausted("Gemini's prepaid credits are used up.")]):
+            result = handlers.handle_process_textbook_ocr(params, lambda _pct: None)
+        self.assertEqual((result["status"], result["paused_at_page"]), ("paused", 2))
+        self.assertIn("continue from page 2", result["paused_reason"])
+        with self.session() as db:
+            # Page 2 is left unread, not marked as failed.
+            self.assertEqual([(p.pdf_page, p.review_status) for p in db.query(ScannedPage).all()], [(1, "ai_ocr")])
+        again = self._run(text)
+        self.assertEqual(again.call_count, 1)  # only the page it stopped at
+        with self.session() as db:
+            self.assertEqual(db.query(ScannedPage).filter_by(review_status="ai_ocr").count(), 2)
+
     def test_start_page_never_runs_past_the_last_page(self):
         self._run("نَصٌّ عَرَبِيٌّ طَوِيلٌ لِلصَّفْحَةِ الثَّانِيَةِ مِنَ الْكِتَابِ", start_page=2, page_count=None)
         with self.session() as db:

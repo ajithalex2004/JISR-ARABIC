@@ -144,6 +144,82 @@ def _translate_ar_to_en(text_ar: str) -> str:
     return f"Lesson text: {cleaned[:80]}"
 
 
+_EXAMPLE_PREFIXES = ("مثال", "مِثال", "مِثَال", "مثَال")
+_TERMINAL = (".", "؟", "?", "!", ":", "؛", "۔")
+_NUMBERED = ("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "-", "•")
+
+
+def _is_example(line: str) -> bool:
+    return line.startswith(_EXAMPLE_PREFIXES)
+
+
+def _split_headword(line: str) -> list[str]:
+    """'الإنسان: الكائن الحيّ المفكّر.' -> ['الإنسان:', 'الكائن الحيّ المفكّر.'] (word, then meaning)."""
+    word, sep, rest = line.partition(":")
+    if not sep or not rest.strip() or _is_example(line) or not word.strip() or len(word.split()) > 3:
+        return [line]
+    return [f"{word.strip()}:", rest.strip()]
+
+
+def _group_lines(lines: list[str]) -> list[str]:
+    """Group a block's lines into paragraphs, keeping printed line breaks as '\n'.
+
+    A word card (headword, meaning, 'مثال: ...' example) becomes one paragraph, ending at its
+    example; headings, questions and numbered exercise lines stand alone; a line that only
+    continues the previous one (no closing punctuation) is joined to it.
+    """
+    paragraphs: list[str] = []
+    current: list[str] = []
+
+    def flush():
+        if current:
+            paragraphs.append("\n".join(current))
+            current.clear()
+
+    for line in lines:
+        if _is_example(line):
+            current.append(line)
+            flush()  # an example closes its word card
+            continue
+        if len(line) < 50 and (line.endswith("؟") or "الوحدة" in line or "الدرس" in line or "الصفحة" in line) \
+                or line.startswith(_NUMBERED):
+            flush()
+            paragraphs.append(line)
+            continue
+        pieces = _split_headword(line)
+        if len(pieces) == 2 or (len(line) < 50 and line.endswith(":")):
+            flush()  # a new headword starts a new card
+            current.extend(pieces)
+            continue
+        last = current[-1] if current else ""
+        if last and not last.endswith(_TERMINAL) and not (len(current) == 1 and len(last.split()) <= 3):
+            current[-1] = f"{last} {line}"  # the printed line wrapped
+        else:
+            current.append(line)
+        if len(" ".join(current)) > 180:
+            flush()
+    flush()
+    return paragraphs
+
+
+def translate_paragraph(text_ar: str) -> str:
+    """English for a paragraph, line by line, so each English line matches its Arabic line."""
+    lines = [l.strip() for l in (text_ar or "").split("\n") if l.strip()]
+    if len(lines) <= 1:
+        return _translate_ar_to_en(text_ar)
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=min(8, len(lines))) as pool:
+        return "\n".join(pool.map(_translate_ar_to_en, lines))
+
+
+def translate_paragraphs(paragraphs: list[str]) -> list[str]:
+    from concurrent.futures import ThreadPoolExecutor
+    if not paragraphs:
+        return []
+    with ThreadPoolExecutor(max_workers=min(4, len(paragraphs))) as pool:
+        return list(pool.map(translate_paragraph, paragraphs))
+
+
 def _clean_ocr_paragraphs(raw_text: str, printed_page: int) -> list[str]:
     import re
     if not raw_text:
@@ -158,37 +234,18 @@ def _clean_ocr_paragraphs(raw_text: str, printed_page: int) -> list[str]:
     # Remove repeated copyright stamp
     cleaned = re.sub(r'جميع الحقوق(جميع الحقوق| محفوظة)*', '', raw_text)
     # Remove artifact ASCII corruption symbols from scanned PDFs
-    cleaned = re.sub(r'[\x00-\x1f\x7f-\x9f™°§©®±µ¶·]+', ' ', cleaned)
+    # (newlines are kept: they are the page's line structure)
+    cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
+    cleaned = re.sub(r'[\x00-\x09\x0b-\x1f\x7f-\x9f™°§©®±µ¶·]+', ' ', cleaned)
     # Fix broken vertical diacritics / letters
     cleaned = re.sub(r'\n+([ً-ْ])', r'\1', cleaned)
-    # Split paragraphs by double newline first
-    parts = [p.strip() for p in cleaned.split("\n\n") if p.strip()]
-    if not parts or len(parts) == 1:
-        lines = [l.strip() for l in cleaned.split("\n") if l.strip()]
-        meaningful = [l for l in lines if re.search(r'[\u0600-\u06FF]', l)]
-        if meaningful:
-            # Group lines into coherent pedagogical segments (headers, passages, exercises)
-            grouped = []
-            curr = []
-            for line in meaningful:
-                if len(line) < 50 and (line.endswith(":") or line.endswith("؟") or "الوحدة" in line or "الدرس" in line or "الصفحة" in line):
-                    if curr:
-                        grouped.append(" ".join(curr))
-                        curr = []
-                    grouped.append(line)
-                elif line.startswith(("1.", "2.", "3.", "4.", "5.", "-", "•")):
-                    if curr:
-                        grouped.append(" ".join(curr))
-                        curr = []
-                    grouped.append(line)
-                else:
-                    curr.append(line)
-                    if len(" ".join(curr)) > 180:
-                        grouped.append(" ".join(curr))
-                        curr = []
-            if curr:
-                grouped.append(" ".join(curr))
-            parts = grouped if grouped else [" ".join(meaningful)]
+    # Blank lines separate blocks; inside a block every line the page printed separately stays on
+    # its own line, so word cards keep their word / meaning / example layout.
+    blocks = [b for b in re.split(r"\n\s*\n", cleaned) if b.strip()]
+    parts = []
+    for block in blocks:
+        lines = [l.strip() for l in block.split("\n") if l.strip()]
+        parts.extend(_group_lines([l for l in lines if re.search(r'[\u0600-\u06FF]', l)]))
 
     # Strip standalone trailing page numbers from paragraphs
     cleaned_parts = []
@@ -246,7 +303,7 @@ def get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | Non
             calc_printed = page_obj.printed_page or pdf_page
 
             paras = _clean_ocr_paragraphs(page_obj.ocr_text_ar, calc_printed)
-            paras_en = [_translate_ar_to_en(p) for p in paras]
+            paras_en = translate_paragraphs(paras)
 
             # Derive pedagogical title
             title_ar = f"صفحة كتاب الوزارة {calc_printed}"

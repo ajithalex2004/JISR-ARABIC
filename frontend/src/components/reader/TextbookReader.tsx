@@ -15,6 +15,9 @@ interface TextbookReaderProps {
   onSelectGrade?: (grade: number) => void;
 }
 
+const splitLines = (text: string) => text.split('\n').map(l => l.trim()).filter(Boolean);
+const isExampleLine = (line: string) => /^مِ?ث[َ]?ا[َ]?ل/.test(line);
+
 export const TextbookReader: React.FC<TextbookReaderProps> = ({
   user,
   activeChild,
@@ -525,6 +528,10 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
                         p.includes('؟') ||
                         p.includes('?') ||
                         !!(pageData?.model_answers?.[pIdx] || pageData?.model_answers?.[String(pIdx)]);
+                      // Lines the page printed separately (e.g. a word card: word / meaning / example)
+                      const arLines = splitLines(p);
+                      const enLines = splitLines(pageData?.paragraphs_en?.[pIdx] || '');
+                      const isCard = arLines.length >= 2 && arLines.some(isExampleLine);
 
                       return (
                         <div
@@ -544,18 +551,39 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
                           </div>
 
                           {/* Interactive Arabic Sentence */}
-                          <div className="text-right leading-loose pt-1 font-arabic" dir="rtl">
-                            <ArabicWordSpans
-                              text={p}
-                              className="text-lg font-medium leading-loose text-slate-900"
-                            />
+                          <div className="text-right leading-loose pt-1 font-arabic space-y-1" dir="rtl">
+                            {arLines.map((line, lIdx) => (
+                              <div key={lIdx} className={isCard && lIdx === 0 ? 'text-emerald-950' : ''}>
+                                <ArabicWordSpans
+                                  text={line}
+                                  className={`leading-loose text-slate-900 ${
+                                    isCard && lIdx === 0 ? 'text-xl font-bold' : 'text-lg font-medium'
+                                  }`}
+                                />
+                              </div>
+                            ))}
                           </div>
 
                           {/* English Translation Directly Below */}
-                          {pageData?.paragraphs_en?.[pIdx] && (
-                            <div className="pt-2 border-t border-slate-200 text-xs text-slate-600 font-sans italic text-left leading-relaxed" dir="ltr">
-                              <span className="font-semibold text-slate-400 not-italic mr-1">EN:</span>
-                              {pageData.paragraphs_en[pIdx]}
+                          {enLines.length > 0 && (
+                            <div className="pt-2 border-t border-slate-200 text-xs text-slate-600 font-sans text-left leading-relaxed flex gap-1" dir="ltr">
+                              <span className="font-semibold text-slate-400 mr-1 shrink-0">EN:</span>
+                              <div className="space-y-0.5 min-w-0">
+                                {enLines.map((line, lIdx) => (
+                                  <div
+                                    key={lIdx}
+                                    className={
+                                      isCard && lIdx === 0
+                                        ? 'font-bold text-sm text-slate-800'
+                                        : isCard && arLines[lIdx] && isExampleLine(arLines[lIdx])
+                                          ? 'italic'
+                                          : isCard ? '' : 'italic'
+                                    }
+                                  >
+                                    {line}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
 

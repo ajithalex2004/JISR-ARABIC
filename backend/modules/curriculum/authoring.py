@@ -262,7 +262,45 @@ def _clean_ocr_paragraphs(raw_text: str, printed_page: int) -> list[str]:
     return parts
 
 
+_HARAKAT = "[\u064B-\u0652\u0670]*"
+_AR_EXAMPLE = re.compile(rf"\s+(?=م{_HARAKAT}ث{_HARAKAT}ا{_HARAKAT}ل{_HARAKAT}\s*:)")
+_EN_EXAMPLE = re.compile(r"\s+(?=(?:e\.g\.|Example)\s*:)", re.IGNORECASE)
+
+
+def _split_card(text: str, example: "re.Pattern", max_head_words: int) -> str:
+    """'word: meaning. example: …' on one line -> 'word:\nmeaning.\nexample: …'."""
+    if not text or "\n" in text or not example.search(text):
+        return text
+    head, sep, rest = text.partition(":")
+    lines = [f"{head.strip()}:", rest.strip()] if sep and rest.strip() and len(head.split()) <= max_head_words \
+        and not example.match(" " + text) else [text]
+    out = []
+    for line in lines:
+        out.extend(part.strip() for part in example.split(line) if part.strip())
+    return "\n".join(out)
+
+
+def layout_card_lines(page: dict) -> dict:
+    """Give one-line word cards (e.g. the curated pages) the printed word / meaning / example lines."""
+    if not isinstance(page, dict) or not isinstance(page.get("paragraphs"), list):
+        return page
+    paragraphs = [_split_card(p, _AR_EXAMPLE, 3) if isinstance(p, str) else p for p in page["paragraphs"]]
+    english = page.get("paragraphs_en")
+    if isinstance(english, list):
+        english = [
+            _split_card(en, _EN_EXAMPLE, 5) if isinstance(en, str) and i < len(paragraphs)
+            and isinstance(paragraphs[i], str) and "\n" in paragraphs[i] else en
+            for i, en in enumerate(english)
+        ]
+        page = {**page, "paragraphs_en": english}
+    return {**page, "paragraphs": paragraphs}
+
+
 def get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | None = None):
+    return layout_card_lines(_get_ocr_page(pdf_page, edition_id=edition_id, db=db))
+
+
+def _get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | None = None):
     """Fetch OCR transcription, image reference, and dual-language translation for a book page."""
     is_gr8 = bool(edition_id and ("gr8" in edition_id.lower() or "grade8" in edition_id.lower() or "grade_8" in edition_id.lower()))
     is_gr7 = bool(edition_id and ("gr7" in edition_id.lower() or "grade7" in edition_id.lower() or "grade_7" in edition_id.lower()))

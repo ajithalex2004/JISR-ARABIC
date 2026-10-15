@@ -109,6 +109,10 @@ def checkout_term(req: PaymentCheckoutRequest, *, db: Session, is_verified_provi
     terms_to_unlock = [1, 2, 3] if is_annual else clean_terms(req.terms, req.term)
     is_annual = len(terms_to_unlock) == 3
 
+    # An unknown or used-up promo code is refused before anything else.
+    promo = (req.promo_code or "").strip().upper()
+    promo_pct = promo_pct_for(promo, parent_id=child.parent_id, db=db, is_prod=is_prod)
+
     # Check if all selected terms are already unlocked
     if not is_annual and len(terms_to_unlock) == 1:
         single_term = terms_to_unlock[0]
@@ -136,8 +140,6 @@ def checkout_term(req: PaymentCheckoutRequest, *, db: Session, is_verified_provi
             )
 
     # Price: USD 10 a term; all three terms together get 15% off; then any promo code.
-    promo = (req.promo_code or "").strip().upper()
-    promo_pct = promo_pct_for(promo, parent_id=child.parent_id, db=db, is_prod=is_prod)
     price = quote(terms_to_unlock, promo_pct=promo_pct)
     final_amount = price["total_usd"]
     subtotal, vat_amount = price["subtotal_usd"], price["vat_usd"]

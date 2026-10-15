@@ -232,7 +232,22 @@ class TestFahimBackend(unittest.TestCase):
             "exp_month": "12",
             "exp_year": "2028",
             "cvc": "123",
-            "promo_code": "FAHIM100"  # 100% demo promo
+            "promo_code": "NOSUCHCODE"
+        })
+        # An unknown promo code is refused instead of being silently ignored.
+        self.assertEqual(checkout_res.status_code, 400)
+        self.assertIn("is not valid", checkout_res.json()["detail"])
+
+        checkout_res = self.client.post("/api/payments/checkout", json={
+            "child_id": child_id,
+            "grade": 5,
+            "term": 1,
+            "payment_method": "card",
+            "card_number": "4242424242424242",
+            "exp_month": "12",
+            "exp_year": "2028",
+            "cvc": "123",
+            "promo_code": "DEMOFREE"  # 100% test promo (development only)
         })
         self.assertEqual(checkout_res.status_code, 200)
         data = checkout_res.json()

@@ -460,7 +460,7 @@ BALL_GAMES_CONTENT_V02 = {
         ]
     },
 
-    # 11. Exam-Style Practice (CBSE / MoE UAE Aligned)
+    # 11. Exam-Style Practice (CBSE Curriculum Aligned)
     "exam_practice": {
         "title_ar": "الاختبار التجريبي وفق الهيكل الوزاري",
         "title_en": "Mock Assessment (UAE Ministry & CBSE Structure)",
@@ -715,7 +715,7 @@ def seed_database(db: Session, include_demo_data: bool = True):
             school_name="Sunrise International School, Abu Dhabi",
             default_grade=5,
             avatar_id="avatar_falcon",
-            curriculum_stream="MoE / CBSE Arabic (Non-Arabs)",
+            curriculum_stream="CBSE Curriculum Arabic (Non-Arabs)",
             access_pin="1234",
             diagnostic_completed=False,
             diagnostic_level="intermediate"
@@ -738,7 +738,7 @@ def seed_database(db: Session, include_demo_data: bool = True):
         if not getattr(child1, "avatar_id", None):
             child1.avatar_id = "avatar_falcon"
         if not getattr(child1, "curriculum_stream", None):
-            child1.curriculum_stream = "MoE / CBSE Arabic (Non-Arabs)"
+            child1.curriculum_stream = "CBSE Curriculum Arabic (Non-Arabs)"
         db.commit()
 
     # Seed child profile 2 (Maryam Al-Nuaimi)
@@ -752,7 +752,7 @@ def seed_database(db: Session, include_demo_data: bool = True):
             school_name="Sunrise International School, Abu Dhabi",
             default_grade=3,
             avatar_id="avatar_gazelle",
-            curriculum_stream="MoE / CBSE Arabic (Non-Arabs)",
+            curriculum_stream="CBSE Curriculum Arabic (Non-Arabs)",
             access_pin="5678",
             diagnostic_completed=True,
             diagnostic_level="beginner"
@@ -774,7 +774,7 @@ def seed_database(db: Session, include_demo_data: bool = True):
         if not getattr(child2, "avatar_id", None):
             child2.avatar_id = "avatar_gazelle"
         if not getattr(child2, "curriculum_stream", None):
-            child2.curriculum_stream = "MoE / CBSE Arabic (Non-Arabs)"
+            child2.curriculum_stream = "CBSE Curriculum Arabic (Non-Arabs)"
         db.commit()
 
     # 7. Seed Demo Tutor Account
@@ -918,7 +918,7 @@ def seed_database(db: Session, include_demo_data: bool = True):
                 school_name="Sunrise International School, Abu Dhabi",
                 default_grade=5,
                 avatar_id=p_avatar,
-                curriculum_stream="MoE / CBSE Arabic (Non-Arabs)",
+                curriculum_stream="CBSE Curriculum Arabic (Non-Arabs)",
                 access_pin="8888",
                 diagnostic_completed=True
             )

@@ -16,8 +16,8 @@ export const UAE_AVATARS = [
 ];
 
 export const CURRICULUM_STREAMS = [
-  'MoE / CBSE Arabic (Non-Arabs)',
-  'General MoE Arabic B',
+  'CBSE Curriculum Arabic (Non-Arabs)',
+  'General CBSE Curriculum Arabic B',
   'IB / British Curriculum Arabic B',
   'American Curriculum Arabic B',
 ];
@@ -72,7 +72,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [childSchool, setChildSchool] = useState('Sunrise International School, Abu Dhabi');
   const [childGrade, setChildGrade] = useState(5);
   const [selectedAvatar, setSelectedAvatar] = useState('avatar_falcon');
-  const [curriculumStream, setCurriculumStream] = useState('MoE / CBSE Arabic (Non-Arabs)');
+  const [curriculumStream, setCurriculumStream] = useState('CBSE Curriculum Arabic (Non-Arabs)');
   const [accessPin, setAccessPin] = useState('');
 
   const [errorMsg, setErrorMsg] = useState('');

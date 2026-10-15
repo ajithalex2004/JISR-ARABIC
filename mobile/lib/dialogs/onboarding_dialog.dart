@@ -27,7 +27,7 @@ class _OnboardingWizardDialogState extends State<OnboardingWizardDialog> {
   int _grade = 5;
 
   // Step 2: Stream & Term
-  String _stream = 'MoE / CBSE Arabic (Non-Arabs)';
+  String _stream = 'CBSE Curriculum Arabic (Non-Arabs)';
   int _selectedTerm = 1;
   late TextEditingController _pinCtrl;
 
@@ -123,7 +123,7 @@ class _OnboardingWizardDialogState extends State<OnboardingWizardDialog> {
     _age = widget.child['age'] ?? 10;
     _grade = widget.child['default_grade'] ?? 5;
     _stream =
-        widget.child['curriculum_stream'] ?? 'MoE / CBSE Arabic (Non-Arabs)';
+        widget.child['curriculum_stream'] ?? 'CBSE Curriculum Arabic (Non-Arabs)';
     _selectedTerm = widget.child['selected_term'] ?? 1;
     _pinCtrl = TextEditingController();
   }
@@ -481,10 +481,10 @@ class _OnboardingWizardDialogState extends State<OnboardingWizardDialog> {
   // STEP 2
   Widget _buildStep2Stream() {
     final streams = [
-      'MoE / CBSE Arabic (Non-Arabs)',
-      'General MoE Stream (المسار العام)',
-      'Advanced MoE Stream (المسار المتقدم)',
-      'Elite MoE Stream (مسار النخبة)',
+      'CBSE Curriculum Arabic (Non-Arabs)',
+      'General CBSE Curriculum Stream (المسار العام)',
+      'Advanced CBSE Curriculum Stream (المسار المتقدم)',
+      'Elite CBSE Curriculum Stream (مسار النخبة)',
       'International Stream (IB / British / American B)',
     ];
 

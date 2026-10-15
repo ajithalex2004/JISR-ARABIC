@@ -206,6 +206,29 @@ class TestAdminParentsAndPayments(unittest.TestCase):
         self.assertIn("/api/admin/parents", detail)
         self.assertIn("column users.foo does not exist", detail)
 
+    def test_exports_return_every_matching_row_for_admins_only(self):
+        headers = self._headers()
+        students = self.client.get("/api/admin/export/students", headers=headers).json()
+        self.assertEqual(students["columns"][0], "Student")
+        self.assertTrue({"Ann Maria", "Lina", "Sam"} <= {r[0] for r in students["rows"]})
+        ann = next(r for r in students["rows"] if r[0] == "Ann Maria")
+        self.assertIn("G6 T1", ann[3])
+        self.assertEqual(ann[8:], ["Alex Joseph", "alex@test.local"])
+
+        parents = self.client.get("/api/admin/export/parents?q=alex", headers=headers).json()
+        self.assertEqual(len(parents["rows"]), 1)
+        self.assertEqual(parents["rows"][0][:2], ["Alex Joseph", "alex@test.local"])
+        self.assertIn("Ann Maria (G6)", parents["rows"][0][7])
+
+        payments = self.client.get("/api/admin/export/payments?status=refunded", headers=headers).json()
+        self.assertEqual([r[14] for r in payments["rows"]], ["RCPT-3"])
+        self.assertEqual(payments["rows"][0][16], "refunded")
+        self.assertEqual(len(self.client.get("/api/admin/export/payments", headers=headers).json()["rows"]), 4)
+
+        self.assertEqual(self.client.get("/api/admin/export/teachers", headers=headers).status_code, 404)
+        parent = self._headers("alex@test.local")
+        self.assertEqual(self.client.get("/api/admin/export/students", headers=parent).status_code, 403)
+
 
 if __name__ == "__main__":
     unittest.main()

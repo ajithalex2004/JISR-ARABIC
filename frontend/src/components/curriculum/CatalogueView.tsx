@@ -163,10 +163,10 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
               </h2>
               <p className="text-[11px] text-slate-500 font-medium">
                 {availableGrades.length === 1
-                  ? `Official UAE Ministry of Education (MoE) Arabic Curriculum · Grade ${availableGrades[0]} Enrolled Track`
+                  ? `Official CBSE Curriculum Arabic · Grade ${availableGrades[0]} Enrolled Track`
                   : user?.role === 'admin'
-                  ? 'Official UAE Ministry of Education (MoE) Arabic Curriculum · Grades 1 to 10'
-                  : `Official UAE Ministry of Education (MoE) Arabic Curriculum · Enrolled Grades (${availableGrades.map((g) => `Class ${g}`).join(', ')})`}
+                  ? 'Official CBSE Curriculum Arabic · Grades 1 to 10'
+                  : `Official CBSE Curriculum Arabic · Enrolled Grades (${availableGrades.map((g) => `Class ${g}`).join(', ')})`}
               </p>
             </div>
           </div>
@@ -293,7 +293,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="bg-[#22c55e] text-white font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider shadow-sm">
-                UAE MoE Curriculum
+                CBSE Curriculum
               </span>
               <span className="bg-white/20 text-purple-100 font-semibold px-3 py-1 rounded-full text-xs backdrop-blur-xs">
                 Grade {selectedGrade} · Term {selectedTerm}
@@ -462,7 +462,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
             <p className="text-xs text-slate-500 italic text-left">
               {isBallGames
                 ? '"Football is the most popular game in the world. Both young and old love it, where two large teams compete on the pitch to score goals into the goalkeeper\'s net."'
-                : `"Interactive reading passage for Grade ${selectedGrade} (Term ${selectedTerm}): ${firstLesson.title_en}. Students explore authentic vocabulary, language structures, and reading comprehension aligned with UAE MoE standards."`}
+                : `"Interactive reading passage for Grade ${selectedGrade} (Term ${selectedTerm}): ${firstLesson.title_en}. Students explore authentic vocabulary, language structures, and reading comprehension aligned with CBSE Curriculum standards."`}
             </p>
           </div>
 
@@ -528,7 +528,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
               </div>
             </div>
 
-            {/* Pillar 4: MoE Model Exam */}
+            {/* Pillar 4: CBSE Curriculum Model Exam */}
             <div
               onClick={() => onSelectView && onSelectView('tests')}
               className="p-4 rounded-2xl border border-amber-100 bg-amber-50/50 hover:bg-amber-50 hover:border-amber-300 transition-all cursor-pointer group shadow-2xs"
@@ -540,7 +540,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
                 4. اختبار محاكاة الوزارة (Ministry Mock Exam)
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                10-question adaptive quiz aligned with UAE MoE exam standards.
+                10-question adaptive quiz aligned with CBSE Curriculum exam standards.
               </p>
               <div className="mt-3 flex items-center gap-1 text-xs font-bold text-amber-600">
                 <span>بدء الاختبار (Start Exam)</span>

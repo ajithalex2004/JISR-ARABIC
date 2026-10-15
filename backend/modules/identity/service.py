@@ -43,7 +43,7 @@ def serialize_child(c: ChildProfile) -> ChildProfileSchema:
         school_name=c.school_name or "Sunrise International School, Abu Dhabi",
         default_grade=c.default_grade or 5,
         avatar_id=c.avatar_id or "avatar_falcon",
-        curriculum_stream=c.curriculum_stream or "MoE / CBSE Arabic (Non-Arabs)",
+        curriculum_stream=c.curriculum_stream or "CBSE Curriculum Arabic (Non-Arabs)",
         access_pin=None,
         has_pin=bool(c.access_pin),
         diagnostic_completed=True,
@@ -300,7 +300,7 @@ def create_password_and_enroll(req: CreatePasswordAndEnrollRequest, *, db: Sessi
         school_name=req.child_school or "Sunrise International School, Abu Dhabi",
         default_grade=req.child_grade or 5,
         avatar_id=req.avatar_id or "avatar_falcon",
-        curriculum_stream=req.curriculum_stream or "MoE / CBSE Arabic (Non-Arabs)",
+        curriculum_stream=req.curriculum_stream or "CBSE Curriculum Arabic (Non-Arabs)",
         access_pin=hashed_pin,
         diagnostic_completed=True,
         diagnostic_level="standard"
@@ -344,7 +344,7 @@ def login(req: LoginRequest, *, db: Session):
             school_name="JISR Learning Platform",
             default_grade=5,
             avatar_id="avatar_falcon",
-            curriculum_stream="MoE / CBSE Arabic (Non-Arabs)",
+            curriculum_stream="CBSE Curriculum Arabic (Non-Arabs)",
             diagnostic_completed=True,
             diagnostic_level="advanced"
         )
@@ -505,7 +505,7 @@ def add_child(req: AddChildRequest, *, user: User, db: Session):
         school_name=req.school_name or "Sunrise International School, Abu Dhabi",
         default_grade=req.default_grade or 5,
         avatar_id=req.avatar_id or "avatar_falcon",
-        curriculum_stream=req.curriculum_stream or "MoE / CBSE Arabic (Non-Arabs)",
+        curriculum_stream=req.curriculum_stream or "CBSE Curriculum Arabic (Non-Arabs)",
         access_pin=hashed_pin,
         diagnostic_completed=True,
         diagnostic_level="standard"

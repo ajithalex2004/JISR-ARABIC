@@ -13,7 +13,7 @@ CANDIDATE_PDF_PATHS = [
 ]
 PDF_SOURCE_PATH = next((p for p in CANDIDATE_PDF_PATHS if os.path.exists(p)), CANDIDATE_PDF_PATHS[0])
 
-# Verified OCR transcriptions for the initial textbook pages from MoE Level 5 Book
+# Verified OCR transcriptions for the initial textbook pages from CBSE Curriculum Level 5 Book
 TEXTBOOK_PAGES_DATA = {
     7: {
         "printed_page": 6,
@@ -1404,7 +1404,7 @@ def get_page_ocr_data(pdf_page: int, edition_id: str | None = None) -> Dict[str,
                     matched_ch = syllabus[0]
 
                 ch_title_ar = matched_ch['title_ar'] if matched_ch else f"صفحة {sp.printed_page or page_key_int}"
-                ch_title_en = matched_ch['title_en'] if matched_ch else f"MoE Textbook Page {sp.printed_page or page_key_int}"
+                ch_title_en = matched_ch['title_en'] if matched_ch else f"CBSE Curriculum Textbook Page {sp.printed_page or page_key_int}"
                 ch_unit_ar = matched_ch['unit_title_ar'] if matched_ch else "الوحدة المقررة"
 
                 return {
@@ -1535,7 +1535,7 @@ def get_page_ocr_data(pdf_page: int, edition_id: str | None = None) -> Dict[str,
                 f"الصفحة رقم {page_key_int} من كتاب منهاج الصف {fallback_grade}. الصورة الأصلية للكتاب متوفرة ومحفوظة."
             ],
             "paragraphs_en": [
-                f"Page {page_key_int} of the UAE MoE Grade {fallback_grade} textbook. Authentic scanned page image available."
+                f"Page {page_key_int} of the CBSE Curriculum Grade {fallback_grade} textbook. Authentic scanned page image available."
             ],
             "confidence": 0.85,
             "review_status": "automatic_unverified",

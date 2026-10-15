@@ -1,5 +1,5 @@
 /**
- * Arabic Translation & Dictionary Service for UAE MoE Grade 5 Curriculum
+ * Arabic Translation & Dictionary Service for CBSE Curriculum Grade 5 Curriculum
  * Provides instantaneous word-level translations, normalization, and morphological stem resolution.
  * Fully supports 100% of curriculum lessons, assessments, study booklets, and microlearning capsules.
  * Extended to 3,280+ fully verified bilingual entries covering all textbook and quiz passages.
@@ -1295,7 +1295,7 @@ const ARABIC_DICTIONARY: Record<string, WordDefinition> = {
   'الوثائقية': { translation: 'Documentary', partOfSpeech: 'noun' },
   'الوحدات': { translation: 'units / chapters', partOfSpeech: 'noun' },
   'الوحدة': { translation: 'unit / chapter', partOfSpeech: 'noun' },
-  'الوزارة': { translation: 'Ministry of Education (MoE)', partOfSpeech: 'noun' },
+  'الوزارة': { translation: 'The Ministry (of Education)', partOfSpeech: 'noun' },
   'الوزاري': { translation: 'ministerial / official exam', partOfSpeech: 'noun' },
   'الوزارية': { translation: 'ministerial (exam model)', partOfSpeech: 'noun' },
   'الوزن': { translation: 'weight / meter', partOfSpeech: 'noun' },

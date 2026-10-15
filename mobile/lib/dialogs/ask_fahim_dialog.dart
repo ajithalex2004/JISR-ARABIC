@@ -183,7 +183,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                   : (_activeMode == 'camera'
                       ? 'Welcome! Snap a photo of your exercise or textbook page for instant solutions.'
                       : (_activeMode == 'exam'
-                          ? 'Welcome to the Exam Paper Assistant. Attach or paste your exam questions for verified MoE solutions.'
+                          ? 'Welcome to the Exam Paper Assistant. Attach or paste your exam questions for verified CBSE Curriculum solutions.'
                           : 'Hello! I am your conversational tutor, Ustadh Fahim. How can I assist you with your lesson or grammar today?'))),
           'escalated': false,
         }
@@ -1289,7 +1289,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
             'text_ar': answerAr,
             'text_en': (answerEn != null && answerEn.isNotEmpty)
                 ? answerEn
-                : 'Guidance and curriculum explanation provided based on UAE MoE standards.',
+                : 'Guidance and curriculum explanation provided based on CBSE Curriculum standards.',
             'escalated': data['escalated_to_tutor'] == true,
             'escalation_message': data['tutor_escalation_message'],
             'is_cached': isCached,
@@ -2884,7 +2884,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                       Text(
                         widget.isArabic
                             ? 'مساعد حل أوراق الامتحانات (منهاج الإمارات)'
-                            : 'Exam Paper Assistant (UAE MoE Curriculum)',
+                            : 'Exam Paper Assistant (CBSE Curriculum)',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF4C1D95)),
                       ),
                       Text(

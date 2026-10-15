@@ -4,8 +4,8 @@ import '../grade_access.dart';
 import '../models/curriculum_models.dart';
 
 /// CatalogueScreen for Mobile incorporating the Web App Home Page Layout:
-/// 1. Top Hero Gradient Banner with UAE MoE Badges & Curriculum Mastery Gauge
-/// 2. Official Scanned Textbook Reader Showcase (108 MoE Textbook Pages with Audio)
+/// 1. Top Hero Gradient Banner with CBSE Curriculum Badges & Curriculum Mastery Gauge
+/// 2. Official Scanned Textbook Reader Showcase (108 CBSE Curriculum Textbook Pages with Audio)
 /// 3. Featured Showcase: Complete Chapter 1 - Ball Games with 4 Curriculum Pillars
 /// 4. 10 Core Capabilities Quick Hub (Ask Fahim, Mastery Matrix, Ranks, Exam Sim)
 /// 5. Grade Switcher (Class 1 to Class 12)
@@ -277,7 +277,7 @@ class CatalogueScreen extends StatelessWidget {
                     Text(
                       isArabic
                           ? 'تصفح كتاب الوزارة المعتمد (${getTextbookPageCount(currentGrade, currentTerm)} صفحة) مع الاستماع الصوتي'
-                          : 'Read all ${getTextbookPageCount(currentGrade, currentTerm)} MoE pages with native TTS audio & zoom',
+                          : 'Read all ${getTextbookPageCount(currentGrade, currentTerm)} CBSE Curriculum pages with native TTS audio & zoom',
                       style: const TextStyle(color: Color(0xFFA7F3D0), fontSize: 10),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -873,7 +873,7 @@ class CatalogueScreen extends StatelessWidget {
                   Text(
                     isArabic
                         ? 'الدروس الرسمية المعتمدة لمنهاج وزارة التربية والتعليم'
-                        : 'Official UAE MoE Approved Curriculum Syllabus',
+                        : 'Official CBSE Curriculum Approved Syllabus',
                     style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                   ),
                 ],
@@ -1571,7 +1571,7 @@ class CatalogueScreen extends StatelessWidget {
                         Text(
                           isArabic
                               ? 'حل فوري لأوراق الامتحانات والأسئلة مع نماذج الإجابات وتوثيق المنهج'
-                              : 'Autonomous exam solving with model answers & MoE citations',
+                              : 'Autonomous exam solving with model answers & CBSE Curriculum citations',
                           style: const TextStyle(fontSize: 9.5, color: Color(0xFF5B21B6)),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1838,7 +1838,7 @@ class CatalogueScreen extends StatelessWidget {
             iconBg: const Color(0xFFECFDF5),
             title: isArabic
                 ? 'الكتاب المدرسي الممسوح (${getTextbookPageCount(currentGrade, currentTerm)} صفحة)'
-                : 'Scanned MoE Textbook (${getTextbookPageCount(currentGrade, currentTerm)} Pages)',
+                : 'Scanned CBSE Curriculum Textbook (${getTextbookPageCount(currentGrade, currentTerm)} Pages)',
             subtitle: isArabic
                 ? 'تصفح صفحات كتاب الوزارة الأصلي صفحة بصفحة مع تدقيق OCR والاستماع الصوتي'
                 : 'All ${getTextbookPageCount(currentGrade, currentTerm)} original textbook pages with TTS vocalization & zoom',
@@ -1902,8 +1902,8 @@ class CatalogueScreen extends StatelessWidget {
             icon: Icons.quiz_rounded,
             iconColor: const Color(0xFFD97706),
             iconBg: const Color(0xFFFEF3C7),
-            title: isArabic ? 'محاكاة الامتحانات والتقييم' : 'MoE Exam Simulator & Assessment',
-            subtitle: isArabic ? 'اختبارات وزارية وفق معايير 40/30/20/10 الرسمية مع تصحيح فوري' : 'Standardized MoE blueprint exam simulation with automated scoring',
+            title: isArabic ? 'محاكاة الامتحانات والتقييم' : 'CBSE Curriculum Exam Simulator & Assessment',
+            subtitle: isArabic ? 'اختبارات وزارية وفق معايير 40/30/20/10 الرسمية مع تصحيح فوري' : 'Standardized CBSE Curriculum blueprint exam simulation with automated scoring',
             badge: 'Exam Blueprint',
             badgeColor: const Color(0xFFD97706),
             onTap: () => onModeSelected('tests'),

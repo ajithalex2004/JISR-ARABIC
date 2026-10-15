@@ -137,7 +137,7 @@ export const MasteryHeatmapView: React.FC<MasteryHeatmapViewProps> = ({
             {heatmapData.child_name}'s Knowledge Gap Heatmap
           </h1>
           <p className="text-xs text-slate-600 mt-1 max-w-2xl">
-            Fine-grained concept proficiency tracker aligned with the UAE Ministry of Education (MoE) and CBSE standards.
+            Fine-grained concept proficiency tracker aligned with CBSE Curriculum standards.
             Sub-70% competencies are automatically isolated and scheduled into spaced-repetition recovery drills.
           </p>
         </div>

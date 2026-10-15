@@ -204,7 +204,7 @@ export const PronunciationSandbox: React.FC = () => {
                   {evaluation.phoneme_scores && Object.keys(evaluation.phoneme_scores).length > 0 && (
                     <div className="pt-2 border-t border-slate-100">
                       <span className="text-[10px] font-bold text-slate-500 block mb-1.5">
-                        تحليل الفونيمات ومخارج الحروف (MoE Phoneme Accuracy):
+                        تحليل الفونيمات ومخارج الحروف (CBSE Curriculum Phoneme Accuracy):
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(evaluation.phoneme_scores).map(([ph, sc]) => {

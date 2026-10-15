@@ -9,27 +9,27 @@ import { UAE_AVATARS } from '../auth/AuthModal';
 
 export const CURRICULUM_STREAMS_LIST = [
   {
-    id: 'MoE / CBSE Arabic (Non-Arabs)',
+    id: 'CBSE Curriculum Arabic (Non-Arabs)',
     titleAr: 'منهاج وزارة التربية والتعليم / CBSE (للناطقين بغير العربية)',
-    titleEn: 'MoE / CBSE Arabic B (Non-Arabs)',
+    titleEn: 'CBSE Curriculum Arabic B (Non-Arabs)',
     descAr: 'المنهاج المعتمد لمدارس CBSE والمدارس الخاصة في دولة الإمارات.'
   },
   {
-    id: 'MoE General Stream',
+    id: 'CBSE Curriculum General Stream',
     titleAr: 'المسار العام (وزارة التربية والتعليم)',
-    titleEn: 'General Stream (MoE Curriculum)',
+    titleEn: 'General Stream (CBSE Curriculum)',
     descAr: 'يركز على الكفاءات اللغوية والتواصلية الأساسية وفق المعايير الوطنية.'
   },
   {
-    id: 'MoE Advanced Stream',
+    id: 'CBSE Curriculum Advanced Stream',
     titleAr: 'المسار المتقدم (وزارة التربية والتعليم)',
-    titleEn: 'Advanced Stream (MoE Curriculum)',
+    titleEn: 'Advanced Stream (CBSE Curriculum)',
     descAr: 'نصوص أدبية متقدمة، تحليل نحوي وبلاغي، وتطبيقات كتابية معمقة.'
   },
   {
-    id: 'MoE Elite Stream',
+    id: 'CBSE Curriculum Elite Stream',
     titleAr: 'مسار النخبة (وزارة التربية والتعليم)',
-    titleEn: 'Elite Stream (MoE Curriculum)',
+    titleEn: 'Elite Stream (CBSE Curriculum)',
     descAr: 'أعلى مستويات التحصيل اللغوي مع نصوص تراثية وتفكير نقدي.'
   },
   {
@@ -64,7 +64,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
   const [grade, setGrade] = useState(child?.default_grade || 5);
 
   // Step 2: Stream & Term
-  const [stream, setStream] = useState(child?.curriculum_stream || 'MoE / CBSE Arabic (Non-Arabs)');
+  const [stream, setStream] = useState(child?.curriculum_stream || 'CBSE Curriculum Arabic (Non-Arabs)');
   const [selectedTerm, setSelectedTerm] = useState<number>(child?.selected_term || 1);
   const [accessPin, setAccessPin] = useState('');
 
@@ -89,7 +89,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
       setAge(child.age || 10);
       setSchoolName(child.school_name || 'Sunrise International School, Abu Dhabi');
       setGrade(child.default_grade || 5);
-      setStream(child.curriculum_stream || 'MoE / CBSE Arabic (Non-Arabs)');
+      setStream(child.curriculum_stream || 'CBSE Curriculum Arabic (Non-Arabs)');
       setSelectedTerm(child.selected_term || 1);
       setAccessPin('');
       setCurrentStep(1);

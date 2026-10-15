@@ -601,7 +601,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                     Text(
                       widget.isArabic
                           ? 'الكتاب المدرسي الأصلي (وزارة التربية)'
-                          : 'Official Textbook Page (UAE MoE)',
+                          : 'Official Textbook Page (CBSE Curriculum)',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,

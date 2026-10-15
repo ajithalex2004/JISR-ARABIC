@@ -50,7 +50,7 @@ class CurriculumLessonItem {
   }
 }
 
-/// Fallback catalogue of all 10 UAE MoE Class 5 Term 1 Lessons
+/// Fallback catalogue of all 10 CBSE Curriculum Class 5 Term 1 Lessons
 const List<CurriculumLessonItem> kClass5Term1Catalogue = [
   CurriculumLessonItem(
     id: 'lesson_01_ball_games',
@@ -760,7 +760,7 @@ class CurriculumLessonPackage {
   }
 }
 
-/// Dynamic total textbook pages lookup across UAE MoE Grades 1-10 and Terms 1-3.
+/// Dynamic total textbook pages lookup across CBSE Curriculum Grades 1-10 and Terms 1-3.
 int getTextbookPageCount(int grade, int term) {
   switch (grade) {
     case 1:

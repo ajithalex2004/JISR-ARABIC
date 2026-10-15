@@ -26,7 +26,7 @@ class CreatePasswordAndEnrollRequest(BaseModel):
     child_school: str = "Sunrise International School, Abu Dhabi"
     child_grade: int = 5
     avatar_id: Optional[str] = "avatar_falcon"
-    curriculum_stream: Optional[str] = "MoE / CBSE Arabic (Non-Arabs)"
+    curriculum_stream: Optional[str] = "CBSE Curriculum Arabic (Non-Arabs)"
     access_pin: Optional[str] = None
 
 class LoginRequest(BaseModel):
@@ -52,7 +52,7 @@ class AddChildRequest(BaseModel):
     school_name: str = "Sunrise International School, Abu Dhabi"
     default_grade: int = 5
     avatar_id: Optional[str] = "avatar_falcon"
-    curriculum_stream: Optional[str] = "MoE / CBSE Arabic (Non-Arabs)"
+    curriculum_stream: Optional[str] = "CBSE Curriculum Arabic (Non-Arabs)"
     access_pin: Optional[str] = None
 
 class UpdateChildRequest(BaseModel):
@@ -81,7 +81,7 @@ class ChildProfileSchema(BaseModel):
     school_name: str
     default_grade: int
     avatar_id: Optional[str] = "avatar_falcon"
-    curriculum_stream: Optional[str] = "MoE / CBSE Arabic (Non-Arabs)"
+    curriculum_stream: Optional[str] = "CBSE Curriculum Arabic (Non-Arabs)"
     access_pin: Optional[str] = None
     diagnostic_completed: bool = False
     diagnostic_level: str = "intermediate"
@@ -402,7 +402,7 @@ class SocraticLearnResponse(BaseModel):
     next_socratic_prompt_ar: Optional[str] = None
 
 class QuestionPaperSolveRequest(BaseModel):
-    paper_title: Optional[str] = Field("UAE MoE Arabic Exam Paper", max_length=255)
+    paper_title: Optional[str] = Field("CBSE Curriculum Arabic Exam Paper", max_length=255)
     document_base64: Optional[str] = Field(None, max_length=7000000)
     mime_type: Optional[str] = Field("application/pdf", max_length=100)
     text_content: Optional[str] = Field(None, max_length=10000)
@@ -434,7 +434,7 @@ class QuestionPaperSolveResponse(BaseModel):
     total_questions: int
     questions: List[SolvedQuestion]
     model_used: str = "gemini-3.5-flash-lite"
-    escalation_summary: str = "All questions resolved autonomously using MoE curriculum grounding"
+    escalation_summary: str = "All questions resolved autonomously using CBSE Curriculum grounding"
 
 class SpeechEvaluationRequest(BaseModel):
     child_id: Optional[str] = None

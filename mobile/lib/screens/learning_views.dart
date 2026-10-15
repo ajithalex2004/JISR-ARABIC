@@ -4119,7 +4119,7 @@ class _CapsulesViewState extends State<CapsulesView> {
 }
 
 // ---------------------------------------------------------------------------
-// 8. ADAPTIVE TESTS & MOE EXAM VIEW
+// 8. ADAPTIVE TESTS & CBSE CURRICULUM EXAM VIEW
 // ---------------------------------------------------------------------------
 class AdaptiveTestsView extends StatefulWidget {
   final Map<String, dynamic>? activeChild;
@@ -5053,7 +5053,7 @@ class _AdminWorkflowViewState extends State<AdminWorkflowView> with SingleTicker
         _metricCard(
           title: isAr ? 'إجمالي صفحات الكتاب الممسوحة' : 'Total Scanned Textbook Pages',
           value: '$pages Pages',
-          subtitle: isAr ? 'طبعة وزارة التربية والتعليم الرسمية 2024–2025' : 'Official UAE MoE 2024–2025 Edition',
+          subtitle: isAr ? 'طبعة وزارة التربية والتعليم الرسمية 2024–2025' : 'Official CBSE Curriculum 2024–2025 Edition',
           icon: Icons.menu_book,
           color: const Color(0xFF4C1D95),
         ),
@@ -5088,7 +5088,7 @@ class _AdminWorkflowViewState extends State<AdminWorkflowView> with SingleTicker
         _metricCard(
           title: isAr ? 'دقة التعرف الضوئي على النصوص (OCR)' : 'OCR Transcription Confidence',
           value: ocrConf.contains('%') ? ocrConf : '$ocrConf%',
-          subtitle: isAr ? 'مطابقة تامة لكتاب الوزارة العربي الأصلي' : 'Exact match with MoE printed textbook',
+          subtitle: isAr ? 'مطابقة تامة لكتاب الوزارة العربي الأصلي' : 'Exact match with CBSE Curriculum printed textbook',
           icon: Icons.check_circle_outline,
           color: const Color(0xFF047857),
         ),

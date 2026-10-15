@@ -360,6 +360,18 @@ def list_payments(
     return admin_payments.list_payments(actor=actor, db=db, q=q, method=method, status=status, parent_id=parent_id, days=days)
 
 
+@router.get('/export/{kind}')
+def export_table(
+    kind: str, q: Optional[str] = None, students: Optional[str] = None, method: Optional[str] = None,
+    status: Optional[str] = None, parent_id: Optional[str] = None, days: Optional[int] = None,
+    actor: Principal = Depends(get_current_user), db: Session = Depends(get_db),
+):
+    """All students / parents / payments matching the filters, as columns + rows for Excel or PDF export."""
+    from backend.modules import admin_export
+    filters = {"q": q, "students": students, "method": method, "status": status, "parent_id": parent_id, "days": days}
+    return admin_export.export_table(kind, filters, actor=actor, db=db)
+
+
 def _ai_models() -> dict:
     import os
     from backend.modules.tutoring.assistant import GEMINI_MODEL
@@ -482,7 +494,7 @@ def get_page_image(pdf_page: int, edition_id: str | None = None):
 
 @router.get('/textbook-library')
 def get_textbook_library(db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
-    """List all 30 MoE textbook volumes with indexing, page counts, and rendering telemetry."""
+    """List all 30 CBSE Curriculum textbook volumes with indexing, page counts, and rendering telemetry."""
     require_roles(actor, ('admin', 'school_admin', 'tutor'))
     return service.get_textbook_library(db=db)
 

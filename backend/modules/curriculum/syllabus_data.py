@@ -1,5 +1,5 @@
 """
-Comprehensive UAE Ministry of Education (MoE) Arabic Curriculum Registry.
+Comprehensive CBSE Curriculum Arabic Registry.
 Provides complete, structured syllabus chapters for Grades 1 through 12 across Terms 1, 2, and 3,
 along with full lesson content generation for the Lesson Player, Vocabulary Drill, Grammar Lab,
 Synthetic Speech Studio, and Assessments.
@@ -36,7 +36,7 @@ class DynamicLesson:
         self.status = status
         self.lesson_order = lesson_order
 
-# High-fidelity predefined topics for all 12 UAE MoE grades across 3 terms
+# High-fidelity predefined topics for all 12 CBSE Curriculum grades across 3 terms
 _GRADE_CURRICULUM_DATA: Dict[int, Dict[int, List[Dict[str, str]]]] = {
     1: {
         1: [
@@ -352,7 +352,7 @@ _SECONDARY_THEMES = {
 }
 
 def get_syllabus_for_grade_and_term(grade: int, term: int) -> List[Dict[str, Any]]:
-    """Returns official structured UAE MoE chapters for any grade (1-12) and term (1-3)."""
+    """Returns official structured CBSE Curriculum chapters for any grade (1-12) and term (1-3)."""
     grade = max(1, min(12, grade))
     term = max(1, min(3, term))
 
@@ -486,7 +486,7 @@ def get_dynamic_lesson_spec(lesson_id: str) -> Optional[DynamicLesson]:
             grade=5,
             term=term,
             title_ar="دروس المنهاج الوزاري المعتمدة",
-            title_en="Official MoE Curriculum Lesson",
+            title_en="Official CBSE Curriculum Lesson",
             unit_id=f"unit_g5_t{term}_1",
             unit_title_ar="الوحدة التعليمية المعتمدة",
             unit_title_en="Approved Learning Unit",
@@ -957,7 +957,7 @@ def generate_dynamic_lesson_content(lesson: Any) -> Dict[str, Any]:
             "title_ar": "ملاحظات المعلم والمتابعة الأكاديمية",
             "title_en": f"Tutor Handover Notes: {title_en}",
             "learner_focus": f"Mastery of vocabulary, pronunciation, and grammatical structure for {title_en}.",
-            "unobserved_fields_note": "Certified curriculum package conforming to UAE MoE Arabic language standards.",
+            "unobserved_fields_note": "Certified curriculum package conforming to CBSE Curriculum Arabic language standards.",
             "rubric_categories": [
                 {"key": "comprehension", "name_en": "Reading Comprehension", "weight": "30%"},
                 {"key": "pronunciation", "name_en": "Oral Fluency & Tashkeel", "weight": "30%"},
@@ -968,7 +968,7 @@ def generate_dynamic_lesson_content(lesson: Any) -> Dict[str, Any]:
         # 12. Exam Practice (Tab 10 / Exam)
         "exam_practice": {
             "title_ar": f"محاكاة الامتحان الوزاري: {title_ar}",
-            "title_en": f"MoE Assessment Simulation: {title_en}",
+            "title_en": f"CBSE Curriculum Assessment Simulation: {title_en}",
             "total_marks": 20,
             "objective_questions": [
                 {

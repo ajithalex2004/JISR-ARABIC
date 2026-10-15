@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { ExportButtons } from './ExportButtons';
 import { api } from '../../services/api';
 import { Payment, PaymentsTable, formatDate, usd } from './PaymentsAdmin';
 
@@ -161,7 +162,10 @@ export function ParentsAdmin({ initialQuery = '' }: { initialQuery?: string }) {
   return <section className="border border-slate-300 bg-white p-4 space-y-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="font-bold text-emerald-950">Parents</h2>
-      <button type="button" onClick={() => setFormFor('new')} className="bg-emerald-900 text-white px-4 py-2">+ Add parent</button>
+      <span className="flex flex-wrap items-center gap-3">
+        <ExportButtons kind="parents" filters={{ q: query.trim(), students }} subtitle={[query.trim() && `Search: ${query.trim()}`, students === 'with' ? 'With students' : students === 'without' ? 'Without students' : ''].filter(Boolean).join(' · ') || 'All parents'} />
+        <button type="button" onClick={() => setFormFor('new')} className="bg-emerald-900 text-white px-4 py-2">+ Add parent</button>
+      </span>
     </div>
     <p className="text-sm text-slate-600">Registered families with their students, grades and payments. Search by parent name, email, phone or a child's name. Click a row's "Details" for the full payment history.</p>
     {formFor && <ParentForm key={formFor === 'new' ? 'new' : formFor.id} editing={formFor === 'new' ? null : formFor} busy={busy === 'form'} onCancel={() => setFormFor(null)} onSubmit={submitForm} />}

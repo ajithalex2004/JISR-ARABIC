@@ -63,7 +63,7 @@ EXAM_QUESTION_COUNT = 10
 
 def _exam_questions(grade: int, term: int, *, db: Session):
     # Consult published curriculum content dynamically from database first, but only
-    # when it can fill a full-length exam; a partial bank would break the MoE blueprint.
+    # when it can fill a full-length exam; a partial bank would break the CBSE Curriculum blueprint.
     published = _questions_for_scope(grade, term, db=db)
     if len(published) >= EXAM_QUESTION_COUNT:
         return published[:EXAM_QUESTION_COUNT]
@@ -203,7 +203,7 @@ def get_adaptive_assessment(lesson_id: str, child_id=None, is_reviewer=False, *,
 
 def get_exam_simulation(grade: int=5, term: int=1, child_id=None, *, db: Session, actor=None):
     """
-    Retrieve full-length official UAE Ministry of Education (MoE) practice exam.
+    Retrieve full-length official CBSE Curriculum practice exam.
     Includes 20-minute countdown limit, Bloom-tagged items, and marks weighting.
     """
     require_exam(db, actor, grade, term, child_id)

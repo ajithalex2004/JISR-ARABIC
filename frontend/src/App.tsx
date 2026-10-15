@@ -344,7 +344,7 @@ export function App() {
           <GamificationCenter activeChild={activeChild} />
         )}
 
-        {currentView === 'profile' && (
+        {currentView === 'profile' && user?.role === 'parent' && (
           <ProfileView
             user={user}
             activeChild={activeChild}

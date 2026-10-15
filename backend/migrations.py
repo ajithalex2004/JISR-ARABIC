@@ -148,6 +148,35 @@ def upgrade():
         print(f"Made column optional to match the app: {column}")
     for column in skipped:
         print(f"WARNING: column {column} is required in the database but optional in the app")
+    with engine.connect() as conn:
+        renamed = rename_curriculum_streams(conn)
+        conn.commit()
+    if renamed:
+        print(f"Renamed the curriculum stream of {renamed} learner profile(s) to CBSE Curriculum")
+
+
+# Learner curriculum streams were once named after "MoE"; they are now "CBSE Curriculum".
+STREAM_RENAMES = (
+    ("MoE / CBSE Arabic", "CBSE Curriculum Arabic"),
+    ("MoE / CBSE", "CBSE Curriculum"),
+    ("MoE / UAE", "CBSE Curriculum"),
+    ("General MoE Arabic B", "General CBSE Curriculum Arabic B"),
+    ("MoE ", "CBSE Curriculum "),
+    (" MoE", " CBSE Curriculum"),
+)
+
+
+def rename_curriculum_streams(conn) -> int:
+    """Rename stored learner streams that still say "MoE"; returns how many profiles changed."""
+    if "child_profiles" not in inspect(conn).get_table_names():
+        return 0
+    changed = 0
+    for old, new in STREAM_RENAMES:
+        result = conn.execute(text(
+            "UPDATE child_profiles SET curriculum_stream = REPLACE(curriculum_stream, :old, :new) "
+            "WHERE curriculum_stream LIKE :pattern"), {"old": old, "new": new, "pattern": f"%{old}%"})
+        changed += result.rowcount or 0
+    return changed
 
 
 def missing_columns(conn):

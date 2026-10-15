@@ -3,14 +3,14 @@ Smart Adaptive Assessment Engine (الاختبارات الذكية) — Assessm
 Features:
 1. Bloom's Taxonomy Tagging: Recall (تذكر), Understanding (فهم), Application (تطبيق), Analysis (تحليل).
 2. Flow-State Adaptive Engine: Scales difficulty up/down based on performance for all 10 curriculum lessons.
-3. Official Exam Simulation (محاكاة نماذج الامتحانات الوزارية): Timed 20-min practice test matching UAE MoE 40/30/20/10 blueprint.
+3. Official Exam Simulation (محاكاة نماذج الامتحانات الوزارية): Timed 20-min practice test matching CBSE Curriculum 40/30/20/10 blueprint.
 4. Detailed Solution Walkthroughs: In-depth rationale explaining why answers are correct or incorrect.
 """
 
 from typing import List, Dict, Any
 from backend.curriculum_catalog import FULL_CURRICULUM_CATALOG
 
-# Official UAE MoE Grade 5 Term 1 Exam Blueprint Bank (100 Marks Total)
+# Official CBSE Curriculum Grade 5 Term 1 Exam Blueprint Bank (100 Marks Total)
 # Weighting: 40% Reading Comprehension (40 pts) | 30% Grammar (30 pts) | 20% Vocabulary (20 pts) | 10% Orthography (10 pts)
 ASSESSMENT_QUESTIONS: List[Dict[str, Any]] = [
     # =========================================================================
@@ -270,7 +270,7 @@ ASSESSMENT_QUESTIONS: List[Dict[str, Any]] = [
     }
 ]
 
-# Official UAE MoE Grade 5 Term 2 Exam Blueprint Bank (100 Marks Total)
+# Official CBSE Curriculum Grade 5 Term 2 Exam Blueprint Bank (100 Marks Total)
 # Units 3 & 4 (مدن عالمية & غرائب وعجائب)
 # Weighting: 40% Reading Comprehension (40 pts) | 30% Grammar (30 pts) | 20% Vocabulary (20 pts) | 10% Orthography (10 pts)
 ASSESSMENT_QUESTIONS_TERM2: List[Dict[str, Any]] = [
@@ -480,7 +480,7 @@ ASSESSMENT_QUESTIONS_TERM2: List[Dict[str, Any]] = [
     }
 ]
 
-# Official UAE MoE Grade 5 Term 3 Exam Blueprint Bank (100 Marks Total)
+# Official CBSE Curriculum Grade 5 Term 3 Exam Blueprint Bank (100 Marks Total)
 # Units 5 & 6 (التواصل & كلنا أذكياء)
 # Weighting: 40% Reading Comprehension (40 pts) | 30% Grammar (30 pts) | 20% Vocabulary (20 pts) | 10% Orthography (10 pts)
 ASSESSMENT_QUESTIONS_TERM3: List[Dict[str, Any]] = [
@@ -723,7 +723,7 @@ ASSESSMENT_QUESTIONS_TERM3: List[Dict[str, Any]] = [
 
 def get_official_exam_simulation(grade: int = 5, term: int = 1, questions: List[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
-    Returns a standardized 20-minute UAE Ministry of Education (MoE) practice exam.
+    Returns a standardized 20-minute CBSE Curriculum practice exam.
     Calibrated to 10 questions and 100 marks total matching the 40/30/20/10 blueprint:
     - 40% Reading Comprehension (40 pts)
     - 30% Grammar & Syntactic Structures (30 pts)
@@ -760,7 +760,7 @@ def get_official_exam_simulation(grade: int = 5, term: int = 1, questions: List[
 
     return {
         "exam_title_ar": f"محاكاة الاختبار الوزاري الموحد — الصف {grade} الفصل {term}",
-        "exam_title_en": f"Official MoE Exam Simulation — Grade {grade} Term {term}",
+        "exam_title_en": f"Official CBSE Curriculum Exam Simulation — Grade {grade} Term {term}",
         "time_limit_minutes": 20,
         "time_limit_seconds": 1200,
         "blueprint_spec": {
@@ -771,7 +771,7 @@ def get_official_exam_simulation(grade: int = 5, term: int = 1, questions: List[
         },
         "total_questions": len(exam_questions),
         "total_marks": sum(q["points"] for q in exam_questions),
-        "curriculum": f"Grade {grade} Arabic Curriculum · Term {term} (Official MoE Specification)",
+        "curriculum": f"Grade {grade} Arabic Curriculum · Term {term} (Official CBSE Curriculum Specification)",
         "questions": exam_questions
     }
 
@@ -857,7 +857,7 @@ def evaluate_exam_submission(answers: Dict[str, int], questions: List[Dict[str, 
     if percentage >= 90.0:
         grade_letter = "A+"
         feedback_ar = "أداء استثنائي وتفوق باهر! متمكن من كافة مستويات التفكير وفق معايير الاختبار الوزاري الموحد."
-        feedback_en = "Exceptional performance! Mastered all cognitive levels according to UAE MoE blueprint standards."
+        feedback_en = "Exceptional performance! Mastered all cognitive levels according to CBSE Curriculum blueprint standards."
     elif percentage >= 75.0:
         grade_letter = "B+"
         feedback_ar = "مستوى ممتاز مع استيعاب وتطبيق لغوي متين ومطابق لمتطلبات المنهاج."

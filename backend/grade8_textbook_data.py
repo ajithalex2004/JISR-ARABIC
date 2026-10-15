@@ -1,5 +1,5 @@
 """
-Official UAE Ministry of Education (MoE) Grade 8 Arabic Textbook Dataset
+Official CBSE Curriculum Grade 8 Arabic Textbook Dataset
 Edition: moe_gr8_vol1_2023 (العربية تجمعنا - الصف الثامن - الجزء الأول)
 Covers Chapter 1 / Unit 1: Coexistence & Tolerance (التعايش والتسامح)
 Pages 6 to 16 with verified Arabic texts, precise English translations, and model answers.

@@ -1,6 +1,6 @@
 """
 Bulk Curriculum Ingestion Utility for JISR / Fahim Arabic.
-Allows uploading and seeding official UAE MoE curriculum packages for Grades 1 to 10 (Terms 1, 2, 3).
+Allows uploading and seeding official CBSE Curriculum packages for Grades 1 to 10 (Terms 1, 2, 3).
 
 Usage Examples:
   # 1. Export starter template for Grade 3 Term 1:

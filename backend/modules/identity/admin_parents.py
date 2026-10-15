@@ -73,9 +73,7 @@ def _family_query(db):
     return db.query(User).filter(or_(User.role == "parent", User.id.in_(select(ChildProfile.parent_id))))
 
 
-def list_parents(q=None, *, actor, db, students=None, offset=0, limit=LIST_LIMIT) -> dict:
-    """Families matching the search, those with students first, newest first; paged."""
-    require_roles(actor, ADMIN_ONLY)
+def _parents_query(q, students, db):
     query = _family_query(db)
     term = (q or "").strip()
     if term:
@@ -90,7 +88,20 @@ def list_parents(q=None, *, actor, db, students=None, offset=0, limit=LIST_LIMIT
         query = query.filter(has_students)
     elif students == "without":
         query = query.filter(~has_students)
+    return query, has_students
 
+
+def _serialize_parents(users, db) -> list[dict]:
+    ids = [u.id for u in users]
+    children = _children_by_parent(ids, db)
+    payments = _payments_by_parent(ids, db)
+    return [_serialize_parent(u, children[u.id], payments[u.id]) for u in users]
+
+
+def list_parents(q=None, *, actor, db, students=None, offset=0, limit=LIST_LIMIT) -> dict:
+    """Families matching the search, those with students first, newest first; paged."""
+    require_roles(actor, ADMIN_ONLY)
+    query, has_students = _parents_query(q, students, db)
     total = query.count()
     offset = max(0, int(offset or 0))
     limit = min(max(1, int(limit or LIST_LIMIT)), LIST_LIMIT)
@@ -98,15 +109,15 @@ def list_parents(q=None, *, actor, db, students=None, offset=0, limit=LIST_LIMIT
         query.order_by(case((has_students, 0), else_=1), User.created_at.desc().nulls_last(), User.email)
         .offset(offset).limit(limit).all()
     )
-    ids = [u.id for u in users]
-    children = _children_by_parent(ids, db)
-    payments = _payments_by_parent(ids, db)
-    return {
-        "total": total,
-        "offset": offset,
-        "limit": limit,
-        "parents": [_serialize_parent(u, children[u.id], payments[u.id]) for u in users],
-    }
+    return {"total": total, "offset": offset, "limit": limit, "parents": _serialize_parents(users, db)}
+
+
+def export_parents(q=None, *, actor, db, students=None) -> list[dict]:
+    """Every matching family (no paging), for the admin Excel / PDF export."""
+    require_roles(actor, ADMIN_ONLY)
+    query, has_students = _parents_query(q, students, db)
+    users = query.order_by(case((has_students, 0), else_=1), User.created_at.desc().nulls_last(), User.email).all()
+    return _serialize_parents(users, db)
 
 
 def _get_family_account(parent_id: str, db) -> User:

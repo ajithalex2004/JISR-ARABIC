@@ -120,7 +120,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold text-white tracking-wide">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>دِرَاسَةٌ بَصَرِيَّةٌ تَفَاعُلِيَّةٌ • UAE MoE Visual Learning</span>
+              <span>دِرَاسَةٌ بَصَرِيَّةٌ تَفَاعُلِيَّةٌ • CBSE Curriculum Visual Learning</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight flex items-center gap-3">
               <GitFork className="w-8 h-8 text-amber-300 transform rotate-90" />
@@ -241,7 +241,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
               <div className="flex items-center gap-2">
                 <GraduationCap className="w-4 h-4 text-indigo-600" />
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                  فصول المنهاج (UAE MoE Grade {selectedGrade} Term 1 Chapters)
+                  فصول المنهاج (CBSE Curriculum Grade {selectedGrade} Term 1 Chapters)
                 </h3>
               </div>
               {/* Search Bar */}

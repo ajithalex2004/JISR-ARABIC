@@ -1,6 +1,6 @@
 """
 seed_all_grades_curriculum.py — High-Performance Curriculum Generator & Seeder.
-Generates and seeds rich, official UAE MoE interactive lesson packages for Grade 2 to Grade 10 across all 3 Terms,
+Generates and seeds rich, official CBSE Curriculum interactive lesson packages for Grade 2 to Grade 10 across all 3 Terms,
 with complete 10-tab LessonViewer support, aligned with scanned PDF page indexes and high-res rendered images.
 """
 import sys

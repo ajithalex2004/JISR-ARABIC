@@ -146,7 +146,7 @@ export const CapsulesGrid: React.FC<CapsulesGridProps> = ({ user, activeChild, i
           </div>
         </div>
         <div className="text-xs text-slate-500 font-sans flex items-center gap-2">
-          <span>UAE MoE & CBSE Aligned</span>
+          <span>CBSE Curriculum Aligned</span>
           <span className="text-slate-300">|</span>
           <span className="font-semibold text-purple-700">كبسولات الصف {selectedGrade} (Grade {selectedGrade})</span>
         </div>

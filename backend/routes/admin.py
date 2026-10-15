@@ -423,6 +423,14 @@ def remove_demo_accounts_now(actor: Principal = Depends(get_current_user)):
     return scheduler.run_demo_cleanup()
 
 
+@router.get('/content-progress')
+def get_content_progress(db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """Per grade and term: book uploaded, pages read, lessons drafted and published."""
+    require_roles(actor, ('admin',))
+    from backend.modules.curriculum.content_progress import content_progress
+    return content_progress(db)
+
+
 @router.get('/coverage-report')
 def get_coverage_report():
     """Coverage report for whole-book content and pronunciation targets (Section 11)."""

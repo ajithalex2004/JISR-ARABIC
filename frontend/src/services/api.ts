@@ -161,7 +161,7 @@ export const api = {
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load system health'));
     return res.json();
   },
-  async adminSystemAction(action: 'check-gemini' | 'test-alert' | 'send-weekly-reports') {
+  async adminSystemAction(action: 'check-gemini' | 'test-alert' | 'send-weekly-reports' | 'remove-demo-accounts') {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/system-health/${action}`, { method: 'POST' });
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Action failed'));
     return res.json();

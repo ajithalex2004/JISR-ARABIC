@@ -56,6 +56,30 @@ def run_weekly_reports(now=None):
     return summary
 
 
+def run_demo_cleanup():
+    """Remove demo/test accounts (see backend.demo_accounts); the outcome shows on System health."""
+    from backend.database import SessionLocal
+    from backend.demo_accounts import remove_demo_accounts
+
+    result = {"removed": [], "error": None}
+    db = SessionLocal()
+    try:
+        result["removed"] = remove_demo_accounts(db)
+    except Exception as exc:
+        db.rollback()
+        result["error"] = f"{type(exc).__name__}: {exc}"[:300]
+        logger.warning("Demo account cleanup failed: %s", exc)
+    finally:
+        db.close()
+    cache_set("scheduler:last:demo_cleanup", {**result, "at": datetime.datetime.now(datetime.UTC).isoformat()},
+              ttl_seconds=30 * 86400)
+    return result
+
+
+def demo_cleanup_enabled() -> bool:
+    return os.getenv("KEEP_DEMO_ACCOUNTS", "").lower() not in ("1", "true", "yes")
+
+
 def weekly_reports_due(now: datetime.datetime) -> bool:
     return now.weekday() == WEEKLY_REPORT_WEEKDAY and now.hour >= WEEKLY_REPORT_HOUR_UTC
 
@@ -82,6 +106,12 @@ def tick(now=None):
             run_scheduled_gemini_probe()
         except Exception as exc:
             logger.warning("Gemini probe job failed: %s", exc)
+    # Demo accounts have published passwords; keep them off the live site (cheap when none are left).
+    if demo_cleanup_enabled() and _claim("demo_cleanup", 6 * 3600):
+        try:
+            run_demo_cleanup()
+        except Exception as exc:
+            logger.warning("Demo cleanup job failed: %s", exc)
     if weekly_reports_due(now) and _claim(f"weekly_reports:{now.date().isoformat()}:{now.hour}", 3600):
         try:
             run_weekly_reports(now)

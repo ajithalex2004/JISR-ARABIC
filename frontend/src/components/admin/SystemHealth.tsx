@@ -23,6 +23,7 @@ type Health = {
   schema?: { missing_columns: string[]; error?: string };
   models?: { assistant: string; drafting: string };
   last_weekly_reports?: { week: string; sent: number; skipped: number; failed: number; error?: string; at: string } | null;
+  last_demo_cleanup?: { removed: string[]; error?: string | null; at: string } | null;
 };
 
 export function SystemHealth() {
@@ -37,7 +38,7 @@ export function SystemHealth() {
   };
   useEffect(() => { load(); }, []);
 
-  const act = async (action: 'check-gemini' | 'test-alert' | 'send-weekly-reports') => {
+  const act = async (action: 'check-gemini' | 'test-alert' | 'send-weekly-reports' | 'remove-demo-accounts') => {
     setBusy(action);
     setError('');
     setNotice('');
@@ -47,6 +48,8 @@ export function SystemHealth() {
         setNotice(res.ok ? `Gemini (${res.model}) is working · ${res.latency_ms} ms` : `Gemini (${res.model}) failed: ${res.error}`);
       } else if (action === 'test-alert') {
         setNotice(res.delivered_to.length ? `Test alert sent to ${res.delivered_to.join(', ')}` : `Test alert could not be delivered: ${res.errors.join('; ')}`);
+      } else if (action === 'remove-demo-accounts') {
+        setNotice(res.error ? `Demo accounts not removed: ${res.error}` : res.removed.length ? `Removed: ${res.removed.join(', ')}` : 'No demo accounts left to remove.');
       } else {
         setNotice(res.error ? `Weekly reports not sent: ${res.error}` : `Weekly reports for ${res.week}: ${res.sent} sent, ${res.skipped} already sent, ${res.failed} failed`);
       }
@@ -96,10 +99,17 @@ export function SystemHealth() {
             ? <span className="text-red-700 font-semibold">Missing columns: {health.schema.missing_columns.join(', ')}. They are added automatically on the next deploy.</span>
             : <span className="text-emerald-800 font-semibold">Matches the app (no missing columns)</span>}
       </div>}
+      {health.last_demo_cleanup && <div className={`border p-3 text-sm ${health.last_demo_cleanup.error ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
+        <span className="text-xs text-slate-500 block">Demo accounts · last checked {formatDate(health.last_demo_cleanup.at)}</span>
+        {health.last_demo_cleanup.error ? <span className="text-red-700">Could not remove them: {health.last_demo_cleanup.error}</span>
+          : health.last_demo_cleanup.removed.length ? <span>Removed {health.last_demo_cleanup.removed.join(', ')}</span>
+            : <span className="text-emerald-800 font-semibold">None on the live site</span>}
+      </div>}
       <div className="flex flex-wrap gap-2">
         <button type="button" disabled={!!busy} onClick={() => act('check-gemini')} className="bg-emerald-900 text-white px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'check-gemini' ? 'Checking…' : 'Check Gemini now'}</button>
         <button type="button" disabled={!!busy} onClick={() => act('test-alert')} className="border border-slate-400 px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'test-alert' ? 'Sending…' : 'Send test alert'}</button>
         <button type="button" disabled={!!busy} onClick={() => { if (window.confirm('Email this week\'s progress report now to every parent who opted in and has not received it yet this week?')) act('send-weekly-reports'); }} className="border border-slate-400 px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'send-weekly-reports' ? 'Sending…' : 'Send weekly reports now'}</button>
+        <button type="button" disabled={!!busy} onClick={() => { if (window.confirm('Permanently delete the demo accounts (parent@fahim.ae, tutor@fahim.ae, cohort.parents@sunrise.ae) and sign-up test families (student_test_…) with their students? Payments are kept anonymised. Admin accounts are never removed.')) act('remove-demo-accounts'); }} className="border border-red-300 text-red-800 px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'remove-demo-accounts' ? 'Removing…' : 'Remove demo accounts'}</button>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {health.components.map(c => <div key={c.key} className={`border p-3 ${c.failures_in_window ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}>

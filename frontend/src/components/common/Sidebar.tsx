@@ -125,14 +125,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: UserIcon,
       isView: (v: string) => v === 'profile'
     },
-    {
+    // Only administrators see the admin panel (not students, parents or signed-out visitors).
+    ...(user?.role === 'admin' ? [{
       id: 'admin',
       titleEn: 'Admin & PDF Library',
       titleAr: 'لوحة الإدارة ومكتبة الكتب',
       icon: Settings,
       badge: 'MoE 30 Books',
       isView: (v: string) => v === 'admin'
-    }
+    }] : [])
   ];
 
   const handleNav = (item: any) => {

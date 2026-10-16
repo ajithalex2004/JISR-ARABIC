@@ -15,6 +15,8 @@ interface PaywallModalProps {
   onPaymentSuccess: () => void;
   // Students (PIN login) can't pay; only a parent account can buy plans.
   canPurchase?: boolean;
+  isSignedIn?: boolean;
+  onLogin?: () => void;
 }
 
 // Prices (USD, 5% UAE VAT included). The server is the source of truth; these only label the plan cards.
@@ -33,7 +35,9 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   chapterName,
   activeChild,
   onPaymentSuccess,
-  canPurchase = true
+  canPurchase = true,
+  isSignedIn = true,
+  onLogin
 }) => {
   const [selectedPlan, setSelectedPlan] = useState<'term' | 'annual' | 'voucher'>('annual');
   const [terms, setTerms] = useState<number[]>([term]);
@@ -171,7 +175,18 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           </p>
         </div>
 
-        {!canPurchase ? (
+        {!isSignedIn ? (
+          <div className="space-y-3 py-2">
+            <div className="p-4 bg-amber-50 border-2 border-amber-500 text-amber-950 text-sm">
+              <div className="font-black mb-1">Log in as a parent to unlock (سجّل الدخول كولي أمر)</div>
+              <p>
+                Plans are bought from a parent account for a child profile. Log in with the parent's email and
+                password, or create a free parent account, then choose a plan: one term USD 10.00, or the full year USD 25.50.
+              </p>
+            </div>
+            <button type="button" onClick={onLogin || onClose} className="w-full py-3 bg-emerald-700 text-white font-bold text-sm hover:bg-emerald-800">Log in / Create account</button>
+          </div>
+        ) : !canPurchase ? (
           <div className="space-y-3 py-2">
             <div className="p-4 bg-amber-50 border-2 border-amber-500 text-amber-950 text-sm">
               <div className="font-black mb-1">Ask your parent to unlock this (اطلب من ولي أمرك فتح المحتوى)</div>

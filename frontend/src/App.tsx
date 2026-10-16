@@ -435,6 +435,7 @@ export function App() {
 
       <PaywallModal
         isOpen={isPaywallOpen}
+        canPurchase={user?.role !== 'learner'}
         onClose={() => setIsPaywallOpen(false)}
         grade={paywallGrade}
         term={paywallTerm}

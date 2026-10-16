@@ -2,14 +2,75 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JISR (جسر) — UAE Arabic Learning Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>JISR Arabic: CBSE Arabic, line by line in English | Classes 1–10, UAE</title>
+    <meta name="description" content="Your child’s CBSE Arabic textbook, line by line in English, with native audio for every word. For non-native learners in UAE schools, Classes 1–10. First chapter of every term free." />
+    <link rel="canonical" href="https://app.jisrarabic.com/" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#58337E" />
-    <meta name="description" content="Official Arabic learning web and mobile application for non-native learners in UAE schools (CBSE & Ministry Curriculum)." />
+
+    <!-- Fonts: connect early so headlines don't wait on the stylesheet chain. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Social sharing (WhatsApp, Instagram, LinkedIn, X, iMessage) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="JISR Arabic" />
+    <meta property="og:url" content="https://app.jisrarabic.com/" />
+    <meta property="og:title" content="JISR Arabic: Arabic, finally understood." />
+    <meta property="og:description" content="The CBSE Arabic textbook, line by line in English, with native audio for every word. Classes 1–10, UAE. First chapter free." />
+    <meta property="og:image" content="https://app.jisrarabic.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Arabic, finally understood. A bridge joining the English word bridge to the Arabic word jisr." />
+    <meta property="og:locale" content="en_AE" />
+    <meta property="og:locale:alternate" content="ar_AE" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="JISR Arabic: Arabic, finally understood." />
+    <meta name="twitter:description" content="The CBSE Arabic textbook, line by line in English, with native audio for every word." />
+    <meta name="twitter:image" content="https://app.jisrarabic.com/og-image.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "EducationalOrganization",
+            "@id": "https://app.jisrarabic.com/#org",
+            "name": "JISR Arabic",
+            "alternateName": "جسر",
+            "legalName": "JISR Arabic Educational Technologies FZ-LLC",
+            "url": "https://app.jisrarabic.com/",
+            "logo": "https://app.jisrarabic.com/logo-512.svg",
+            "areaServed": "AE"
+          },
+          {
+            "@type": "Course",
+            "name": "CBSE Arabic for non-native learners (Classes 1–10)",
+            "description": "The CBSE Arabic textbook, line by line in English, with native audio for every word, an AI tutor, mind maps, study booklets and exam simulation.",
+            "provider": { "@id": "https://app.jisrarabic.com/#org" },
+            "inLanguage": ["ar", "en"],
+            "educationalLevel": "Classes 1–10",
+            "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "online", "courseWorkload": "PT1H" },
+            "offers": [
+              { "@type": "Offer", "name": "One term", "price": "10.00", "priceCurrency": "USD", "category": "Paid" },
+              { "@type": "Offer", "name": "Full year (3 terms)", "price": "25.50", "priceCurrency": "USD", "category": "Paid" }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body class="bg-[#fbfbfa] text-slate-900 antialiased">
     <div id="app"></div>
+    <noscript>
+      <main style="font-family:system-ui,sans-serif;max-width:640px;margin:48px auto;padding:0 20px;line-height:1.6">
+        <h1>JISR Arabic: Arabic, finally understood.</h1>
+        <p>Your child’s CBSE Arabic textbook, line by line in English, with native audio for every word. For non-native learners in UAE schools, Classes 1–10.</p>
+        <p>One term costs $10; the full year (3 terms) costs $25.50. The first chapter of every term is free.</p>
+        <p>Please turn on JavaScript to use JISR.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

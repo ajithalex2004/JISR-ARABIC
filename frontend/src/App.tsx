@@ -126,6 +126,18 @@ export function App() {
     }
   }, [activeChild?.default_grade, user?.role]);
 
+  // Arriving from the landing page's "Start free" / "Sign in" (/?auth=signup|login).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const intent = params.get('auth');
+    if (intent !== 'signup' && intent !== 'login') return;
+    params.delete('auth');
+    window.history.replaceState(null, '', window.location.pathname + (params.toString() ? `?${params}` : '') + window.location.hash);
+    if (localStorage.getItem('fahim_token')) return;
+    setAuthModalMode(intent === 'signup' ? 'signup_email' : 'login');
+    setIsAuthOpen(true);
+  }, []);
+
   // Check existing session
   useEffect(() => {
     const restoreSession = async () => {

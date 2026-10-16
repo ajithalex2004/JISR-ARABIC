@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { AuthResponse, ChildProfile } from '../../types';
-import { FahimRobotMascot } from '../common/FaheemRobotMascot';
 
 export const UAE_AVATARS = [
   { id: 'avatar_falcon', nameAr: 'الصقر الشامخ', nameEn: 'Falcon', icon: '🦅', desc: 'Pride & Vision' },
@@ -301,7 +300,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <X className="w-4 h-4" />
           </button>
 
-          <FahimRobotMascot size={88} className="mb-2 hover:scale-105 transition-transform" />
+          <img src="/logo.svg" alt="JISR Arabic" width={88} height={88} className="w-[88px] h-[88px] mb-2 rounded-2xl shadow-md object-cover hover:scale-105 transition-transform" />
 
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
             {mode === 'login' ? 'Login' : mode.startsWith('signup') ? 'Create Account' : mode === 'add_child' ? 'Add Child Profile' : 'Fahim Account'}

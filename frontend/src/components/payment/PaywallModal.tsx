@@ -13,6 +13,8 @@ interface PaywallModalProps {
   chapterName?: string;
   activeChild: ChildProfile | null;
   onPaymentSuccess: () => void;
+  // Students (PIN login) can't pay; only a parent account can buy plans.
+  canPurchase?: boolean;
 }
 
 // Prices (USD, 5% UAE VAT included). The server is the source of truth; these only label the plan cards.
@@ -30,7 +32,8 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   term,
   chapterName,
   activeChild,
-  onPaymentSuccess
+  onPaymentSuccess,
+  canPurchase = true
 }) => {
   const [selectedPlan, setSelectedPlan] = useState<'term' | 'annual' | 'voucher'>('annual');
   const [terms, setTerms] = useState<number[]>([term]);
@@ -58,7 +61,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
   // Live price from the server (validates the promo code too).
   useEffect(() => {
-    if (!isOpen || !body || selectedPlan === 'voucher') return;
+    if (!isOpen || !body || selectedPlan === 'voucher' || !canPurchase) return;
     let cancelled = false;
     api.quotePayment(body)
       .then(q => { if (!cancelled) { setQuote(q); setPromoMsg(appliedPromo ? `${appliedPromo} applied: you save ${usd(q.promo_discount_usd)}` : ''); } })
@@ -67,7 +70,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         if (appliedPromo) { setPromoMsg(e.message); setAppliedPromo(''); } else setErrorMsg(e.message);
       });
     return () => { cancelled = true; };
-  }, [isOpen, body, selectedPlan]);
+  }, [isOpen, body, selectedPlan, canPurchase]);
 
   if (!isOpen) return null;
 
@@ -168,7 +171,18 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           </p>
         </div>
 
-        {successReceipt ? (
+        {!canPurchase ? (
+          <div className="space-y-3 py-2">
+            <div className="p-4 bg-amber-50 border-2 border-amber-500 text-amber-950 text-sm">
+              <div className="font-black mb-1">Ask your parent to unlock this (اطلب من ولي أمرك فتح المحتوى)</div>
+              <p>
+                Plans can only be bought from a parent account. Ask your parent to log in to JISR with their email
+                and password, then choose a plan for you: one term USD 10.00, or the full year USD 25.50.
+              </p>
+            </div>
+            <button type="button" onClick={onClose} className="w-full py-3 bg-emerald-700 text-white font-bold text-sm hover:bg-emerald-800">OK</button>
+          </div>
+        ) : successReceipt ? (
           <div className="space-y-4 py-4">
             <div className="p-4 bg-emerald-100 border-2 border-emerald-600 text-emerald-950">
               <div className="flex items-center gap-2 font-black text-sm mb-1">

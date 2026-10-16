@@ -162,7 +162,7 @@ export function Faq() {
   );
 }
 
-export function FinalCta({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+export function FinalCta({ onEnter, signedIn = false }: { onEnter: (i: EnterIntent) => void; signedIn?: boolean }) {
   return (
     <section className="jl-final" aria-labelledby="jl-final-title">
       <div className="jl-wrap" data-reveal>
@@ -170,8 +170,14 @@ export function FinalCta({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
         <h2 id="jl-final-title" className="jl-display jl-display--sm">Let’s begin.</h2>
         <p className="jl-lede">Create a free account in a minute. Chapter 1 of every term is on us.</p>
         <div className="jl-actions jl-actions--center">
-          <button type="button" className="jl-btn jl-btn--primary" onClick={() => onEnter('signup')}>Start free <span aria-hidden="true" className="jl-btn__arrow">→</span></button>
-          <button type="button" className="jl-btn jl-btn--ghost" onClick={() => onEnter('login')}>I have an account</button>
+          {signedIn ? (
+            <button type="button" className="jl-btn jl-btn--primary" onClick={() => onEnter('explore')}>Go to my dashboard <span aria-hidden="true" className="jl-btn__arrow">→</span></button>
+          ) : (
+            <>
+              <button type="button" className="jl-btn jl-btn--primary" onClick={() => onEnter('signup')}>Start free <span aria-hidden="true" className="jl-btn__arrow">→</span></button>
+              <button type="button" className="jl-btn jl-btn--ghost" onClick={() => onEnter('login')}>I have an account</button>
+            </>
+          )}
         </div>
       </div>
     </section>

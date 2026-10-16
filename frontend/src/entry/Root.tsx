@@ -7,7 +7,7 @@ const Landing = lazy(() => import('../components/landing/Landing'));
 
 export type EnterIntent = 'signup' | 'login' | 'explore';
 
-// Set when a signed-out visitor chooses to go into the app ("Try a free lesson", "Sign in"…).
+// Set when a visitor goes from the welcome page into the app ("Sign in", "My dashboard"…).
 // Session-scoped on purpose: every new visit starts on the welcome page.
 const IN_APP_KEY = 'jisr_in_app';
 export const WELCOME_PATH = '/welcome';
@@ -16,14 +16,13 @@ function readStorage(store: 'local' | 'session', key: string): string | null {
   try { return (store === 'local' ? window.localStorage : window.sessionStorage).getItem(key); } catch { return null; }
 }
 
-/** Signed-out visitors start every visit on the welcome page (/welcome), which is also always
- *  reachable directly. Signed-in users, deep links (?grade=, ?payment=, #admin…) and guests who
- *  already chose to enter the app this session go to the app. */
+/** Every visit to the site starts on the welcome page (/welcome), signed in or not. Deep links
+ *  (?grade=, ?payment=, #admin…) and anyone who already went into the app during this browser
+ *  session (so a refresh doesn't bounce them out of a lesson) go to the app. */
 export function shouldShowLanding(loc: Pick<Location, 'pathname' | 'search' | 'hash'> = window.location): boolean {
   const path = loc.pathname.replace(/\/+$/, '') || '/';
   if (path === WELCOME_PATH) return true;
   if (path !== '/' || loc.search || loc.hash) return false;
-  if (readStorage('local', 'fahim_token')) return false;
   if (readStorage('session', IN_APP_KEY)) return false;
   return true;
 }
@@ -66,5 +65,5 @@ export function Root() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  return <Suspense fallback={<Loading />}>{landing ? <Landing onEnter={enterApp} /> : <App />}</Suspense>;
+  return <Suspense fallback={<Loading />}>{landing ? <Landing onEnter={enterApp} signedIn={!!readStorage('local', 'fahim_token')} /> : <App />}</Suspense>;
 }

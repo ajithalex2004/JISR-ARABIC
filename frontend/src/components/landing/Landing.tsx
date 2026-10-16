@@ -9,7 +9,7 @@ import './landing.css';
 
 const NAV = [['#how', 'How it works'], ['#features', 'Features'], ['#pricing', 'Pricing'], ['#faq', 'FAQ']];
 
-function Nav({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+function Nav({ onEnter, signedIn }: { onEnter: (i: EnterIntent) => void; signedIn: boolean }) {
   const scrolled = useScrolled();
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -28,8 +28,14 @@ function Nav({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
         <nav aria-label="Main" className="jl-nav__links" id="jl-menu">
           <ul>{NAV.map(([href, label]) => <li key={href}><a href={href} onClick={() => setOpen(false)}>{label}</a></li>)}</ul>
           <div className="jl-nav__cta">
-            <button type="button" className="jl-btn jl-btn--text" onClick={() => onEnter('login')}>Sign in</button>
-            <button type="button" className="jl-btn jl-btn--primary jl-btn--sm" onClick={() => onEnter('signup')}>Start free</button>
+            {signedIn ? (
+              <button type="button" className="jl-btn jl-btn--primary jl-btn--sm" onClick={() => onEnter('explore')}>My dashboard</button>
+            ) : (
+              <>
+                <button type="button" className="jl-btn jl-btn--text" onClick={() => onEnter('login')}>Sign in</button>
+                <button type="button" className="jl-btn jl-btn--primary jl-btn--sm" onClick={() => onEnter('signup')}>Start free</button>
+              </>
+            )}
           </div>
         </nav>
         <button type="button" className="jl-burger" aria-expanded={open} aria-controls="jl-menu" onClick={() => setOpen((o) => !o)}>
@@ -63,7 +69,7 @@ function Footer({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
   );
 }
 
-export default function Landing({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+export default function Landing({ onEnter, signedIn = false }: { onEnter: (i: EnterIntent) => void; signedIn?: boolean }) {
   const root = useRef<HTMLDivElement>(null);
   useReveal(root);
   useEffect(() => {
@@ -76,9 +82,9 @@ export default function Landing({ onEnter }: { onEnter: (i: EnterIntent) => void
   return (
     <div ref={root} className="jl">
       <a href="#jl-main" className="jl-skip">Skip to content</a>
-      <Nav onEnter={onEnter} />
+      <Nav onEnter={onEnter} signedIn={signedIn} />
       <main id="jl-main" tabIndex={-1}>
-        <Hero onEnter={onEnter} />
+        <Hero onEnter={onEnter} signedIn={signedIn} />
         <Marquee />
         <WordDemo />
         <ScrollStory />
@@ -87,7 +93,7 @@ export default function Landing({ onEnter }: { onEnter: (i: EnterIntent) => void
         <Parents />
         <Pricing onEnter={onEnter} />
         <Faq />
-        <FinalCta onEnter={onEnter} />
+        <FinalCta onEnter={onEnter} signedIn={signedIn} />
       </main>
       <Footer onEnter={onEnter} />
     </div>

@@ -58,7 +58,7 @@ export function BridgeArt() {
   );
 }
 
-export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+export function Hero({ onEnter, signedIn = false }: { onEnter: (i: EnterIntent) => void; signedIn?: boolean }) {
   const ref = useRef<HTMLElement>(null);
 
   // Gentle pointer parallax on the art, for mouse/trackpad users who haven't asked for less motion.
@@ -99,8 +99,8 @@ export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
             Built for non-native learners in UAE schools, and for the parents helping with homework.
           </p>
           <div className="jl-actions jl-rise" style={{ ['--d' as string]: 3 }}>
-            <button type="button" className="jl-btn jl-btn--primary" onClick={() => onEnter('signup')}>
-              Start free <span aria-hidden="true" className="jl-btn__arrow">→</span>
+            <button type="button" className="jl-btn jl-btn--primary" onClick={() => onEnter(signedIn ? 'explore' : 'signup')}>
+              {signedIn ? 'Go to my dashboard' : 'Start free'} <span aria-hidden="true" className="jl-btn__arrow">→</span>
             </button>
             <button type="button" className="jl-btn jl-btn--ghost" onClick={() => onEnter('explore')}>
               Try a free lesson

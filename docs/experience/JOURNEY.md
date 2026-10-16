@@ -57,9 +57,9 @@ child's confidence.
 | 10 | **Unlock** (app) | — | Paywall on chapter 2 → Stripe checkout → receipt + tax invoice | Paid term |
 | 11 | **Master** (app) | "Is my child improving?" | Mastery heatmap, ranks & badges, exam simulation, parent progress | Weekly return |
 
-Every signed-out visit starts on the welcome page at `/welcome` (the bare domain redirects there).
-Signed-in users and deep links go straight to the app; a guest who enters the app stays there for
-the rest of that browser session; signing out returns to `/welcome`.
+Every visit starts on the welcome page at `/welcome` (the bare domain redirects there). Signed-in
+users see "My dashboard" instead of Sign in / Start free. Deep links go straight to the app; anyone
+who enters the app stays there for the rest of that browser session; signing out returns to `/welcome`.
 
 ## 4. Build stages (each verified before the next)
 

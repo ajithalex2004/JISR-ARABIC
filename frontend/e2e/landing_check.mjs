@@ -114,7 +114,7 @@ for (const [path, opts, want, label] of [['/?grade=7', {}, false, 'deep link ?gr
   const p = await page({ token: true });
   await p.goto(BASE + '/', { waitUntil: 'networkidle' });
   ok(await p.getByRole('button', { name: 'My dashboard', exact: true }).isVisible(), 'signed in: nav shows My dashboard');
-  ok(!(await p.getByRole('button', { name: 'Sign in', exact: true }).count()), 'signed in: no Sign in button');
+  ok(await p.getByRole('button', { name: 'Sign in', exact: true }).first().isVisible(), 'signed in: Sign in is still visible');
   await p.getByRole('button', { name: 'My dashboard', exact: true }).click();
   await p.waitForTimeout(1500);
   ok(!(await isLanding(p)), 'signed in: My dashboard opens the app');
@@ -128,6 +128,17 @@ for (const [path, opts, want, label] of [['/?grade=7', {}, false, 'deep link ?gr
   await p.getByRole('button', { name: 'Sign in', exact: true }).click();
   await p.waitForTimeout(1500);
   ok(await p.getByRole('heading', { name: 'Login' }).isVisible().catch(() => false), 'Sign in opens the Login screen');
+  await p.context().close();
+}
+
+// 6d. Phones: Sign in is visible without opening the menu, and opens the Login screen
+{
+  const p = await page({ viewport: { width: 375, height: 812 } });
+  await p.goto(BASE + '/', { waitUntil: 'networkidle' });
+  const btn = p.locator('.jl-nav__signin-m');
+  ok(await btn.isVisible(), 'phone: Sign in visible in the top bar');
+  await btn.click(); await p.waitForTimeout(1500);
+  ok(await p.getByRole('heading', { name: 'Login' }).isVisible().catch(() => false), 'phone: Sign in opens the Login screen');
   await p.context().close();
 }
 

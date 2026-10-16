@@ -134,7 +134,7 @@ export function App() {
     if (intent !== 'signup' && intent !== 'login') return;
     params.delete('auth');
     window.history.replaceState(null, '', window.location.pathname + (params.toString() ? `?${params}` : '') + window.location.hash);
-    if (localStorage.getItem('fahim_token')) return;
+    // Opens even when already signed in, so a parent can switch accounts (e.g. to a student PIN).
     setAuthModalMode(intent === 'signup' ? 'signup_email' : 'login');
     setIsAuthOpen(true);
   }, []);

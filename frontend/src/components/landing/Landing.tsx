@@ -28,16 +28,16 @@ function Nav({ onEnter, signedIn }: { onEnter: (i: EnterIntent) => void; signedI
         <nav aria-label="Main" className="jl-nav__links" id="jl-menu">
           <ul>{NAV.map(([href, label]) => <li key={href}><a href={href} onClick={() => setOpen(false)}>{label}</a></li>)}</ul>
           <div className="jl-nav__cta">
+            <button type="button" className="jl-btn jl-btn--text jl-nav__signin" onClick={() => onEnter('login')}>Sign in</button>
             {signedIn ? (
               <button type="button" className="jl-btn jl-btn--primary jl-btn--sm" onClick={() => onEnter('explore')}>My dashboard</button>
             ) : (
-              <>
-                <button type="button" className="jl-btn jl-btn--text" onClick={() => onEnter('login')}>Sign in</button>
-                <button type="button" className="jl-btn jl-btn--primary jl-btn--sm" onClick={() => onEnter('signup')}>Start free</button>
-              </>
+              <button type="button" className="jl-btn jl-btn--primary jl-btn--sm" onClick={() => onEnter('signup')}>Start free</button>
             )}
           </div>
         </nav>
+        {/* Phones: Sign in stays on screen next to the menu button instead of hiding inside the menu. */}
+        <button type="button" className="jl-btn jl-btn--line-light jl-btn--sm jl-nav__signin-m" onClick={() => onEnter('login')}>Sign in</button>
         <button type="button" className="jl-burger" aria-expanded={open} aria-controls="jl-menu" onClick={() => setOpen((o) => !o)}>
           <span className="jl-sr">{open ? 'Close menu' : 'Open menu'}</span><i aria-hidden="true" />
         </button>

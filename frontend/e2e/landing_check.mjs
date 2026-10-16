@@ -27,6 +27,7 @@ for (const [w, h] of [[375, 812], [768, 1024], [1440, 900]]) {
   const p = await page({ viewport: { width: w, height: h } });
   await p.goto(BASE + '/', { waitUntil: 'networkidle' });
   ok(await isLanding(p), `${w}px: landing shown at /`);
+  ok(new URL(p.url()).pathname === '/welcome', `${w}px: address bar shows /welcome (${p.url()})`);
   const ov = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   ok(ov <= 0, `${w}px: no horizontal overflow (${ov}px)`);
   ok(p.errs.length === 0, `${w}px: no console errors ${JSON.stringify(p.errs)}`);
@@ -87,7 +88,13 @@ for (const [w, h] of [[375, 812], [768, 1024], [1440, 900]]) {
   ok(await p.getByText(/create account|sign up/i).first().isVisible().catch(() => false), 'sign-up modal is open');
   ok(!(new URL(p.url()).search.includes('auth')), 'auth intent stripped from URL: ' + p.url());
   await p.goto(BASE + '/', { waitUntil: 'networkidle' });
-  ok(!(await isLanding(p)), 'returning visitor goes straight to the app');
+  ok(!(await isLanding(p)), 'a guest who entered the app stays in it for the session');
+  {
+    const p2 = await page();
+    await p2.goto(BASE + '/', { waitUntil: 'networkidle' });
+    ok(await isLanding(p2), 'every new visit starts on the welcome page');
+    await p2.context().close();
+  }
   await p.goto(BASE + '/welcome', { waitUntil: 'networkidle' });
   ok(await isLanding(p), '/welcome always shows the landing');
   ok(p.errs.length === 0, 'flows: no errors ' + JSON.stringify(p.errs));

@@ -23,6 +23,7 @@ import { ProfileView } from './components/profile/ProfileView';
 import { SubscriptionView } from './components/profile/SubscriptionView';
 import { User, ChildProfile, AuthResponse, LearningPlan } from './types';
 import { api, API_BASE } from './services/api';
+import { goToWelcome } from './entry/Root';
 
 export function App() {
   const [accessNotice, setAccessNotice] = useState('');
@@ -215,6 +216,7 @@ export function App() {
     localStorage.removeItem('fahim_token');
     setUser(null);
     setActiveChild(null);
+    goToWelcome();
   };
 
   const handleSelectLesson = (lessonId: string) => {

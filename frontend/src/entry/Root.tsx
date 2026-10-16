@@ -7,21 +7,31 @@ const Landing = lazy(() => import('../components/landing/Landing'));
 
 export type EnterIntent = 'signup' | 'login' | 'explore';
 
-const ENTERED_KEY = 'jisr_entered_app';
+// Set when a signed-out visitor chooses to go into the app ("Try a free lesson", "Sign in"…).
+// Session-scoped on purpose: every new visit starts on the welcome page.
+const IN_APP_KEY = 'jisr_in_app';
+export const WELCOME_PATH = '/welcome';
 
 function readStorage(store: 'local' | 'session', key: string): string | null {
   try { return (store === 'local' ? window.localStorage : window.sessionStorage).getItem(key); } catch { return null; }
 }
 
-/** The landing page is for signed-out visitors arriving at the bare root (or anyone at /welcome).
- *  Deep links (?grade=, ?payment=, #admin…), sessions and returning learners go straight to the app. */
+/** Signed-out visitors start every visit on the welcome page (/welcome), which is also always
+ *  reachable directly. Signed-in users, deep links (?grade=, ?payment=, #admin…) and guests who
+ *  already chose to enter the app this session go to the app. */
 export function shouldShowLanding(loc: Pick<Location, 'pathname' | 'search' | 'hash'> = window.location): boolean {
   const path = loc.pathname.replace(/\/+$/, '') || '/';
-  if (path === '/welcome') return true;
+  if (path === WELCOME_PATH) return true;
   if (path !== '/' || loc.search || loc.hash) return false;
   if (readStorage('local', 'fahim_token')) return false;
-  if (readStorage('local', ENTERED_KEY)) return false;
+  if (readStorage('session', IN_APP_KEY)) return false;
   return true;
+}
+
+/** Leave the app for the welcome page (used on sign-out). */
+export function goToWelcome() {
+  try { window.sessionStorage.removeItem(IN_APP_KEY); } catch { /* ignore */ }
+  window.location.assign(WELCOME_PATH);
 }
 
 const Loading = () => (
@@ -31,10 +41,19 @@ const Loading = () => (
 );
 
 export function Root() {
-  const [landing, setLanding] = useState(shouldShowLanding);
+  const [landing, setLanding] = useState(() => {
+    const show = shouldShowLanding();
+    // Keep the address bar on /welcome so the welcome page is always the page people see and share.
+    if (show && window.location.pathname !== WELCOME_PATH) window.history.replaceState(null, '', WELCOME_PATH);
+    return show;
+  });
+
+  useEffect(() => {
+    try { window.localStorage.removeItem('jisr_entered_app'); } catch { /* old "skip the landing" flag */ }
+  }, []);
 
   const enterApp = useCallback((intent: EnterIntent) => {
-    try { window.localStorage.setItem(ENTERED_KEY, '1'); } catch { /* private mode: fine */ }
+    try { window.sessionStorage.setItem(IN_APP_KEY, '1'); } catch { /* private mode: fine */ }
     const url = intent === 'explore' ? '/' : `/?auth=${intent}`;
     window.history.pushState(null, '', url);
     window.scrollTo(0, 0);

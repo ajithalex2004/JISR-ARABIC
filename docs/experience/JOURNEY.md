@@ -45,7 +45,7 @@ child's confidence.
 
 | # | Stage | Visitor's question | What they see/do | Success signal |
 |---|---|---|---|---|
-| 1 | **Arrive** (`/`, signed-out) | "What is this?" | Hero: "Arabic, finally understood." The bridge draws from *bridge* to **جِسْر**. Primary CTA *Start free*, secondary *Try a free lesson* | Scrolls or clicks within 5s |
+| 1 | **Arrive** (`/welcome`, signed-out) | "What is this?" | Hero: "JISR, finally bridge the gap." The bridge draws from *bridge* to **جِسْر**. Primary CTA *Start free*, secondary *Try a free lesson* | Scrolls or clicks within 5s |
 | 2 | **Feel it** | "Does it actually help my child?" | Live word demo: tap any Arabic word to hear it, see transliteration and meaning; the real product interaction | Taps ≥1 word |
 | 3 | **Understand** | "How does it work?" | Scroll story (sticky): *The textbook page* → *Line by line, in English* → *Practise until it sticks* | Reaches step 3 |
 | 4 | **Trust** | "Is it aligned with school?" | CBSE curriculum, Classes 1–10, three terms; parent dashboard; receipts & UAE tax invoices | Opens curriculum or parent section |
@@ -57,8 +57,9 @@ child's confidence.
 | 10 | **Unlock** (app) | — | Paywall on chapter 2 → Stripe checkout → receipt + tax invoice | Paid term |
 | 11 | **Master** (app) | "Is my child improving?" | Mastery heatmap, ranks & badges, exam simulation, parent progress | Weekly return |
 
-Returning learners and anyone with a session skip stages 1–7 and go straight to the app.
-The landing stays available at `/welcome`.
+Every signed-out visit starts on the welcome page at `/welcome` (the bare domain redirects there).
+Signed-in users and deep links go straight to the app; a guest who enters the app stays there for
+the rest of that browser session; signing out returns to `/welcome`.
 
 ## 4. Build stages (each verified before the next)
 

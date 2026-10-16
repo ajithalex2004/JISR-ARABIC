@@ -1,5 +1,6 @@
 import os
 import datetime
+import time
 import random
 import secrets
 import bcrypt
@@ -31,7 +32,8 @@ def create_access_token(data: dict, expires_delta: Optional[datetime.timedelta] 
         expire = datetime.datetime.now(datetime.timezone.utc) + expires_delta
     else:
         expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire, "jti": secrets.token_urlsafe(18)})
+    # iat lets a "sign out everywhere" (password reset) revoke only the tokens issued before it.
+    to_encode.update({"exp": expire, "iat": int(time.time()), "jti": secrets.token_urlsafe(18)})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   BookOpen, BookText, Clock, FlaskConical, Sparkles,
   Target, Trophy, User as UserIcon, LogOut,
-  Smartphone, Monitor, ChevronRight, CheckCircle, ShieldCheck, Settings, GitFork
+  ChevronRight, CheckCircle, ShieldCheck, Settings, GitFork
 } from 'lucide-react';
 import { User, ChildProfile } from '../../types';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
@@ -16,8 +16,6 @@ interface SidebarProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   onOpenAskFahim: () => void;
-  isMobileSimulator: boolean;
-  onToggleMobileSimulator: () => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
@@ -39,8 +37,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenAuth,
   onLogout,
   onOpenAskFahim,
-  isMobileSimulator,
-  onToggleMobileSimulator,
   isOpenMobile = false,
   onCloseMobile
 }) => {
@@ -265,22 +261,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* 3. Footer Controls */}
       <div className="p-4 border-t border-purple-100 space-y-2.5 bg-slate-50/70">
-        {/* Toggle Mobile App Simulator */}
-        <button
-          onClick={onToggleMobileSimulator}
-          className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-white border border-slate-200/80 flex items-center justify-between transition-colors shadow-2xs"
-          title="Toggle Mobile Simulator"
-        >
-          <div className="flex items-center gap-2">
-            {isMobileSimulator ? (
-              <Monitor className="w-3.5 h-3.5 text-purple-600" />
-            ) : (
-              <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
-            )}
-            <span>{isMobileSimulator ? 'Switch to Desktop View' : 'Mobile App Simulator'}</span>
-          </div>
-          <span className="text-[10px] text-slate-400 font-mono">Sim</span>
-        </button>
 
         {/* User Session: Login or Logout */}
         {user ? (

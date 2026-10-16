@@ -152,9 +152,13 @@ class TestPillar2SecureAuthentication(unittest.TestCase):
         self.assertTrue(is_session_revoked_in_cache(jti, user_id))
         self.assertFalse(is_session_revoked_in_cache("unrelated-jti", user_id))
 
-        # Revoke user
+        # Revoke user: sessions issued before the revocation (or without an issue time) are caught...
+        import time
         record_revoked_user(user_id)
         self.assertTrue(is_session_revoked_in_cache("any-other-jti", user_id))
+        self.assertTrue(is_session_revoked_in_cache("older-jti", user_id, issued_at=time.time() - 60))
+        # ...but signing in again afterwards gives a working session
+        self.assertFalse(is_session_revoked_in_cache("newer-jti", user_id, issued_at=time.time() + 1))
 
     def test_distributed_rate_limit_middleware(self):
         client = TestClient(app)

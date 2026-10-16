@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import { Root } from './entry/Root';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { UpdateAvailableBanner } from './components/common/UpdateAvailableBanner';
 import './index.css';
@@ -8,7 +8,7 @@ import './index.css';
 ReactDOM.createRoot(document.getElementById('app')!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      <Root />
       <UpdateAvailableBanner />
     </ErrorBoundary>
   </React.StrictMode>

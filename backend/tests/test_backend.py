@@ -194,12 +194,19 @@ class TestFahimBackend(unittest.TestCase):
         })
         self.assertEqual(reset_res.status_code, 200)
 
-        # Verify new password login works
+        # The reset signs out the session that existed before it
+        old_token = login_res.json()["access_token"]
+        self.assertEqual(self.client.get("/api/auth/me", headers={"Authorization": f"Bearer {old_token}"}).status_code, 401)
+
+        # Verify new password login works, and the new session stays signed in
         new_login = self.client.post("/api/auth/login", json={
             "email": "newparent@fahim.ae",
             "password": "NewSecurePassword2026!"
         })
         self.assertEqual(new_login.status_code, 200)
+        new_token = new_login.json()["access_token"]
+        me = self.client.get("/api/auth/me", headers={"Authorization": f"Bearer {new_token}"})
+        self.assertEqual(me.status_code, 200, me.text)
 
     def test_05_curriculum_demo_and_paywall(self):
         """Test free demo access for Chapter 1 (Ball Games) and USD 50 paywall for non-demo."""

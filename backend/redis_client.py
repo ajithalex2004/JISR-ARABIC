@@ -24,7 +24,7 @@ _redis_retry_interval = 15.0  # seconds between reconnect attempts if offline
 _fallback_lock = threading.Lock()
 _fallback_rate_buckets = defaultdict(deque)
 _fallback_revoked_tokens = set()
-_fallback_revoked_users = set()
+_fallback_revoked_users: dict = {}  # user_id -> epoch seconds of the revocation
 _fallback_cache: Dict[str, Tuple[float, Any]] = {}
 
 
@@ -121,22 +121,37 @@ def record_revoked_token(jti: str, ttl_seconds: int = 86400 * 7):
 
 
 def record_revoked_user(user_id: str, ttl_seconds: int = 86400 * 7):
-    """Mark all sessions for a user as revoked (e.g. upon password reset or account deletion)."""
+    """Revoke every session a user holds right now (e.g. upon password reset or account deletion).
+
+    Stores the moment of revocation, so sessions started afterwards (signing in again with the new
+    password) stay valid.
+    """
     if not user_id:
         return
     cache_delete_pattern("auth_principal:*")
+    revoked_at = int(time.time())
     client = get_redis_client()
     if client:
         try:
-            client.setex(f"fahim:revoked_user:{user_id}", ttl_seconds, "1")
+            client.setex(f"fahim:revoked_user:{user_id}", ttl_seconds, str(revoked_at))
             return
         except Exception as e:
             logger.warning(f"Failed to record revoked user in Redis: {e}")
     with _fallback_lock:
-        _fallback_revoked_users.add(user_id)
+        _fallback_revoked_users[user_id] = revoked_at
 
 
-def is_session_revoked_in_cache(jti: Optional[str], user_id: Optional[str] = None) -> bool:
+def _issued_before(issued_at: Optional[float], revoked_at) -> bool:
+    """A token is caught by a user-wide revocation if it was issued before it (or has no issue time)."""
+    try:
+        revoked = float(revoked_at)
+    except (TypeError, ValueError):
+        revoked = 0.0
+    return issued_at is None or float(issued_at) < revoked
+
+
+def is_session_revoked_in_cache(jti: Optional[str], user_id: Optional[str] = None,
+                                issued_at: Optional[float] = None) -> bool:
     """
     Fast sub-millisecond check to verify if a token or user has been revoked.
     Returns True if definitely revoked in cache, False otherwise.
@@ -150,9 +165,11 @@ def is_session_revoked_in_cache(jti: Optional[str], user_id: Optional[str] = Non
             pipe = client.pipeline()
             pipe.exists(f"fahim:revoked_token:{jti}")
             if user_id:
-                pipe.exists(f"fahim:revoked_user:{user_id}")
+                pipe.get(f"fahim:revoked_user:{user_id}")
             results = pipe.execute()
-            if any(results):
+            if results[0]:
+                return True
+            if user_id and results[1] is not None and _issued_before(issued_at, results[1]):
                 return True
         except Exception as e:
             logger.debug(f"Redis session revocation check failed: {e}")
@@ -160,7 +177,7 @@ def is_session_revoked_in_cache(jti: Optional[str], user_id: Optional[str] = Non
     with _fallback_lock:
         if jti in _fallback_revoked_tokens:
             return True
-        if user_id and user_id in _fallback_revoked_users:
+        if user_id and user_id in _fallback_revoked_users and _issued_before(issued_at, _fallback_revoked_users[user_id]):
             return True
 
     return False

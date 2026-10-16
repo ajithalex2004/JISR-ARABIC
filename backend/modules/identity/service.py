@@ -133,7 +133,7 @@ def get_current_user(authorization: Optional[str]=None, *, db: Session) -> Princ
         if is_student_session_superseded(child_id, jti):
             raise ApplicationError(401, "You have been logged out because this student account logged in from another device.")
 
-    if is_session_revoked_in_cache(jti, user_id):
+    if is_session_revoked_in_cache(jti, user_id, payload.get("iat")):
         raise ApplicationError(401, "Session has expired or was revoked")
 
     principal_cache_key = f"auth_principal:{jti}"

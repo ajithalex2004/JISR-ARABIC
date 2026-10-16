@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  User as UserIcon, Sparkles, Smartphone,
-  Monitor, LogOut, CheckCircle, ChevronDown, Plus, Users, Compass, Menu
+  User as UserIcon, Sparkles,
+  LogOut, CheckCircle, ChevronDown, Plus, Users, Compass, Menu
 } from 'lucide-react';
 import { User, ChildProfile } from '../../types';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
@@ -30,8 +30,6 @@ interface HeaderProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   onOpenAskFahim: () => void;
-  isMobileSimulator: boolean;
-  onToggleMobileSimulator: () => void;
   onToggleMobileMenu?: () => void;
 }
 
@@ -48,8 +46,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   onLogout,
   onOpenAskFahim,
-  isMobileSimulator,
-  onToggleMobileSimulator,
   onToggleMobileMenu
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -86,24 +82,6 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <ArabEnglishToggleSwitch compact />
-          <span className="text-purple-300/40">|</span>
-          <button
-            onClick={onToggleMobileSimulator}
-            className="flex items-center gap-1.5 hover:text-white transition-colors text-purple-200 text-xs px-2 py-0.5 rounded-lg hover:bg-white/10"
-            title="Toggle Mobile App Simulator"
-          >
-            {isMobileSimulator ? (
-              <>
-                <Monitor className="w-3.5 h-3.5 text-amber-300" />
-                <span>Web View</span>
-              </>
-            ) : (
-              <>
-                <Smartphone className="w-3.5 h-3.5 text-emerald-300" />
-                <span>Mobile App View</span>
-              </>
-            )}
-          </button>
           <span className="text-purple-300/40">|</span>
           <span className="text-purple-200 text-[11px] font-semibold">Fahim v2.4</span>
         </div>

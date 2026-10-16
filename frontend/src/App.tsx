@@ -12,7 +12,6 @@ import { AuthModal } from './components/auth/AuthModal';
 import { PaywallModal } from './components/payment/PaywallModal';
 import { AskFahimModal } from './components/ai/AskFahimModal';
 import { OnboardingWizardModal } from './components/onboarding/OnboardingWizardModal';
-import { MobileFrameSimulator } from './components/mobile/MobileFrameSimulator';
 import { SocraticLearnStudio } from './components/learning/SocraticLearnStudio';
 import { MindmapsViewer } from './components/learning/MindmapsViewer';
 import { MalazimViewer } from './components/learning/MalazimViewer';
@@ -23,7 +22,7 @@ import { GamificationCenter } from './components/gamification/GamificationCenter
 import { ProfileView } from './components/profile/ProfileView';
 import { SubscriptionView } from './components/profile/SubscriptionView';
 import { User, ChildProfile, AuthResponse, LearningPlan } from './types';
-import { api } from './services/api';
+import { api, API_BASE } from './services/api';
 
 export function App() {
   const [accessNotice, setAccessNotice] = useState('');
@@ -32,9 +31,19 @@ export function App() {
       const detail = (event as CustomEvent).detail;
       setAccessNotice(detail.message);
       if (detail.status === 401) {
-        setUser(null);
-        setActiveChild(null);
-        localStorage.removeItem('fahim_token');
+        // One endpoint refusing the request is not proof the session is gone: sign out only if
+        // the session itself is no longer valid.
+        const token = localStorage.getItem('fahim_token');
+        if (!token) { setUser(null); setActiveChild(null); return; }
+        fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(res => {
+            if (res.status === 401 && localStorage.getItem('fahim_token') === token) {
+              setUser(null);
+              setActiveChild(null);
+              localStorage.removeItem('fahim_token');
+            }
+          })
+          .catch(() => {});
       }
     };
     window.addEventListener('fahim:access-denied', onDenied);
@@ -102,7 +111,6 @@ export function App() {
   const [paywallTerm, setPaywallTerm] = useState<number>(1);
   const [paywallChapterName, setPaywallChapterName] = useState<string | undefined>(undefined);
   const [isAskFahimOpen, setIsAskFahimOpen] = useState<boolean>(false);
-  const [isMobileSimulator, setIsMobileSimulator] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [readerInitialPage, setReaderInitialPage] = useState<number>(7);
   const [appGrade, setAppGrade] = useState<number>(() => {
@@ -235,8 +243,6 @@ export function App() {
         }}
         onLogout={handleLogout}
         onOpenAskFahim={() => setIsAskFahimOpen(true)}
-        isMobileSimulator={isMobileSimulator}
-        onToggleMobileSimulator={() => setIsMobileSimulator(!isMobileSimulator)}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
@@ -263,8 +269,6 @@ export function App() {
           }}
           onLogout={handleLogout}
           onOpenAskFahim={() => setIsAskFahimOpen(true)}
-          isMobileSimulator={isMobileSimulator}
-          onToggleMobileSimulator={() => setIsMobileSimulator(!isMobileSimulator)}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
@@ -473,14 +477,7 @@ export function App() {
     </div>
   );
 
-  return (
-    <MobileFrameSimulator
-      enabled={isMobileSimulator}
-      onToggle={() => setIsMobileSimulator(false)}
-    >
-      {appContent}
-    </MobileFrameSimulator>
-  );
+  return appContent;
 }
 
 export default App;

@@ -303,10 +303,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <img src="/logo.svg" alt="JISR Arabic" width={88} height={88} className="w-[88px] h-[88px] mb-2 rounded-2xl shadow-md object-cover hover:scale-105 transition-transform" />
 
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            {mode === 'login' ? 'Login' : mode.startsWith('signup') ? 'Create Account' : mode === 'add_child' ? 'Add Child Profile' : 'Fahim Account'}
+            {mode === 'login' ? 'Login' : mode.startsWith('signup') ? 'Create Account' : mode === 'add_child' ? 'Add Child Profile' : 'JISR Account'}
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Start your learning journey with Fahim
+            Start your learning journey with JISR
           </p>
         </div>
 
@@ -1096,7 +1096,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {/* Bottom Inspirational Card (Screenshot 2, 3, 4) */}
           <div className="bg-[#F5F3FF] border border-[#DDD6FE] rounded-2xl p-3.5 flex items-center gap-3 text-xs text-[#5E35B1] font-medium mt-3">
             <Lightbulb className="w-5 h-5 shrink-0 text-[#7C3AED]" />
-            <span>Success starts with one step, stay with Fahim!</span>
+            <span>Success starts with one step, stay with JISR!</span>
           </div>
         </div>
       </div>

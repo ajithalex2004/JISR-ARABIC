@@ -161,7 +161,8 @@
   background-image: radial-gradient(rgba(245, 239, 230, 0.07) 1px, transparent 1px);
   background-size: 3px 3px;
 }
-.jl-hero__grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(32px, 5vw, 80px); align-items: center; }
+.jl-hero__grid { display: grid; grid-template-columns: 1.25fr 0.9fr; gap: clamp(32px, 5vw, 80px); align-items: center; }
+.jl-hero .jl-display { font-size: clamp(2.7rem, 6.2vw, 5.6rem); }
 .jl-hero .jl-eyebrow { color: var(--gold); display: inline-flex; align-items: center; gap: 10px; }
 .jl-dot { width: 8px; height: 8px; background: var(--emerald); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); animation: jl-pulse 2.4s var(--ease) infinite; }
 .jl-hero .jl-lede { color: var(--muted-dark); margin-top: 28px; }

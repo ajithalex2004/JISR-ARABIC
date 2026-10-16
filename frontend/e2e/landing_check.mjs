@@ -102,10 +102,32 @@ for (const [w, h] of [[375, 812], [768, 1024], [1440, 900]]) {
 }
 
 // 6. Gate rules
-for (const [path, opts, want, label] of [['/?grade=7', {}, false, 'deep link ?grade= goes to app'], ['/?payment=success', {}, false, 'payment return goes to app'], ['/#admin', {}, false, '#admin goes to app'], ['/', { token: true }, false, 'signed-in visitor goes to app']]) {
+for (const [path, opts, want, label] of [['/?grade=7', {}, false, 'deep link ?grade= goes to app'], ['/?payment=success', {}, false, 'payment return goes to app'], ['/#admin', {}, false, '#admin goes to app'], ['/', { token: true }, true, 'signed-in visitor also starts on the welcome page']]) {
   const p = await page(opts);
   await p.goto(BASE + path, { waitUntil: 'networkidle' });
   ok((await isLanding(p)) === want, label);
+  await p.context().close();
+}
+
+// 6b. Signed-in visitor: welcome page offers "My dashboard" instead of Sign in, and it opens the app
+{
+  const p = await page({ token: true });
+  await p.goto(BASE + '/', { waitUntil: 'networkidle' });
+  ok(await p.getByRole('button', { name: 'My dashboard', exact: true }).isVisible(), 'signed in: nav shows My dashboard');
+  ok(!(await p.getByRole('button', { name: 'Sign in', exact: true }).count()), 'signed in: no Sign in button');
+  await p.getByRole('button', { name: 'My dashboard', exact: true }).click();
+  await p.waitForTimeout(1500);
+  ok(!(await isLanding(p)), 'signed in: My dashboard opens the app');
+  await p.context().close();
+}
+
+// 6c. Sign in opens the login screen
+{
+  const p = await page();
+  await p.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await p.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await p.waitForTimeout(1500);
+  ok(await p.getByRole('heading', { name: 'Login' }).isVisible().catch(() => false), 'Sign in opens the Login screen');
   await p.context().close();
 }
 

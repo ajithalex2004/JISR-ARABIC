@@ -7,6 +7,7 @@ import {
 import { LessonPackage, ChildProfile, MistakeEntry } from '../../types';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ArabEnglishToggleSwitch } from '../common/ArabEnglishToggleSwitch';
+import { TashkeelToggleSwitch } from '../common/TashkeelToggleSwitch';
 import { audioManager } from '../../services/audio';
 import { api } from '../../services/api';
 import { PronunciationSandbox } from '../audio/PronunciationSandbox';
@@ -286,7 +287,8 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <TashkeelToggleSwitch />
           <ArabEnglishToggleSwitch />
           <span className="bg-emerald-800 text-white text-xs font-bold px-2.5 py-1 uppercase tracking-wider">
             {data.lesson.is_first_chapter_demo ? 'Interactive Demo Active' : 'Full Term Pack'}

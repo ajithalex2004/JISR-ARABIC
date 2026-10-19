@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../arabic_dict.dart';
 import '../arab_english_service.dart';
+import '../tashkeel.dart';
 
 /// Normalize Arabic text by removing tashkeel diacritics, punctuation, and unifying Alef variants.
 String normalizeArabic(String text) {
@@ -196,6 +197,8 @@ class InteractiveArabicText extends StatelessWidget {
     return ValueListenableBuilder<int>(
       valueListenable: WordGloss.revision,
       builder: (context, _, _) => ValueListenableBuilder<bool>(
+      valueListenable: TashkeelState.notifier,
+      builder: (context, _, _) => ValueListenableBuilder<bool>(
       valueListenable: ArabEnglishState.notifier,
       builder: (context, isArabEnglishOn, _) {
         return Directionality(
@@ -350,7 +353,7 @@ class InteractiveArabicText extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      word,
+                      TashkeelState.display(word),
                       style: (style ??
                               const TextStyle(
                                 fontSize: 13.5,
@@ -389,6 +392,7 @@ class InteractiveArabicText extends StatelessWidget {
       ),
     );
   },
+),
 ),
 );
   }

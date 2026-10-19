@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { audioManager } from '../../services/audio';
 import { getWordTranslation, fetchWordGloss, WordDefinition } from '../../services/arabicDictionary';
 import { ArabEnglishHelper, useArabEnglish } from '../../services/arabEnglishService';
+import { stripTashkeel, useTashkeel } from '../../services/tashkeel';
 
 interface ArabicWordSpansProps {
   text: string;
@@ -37,6 +38,8 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
   showAudioPrompt = true
 }) => {
   const [arabEnglishEnabled] = useArabEnglish();
+  const [tashkeelMode] = useTashkeel();
+  const hideTashkeel = tashkeelMode === 'plain';
   const [activePlayingWord, setActivePlayingWord] = useState<string>('');
   const [activeTouchedIndex, setActiveTouchedIndex] = useState<number | null>(null);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
@@ -180,7 +183,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
 
           const cleanWord = token.replace(/[؟!\.,،؛:\'\"()\[\]\-—]/g, '').trim();
           if (!cleanWord) {
-            return <span key={idx}>{token}</span>;
+            return <span key={idx}>{hideTashkeel ? stripTashkeel(token) : token}</span>;
           }
 
           const isPlaying = activePlayingWord && cleanWord && (cleanWord === activePlayingWord || token.includes(activePlayingWord));
@@ -214,7 +217,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
                     : 'hover:bg-purple-100/80 hover:text-[#58337E] hover:ring-1 hover:ring-purple-400'
                 }`}
               >
-                <span className="leading-tight">{token}</span>
+                <span className="leading-tight">{hideTashkeel ? stripTashkeel(token) : token}</span>
                 {arabEnglishEnabled && arabEn && (
                   <span
                     className="block text-[11px] font-sans font-bold tracking-tight text-[#4338CA] leading-none select-none text-center mt-0.5 whitespace-nowrap"
@@ -253,6 +256,11 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
             <span className="font-arabic text-base text-amber-300 font-bold leading-tight drop-shadow-sm" dir="rtl">
               {tooltipState.token}
             </span>
+            {hideTashkeel && stripTashkeel(tooltipState.token) !== tooltipState.token && (
+              <span className="text-[9px] text-emerald-300 font-bold uppercase tracking-wider mt-0.5">
+                Vowels revealed
+              </span>
+            )}
 
             {/* Arab-English Phonetic Pronunciation Badge */}
             {(() => {

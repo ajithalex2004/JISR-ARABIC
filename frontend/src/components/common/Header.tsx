@@ -6,6 +6,7 @@ import {
 import { User, ChildProfile } from '../../types';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ArabEnglishToggleSwitch } from './ArabEnglishToggleSwitch';
+import { TashkeelToggleSwitch } from './TashkeelToggleSwitch';
 
 
 const AVATAR_ICONS: Record<string, string> = {
@@ -81,6 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-3">
+          <TashkeelToggleSwitch compact />
           <ArabEnglishToggleSwitch compact />
           <span className="text-purple-300/40">|</span>
           <span className="text-purple-200 text-[11px] font-semibold">Fahim v2.4</span>
@@ -142,7 +144,8 @@ export const Header: React.FC<HeaderProps> = ({
 
 
           {/* Arab-English Pronunciation Toggle */}
-          <div className="hidden sm:flex">
+          <div className="hidden sm:flex items-center gap-2">
+            <TashkeelToggleSwitch />
             <ArabEnglishToggleSwitch />
           </div>
 

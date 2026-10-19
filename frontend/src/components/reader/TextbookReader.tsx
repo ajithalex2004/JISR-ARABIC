@@ -4,6 +4,7 @@ import { api, API_BASE } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ArabEnglishToggleSwitch } from '../common/ArabEnglishToggleSwitch';
+import { TashkeelToggleSwitch } from '../common/TashkeelToggleSwitch';
 import { User, ChildProfile } from '../../types';
 
 interface TextbookReaderProps {
@@ -356,6 +357,7 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
             </button>
           </div>
 
+          <TashkeelToggleSwitch />
           <ArabEnglishToggleSwitch />
         </div>
       </div>

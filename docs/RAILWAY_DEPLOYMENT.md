@@ -166,6 +166,23 @@ python scripts\upload_content.py --api https://api.jisrarabic.com
 The Hobby plan allows volumes up to 5 GB, which covers these folders with room to spare.
 Delete `.content-upload-progress.json` only if you want to upload everything again.
 
+## Updating lesson content after a code change
+
+The Class 5 lessons (vocabulary, roots, grammar, quizzes) are written in the code catalogue
+(`backend/curriculum_catalog*.py`, `backend/curriculum_seed.py`). Merging a change there does
+not change the live lessons until the content is imported:
+
+1. Railway → **api** service → **Variables** → add `IMPORT_CONTENT_ON_DEPLOY` = `1`.
+   Railway redeploys the service.
+2. In **Deployments → View logs**, look for
+   `Curriculum content imported without demo accounts; cache cleared for N lessons.`
+3. Delete the `IMPORT_CONTENT_ON_DEPLOY` variable (Railway redeploys again, without importing).
+
+The import replaces those lesson versions with the catalogue, so edits made to them in the
+admin screens are lost; it also clears the lesson cache so learners see the change at once.
+With the Railway CLI you can run it directly instead: `railway ssh --service api`, then
+`python -m backend.content_import`.
+
 ## Step 6 — Mobile app
 
 The app's built-in API address is `https://api.jisrarabic.com`, so release builds need no

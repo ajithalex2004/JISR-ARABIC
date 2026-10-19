@@ -18,6 +18,13 @@ if [ "${RUN_MIGRATIONS:-1}" = "1" ] && [ "$1" = "api" ]; then
         fi
     }
     echo ">> [JISR Entrypoint] Database schema verified."
+    # Re-import the authored curriculum (lesson versions + vocabulary) from the code catalogue.
+    # Set IMPORT_CONTENT_ON_DEPLOY=1 for one deploy, then remove it: it overwrites edits made
+    # to those lesson versions in the admin screens.
+    if [ "${IMPORT_CONTENT_ON_DEPLOY:-0}" = "1" ]; then
+        echo ">> [JISR Entrypoint] Importing curriculum content (IMPORT_CONTENT_ON_DEPLOY=1)..."
+        python -m backend.content_import || echo ">> [JISR Entrypoint] Warning: content import failed."
+    fi
     # Demo/test accounts have published passwords: keep them off the live site.
     if [ "${FAHIM_ENV:-production}" = "production" ] && [ "${KEEP_DEMO_ACCOUNTS:-0}" != "1" ]; then
         python -m backend.demo_accounts || echo ">> [JISR Entrypoint] Warning: could not remove demo accounts."

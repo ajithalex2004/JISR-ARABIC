@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../arab_english_service.dart';
 import '../tashkeel.dart';
+import '../widgets/aligned_sentence.dart';
 import '../auth_service.dart';
 import '../chapter1_data.dart';
 import '../models/curriculum_models.dart';
@@ -120,6 +121,10 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
         setState(() {
           _remoteOcrData = Map<String, dynamic>.from(res);
           _loadingOcr = false;
+        });
+        AlignmentStore.requestPage(widget.api ?? ApiService(), page, _currentEditionId, token: widget.token)
+            .then((added) {
+          if (added && mounted) setState(() {});
         });
         return;
       }
@@ -1049,6 +1054,14 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
             ...List.generate(paragraphsAr.length, (pIdx) {
               final pAr = paragraphsAr[pIdx];
               final pEn = pIdx < paragraphsEn.length ? paragraphsEn[pIdx] : '';
+              // Line-by-line Arabic–English matches, where the page has them.
+              List<String> lines(String t) => t.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+              final arLines = lines(pAr);
+              final enLines = lines(pEn);
+              final lineChunks = arLines.length == enLines.length
+                  ? [for (var i = 0; i < arLines.length; i++) AlignmentStore.lookup(arLines[i], enLines[i])]
+                  : <List<AlignmentChunk>?>[];
+              final aligned = lineChunks.any((c) => c != null);
               return Card(
                 margin: const EdgeInsets.only(bottom: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -1073,6 +1086,29 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
                         ],
                       ),
                       const SizedBox(height: 6),
+                      if (aligned) ...[
+                        for (var i = 0; i < arLines.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: AlignedSentenceView(
+                              ar: arLines[i],
+                              en: enLines[i],
+                              chunks: lineChunks[i] ?? const [],
+                              onVocalize: widget.onVocalize,
+                              showNote: false,
+                              arStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                                height: 1.8,
+                              ),
+                            ),
+                          ),
+                        const Text(
+                          'Tap a word to see its match. Matches suggested by AI.',
+                          style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                        ),
+                      ] else
                       ValueListenableBuilder<bool>(
                         valueListenable: TashkeelState.notifier,
                         builder: (context, _, _) => Text(
@@ -1138,7 +1174,7 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
                           );
                         },
                       ),
-                      if (pEn.isNotEmpty) ...[
+                      if (pEn.isNotEmpty && !aligned) ...[
                         const Divider(height: 16),
                         Text(
                           pEn,

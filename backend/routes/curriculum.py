@@ -112,3 +112,10 @@ def sentence_alignments(payload: AlignmentRequest, db: Session=Depends(get_db)):
     """Arabic-English matching chunks for each sentence pair (null where none is available)."""
     from backend.modules.curriculum.alignment import get_alignments
     return {"alignments": get_alignments(db, [(p.ar, p.en) for p in payload.pairs])}
+
+@router.get('/page-alignments/{pdf_page}')
+def page_alignments(pdf_page: int, edition_id: Optional[str]=Query(None, max_length=80), db: Session=Depends(get_db),
+                    actor: Principal=Depends(get_current_user)):
+    """Arabic-English matching chunks for the lines of a textbook page (signed-in users, like the page text)."""
+    from backend.modules.curriculum.alignment import get_page_alignments
+    return {"lines": get_page_alignments(db, pdf_page, edition_id)}

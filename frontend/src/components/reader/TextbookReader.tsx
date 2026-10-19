@@ -3,6 +3,8 @@ import { BookOpen, Volume2, FileText, Sparkles, ChevronDown, ChevronUp, Loader2 
 import { api, API_BASE } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
+import { AlignedEnglish } from '../audio/AlignedSentence';
+import { AlignmentChunk } from '../../services/alignment';
 import { ArabEnglishToggleSwitch } from '../common/ArabEnglishToggleSwitch';
 import { TashkeelToggleSwitch } from '../common/TashkeelToggleSwitch';
 import { User, ChildProfile } from '../../types';
@@ -159,6 +161,24 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
   useEffect(() => {
     loadPage(currentPage);
     loadCoverage();
+  }, [currentPage, currentEditionId]);
+
+  // Arabic–English matches for this page's lines, keyed by "arabic line\u0000english line".
+  const [lineMatches, setLineMatches] = useState<Map<string, AlignmentChunk[]>>(new Map());
+  // The highlighted match: paragraph, line and chunk.
+  const [readerMatch, setReaderMatch] = useState<{ p: number; l: number; c: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setLineMatches(new Map());
+    setReaderMatch(null);
+    api.getPageAlignments(currentPage, currentEditionId)
+      .then((lines) => {
+        if (!cancelled) setLineMatches(new Map(lines.map((line) => [`${line.ar}\u0000${line.en}`, line.chunks])));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [currentPage, currentEditionId]);
 
   const loadPage = async (page: number) => {
@@ -534,6 +554,9 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
                       const arLines = splitLines(p);
                       const enLines = splitLines(pageData?.paragraphs_en?.[pIdx] || '');
                       const isCard = arLines.length >= 2 && arLines.some(isExampleLine);
+                      // Matches exist only where the Arabic and English have the same lines.
+                      const lineChunks = (lIdx: number): AlignmentChunk[] =>
+                        arLines.length === enLines.length ? lineMatches.get(`${arLines[lIdx]}\u0000${enLines[lIdx]}`) ?? [] : [];
 
                       return (
                         <div
@@ -554,16 +577,25 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
 
                           {/* Interactive Arabic Sentence */}
                           <div className="text-right leading-loose pt-1 font-arabic space-y-1" dir="rtl">
-                            {arLines.map((line, lIdx) => (
-                              <div key={lIdx} className={isCard && lIdx === 0 ? 'text-emerald-950' : ''}>
-                                <ArabicWordSpans
-                                  text={line}
-                                  className={`leading-loose text-slate-900 ${
-                                    isCard && lIdx === 0 ? 'text-xl font-bold' : 'text-lg font-medium'
-                                  }`}
-                                />
-                              </div>
-                            ))}
+                            {arLines.map((line, lIdx) => {
+                              const chunks = lineChunks(lIdx);
+                              const active = readerMatch && readerMatch.p === pIdx && readerMatch.l === lIdx ? chunks[readerMatch.c] : undefined;
+                              return (
+                                <div key={lIdx} className={isCard && lIdx === 0 ? 'text-emerald-950' : ''}>
+                                  <ArabicWordSpans
+                                    text={line}
+                                    className={`leading-loose text-slate-900 ${
+                                      isCard && lIdx === 0 ? 'text-xl font-bold' : 'text-lg font-medium'
+                                    }`}
+                                    highlightedWords={active?.ar}
+                                    onWordHover={chunks.length ? (w) => {
+                                      const c = w === null ? -1 : chunks.findIndex((ch) => ch.ar.includes(w));
+                                      setReaderMatch(c >= 0 ? { p: pIdx, l: lIdx, c } : null);
+                                    } : undefined}
+                                  />
+                                </div>
+                              );
+                            })}
                           </div>
 
                           {/* English Translation Directly Below */}
@@ -582,7 +614,12 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
                                           : isCard ? '' : 'italic'
                                     }
                                   >
-                                    {line}
+                                    <AlignedEnglish
+                                      text={line}
+                                      chunks={lineChunks(lIdx)}
+                                      activeChunk={readerMatch && readerMatch.p === pIdx && readerMatch.l === lIdx ? readerMatch.c : null}
+                                      onActivate={(c) => setReaderMatch(c === null || c < 0 ? null : { p: pIdx, l: lIdx, c })}
+                                    />
                                   </div>
                                 ))}
                               </div>

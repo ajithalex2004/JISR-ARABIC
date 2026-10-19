@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArabicWordSpans } from './ArabicWordSpans';
-import { Alignment, splitWords } from '../../services/alignment';
+import { Alignment, AlignmentChunk, splitWords } from '../../services/alignment';
 
 interface AlignedSentenceProps {
   ar: string;
@@ -18,10 +18,7 @@ export const AlignedSentence: React.FC<AlignedSentenceProps> = ({ ar, en, alignm
   const [active, setActive] = useState<number | null>(null);
   const chunks = alignment ?? [];
   const chunkOfAr = (i: number | null) => (i === null ? null : chunks.findIndex((c) => c.ar.includes(i)));
-  const chunkOfEn = (i: number) => chunks.findIndex((c) => c.en.includes(i));
   const current = active !== null && active >= 0 ? chunks[active] : undefined;
-
-  const englishWords = splitWords(en);
 
   return (
     <>
@@ -34,37 +31,54 @@ export const AlignedSentence: React.FC<AlignedSentenceProps> = ({ ar, en, alignm
         />
       </div>
       <div className={enClassName} dir="ltr">
-        {chunks.length === 0
-          ? en
-          : englishWords.map((word, i) => {
-              const chunk = chunkOfEn(i);
-              const isMatched = current?.en.includes(i);
-              return (
-                <React.Fragment key={i}>
-                  {i > 0 && ' '}
-                  {chunk >= 0 ? (
-                    <span
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`${word}: show the matching Arabic`}
-                      onMouseEnter={() => setActive(chunk)}
-                      onMouseLeave={() => setActive(null)}
-                      onFocus={() => setActive(chunk)}
-                      onBlur={() => setActive(null)}
-                      onClick={() => setActive(chunk)}
-                      className={`cursor-pointer rounded-sm px-0.5 underline decoration-dotted decoration-slate-400 underline-offset-4 transition-colors ${
-                        isMatched ? 'bg-sky-100 text-sky-950 not-italic font-bold decoration-solid decoration-sky-600 decoration-2' : 'hover:bg-sky-50'
-                      }`}
-                    >
-                      {word}
-                    </span>
-                  ) : (
-                    <span>{word}</span>
-                  )}
-                </React.Fragment>
-              );
-            })}
+        <AlignedEnglish text={en} chunks={chunks} activeChunk={active} onActivate={setActive} />
       </div>
+    </>
+  );
+};
+
+interface AlignedEnglishProps {
+  text: string;
+  chunks: AlignmentChunk[];
+  /** Index into chunks of the highlighted match, or null. */
+  activeChunk: number | null;
+  onActivate: (chunk: number | null) => void;
+}
+
+/** English words that light up their Arabic match; plain text when there are no chunks. */
+export const AlignedEnglish: React.FC<AlignedEnglishProps> = ({ text, chunks, activeChunk, onActivate }) => {
+  if (chunks.length === 0) return <>{text}</>;
+  const current = activeChunk !== null && activeChunk >= 0 ? chunks[activeChunk] : undefined;
+  return (
+    <>
+      {splitWords(text).map((word, i) => {
+        const chunk = chunks.findIndex((c) => c.en.includes(i));
+        const isMatched = current?.en.includes(i);
+        return (
+          <React.Fragment key={i}>
+            {i > 0 && ' '}
+            {chunk >= 0 ? (
+              <span
+                tabIndex={0}
+                role="button"
+                aria-label={`${word}: show the matching Arabic`}
+                onMouseEnter={() => onActivate(chunk)}
+                onMouseLeave={() => onActivate(null)}
+                onFocus={() => onActivate(chunk)}
+                onBlur={() => onActivate(null)}
+                onClick={() => onActivate(chunk)}
+                className={`cursor-pointer rounded-sm px-0.5 underline decoration-dotted decoration-slate-400 underline-offset-4 transition-colors ${
+                  isMatched ? 'bg-sky-100 text-sky-950 not-italic font-bold decoration-solid decoration-sky-600 decoration-2' : 'hover:bg-sky-50'
+                }`}
+              >
+                {word}
+              </span>
+            ) : (
+              <span>{word}</span>
+            )}
+          </React.Fragment>
+        );
+      })}
     </>
   );
 };

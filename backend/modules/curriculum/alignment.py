@@ -154,11 +154,13 @@ def _ai_align(pairs: Sequence[Tuple[str, str]]) -> Optional[Tuple[Dict[int, Opti
     return results, response.provider
 
 
-def get_alignments(db: Session, pairs: Sequence[Tuple[str, str]]) -> List[Optional[List[dict]]]:
+def get_alignments(db: Session, pairs: Sequence[Tuple[str, str]], trusted: bool = False,
+                   max_new: int = MAX_NEW_PER_REQUEST) -> List[Optional[List[dict]]]:
     """Chunks for each (arabic, english) pair, in order; None where no alignment is available.
 
-    Stored alignments are returned as they are. Catalogue sentences without one are aligned
-    now, up to MAX_NEW_PER_REQUEST per request, so a page fills in over a few visits at most.
+    Stored alignments are returned as they are. Sentences without one are aligned now, up to
+    max_new per request, so a page fills in over a few visits at most. Only catalogue sentences
+    are sent to the AI unless the caller built the pairs itself (trusted), as the reader does.
     """
     from backend.models import SentenceAlignment
 
@@ -168,30 +170,32 @@ def get_alignments(db: Session, pairs: Sequence[Tuple[str, str]]) -> List[Option
     catalogue = _catalogue_ids()
     missing, seen = [], set()
     for (a, e), pid in zip(pairs, ids):
-        if pid not in rows and pid in catalogue and pid not in seen:
+        if pid not in rows and (trusted or pid in catalogue) and pid not in seen:
             seen.add(pid)
             missing.append((pid, a, e))
-    missing = missing[:MAX_NEW_PER_REQUEST]
+    missing = missing[:max_new]
 
-    if missing:
-        outcome = _ai_align([(a, e) for _, a, e in missing])
-        if outcome is not None:
-            results, provider = outcome
-            for index, (pid, a, e) in enumerate(missing):
-                chunks = results.get(index)
-                # A failed check is stored too ("unusable"), so the AI isn't asked again on every visit.
-                row = SentenceAlignment(
-                    id=pid, arabic=a, english=e, chunks_json=json.dumps(chunks or []),
-                    status="ai" if chunks else "unusable", provider=provider,
-                )
-                try:
-                    db.add(row)
-                    db.commit()
-                except IntegrityError:
-                    db.rollback()  # another request stored it first
-                    row = db.get(SentenceAlignment, pid)
-                if row is not None:
-                    rows[pid] = row
+    for start in range(0, len(missing), MAX_NEW_PER_REQUEST):
+        batch = missing[start:start + MAX_NEW_PER_REQUEST]
+        outcome = _ai_align([(a, e) for _, a, e in batch])
+        if outcome is None:
+            break  # AI unavailable: nothing stored, so a later visit tries again
+        results, provider = outcome
+        for index, (pid, a, e) in enumerate(batch):
+            chunks = results.get(index)
+            # A failed check is stored too ("unusable"), so the AI isn't asked again on every visit.
+            row = SentenceAlignment(
+                id=pid, arabic=a, english=e, chunks_json=json.dumps(chunks or []),
+                status="ai" if chunks else "unusable", provider=provider,
+            )
+            try:
+                db.add(row)
+                db.commit()
+            except IntegrityError:
+                db.rollback()  # another request stored it first
+                row = db.get(SentenceAlignment, pid)
+            if row is not None:
+                rows[pid] = row
 
     output = []
     for pid in ids:
@@ -201,3 +205,41 @@ def get_alignments(db: Session, pairs: Sequence[Tuple[str, str]]) -> List[Option
         else:
             output.append(json.loads(row.chunks_json) or None)
     return output
+
+
+MAX_NEW_PER_PAGE = 36
+
+
+def _lines(text) -> List[str]:
+    return [line.strip() for line in str(text or "").split("\n") if line.strip()]
+
+
+def page_line_pairs(page: dict) -> List[Tuple[str, str]]:
+    """The reader's Arabic/English line pairs for a textbook page.
+
+    Lines are split exactly as the reader shows them; a paragraph whose Arabic and English
+    have different line counts has no reliable pairing, so it is left out.
+    """
+    pairs = []
+    arabic = page.get("paragraphs") if isinstance(page, dict) else None
+    english = page.get("paragraphs_en") if isinstance(page, dict) else None
+    if not isinstance(arabic, list) or not isinstance(english, list):
+        return pairs
+    for ar_text, en_text in zip(arabic, english):
+        ar_lines, en_lines = _lines(ar_text), _lines(en_text)
+        if ar_lines and len(ar_lines) == len(en_lines):
+            pairs.extend(zip(ar_lines, en_lines))
+    return pairs
+
+
+def get_page_alignments(db: Session, pdf_page: int, edition_id: Optional[str] = None) -> List[dict]:
+    """[{ar, en, chunks}] for the lines of a textbook page that have an alignment.
+
+    The page text is rebuilt here from the page number, never taken from the client.
+    """
+    from backend.modules.curriculum.authoring import get_ocr_page
+
+    page = get_ocr_page(pdf_page=pdf_page, edition_id=edition_id, db=db)
+    pairs = list(dict.fromkeys(page_line_pairs(page)))
+    results = get_alignments(db, pairs, trusted=True, max_new=MAX_NEW_PER_PAGE)
+    return [{"ar": a, "en": e, "chunks": c} for (a, e), c in zip(pairs, results) if c]

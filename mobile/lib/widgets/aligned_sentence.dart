@@ -40,6 +40,39 @@ class AlignmentStore {
 
   static List<AlignmentChunk>? lookup(String ar, String en) => _known[_key(ar, en)];
 
+  static final Set<String> _requestedPages = {};
+
+  /// Fetches the matches for a textbook page's lines (signed-in users); true if any arrived.
+  static Future<bool> requestPage(ApiService api, int pdfPage, String? editionId, {String? token}) async {
+    final pageKey = '$editionId/$pdfPage';
+    if (!_requestedPages.add(pageKey)) return false;
+    try {
+      final data = await api.get(
+        '/api/curriculum/page-alignments/$pdfPage',
+        query: {'edition_id': ?editionId},
+        token: token,
+        timeout: const Duration(seconds: 45),
+      );
+      final lines = data is Map ? data['lines'] : null;
+      if (lines is! List) return false;
+      var added = false;
+      for (final line in lines.whereType<Map>()) {
+        final chunks = AlignmentChunk.listFromJson(line['chunks']);
+        final ar = line['ar']?.toString() ?? '';
+        final en = line['en']?.toString() ?? '';
+        if (chunks != null && ar.isNotEmpty && en.isNotEmpty) {
+          _known[_key(ar, en)] = chunks;
+          added = true;
+        }
+      }
+      if (added) revision.value++;
+      return added;
+    } catch (_) {
+      _requestedPages.remove(pageKey);
+      return false;
+    }
+  }
+
   /// Fetches alignments for pairs not yet asked about in this session; true if any arrived.
   static Future<bool> request(ApiService api, List<MapEntry<String, String>> pairs) async {
     final wanted = <MapEntry<String, String>>[];
@@ -87,6 +120,7 @@ class AlignedSentenceView extends StatefulWidget {
   final List<AlignmentChunk> chunks;
   final void Function(String word)? onVocalize;
   final TextStyle? arStyle;
+  final bool showNote;
 
   const AlignedSentenceView({
     super.key,
@@ -95,6 +129,7 @@ class AlignedSentenceView extends StatefulWidget {
     required this.chunks,
     this.onVocalize,
     this.arStyle,
+    this.showNote = true,
   });
 
   @override
@@ -179,11 +214,13 @@ class _AlignedSentenceViewState extends State<AlignedSentenceView> {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Tap a word to see its match. Matches suggested by AI.',
-            style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
-          ),
+          if (widget.showNote) ...[
+            const SizedBox(height: 4),
+            const Text(
+              'Tap a word to see its match. Matches suggested by AI.',
+              style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+            ),
+          ],
         ],
       ),
     );

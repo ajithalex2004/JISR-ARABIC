@@ -183,6 +183,13 @@ export const api = {
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not start reading the pages'));
     return res.json();
   },
+  async adminDraftFromBook(term?: { grade: number; term: number }) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/textbooks/draft-from-book`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(term || {}),
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not start drafting'));
+    return res.json();
+  },
   async adminSystemAction(action: 'check-gemini' | 'test-alert' | 'send-weekly-reports' | 'remove-demo-accounts') {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/system-health/${action}`, { method: 'POST' });
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Action failed'));

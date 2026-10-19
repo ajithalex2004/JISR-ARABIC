@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.database import Base, get_db
 from backend.main import app
-from backend.models import BookEdition, ScannedPage, User, UserSession
+from backend.models import BookEdition, Lesson, LessonVersion, ScannedPage, Unit, User, UserSession
 from backend.security import create_access_token, decode_access_token, hash_password
 from backend.tasks.queue import clear_task_queue, list_recent_tasks
 
@@ -104,6 +104,38 @@ class TestReadTextbookPages(unittest.TestCase):
         again = self.client.post("/api/admin/textbooks/read-pages", headers=headers).json()
         self.assertEqual((again["queued"], again["already_reading"]), ([], ["moe_gr1_vol1_2023"]))
         self.assertEqual(len(self.ocr_tasks()), 1)
+
+
+    def add_lessons(self):
+        with self.session() as db:
+            db.add(Unit(id="u1", book_edition_id="moe_gr1_vol1_2023", unit_number=1, title_ar="و", title_en="U"))
+            for order in (1, 2):
+                db.add(Lesson(id=f"l{order}", unit_id="u1", grade=1, term=1, lesson_order=order, title_ar="د",
+                              title_en="L", start_page=order))
+            db.commit()
+            # l1 is already drafted from the book; only l2 needs a draft.
+            db.add(LessonVersion(id="v1", lesson_id="l1", content_json="{}", content_hash="h1", status="published",
+                                 created_by="ai-drafter"))
+            db.commit()
+
+    def test_draft_from_book_queues_only_lessons_not_yet_drafted(self):
+        self.add_lessons()
+        headers = self.auth("ad", "admin")
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test"}):
+            res = self.client.post("/api/admin/textbooks/draft-from-book", json={"grade": 1, "term": 1}, headers=headers)
+            self.assertEqual(res.status_code, 200, res.text)
+            [task] = [t for t in list_recent_tasks(limit=50) if t.task_type == "draft_lessons"]
+            self.assertEqual((task.params["grade"], task.params["term"], task.params["lesson_ids"]), (1, 1, ["l2"]))
+            self.assertFalse(task.params["overwrite"])
+            again = self.client.post("/api/admin/textbooks/draft-from-book", json={"grade": 1, "term": 1}, headers=headers)
+            self.assertEqual(again.status_code, 409)
+            everything = self.client.post("/api/admin/textbooks/draft-from-book", json={}, headers=headers).json()
+            self.assertEqual((everything["queued"], everything["already_drafting"]), ([], [{"grade": 1, "term": 1}]))
+            # A term whose book was never read has nothing to draft.
+            self.assertEqual(self.client.post("/api/admin/textbooks/draft-from-book", json={"grade": 3, "term": 1},
+                                              headers=headers).status_code, 409)
+        self.assertEqual(self.client.post("/api/admin/textbooks/draft-from-book", json={},
+                                          headers=self.auth("ta", "tutor")).status_code, 403)
 
 
 if __name__ == "__main__":

@@ -202,6 +202,31 @@ def read_all_textbook_pages(db: Session = Depends(get_db), actor: Principal = De
     cells = [cell for row in content_progress(db)["grades"] for cell in row["terms"]]
     return queue_all_book_reads(cells, actor.id)
 
+class DraftFromBookRequest(BaseModel):
+    grade: Optional[int] = None
+    term: Optional[int] = None
+
+@router.post('/textbooks/draft-from-book')
+def draft_from_book(req: DraftFromBookRequest, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """AI-draft from the read textbook pages every lesson not yet drafted from them (one term, or all).
+    Drafts wait for teacher review; the lessons learners see stay live until a draft is published."""
+    require_roles(actor, ('admin',))
+    import os
+    if not (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+        raise HTTPException(status_code=503, detail='GEMINI_API_KEY is not configured')
+    from backend.modules.curriculum.content_progress import content_progress
+    from backend.modules.curriculum.page_reading import queue_drafts
+    cells = [cell for row in content_progress(db)["grades"] for cell in row["terms"]]
+    if req.grade is not None or req.term is not None:
+        cells = [cell for cell in cells if (cell["grade"], cell["term"]) == (req.grade, req.term)]
+        if not cells:
+            raise HTTPException(status_code=400, detail='grade must be 1-12 and term 1-3')
+        if not cells[0]["draft_lesson_ids"] and not cells[0]["drafting_queued"]:
+            raise HTTPException(status_code=409, detail='Nothing to draft: read the book pages first, or every lesson is already drafted from the book')
+        if cells[0]["drafting_queued"]:
+            raise HTTPException(status_code=409, detail='This term is already being drafted')
+    return queue_drafts(cells, actor.id)
+
 @router.post('/textbooks/{edition_id}/read-pages')
 def read_textbook_pages(edition_id: str, actor: Principal = Depends(get_current_user)):
     """Read the unread and failed pages of one uploaded textbook, from the PDF already stored."""

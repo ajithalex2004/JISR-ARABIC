@@ -1,7 +1,10 @@
-"""Read (or re-read) the pages of textbooks already uploaded, from Admin > Content.
+"""Admin > Content actions that turn uploaded textbooks into lessons.
 
-Uploaded PDFs stay in the content folder (uploads/<edition>.pdf). Queuing the OCR task on the same
-file resumes it: pages already read are skipped and failed or unread pages are tried again."""
+Reading pages: uploaded PDFs stay in the content folder (uploads/<edition>.pdf). Queuing the OCR task
+on the same file resumes it: pages already read are skipped and failed or unread pages are tried again.
+
+Drafting from the book: AI drafts lessons from the read pages as versions awaiting review; the lessons
+learners see now stay live until a teacher publishes the draft."""
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -11,6 +14,7 @@ from backend.tasks.queue import enqueue_task, list_recent_tasks
 
 EDITION_ID = re.compile(r"^moe_gr(?:[1-9]|1[0-2])_vol[1-3]_2023$")
 OCR_TASK = "process_textbook_ocr"
+DRAFT_TASK = "draft_lessons"
 
 
 def stored_pdf(edition_id: str) -> Optional[Path]:
@@ -53,3 +57,31 @@ def queue_all_book_reads(cells: List[Dict[str, Any]], actor_id: Optional[str]) -
             continue
         queued.append(queue_book_read(cell["edition_id"], actor_id))
     return {"queued": queued, "already_reading": already}
+
+
+def terms_being_drafted() -> Set[tuple]:
+    """(grade, term) pairs with a drafting task waiting or running."""
+    return {(int(task.params.get("grade", 0)), int(task.params.get("term", 0)))
+            for task in list_recent_tasks(limit=200)
+            if task.task_type == DRAFT_TASK and task.status in ("pending", "running")}
+
+
+def queue_term_draft(cell: Dict[str, Any], actor_id: Optional[str]) -> Dict[str, Any]:
+    """Draft from the book the lessons of a term not yet drafted from it (none already awaiting review)."""
+    task = enqueue_task(task_type=DRAFT_TASK, actor_id=actor_id, params={
+        "grade": cell["grade"], "term": cell["term"], "lesson_ids": cell["draft_lesson_ids"],
+        "overwrite": False, "actor_id": actor_id})
+    return {"grade": cell["grade"], "term": cell["term"], "lessons": len(cell["draft_lesson_ids"]),
+            "task_id": task.id, "poll_url": f"/api/tasks/{task.id}"}
+
+
+def queue_drafts(cells: List[Dict[str, Any]], actor_id: Optional[str]) -> Dict[str, Any]:
+    queued, already = [], []
+    for cell in cells:
+        if not cell["draft_lesson_ids"]:
+            continue
+        if cell["drafting_queued"]:
+            already.append({"grade": cell["grade"], "term": cell["term"]})
+            continue
+        queued.append(queue_term_draft(cell, actor_id))
+    return {"queued": queued, "already_drafting": already}

@@ -10,7 +10,7 @@ from backend.database import Base
 from backend.models import BookEdition, Lesson, LessonVersion, Unit
 from backend.modules.curriculum.service import get_lesson_content
 from backend.modules.identity.access import Principal
-from backend.redis_client import cache_delete
+from backend.redis_client import cache_delete, cache_set, lesson_package_key
 
 
 class TestLessonContentSource(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestLessonContentSource(unittest.TestCase):
         for lid in ("src_generated", "src_draft", "src_published"):
             self.db.add(Lesson(id=lid, unit_id="src_u", grade=7, term=2, lesson_order=1, title_ar="د", title_en="L",
                                start_page=1))
-            cache_delete(f"lesson_package:{lid}")
+            cache_delete(lesson_package_key(lid))
         self.db.commit()
         published = json.dumps({"vocabulary_cards": [], "note": "teacher version"})
         self.db.add_all([
@@ -54,6 +54,11 @@ class TestLessonContentSource(unittest.TestCase):
         pkg = self.fetch("src_draft")
         self.assertEqual(pkg["content_source"], "auto_generated")
         self.assertNotEqual(pkg["content"].get("note"), "unreviewed draft")
+
+    def test_packages_cached_by_older_code_are_ignored(self):
+        # An old-format package (no content_source) under the previous key must not be served.
+        cache_set("lesson_package:src_generated", {"lesson": {}, "version_tag": "v1.0.0-moe-verified", "content": {}}, ttl_seconds=60)
+        self.assertEqual(self.fetch("src_generated")["content_source"], "auto_generated")
 
     def test_published_version_is_served_as_published(self):
         pkg = self.fetch("src_published")

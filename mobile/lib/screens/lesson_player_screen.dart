@@ -11,6 +11,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../api_service.dart';
 import '../auth_service.dart';
 import '../tashkeel.dart';
+import '../widgets/root_tree_sheet.dart';
 import '../arab_english_service.dart';
 import '../widgets/interactive_arabic_text.dart';
 import '../models/curriculum_models.dart';
@@ -1503,6 +1504,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
           final wordAr = v['vowelled_ar']?.toString() ?? v['word_ar']?.toString() ?? '';
           final meaning = v['meaning_en']?.toString() ?? '';
           final root = v['root']?.toString() ?? '';
+          final borrowed = root.isEmpty && (v['root_note_en']?.toString() ?? '').isNotEmpty;
           final example = v['example_ar']?.toString() ?? '';
 
           return Card(
@@ -1515,15 +1517,29 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
               title: Row(
                 children: [
                   Text(wordAr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  if (root.isNotEmpty) ...[
+                  if (root.isNotEmpty || borrowed) ...[
                     const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEDE9FE),
-                        borderRadius: BorderRadius.circular(6),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(6),
+                      onTap: () => showRootTreeSheet(
+                        context,
+                        root: root,
+                        word: wordAr,
+                        onVocalize: widget.onVocalize,
+                        api: widget.api,
                       ),
-                      child: Text('جذر: $root', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF6C5CE7))),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFFCD34D)),
+                        ),
+                        child: Text(
+                          borrowed ? '🌳 Borrowed word' : '🌳 جذر: $root',
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                        ),
+                      ),
                     ),
                   ],
                 ],

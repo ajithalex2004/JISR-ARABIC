@@ -148,6 +148,8 @@ export interface VocabularyCard {
   example_ar: string;
   example_en: string;
   root: string;
+  /** Why the root is empty or unusual (borrowed or blended words). */
+  root_note_en?: string;
   category: string;
 }
 

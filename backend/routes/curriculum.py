@@ -4,7 +4,7 @@ from backend.database import get_db
 from backend.api.dependencies import get_current_user, get_optional_user
 from backend.modules.identity.access import Principal, require_child, optional_child, require_roles, FAMILY_ROLES, PARENT_ROLES, STAFF_ROLES
 """HTTP adapter: request parsing, dependency injection, and service delegation."""
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from backend.schemas import SubmitDiagnosticRequest, OnboardingProfileUpdateRequest, ActiveGradeRequest
 from backend.modules.curriculum import service as service
 router = APIRouter(prefix='/api/curriculum', tags=['Curriculum'])
@@ -97,3 +97,12 @@ def word_gloss(word: str=Query(..., max_length=40), context: str=Query('', max_l
     """English meaning of one Arabic word, for tooltips when the client dictionary has no entry."""
     from backend.modules.curriculum.glossary import gloss_word
     return gloss_word(word, context) or {"translation": None, "part_of_speech": None, "source": None}
+
+@router.get('/root-family')
+def root_family(root: str=Query('', max_length=20), word: str=Query('', max_length=60)):
+    """A root's word family for the Root Tree Explorer: words from the learner's lessons plus AI-suggested relatives."""
+    from backend.modules.curriculum.roots import root_family as build
+    result = build(root or None, word or None)
+    if result is None:
+        raise HTTPException(status_code=422, detail="Send a vocabulary word or a 3-4 letter Arabic root such as ك-ت-ب.")
+    return result

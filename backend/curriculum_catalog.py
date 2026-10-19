@@ -194,7 +194,8 @@ HORSE_RIDING_CONTENT = {
             "definition_ar": "أَلْفُ أَلْفٍ (1000000).",
             "example_ar": "سَأُشَارِكُ فِي مُسَابَقَةٍ فِيهَا جَوَائِزُ بِمَلَايِينِ الدَّرَاهِمِ.",
             "example_en": "I will take part in a competition with million-dirham prizes.",
-            "root": "م-ل-ن",
+            "root": "",
+            "root_note_en": "Borrowed from Italian 'milione', so it has no Arabic root.",
             "category": "numbers"
         },
         {
@@ -469,7 +470,8 @@ RUNNING_CONTENT = {
             "definition_ar": "وِسَامٌ مِنَ الذَّهَبِ أَوِ الفِضَّةِ أَوِ البُرُونْزِ.",
             "example_ar": "طُمُوحِي الحُصُولُ عَلَى المَيْدَالِيَةِ الأُولَى.",
             "example_en": "My ambition is to obtain the top medal.",
-            "root": "م-د-ل",
+            "root": "",
+            "root_note_en": "Borrowed from French 'médaille', so it has no Arabic root.",
             "category": "sports"
         },
         {
@@ -480,7 +482,8 @@ RUNNING_CONTENT = {
             "definition_ar": "سِبَاقٌ لِمَسَافَاتٍ مُحَدَّدَةٍ طَوِيلَةٍ.",
             "example_ar": "أُشَارِكُ كُلَّ عَامٍ فِي مَارَاثُونِ المَدِينَةِ.",
             "example_en": "I participate every year in the city marathon.",
-            "root": "م-ر-ث",
+            "root": "",
+            "root_note_en": "Named after the Greek town of Marathon, so it has no Arabic root.",
             "category": "sports"
         },
         {
@@ -1910,7 +1913,8 @@ MY_CLOTHES_CONTENT = {
             "definition_ar": "دَوْلَةٌ تَقَعُ فِي أَمْرِيكَا، شَهِيرَةٌ بِقُبَّعَةِ السَّمْبْرِيرُو.",
             "example_ar": "قُبَّعَةُ السَّمْبْرِيرُو مَصْنُوعَةٌ مِنَ القَشِّ فِي المَكْسِيكِ.",
             "example_en": "The Sombrero hat is made of straw in Mexico.",
-            "root": "م-ك-س",
+            "root": "",
+            "root_note_en": "A country name borrowed from Spanish 'México', so it has no Arabic root.",
             "category": "geography"
         },
         {
@@ -2116,7 +2120,8 @@ FUN_TIME_CONTENT = {
             "definition_ar": "الشَّبَكَةُ المَعْلُومَاتِيَّةُ العَالَمِيَّةُ الَّتِي تَرْبِطُ العَالَمَ.",
             "example_ar": "أَسْتَطِيعُ البَحْثَ بِسُهُولَةٍ فِي شَبَكَةِ الإِنْتَرْنِت.",
             "example_en": "I can easily search on the internet.",
-            "root": "ن-ت-ت",
+            "root": "ش-ب-ك",
+            "root_note_en": "شَبَكَة (network) comes from this root; الإِنْتَرْنِت is borrowed from English.",
             "category": "technology"
         },
         {
@@ -2161,6 +2166,7 @@ FUN_TIME_CONTENT = {
             "example_ar": "ذَهَبْتُ مَعَ عَائِلَتِي فِي رِحْلَةِ سَفَارِي مُمْتِعَةٍ فِي صَحْرَاءِ الإِمَارَاتِ.",
             "example_en": "I went with my family on an enjoyable safari in the UAE desert.",
             "root": "س-ف-ر",
+            "root_note_en": "سَفَارِي reached English through Swahili, from the Arabic سَفَر (travel).",
             "category": "leisure"
         },
         {
@@ -2171,7 +2177,8 @@ FUN_TIME_CONTENT = {
             "definition_ar": "شَرِيطٌ مُصَوَّرٌ يَعْرِضُ قِصَّةً مَرْئِيَّةً.",
             "example_ar": "أُحِبُّ مُشَاهَدَةَ الأَفْلَامِ الوَثَائِقِيَّةِ عَنِ الحَيَوَانَاتِ.",
             "example_en": "I love watching documentary movies about animals.",
-            "root": "ف-ل-م",
+            "root": "",
+            "root_note_en": "Borrowed from English 'film', so it has no Arabic root.",
             "category": "media"
         },
         {

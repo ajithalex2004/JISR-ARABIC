@@ -1440,7 +1440,8 @@ LIVING_CREATURES_CONTENT = {
             "definition_ar": "حَيَوَانَاتٌ تَعِيشُ فِي البَرِّ وَالمَاءِ.",
             "example_ar": "الضِّفْدَعُ مِنْ أَشْهَرِ البَرْمَائِيَّاتِ.",
             "example_en": "The frog is one of the most famous amphibians.",
-            "root": "ب-ر-م",
+            "root": "ب-ر-ر / م-و-ه",
+            "root_note_en": "A blended word (نَحْت) made from بَرّ (land) and مَاء (water).",
             "category": "science"
         },
         {

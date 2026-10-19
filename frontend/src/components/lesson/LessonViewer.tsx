@@ -11,6 +11,7 @@ import { TashkeelToggleSwitch } from '../common/TashkeelToggleSwitch';
 import { audioManager } from '../../services/audio';
 import { api } from '../../services/api';
 import { PronunciationSandbox } from '../audio/PronunciationSandbox';
+import { RootTreeExplorer } from '../learning/RootTreeExplorer';
 
 interface LessonViewerProps {
   lessonId: string;
@@ -54,6 +55,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
 }) => {
   const [data, setData] = useState<{ lesson: any; content: LessonPackage; version_id?: string } | null>(null);
   const [activeTab, setActiveTab] = useState<FeatureTab>('vocab');
+  const [rootExplorer, setRootExplorer] = useState<{ root: string; word: string } | null>(null);
   const [selectedPath, setSelectedPath] = useState<'foundation' | 'guided' | 'independent'>('guided');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string>('');
@@ -423,9 +425,19 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                     <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
                       {card.meaning_en}
                     </span>
-                    <span className="text-[10px] text-slate-400 block font-mono">
-                      Root: {card.root}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setRootExplorer({ root: card.root, word: card.vowelled_ar || card.word_ar })}
+                      title={card.root ? 'Explore every word from this root' : card.root_note_en || 'Borrowed word'}
+                      className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 hover:border-amber-500"
+                    >
+                      <span aria-hidden>🌳</span>
+                      {card.root ? (
+                        <>Root <span className="font-arabic text-xs" lang="ar">{card.root}</span></>
+                      ) : (
+                        'Borrowed word'
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -1248,6 +1260,13 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
         </div>
       )}
 
+      {rootExplorer && (
+        <RootTreeExplorer
+          root={rootExplorer.root}
+          word={rootExplorer.word}
+          onClose={() => setRootExplorer(null)}
+        />
+      )}
     </div>
   );
 };

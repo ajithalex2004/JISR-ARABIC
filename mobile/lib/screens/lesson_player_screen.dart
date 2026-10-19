@@ -12,6 +12,7 @@ import '../api_service.dart';
 import '../auth_service.dart';
 import '../tashkeel.dart';
 import '../widgets/root_tree_sheet.dart';
+import '../widgets/aligned_sentence.dart';
 import '../arab_english_service.dart';
 import '../widgets/interactive_arabic_text.dart';
 import '../models/curriculum_models.dart';
@@ -439,6 +440,20 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     ),
     ),
     );
+  }
+
+  /// Asks for Arabic–English matches for this page's paragraphs; the page rebuilds when they arrive.
+  List<Widget> _requestAlignments(LessonContentPage page) {
+    final pairs = [
+      for (var i = 0; i < page.paragraphsAr.length && i < page.paragraphsEn.length; i++)
+        MapEntry(page.paragraphsAr[i], page.paragraphsEn[i]),
+    ];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AlignmentStore.request(widget.api ?? ApiService(), pairs).then((added) {
+        if (added && mounted) setState(() {});
+      });
+    });
+    return const [];
   }
 
   // ---------------------------------------------------------------------------
@@ -1182,9 +1197,11 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
 
       // 2. Paragraph Cards with Arabic Tashkeel & Audio (visible in 'split' or 'text')
       if (_textbookSubMode == 'split' || _textbookSubMode == 'text') ...[
+        ..._requestAlignments(currentPage),
         ...List.generate(currentPage.paragraphsAr.length, (pIdx) {
           final pAr = currentPage.paragraphsAr[pIdx];
           final pEn = pIdx < currentPage.paragraphsEn.length ? currentPage.paragraphsEn[pIdx] : '';
+          final chunks = pEn.isEmpty ? null : AlignmentStore.lookup(pAr, pEn);
 
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
@@ -1215,6 +1232,9 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  if (chunks != null)
+                    AlignedSentenceView(ar: pAr, en: pEn, chunks: chunks, onVocalize: widget.onVocalize)
+                  else
                   _buildInteractiveArabicText(
                     pAr,
                     style: const TextStyle(
@@ -1261,7 +1281,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                       );
                     },
                   ),
-                  if (pEn.isNotEmpty) ...[
+                  if (pEn.isNotEmpty && chunks == null) ...[
                     const Divider(height: 20),
                     Text(
                       pEn,

@@ -698,3 +698,12 @@ class AsyncAudioSynthesizeResponse(BaseModel):
     task_id: str
     status: str
     poll_url: str
+
+
+class SentencePair(BaseModel):
+    ar: str = Field(..., min_length=1, max_length=600)
+    en: str = Field(..., min_length=1, max_length=600)
+
+
+class AlignmentRequest(BaseModel):
+    pairs: list[SentencePair] = Field(..., min_length=1, max_length=40)

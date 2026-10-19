@@ -210,6 +210,7 @@ class TestAccessControl(unittest.TestCase):
             "/api/curriculum/textbook-info/{edition_id}",
             "/api/curriculum/word-gloss",  # rate-limited and cached in main.py: it calls the AI model
             "/api/curriculum/root-family",  # rate-limited like word-gloss; AI only for catalogue roots
+            "/api/curriculum/alignments",  # rate-limited like word-gloss; AI only for catalogue sentences
         }
         public.update('/api/auth/' + suffix for suffix in (
             'signup', 'verify-otp', 'create-password-enroll', 'login', 'login-otp',

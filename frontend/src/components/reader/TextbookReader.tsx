@@ -5,6 +5,7 @@ import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { AlignedEnglish } from '../audio/AlignedSentence';
 import { AlignmentChunk } from '../../services/alignment';
+import { localWordIndex } from '../../services/playbackWords';
 import { ArabEnglishToggleSwitch } from '../common/ArabEnglishToggleSwitch';
 import { TashkeelToggleSwitch } from '../common/TashkeelToggleSwitch';
 import { User, ChildProfile } from '../../types';
@@ -165,6 +166,12 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
 
   // Arabic–English matches for this page's lines, keyed by "arabic line\u0000english line".
   const [lineMatches, setLineMatches] = useState<Map<string, AlignmentChunk[]>>(new Map());
+  // What the audio is saying, so a line's English can light up with its spoken Arabic word.
+  const [playback, setPlayback] = useState<{ text: string; index: number }>({ text: '', index: -1 });
+  useEffect(
+    () => audioManager.subscribe((state) => setPlayback({ text: state.isPlaying ? state.text : '', index: state.activeWordIndex })),
+    []
+  );
   // The highlighted match: paragraph, line and chunk.
   const [readerMatch, setReaderMatch] = useState<{ p: number; l: number; c: number } | null>(null);
   useEffect(() => {
@@ -617,6 +624,10 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
                                     <AlignedEnglish
                                       text={line}
                                       chunks={lineChunks(lIdx)}
+                                      playingChunk={(() => {
+                                        const spoken = localWordIndex(playback.text, playback.index, arLines[lIdx] ?? '');
+                                        return spoken >= 0 ? lineChunks(lIdx).findIndex((c) => c.ar.includes(spoken)) : -1;
+                                      })()}
                                       activeChunk={readerMatch && readerMatch.p === pIdx && readerMatch.l === lIdx ? readerMatch.c : null}
                                       onActivate={(c) => setReaderMatch(c === null || c < 0 ? null : { p: pIdx, l: lIdx, c })}
                                     />

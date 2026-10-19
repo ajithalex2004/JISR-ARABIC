@@ -1,5 +1,14 @@
 // Universal Audio & Speech Recognition Engine (Section 11 Compliance)
 import { authenticatedFetch, API_BASE } from './api';
+import { estimateWordIndex, playbackWords, wordIndexAtChar } from './playbackWords';
+
+export interface PlaybackState {
+  isPlaying: boolean;
+  text: string;
+  activeWord: string;
+  /** Position of the spoken word among the whitespace-separated words of `text`; -1 when unknown. */
+  activeWordIndex: number;
+}
 
 export type PlaybackSpeed = 1.0 | 0.6 | 0.3;
 export type RepeatCount = 1 | 2 | 3;
@@ -15,8 +24,11 @@ class AudioManager {
   private targetRepeats: RepeatCount = 1;
   private selectedVoice: SpeechSynthesisVoice | null = null;
   private availableVoices: SpeechSynthesisVoice[] = [];
-  private listeners: Set<(state: { isPlaying: boolean; text: string; activeWord: string }) => void> = new Set();
+  private listeners: Set<(state: PlaybackState) => void> = new Set();
   private activeWord: string = "";
+  // Position of the spoken word among the whitespace-separated words of currentText (-1: none).
+  private activeWordIndex: number = -1;
+  private progressFrame: number | null = null;
   // Monotonically increasing playback token to cancel prior in-flight requests and avoid double voice
   private activePlaybackId: number = 0;
 
@@ -60,7 +72,7 @@ class AudioManager {
     this.targetRepeats = count;
   }
 
-  public subscribe(cb: (state: { isPlaying: boolean; text: string; activeWord: string }) => void) {
+  public subscribe(cb: (state: PlaybackState) => void) {
     this.listeners.add(cb);
     return () => {
       this.listeners.delete(cb);
@@ -72,14 +84,42 @@ class AudioManager {
       listener({
         isPlaying: this.isPlaying,
         text: this.currentText,
-        activeWord: this.activeWord
+        activeWord: this.activeWord,
+        activeWordIndex: this.isPlaying ? this.activeWordIndex : -1
       });
     }
+  }
+
+  /** Moves the spoken-word position and tells listeners when it changes. */
+  private setWordIndex(index: number) {
+    if (index === this.activeWordIndex) return;
+    this.activeWordIndex = index;
+    const words = playbackWords(this.currentText);
+    this.activeWord = index >= 0 && index < words.length ? words[index] : this.activeWord;
+    this.notify();
+  }
+
+  /** Estimates the spoken word from the audio's progress, once per frame, while it plays. */
+  private trackAudioProgress(audio: HTMLAudioElement, playbackId: number) {
+    const words = playbackWords(this.currentText);
+    const tick = () => {
+      if (playbackId !== this.activePlaybackId || this.currentAudio !== audio) return;
+      if (!audio.paused && audio.duration > 0) {
+        this.setWordIndex(estimateWordIndex(words, audio.currentTime, audio.duration));
+      }
+      this.progressFrame = requestAnimationFrame(tick);
+    };
+    if (this.progressFrame !== null) cancelAnimationFrame(this.progressFrame);
+    this.progressFrame = requestAnimationFrame(tick);
   }
 
   public stop() {
     // Invalidate any in-flight async synthesize calls so they cannot start playing
     this.activePlaybackId++;
+    if (this.progressFrame !== null && typeof cancelAnimationFrame !== 'undefined') {
+      cancelAnimationFrame(this.progressFrame);
+      this.progressFrame = null;
+    }
 
     if (this.currentAudio) {
       // Disconnect all event listeners before pausing to prevent ghost callbacks
@@ -112,6 +152,7 @@ class AudioManager {
 
     this.isPlaying = false;
     this.activeWord = "";
+    this.activeWordIndex = -1;
     this.notify();
   }
 
@@ -131,6 +172,7 @@ class AudioManager {
     this.pendingRepeats = repeats;
     this.isPlaying = true;
     this.activeWord = text.split(/\s+/)[0] || text;
+    this.activeWordIndex = -1;
     this.notify();
 
     // Level 1/2: use a pre-generated or server-provided audio asset when available.
@@ -181,6 +223,7 @@ class AudioManager {
 
           try {
             await audio.play();
+            this.trackAudioProgress(audio, playbackId);
             return;
           } catch (autoplayErr: any) {
             // An AbortError means the play was intentionally interrupted or stopped.
@@ -265,6 +308,7 @@ class AudioManager {
       if (event.name === 'word') {
         const word = fluentText.substr(event.charIndex, event.charLength || 10).split(/\s+/)[0];
         this.activeWord = word;
+        this.activeWordIndex = wordIndexAtChar(playbackWords(fluentText), event.charIndex);
         this.notify();
       }
     };

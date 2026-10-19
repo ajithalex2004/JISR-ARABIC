@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../arabic_dict.dart';
 import '../arab_english_service.dart';
+import '../playback_words.dart';
 import '../tashkeel.dart';
 
 /// Normalize Arabic text by removing tashkeel diacritics, punctuation, and unifying Alef variants.
@@ -194,7 +195,9 @@ class InteractiveArabicText extends StatelessWidget {
 
     final words = text.split(RegExp(r'\s+')).where((w) => w.trim().isNotEmpty).toList();
 
-    return ValueListenableBuilder<int>(
+    return ValueListenableBuilder<SpokenWord?>(
+      valueListenable: PlaybackProgress.notifier,
+      builder: (context, spoken, _) => ValueListenableBuilder<int>(
       valueListenable: WordGloss.revision,
       builder: (context, _, _) => ValueListenableBuilder<bool>(
       valueListenable: TashkeelState.notifier,
@@ -212,12 +215,11 @@ class InteractiveArabicText extends StatelessWidget {
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 3,
         runSpacing: 5,
-        children: words.map((word) {
+        children: words.indexed.map((entry) {
+          final (wordIndex, word) = entry;
           final cleanWord = word.replaceAll(RegExp(r'[؟!\.,،؛:\x27"()\[\]\-—/\\«»<>]'), '').trim();
           final translation = WordGloss.meaning(word, text);
-          final isPlaying = activeWord.isNotEmpty &&
-              cleanWord.isNotEmpty &&
-              (cleanWord == activeWord || word.contains(activeWord));
+          final isPlaying = isSpokenWord(spoken, text, wordIndex, word, activeWord);
 
           final arabEn = ArabEnglishHelper.transliterate(cleanWord);
           final tooltipMessage = cleanWord.isNotEmpty
@@ -392,6 +394,7 @@ class InteractiveArabicText extends StatelessWidget {
       ),
     );
   },
+),
 ),
 ),
 );

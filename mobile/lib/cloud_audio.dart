@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
 import 'api_service.dart';
+import 'playback_words.dart';
 
 /// Plays Arabic with the server's cloud voice (the same audio the web app uses).
 ///
@@ -16,6 +17,7 @@ class CloudArabicAudio {
   final ApiService api;
   final AudioPlayer _player = AudioPlayer();
   StreamSubscription<void>? _completion;
+  StreamSubscription<Duration>? _position;
   int _playback = 0;
   bool _contextSet = false;
 
@@ -63,11 +65,23 @@ class CloudArabicAudio {
   Future<bool> play(String text, {required double speed, required int repeats, required VoidCallback onDone}) async {
     final id = ++_playback;
     await _completion?.cancel();
+    await _position?.cancel();
     final url = await resolve(text);
     if (url == null || id != _playback) return false;
     await _ensureAudioContext();
 
     var remaining = repeats < 1 ? 1 : repeats;
+    // Estimate the spoken word from the clip's progress, for word-by-word highlighting.
+    final words = playbackWords(text);
+    Duration? duration;
+    _position = _player.onPositionChanged.listen((position) async {
+      if (id != _playback) return;
+      duration ??= await _player.getDuration();
+      final total = duration;
+      if (total != null && id == _playback) {
+        PlaybackProgress.update(text, estimateWordIndex(words, position, total));
+      }
+    });
     _completion = _player.onPlayerComplete.listen((_) async {
       if (id != _playback) return;
       remaining--;
@@ -77,6 +91,7 @@ class CloudArabicAudio {
         await _player.seek(Duration.zero);
         await _player.resume();
       } else {
+        PlaybackProgress.clear();
         onDone();
       }
     });
@@ -87,6 +102,7 @@ class CloudArabicAudio {
     } catch (e) {
       debugPrint('Cloud audio playback failed: $e');
       await _completion?.cancel();
+      await _position?.cancel();
       return false;
     }
   }
@@ -94,6 +110,8 @@ class CloudArabicAudio {
   Future<void> stop() async {
     _playback++;
     await _completion?.cancel();
+    await _position?.cancel();
+    PlaybackProgress.clear();
     try {
       await _player.stop();
     } catch (_) {}

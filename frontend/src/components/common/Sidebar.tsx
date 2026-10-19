@@ -2,7 +2,7 @@ import React from 'react';
 import {
   BookOpen, BookText, Clock, FlaskConical, Sparkles,
   Target, Trophy, User as UserIcon, LogOut,
-  ChevronRight, CheckCircle, ShieldCheck, Settings, GitFork
+  ChevronRight, CheckCircle, ShieldCheck, Settings, GitFork, Link2
 } from 'lucide-react';
 import { User, ChildProfile } from '../../types';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
@@ -121,6 +121,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       titleAr: 'الملف الشخصي',
       icon: UserIcon,
       isView: (v: string) => v === 'profile'
+    }] : []),
+    // Teachers check the AI's Arabic–English word matches (tutors have no admin panel).
+    ...(user?.role === 'tutor' || user?.role === 'admin' ? [{
+      id: 'word-matches',
+      titleEn: 'Word Matches Review',
+      titleAr: 'مراجعة مطابقة الكلمات',
+      icon: Link2,
+      isView: (v: string) => v === 'word-matches'
     }] : []),
     // Only administrators see the admin panel (not students, parents or signed-out visitors).
     ...(user?.role === 'admin' ? [{

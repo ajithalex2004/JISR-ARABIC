@@ -8,6 +8,7 @@ import { TextbookReader } from './components/reader/TextbookReader';
 import { ParentDashboard } from './components/dashboard/ParentDashboard';
 import { TutorDashboard } from './components/dashboard/TutorDashboard';
 import { AdminWorkflow } from './components/admin/AdminWorkflow';
+import { WordMatchReview } from './components/admin/WordMatchReview';
 import { AuthModal } from './components/auth/AuthModal';
 import { PaywallModal } from './components/payment/PaywallModal';
 import { AskFahimModal } from './components/ai/AskFahimModal';
@@ -312,7 +313,7 @@ export function App() {
             </div>
           </div>
         )}
-        {currentView !== 'admin' && ((currentView === 'tutor' && !['tutor', 'admin'].includes(user?.role || '')) || (currentView === 'parent' && !['parent', 'admin'].includes(user?.role || ''))) && <div role="alert" className="m-4 border border-amber-500 bg-amber-50 p-4">This page is not available for your account. Please sign in with the appropriate role.</div>}
+        {currentView !== 'admin' && (((currentView === 'tutor' || currentView === 'word-matches') && !['tutor', 'admin'].includes(user?.role || '')) || (currentView === 'parent' && !['parent', 'admin'].includes(user?.role || ''))) && <div role="alert" className="m-4 border border-amber-500 bg-amber-50 p-4">This page is not available for your account. Please sign in with the appropriate role.</div>}
         {currentView === 'catalogue' && (
           <CatalogueView
             user={user}
@@ -425,6 +426,12 @@ export function App() {
         )}
 
         {currentView === 'tutor' && ['tutor', 'admin'].includes(user?.role || '') && <TutorDashboard />}
+
+        {currentView === 'word-matches' && ['tutor', 'admin'].includes(user?.role || '') && (
+          <div className="max-w-5xl mx-auto px-4 py-6">
+            <WordMatchReview />
+          </div>
+        )}
 
         {currentView === 'admin' && user?.role === 'admin' && <AdminWorkflow />}
       </main>

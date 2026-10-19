@@ -32,4 +32,17 @@ void main() {
       expect(buildSpeechEvaluation(targetPhrase: 'مرحبا', transcript: '   '), isNull);
     });
   });
+
+  group('buildRecordingEvaluation', () {
+    test('sends the recording for a signed-in learner', () {
+      final body = buildRecordingEvaluation(targetPhrase: 'مرحبا', audioBase64: 'UklGRg==', childId: 'c1')!;
+      expect(body['audio_base64'], 'UklGRg==');
+      expect(body['audio_mime_type'], 'audio/wav');
+      expect(body.containsKey('spoken_text'), isFalse);
+    });
+    test('needs a learner and some audio', () {
+      expect(buildRecordingEvaluation(targetPhrase: 'مرحبا', audioBase64: 'UklGRg=='), isNull);
+      expect(buildRecordingEvaluation(targetPhrase: 'مرحبا', audioBase64: '', childId: 'c1'), isNull);
+    });
+  });
 }

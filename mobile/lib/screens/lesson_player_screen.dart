@@ -1,4 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../api_service.dart';
@@ -62,6 +69,10 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   bool _isRecording = false;
   String _heard = '';
   String? _speechNotice;
+  // Phones without Arabic speech recognition record the child and let the server transcribe.
+  final AudioRecorder _recorder = AudioRecorder();
+  bool _isServerRecording = false;
+  Timer? _recordingTimer;
   final TextEditingController _writingCtrl = TextEditingController();
   bool _writingSubmitted = false;
   bool _isSubmittingWriting = false;
@@ -69,6 +80,10 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   /// Tap once to start listening, tap again (or pause) to stop; the transcript is then scored.
   Future<void> _recordAndEvaluateSpeech(String targetSpeech) async {
     if (_isEvaluatingSpeech) return;
+    if (_isServerRecording) {
+      await _finishServerRecording(targetSpeech);
+      return;
+    }
     if (_isRecording) {
       await _speech.stop();
       return; // the final result / status callback finishes the attempt
@@ -78,6 +93,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       _speechEvaluated = false;
       _speechResult = null;
       _heard = '';
+      _currentTargetSpeech = targetSpeech;
     });
     try {
       if (!_speechReady) {
@@ -98,7 +114,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       }
       final localeId = pickArabicLocale((await _speech.locales()).map((l) => l.localeId));
       if (localeId == null) {
-        setState(() => _speechNotice = 'هذا الجهاز لا يدعم التعرف على الكلام العربي، لذلك لا يمكن تقييم النطق.\nThis phone has no Arabic speech recognition, so speaking can\'t be scored here.');
+        await _startServerRecording();
         return;
       }
       setState(() => _isRecording = true);
@@ -128,6 +144,59 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     }
   }
 
+  /// No Arabic recognition on this phone: record a short WAV for the server to transcribe.
+  Future<void> _startServerRecording() async {
+    if (kIsWeb || widget.childId == null || widget.childId!.isEmpty) {
+      setState(() => _speechNotice = 'هذا الجهاز لا يدعم التعرف على الكلام العربي.\nThis device has no Arabic speech recognition, so speaking can\'t be scored here.');
+      return;
+    }
+    if (!await _recorder.hasPermission()) {
+      setState(() => _speechNotice = 'يرجى السماح باستخدام الميكروفون للتدرب على النطق.\nPlease allow microphone access to practise speaking.');
+      return;
+    }
+    final dir = await getTemporaryDirectory();
+    await _recorder.start(
+      const RecordConfig(encoder: AudioEncoder.wav, sampleRate: 16000, numChannels: 1),
+      path: '${dir.path}/jisr_speaking_practice.wav',
+    );
+    if (!mounted) return;
+    setState(() {
+      _isServerRecording = true;
+      _isRecording = true;
+    });
+    // One sentence is short; stop on our own if the child forgets to tap.
+    _recordingTimer = Timer(const Duration(seconds: 12), () {
+      if (_isServerRecording) _finishServerRecording(_currentTargetSpeech);
+    });
+  }
+
+  String _currentTargetSpeech = '';
+
+  Future<void> _finishServerRecording(String targetSpeech) async {
+    _recordingTimer?.cancel();
+    if (!_isServerRecording) return;
+    final path = await _recorder.stop();
+    if (!mounted) return;
+    setState(() {
+      _isServerRecording = false;
+      _isRecording = false;
+    });
+    final bytes = path == null ? null : await File(path).readAsBytes();
+    final body = bytes == null || bytes.length < 2000
+        ? null
+        : buildRecordingEvaluation(
+            targetPhrase: targetSpeech,
+            audioBase64: base64Encode(bytes),
+            childId: widget.childId,
+            lessonId: widget.package.lessonId,
+          );
+    if (body == null) {
+      setState(() => _speechNotice = 'لم نسمعك بوضوح. اضغط على الميكروفون وأعد قراءة الجملة.\nWe didn\'t catch that. Tap the mic and read the sentence again.');
+      return;
+    }
+    await _submitEvaluation(body);
+  }
+
   Future<void> _finishAttempt(String targetSpeech) async {
     if (!_isRecording || !mounted) return;
     final body = buildSpeechEvaluation(
@@ -141,10 +210,17 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       setState(() => _speechNotice = 'لم نسمعك بوضوح. اضغط على الميكروفون وأعد قراءة الجملة.\nWe didn\'t catch that. Tap the mic and read the sentence again.');
       return;
     }
+    await _submitEvaluation(body);
+  }
+
+  Future<void> _submitEvaluation(Map<String, dynamic> body) async {
     setState(() => _isEvaluatingSpeech = true);
     try {
       final api = widget.api ?? ApiService();
       final res = await api.evaluateSpeech(body, token: widget.token);
+      if (res is Map && (res['recognized_text'] ?? '').toString().isNotEmpty && mounted) {
+        setState(() => _heard = res['recognized_text'].toString());
+      }
       if (!mounted) return;
       setState(() {
         _isEvaluatingSpeech = false;
@@ -152,12 +228,15 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
         _speechResult = res is Map<String, dynamic> ? res : null;
         if (!_speechEvaluated) _speechNotice = 'تعذّر تقييم النطق الآن. حاول مرة أخرى.\nCouldn\'t score your speaking right now. Please try again.';
       });
-    } catch (_) {
-      // No made-up score: tell the child it didn't work instead.
+    } catch (e) {
+      // No made-up score: tell the child it didn't work instead, with the server's reason
+      // when it gave one (daily limit reached, nothing heard, ...).
       if (mounted) {
         setState(() {
           _isEvaluatingSpeech = false;
-          _speechNotice = 'تعذّر تقييم النطق الآن. تحقق من الاتصال وحاول مرة أخرى.\nCouldn\'t score your speaking right now. Check your connection and try again.';
+          _speechNotice = e is AuthException && e.message.isNotEmpty && !e.message.startsWith('Request failed')
+              ? e.message
+              : 'تعذّر تقييم النطق الآن. تحقق من الاتصال وحاول مرة أخرى.\nCouldn\'t score your speaking right now. Check your connection and try again.';
         });
       }
     }
@@ -232,6 +311,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
 
   @override
   void dispose() {
+    _recordingTimer?.cancel();
+    _recorder.dispose();
     _speech.cancel();
     _writingCtrl.dispose();
     super.dispose();

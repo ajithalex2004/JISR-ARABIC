@@ -10,11 +10,11 @@ type Cell = {
   total_pages: number | null;
   pages_read: number;
   pages_failed: number;
-  lessons: { total: number; published: number; in_review: number; not_started: number };
+  lessons: { total: number; published: number; in_review: number; not_started: number; auto_generated: number };
   stage: Stage;
 };
 type Progress = {
-  summary: Record<Stage, number> & { lessons_published: number; lessons_total: number };
+  summary: Record<Stage, number> & { lessons_published: number; lessons_total: number; lessons_auto_generated: number };
   grades: { grade: number; terms: Cell[] }[];
 };
 
@@ -38,6 +38,9 @@ function CellCard({ cell }: { cell: Cell }) {
     </div>}
     {lessons.total > 0 && <div>
       Lessons: {lessons.published}/{lessons.total} published{lessons.in_review ? ` · ${lessons.in_review} to review` : ''}
+    </div>}
+    {lessons.auto_generated > 0 && <div className="text-amber-900">
+      Students see {lessons.auto_generated} auto-generated (not teacher-reviewed)
     </div>}
     {cell.stage !== 'published' && cell.stage !== 'no_book' && <div className="opacity-75 italic">Next: {stage.next}</div>}
   </div>;
@@ -70,6 +73,10 @@ export function ContentProgress() {
       <div className="border border-slate-200 bg-slate-50 p-3"><div className="text-xs text-slate-500">Terms in progress</div><div className="text-lg font-bold">{s.in_review + s.ready_to_draft + s.reading + s.uploaded}</div></div>
       <div className="border border-slate-200 bg-slate-50 p-3"><div className="text-xs text-slate-500">Books not uploaded</div><div className="text-lg font-bold">{s.no_book}</div></div>
     </div>}
+    {s && s.lessons_auto_generated > 0 && <p className="text-sm border border-amber-300 bg-amber-50 text-amber-950 p-3">
+      <strong>{s.lessons_auto_generated} of {s.lessons_total} lessons</strong> are shown to students as auto-generated content
+      that no teacher has reviewed yet. Publishing a reviewed version in Curriculum Review replaces it.
+    </p>}
     {progress && <div className="overflow-x-auto">
       <table className="w-full text-sm border-collapse min-w-[640px] table-fixed">
         <thead>

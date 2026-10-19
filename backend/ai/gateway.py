@@ -51,6 +51,7 @@ class AIRequest:
     tier: str = "fast"                # "fast" (chat) or "strong" (page reading, drafting)
     gemini_model: Optional[str] = None
     learner_id: Optional[str] = None  # counts towards this learner's daily limit
+    providers: Optional[List[str]] = None  # only these providers (e.g. ["gemini"] for audio input)
     retry_on_rate_limit: bool = False  # wait and retry a rate limit when no other provider is left
     timeout: float = 120.0
 
@@ -187,8 +188,12 @@ def generate(request: AIRequest, *, gemini_client=_UNSET) -> AIResponse:
     None means Gemini is not available for this call.
     """
     providers = _providers(gemini_client)
+    if request.providers is not None:
+        providers = [p for p in providers if p.name in request.providers]
     if not providers:
-        raise AIUnavailable("No AI provider is configured (set GEMINI_API_KEY or ANTHROPIC_API_KEY).")
+        raise AIUnavailable("No AI provider is configured (set GEMINI_API_KEY or ANTHROPIC_API_KEY)."
+                            if request.providers is None else
+                            f"No configured AI provider supports {request.feature} ({', '.join(request.providers)}).")
     _check_limits(request)
 
     primary = providers[0].name

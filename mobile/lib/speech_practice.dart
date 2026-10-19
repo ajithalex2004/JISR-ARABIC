@@ -32,3 +32,22 @@ Map<String, dynamic>? buildSpeechEvaluation({
     'spoken_text': spoken,
   };
 }
+
+/// Body for scoring a recording on the server (phones without Arabic speech recognition), or
+/// null when it can't be sent: the server only transcribes for a signed-in learner.
+Map<String, dynamic>? buildRecordingEvaluation({
+  required String targetPhrase,
+  required String audioBase64,
+  String? childId,
+  String? lessonId,
+  String mimeType = 'audio/wav',
+}) {
+  if (audioBase64.isEmpty || childId == null || childId.isEmpty) return null;
+  return {
+    'child_id': childId,
+    if (lessonId != null && lessonId.isNotEmpty) 'lesson_id': lessonId,
+    'target_phrase': targetPhrase,
+    'audio_base64': audioBase64,
+    'audio_mime_type': mimeType,
+  };
+}

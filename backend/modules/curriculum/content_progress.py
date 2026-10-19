@@ -73,7 +73,10 @@ def content_progress(db: Session) -> Dict[str, Any]:
                 "total_pages": edition.total_pages if edition else None,
                 "pages_read": read["read"],
                 "pages_failed": read["failed"],
-                "lessons": {**lesson_counts, "not_started": lesson_counts["total"] - lesson_counts["published"] - lesson_counts["in_review"]},
+                "lessons": {**lesson_counts,
+                            "not_started": lesson_counts["total"] - lesson_counts["published"] - lesson_counts["in_review"],
+                            # What students see for lessons without a published version: auto-generated content.
+                            "auto_generated": lesson_counts["total"] - lesson_counts["published"]},
             }
             cell["stage"] = _stage(cell)
             cells.append(cell)
@@ -84,4 +87,5 @@ def content_progress(db: Session) -> Dict[str, Any]:
                for stage in ("published", "in_review", "ready_to_draft", "reading", "uploaded", "no_book")}
     summary["lessons_published"] = sum(cell["lessons"]["published"] for cell in all_cells)
     summary["lessons_total"] = sum(cell["lessons"]["total"] for cell in all_cells)
+    summary["lessons_auto_generated"] = summary["lessons_total"] - summary["lessons_published"]
     return {"summary": summary, "grades": rows}

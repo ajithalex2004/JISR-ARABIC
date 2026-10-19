@@ -287,7 +287,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <TashkeelToggleSwitch />
           <ArabEnglishToggleSwitch />
           <span className="bg-emerald-800 text-white text-xs font-bold px-2.5 py-1 uppercase tracking-wider">

@@ -51,7 +51,32 @@ class TestContentProgress(unittest.TestCase):
         self.assertEqual(report["summary"]["lessons_published"], 1)
         # Lessons without a published version reach students as auto-generated content.
         self.assertEqual(report["summary"]["lessons_auto_generated"], 2)
-        self.assertEqual(report["summary"]["no_book"], 34)
+        self.assertEqual(report["summary"]["no_book"], 30)
+        self.assertEqual(report["summary"]["pages_failed"], 1)
+
+    def test_published_without_reading_the_book_is_flagged(self):
+        db = self.db
+        db.add(Unit(id="u3", book_edition_id="moe_gr3_vol1_2023", unit_number=1, title_ar="و", title_en="U"))
+        db.add(Lesson(id="g3", unit_id="u3", grade=3, term=1, lesson_order=1, title_ar="د", title_en="L", start_page=1))
+        db.add(LessonVersion(id="v4", lesson_id="l2", content_json="{}", content_hash="h4", status="published"))
+        db.add(LessonVersion(id="v5", lesson_id="l3", content_json="{}", content_hash="h5", status="published"))
+        db.add(LessonVersion(id="v6", lesson_id="g3", content_json="{}", content_hash="h6", status="published"))
+        db.commit()
+        report = content_progress(db)
+        cells = {(c["grade"], c["term"]): c for row in report["grades"] for c in row["terms"]}
+        # Grade 1 Term 1's pages were read, so its lessons are from the book.
+        self.assertEqual(cells[(1, 1)]["stage"], "published")
+        # Grade 3 Term 1 has no book and no pages read: published from the syllabus only.
+        self.assertEqual((cells[(3, 1)]["stage"], cells[(3, 1)]["from_book"]), ("published_unsourced", False))
+        self.assertIn("Grade 3 Term 1", report["summary"]["books_missing_list"])
+        self.assertEqual(report["summary"]["published_unsourced"], 1)
+
+    def test_curated_reader_pages_count_as_read(self):
+        cells = {(c["grade"], c["term"]): c for row in content_progress(self.db)["grades"] for c in row["terms"]}
+        g5 = cells[(5, 1)]
+        self.assertTrue(g5["from_book"])
+        self.assertGreater(g5["pages_curated"], 0)
+        self.assertFalse(cells[(5, 2)]["from_book"])
 
 
 if __name__ == "__main__":

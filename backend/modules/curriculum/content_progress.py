@@ -18,14 +18,25 @@ def edition_id(grade: int, term: int) -> str:
     return f"moe_gr{grade}_vol{term}_2023"
 
 
+def curated_pages() -> Dict[str, int]:
+    """Pages transcribed and checked by hand, shipped with the code (the Volume 1 readers of grades 5-8).
+    They count as read even though no scanned page row exists for them."""
+    from backend.grade8_textbook_data import GRADE_8_TEXTBOOK_PAGES_DATA
+    from backend.ocr_reader import GRADE_6_TEXTBOOK_PAGES_DATA, GRADE_7_TEXTBOOK_PAGES_DATA, TEXTBOOK_PAGES_DATA
+    sets = {5: TEXTBOOK_PAGES_DATA, 6: GRADE_6_TEXTBOOK_PAGES_DATA, 7: GRADE_7_TEXTBOOK_PAGES_DATA, 8: GRADE_8_TEXTBOOK_PAGES_DATA}
+    return {edition_id(grade, 1): len({str(page) for page in data}) for grade, data in sets.items()}
+
+
 def _stage(cell: Dict[str, Any]) -> str:
     lessons = cell["lessons"]
     if lessons["total"] and lessons["published"] == lessons["total"]:
-        return "published"
+        # Lessons published while no page of the book was ever read came from the syllabus, not the textbook.
+        return "published" if cell["from_book"] else "published_unsourced"
     if lessons["published"] or lessons["in_review"]:
         return "in_review"
-    if cell["pages_read"]:
-        return "ready_to_draft" if cell["pages_read"] >= (cell["total_pages"] or 0) > 0 else "reading"
+    read = cell["pages_read"] + cell["pages_curated"]
+    if read:
+        return "ready_to_draft" if read >= (cell["total_pages"] or 0) > 0 else "reading"
     return "uploaded" if cell["uploaded"] else "no_book"
 
 
@@ -56,6 +67,7 @@ def content_progress(db: Session) -> Dict[str, Any]:
         elif states & {"content_pending", "approved"}:
             entry["in_review"] += 1
 
+    curated = curated_pages()
     uploads = content_root() / "uploads"
     rows: List[Dict[str, Any]] = []
     for grade in GRADES:
@@ -73,6 +85,8 @@ def content_progress(db: Session) -> Dict[str, Any]:
                 "total_pages": edition.total_pages if edition else None,
                 "pages_read": read["read"],
                 "pages_failed": read["failed"],
+                "pages_curated": curated.get(book_id, 0),
+                "from_book": bool(read["read"] or curated.get(book_id, 0)),
                 "lessons": {**lesson_counts,
                             "not_started": lesson_counts["total"] - lesson_counts["published"] - lesson_counts["in_review"],
                             # What students see for lessons without a published version: auto-generated content.
@@ -84,7 +98,14 @@ def content_progress(db: Session) -> Dict[str, Any]:
 
     all_cells = [cell for row in rows for cell in row["terms"]]
     summary = {stage: sum(1 for cell in all_cells if cell["stage"] == stage)
-               for stage in ("published", "in_review", "ready_to_draft", "reading", "uploaded", "no_book")}
+               for stage in ("published", "published_unsourced", "in_review", "ready_to_draft", "reading", "uploaded",
+                             "no_book")}
+    # Book-level gaps, whatever the lessons' state: books never uploaded, uploaded but unread, pages to retry.
+    missing = [cell for cell in all_cells if not cell["uploaded"] and not cell["from_book"]]
+    summary["books_missing"] = len(missing)
+    summary["books_missing_list"] = [f"Grade {cell['grade']} Term {cell['term']}" for cell in missing]
+    summary["books_unread"] = sum(1 for cell in all_cells if cell["uploaded"] and not cell["from_book"])
+    summary["pages_failed"] = sum(cell["pages_failed"] for cell in all_cells)
     summary["lessons_published"] = sum(cell["lessons"]["published"] for cell in all_cells)
     summary["lessons_total"] = sum(cell["lessons"]["total"] for cell in all_cells)
     summary["lessons_auto_generated"] = summary["lessons_total"] - summary["lessons_published"]

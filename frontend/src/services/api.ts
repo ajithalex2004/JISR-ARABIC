@@ -630,6 +630,26 @@ export const api = {
     return res.json();
   },
 
+  /** Stored Arabic–English word matches with one status, for teacher review (admins and tutors). */
+  async listAlignmentsForReview(status: string, q = '', offset = 0) {
+    const params = new URLSearchParams({ status, q, offset: String(offset), limit: '20' });
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/alignments?${params}`);
+    if (!res.ok) throw new Error((await res.json().catch(() => null))?.detail || 'Could not load word matches');
+    return res.json();
+  },
+
+  /** Approve (optionally with edited matches), reject, or regenerate one sentence's word matches. */
+  async reviewAlignment(id: string, action: 'approve' | 'reject' | 'regenerate', chunks?: { ar: number[]; en: number[] }[]) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/alignments/${encodeURIComponent(id)}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(chunks ? { action, chunks } : { action }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.detail || 'Could not save the review');
+    return data;
+  },
+
   /** Arabic–English matching chunks for the lines of a textbook page: [{ar, en, chunks}]. */
   async getPageAlignments(pdfPage: number, editionId?: string): Promise<{ ar: string; en: string; chunks: { ar: number[]; en: number[] }[] }[]> {
     const query = editionId ? `?edition_id=${encodeURIComponent(editionId)}` : '';

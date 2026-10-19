@@ -183,15 +183,27 @@ jobs:
   release-ios:
     name: Build & Sign iOS IPA
     if: github.event.inputs.target == 'all' || github.event.inputs.target == 'ios' || startsWith(github.ref, 'refs/tags/v')
-    runs-on: macos-14
-    continue-on-error: true
+    runs-on: macos-15
     defaults:
       run:
         working-directory: mobile
+    env:
+      # App Store Connect API key (Users and Access -> Integrations) plus the Apple team.
+      # With all four set, the build is signed automatically and can go to TestFlight;
+      # without them it falls back to an unsigned archive (not installable on an iPhone).
+      ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      ASC_KEY_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -202,7 +214,26 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build iOS App Archive
+      - name: Check Signing Credentials
+        id: signing
+        run: |
+          missing=""
+          for name in ASC_ISSUER_ID ASC_KEY_ID ASC_KEY_P8 APPLE_TEAM_ID; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -z "$missing" ]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::iOS signing secrets missing:$missing. Building an UNSIGNED archive, which cannot be installed on an iPhone or uploaded to TestFlight. Add APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_KEY_P8 and APPLE_TEAM_ID as repository secrets."
+            if [ "${{ github.event.inputs.deploy_to_testflight }}" = "true" ]; then
+              echo "::error::TestFlight upload requested but signing secrets are missing:$missing"
+              exit 1
+            fi
+          fi
+
+      - name: Resolve API Base
+        id: api
         env:
           API_BASE_INPUT: ${{ github.event.inputs.api_base }}
           API_BASE_VAR: ${{ vars.FAHIM_API_BASE }}
@@ -212,25 +243,76 @@ jobs:
             https://*) ;;
             *) echo "::error::API base must be an https:// address, got: $API_BASE"; exit 1 ;;
           esac
+          echo "base=$API_BASE" >> "$GITHUB_OUTPUT"
+
+      - name: Build Unsigned iOS Archive
+        if: steps.signing.outputs.signed != 'true'
+        run: |
           mkdir -p build/app/outputs/symbols
           flutter build ipa --release \
-            --dart-define=FAHIM_API_BASE="$API_BASE" \
+            --dart-define=FAHIM_API_BASE="${{ steps.api.outputs.base }}" \
             --obfuscate \
             --split-debug-info=build/app/outputs/symbols \
             --no-codesign
-
-      - name: Package Payload as IPA (Unsigned / Direct Archive)
-        run: |
-          if [ -d "build/ios/archive/Runner.xcarchive" ]; then
-            echo "Xcode archive successfully created."
-          else
+          if [ ! -d "build/ios/archive/Runner.xcarchive" ]; then
             cd build/ios/iphoneos
             mkdir -p Payload
-            cp -r Runner.app Payload/ || true
-            zip -r JISR-iOS-Release.ipa Payload/ || true
+            cp -r Runner.app Payload/
+            zip -r JISR-iOS-Unsigned.ipa Payload/
           fi
 
-      - name: Upload iOS Archive / IPA Artifact
+      - name: Build, Sign and Export iOS App
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          UPLOAD: ${{ github.event.inputs.deploy_to_testflight == 'true' }}
+        run: |
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_KEY_P8" > "$KEY_PATH"
+          AUTH=(-allowProvisioningUpdates
+                -authenticationKeyPath "$KEY_PATH"
+                -authenticationKeyID "$ASC_KEY_ID"
+                -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+
+          # Write Flutter's build settings (API base, obfuscation, version from pubspec) for Xcode.
+          mkdir -p build/app/outputs/symbols
+          flutter build ios --release --config-only \
+            --dart-define=FAHIM_API_BASE="${{ steps.api.outputs.base }}" \
+            --obfuscate \
+            --split-debug-info=build/app/outputs/symbols
+
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/ios/archive/Runner.xcarchive \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            "${AUTH[@]}" archive
+
+          # "upload" sends the build straight to App Store Connect / TestFlight; "export" keeps an .ipa.
+          DESTINATION=export
+          [ "$UPLOAD" = "true" ] && DESTINATION=upload
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>${DESTINATION}</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+
+          xcodebuild -exportArchive \
+            -archivePath build/ios/archive/Runner.xcarchive \
+            -exportPath build/ios/ipa \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            "${AUTH[@]}"
+          rm -f "$KEY_PATH"
+          if [ "$UPLOAD" = "true" ]; then
+            echo "::notice::Uploaded to App Store Connect. The build appears in TestFlight after Apple finishes processing (usually 5-30 minutes)."
+          fi
+
+      - name: Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: JISR-iOS-IPA

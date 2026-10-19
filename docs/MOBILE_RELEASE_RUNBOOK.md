@@ -104,13 +104,36 @@ ProGuard/R8 optimization rules are defined in [`mobile/android/app/proguard-rule
 
 ## 4. iOS Release Packaging (Apple App Store / TestFlight)
 
-### 4.1 Prerequisites
-- Apple Developer Account with Admin or App Manager access.
-- Provisioning Profile with Bundle ID (e.g. `com.jisr.app.mobile`).
-- macOS build runner with Xcode 15+ and command-line tools.
+### 4.1 One-time setup (cloud builds via GitHub Actions)
+1. **Apple Developer Program** membership (organization account for the company name on the App Store).
+2. **App ID** `com.jisr.app.mobile` (same as Android). Create the app record in App Store Connect with this Bundle ID.
+3. **App Store Connect API key**: Users and Access → Integrations → App Store Connect API → create a key with the
+   *App Manager* role. Note the Issuer ID and Key ID and download the `.p8` file (it can be downloaded only once).
+4. **Team ID**: developer.apple.com → Membership details.
+5. Add four **repository secrets** (GitHub → Settings → Secrets and variables → Actions):
 
-### 4.2 Building the Release Archive (`.ipa`)
-Run on macOS:
+| Secret | Value |
+|---|---|
+| `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID (UUID) |
+| `APP_STORE_CONNECT_KEY_ID` | Key ID (10 characters) |
+| `APP_STORE_CONNECT_KEY_P8` | Full contents of the `.p8` file, including the BEGIN/END lines |
+| `APPLE_TEAM_ID` | Team ID (10 characters) |
+
+Signing is automatic: Xcode creates or renews the distribution certificate and provisioning profile through the
+API key on each build, so no certificates or profiles need to be stored in the repository.
+
+### 4.2 Building and uploading to TestFlight
+GitHub → Actions → **JISR Arabic Mobile Release** → *Run workflow* with target `ios` (or `all`) and
+**Deploy .ipa to Apple TestFlight** ticked. The job archives and signs the app, then uploads it to App Store
+Connect; it appears in TestFlight after Apple's processing (usually 5–30 minutes). Without the tick, the signed
+`.ipa` is kept as the `JISR-iOS-IPA` artifact instead.
+
+Every upload needs a new build number: bump `version:` in `mobile/pubspec.yaml` (e.g. `1.0.6+7` → `1.0.7+8`).
+
+If the secrets are missing, the job warns and produces an **unsigned** archive (not installable on an iPhone);
+requesting a TestFlight upload without them fails the job.
+
+### 4.3 Manual build on a Mac (alternative)
 ```bash
 cd mobile
 flutter build ipa --release \
@@ -118,21 +141,8 @@ flutter build ipa --release \
   --obfuscate \
   --split-debug-info=build/app/outputs/symbols
 ```
-**Output:** `mobile/build/ios/archive/Runner.xcarchive` and `mobile/build/ios/ipa/*.ipa`
-
-### 4.3 Uploading to App Store Connect
-Use **Apple Transporter** or the command-line `xcrun altool`:
-```bash
-xcrun altool --upload-app \
-  --type ios \
-  --file "build/ios/ipa/mobile.ipa" \
-  --apiKey "YOUR_APP_STORE_CONNECT_API_KEY_ID" \
-  --apiIssuer "YOUR_ISSUER_UUID"
-```
-Or open in Xcode:
-1. Open `mobile/ios/Runner.xcworkspace` in Xcode.
-2. Select **Product > Archive**.
-3. In the Organizer window, click **Distribute App > App Store Connect > Upload**.
+Then upload `build/ios/ipa/*.ipa` with **Apple Transporter**, or open `mobile/ios/Runner.xcworkspace` in Xcode →
+**Product > Archive** → **Distribute App > App Store Connect > Upload**.
 
 ---
 

@@ -46,6 +46,30 @@ void main() {
     expect(AlignmentStore.lookup('مرحبا', 'Hello'), isNull);
   });
 
+  test('AlignmentStore.requestPage stores line matches once per page and sends the sign-in token', () async {
+    var calls = 0;
+    String? auth;
+    final api = ApiService(
+      baseUrl: 'http://test',
+      client: MockClient((request) async {
+        calls++;
+        auth = request.headers['Authorization'];
+        expect(request.url.path, '/api/curriculum/page-alignments/14');
+        expect(request.url.queryParameters['edition_id'], 'moe_gr7_vol1_2023');
+        return http.Response(
+          jsonEncode({'lines': [{'ar': 'الوَلَدُ يَلْعَبُ.', 'en': 'The boy plays.', 'chunks': [{'ar': [0], 'en': [0, 1]}, {'ar': [1], 'en': [2]}]}]}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    expect(await AlignmentStore.requestPage(api, 14, 'moe_gr7_vol1_2023', token: 'tok'), isTrue);
+    expect(await AlignmentStore.requestPage(api, 14, 'moe_gr7_vol1_2023', token: 'tok'), isFalse);
+    expect(calls, 1);
+    expect(auth, 'Bearer tok');
+    expect(AlignmentStore.lookup('الوَلَدُ يَلْعَبُ.', 'The boy plays.')!.first.en, [0, 1]);
+  });
+
   testWidgets('tapping a word highlights its match on the other side', (tester) async {
     final spoken = <String>[];
     await tester.pumpWidget(MaterialApp(

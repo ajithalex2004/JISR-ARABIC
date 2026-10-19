@@ -115,5 +115,63 @@ class TestAlignmentEndpoint(unittest.TestCase):
         self.assertEqual(self._post([{"ar": "ا" * 601, "en": "x"}]).status_code, 422)
 
 
+PAGE = {
+    "paragraphs": ["الدَّرْسُ الأَوَّلُ", "الحِصَانُ سَرِيعٌ.\nالوَلَدُ يَلْعَبُ.", "سطر واحد\nسطر ثان"],
+    "paragraphs_en": ["Lesson one", "The horse is fast.\nThe boy plays.", "Only one English line"],
+}
+
+
+class TestPageAlignments(unittest.TestCase):
+    def setUp(self):
+        engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+        Base.metadata.create_all(engine)
+        self.db = sessionmaker(bind=engine)()
+
+    def tearDown(self):
+        self.db.close()
+
+    def test_line_pairs_skip_paragraphs_whose_line_counts_differ(self):
+        self.assertEqual(alignment.page_line_pairs(PAGE), [
+            ("الدَّرْسُ الأَوَّلُ", "Lesson one"),
+            ("الحِصَانُ سَرِيعٌ.", "The horse is fast."),
+            ("الوَلَدُ يَلْعَبُ.", "The boy plays."),
+        ])
+        self.assertEqual(alignment.page_line_pairs({"paragraphs": None}), [])
+
+    def test_page_text_comes_from_the_server_and_lines_are_aligned(self):
+        reply = _ai({"alignments": [
+            {"pair": 0, "chunks": [{"ar": [0], "en": [1]}, {"ar": [1], "en": [0]}]},
+            {"pair": 1, "chunks": [{"ar": [0], "en": [0, 1]}, {"ar": [1], "en": [3]}]},
+            {"pair": 2, "chunks": [{"ar": [0], "en": [0]}]},  # covers too little: dropped
+        ]})
+        with patch("backend.modules.curriculum.authoring.get_ocr_page", return_value=PAGE) as page, \
+             patch("backend.ai.gateway.available", return_value=True), \
+             patch("backend.ai.gateway.generate", return_value=reply) as gen:
+            lines = alignment.get_page_alignments(self.db, 14, "moe_gr7_vol1_2023")
+            again = alignment.get_page_alignments(self.db, 14, "moe_gr7_vol1_2023")
+        page.assert_called_with(pdf_page=14, edition_id="moe_gr7_vol1_2023", db=self.db)
+        gen.assert_called_once()  # stored after the first visit
+        self.assertEqual([line["en"] for line in lines], ["Lesson one", "The horse is fast."])
+        self.assertEqual(lines[1]["chunks"], [{"ar": [0], "en": [0, 1]}, {"ar": [1], "en": [3]}])
+        self.assertEqual(again, lines)
+
+    def test_large_pages_are_aligned_in_batches(self):
+        many = {"paragraphs": [f"كلمة{i} ثانية" for i in range(20)], "paragraphs_en": [f"word{i} second" for i in range(20)]}
+
+        def reply(request):
+            count = request.prompt.count("Pair ")
+            return _ai({"alignments": [{"pair": i, "chunks": [{"ar": [0], "en": [0]}, {"ar": [1], "en": [1]}]} for i in range(count)]})
+
+        with patch("backend.modules.curriculum.authoring.get_ocr_page", return_value=many), \
+             patch("backend.ai.gateway.available", return_value=True), \
+             patch("backend.ai.gateway.generate", side_effect=reply) as gen:
+            lines = alignment.get_page_alignments(self.db, 3)
+        self.assertEqual(gen.call_count, 2)  # 12 + 8
+        self.assertEqual(len(lines), 20)
+
+    def test_endpoint_requires_sign_in(self):
+        self.assertEqual(TestClient(app).get("/api/curriculum/page-alignments/14").status_code, 401)
+
+
 if __name__ == "__main__":
     unittest.main()

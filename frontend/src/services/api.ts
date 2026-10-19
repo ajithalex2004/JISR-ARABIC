@@ -630,6 +630,15 @@ export const api = {
     return res.json();
   },
 
+  /** Arabic–English matching chunks for the lines of a textbook page: [{ar, en, chunks}]. */
+  async getPageAlignments(pdfPage: number, editionId?: string): Promise<{ ar: string; en: string; chunks: { ar: number[]; en: number[] }[] }[]> {
+    const query = editionId ? `?edition_id=${encodeURIComponent(editionId)}` : '';
+    const res = await authenticatedFetch(`${API_BASE}/api/curriculum/page-alignments/${pdfPage}${query}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.lines) ? data.lines : [];
+  },
+
   async solveQuestion(questionAr: string, contextAr?: string, grade?: number) {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/solve-question`, {
       method: 'POST',

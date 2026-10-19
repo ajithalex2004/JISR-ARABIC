@@ -69,7 +69,8 @@ async def distributed_rate_limit(request: Request, call_next):
     is_auth_checkout = (path.startswith("/api/auth/") or path.startswith("/api/payments/checkout")) and request.method == "POST"
     is_heavy_ai_audio = path.startswith(("/api/ai/", "/api/audio/synthesize"))
     # Word tooltips call this on hover, so it gets a higher per-IP budget than the AI tutor.
-    is_word_gloss = path in ("/api/curriculum/word-gloss", "/api/curriculum/root-family", "/api/curriculum/alignments")
+    is_word_gloss = path in ("/api/curriculum/word-gloss", "/api/curriculum/root-family", "/api/curriculum/alignments") \
+        or path.startswith("/api/curriculum/page-alignments/")
 
     if is_auth_checkout or is_heavy_ai_audio or is_word_gloss:
         client_ip = _extract_real_client_ip(request)
@@ -81,7 +82,9 @@ async def distributed_rate_limit(request: Request, call_next):
         else:
             limit = 30  # Max 30 requests/minute for heavy AI & TTS endpoints per IP
 
-        rate_key = f"{client_ip}:{path}"
+        # Every page shares one budget, so walking through page numbers can't multiply it.
+        rate_path = "/api/curriculum/page-alignments" if path.startswith("/api/curriculum/page-alignments/") else path
+        rate_key = f"{client_ip}:{rate_path}"
         is_allowed, current_count, retry_after = check_rate_limit(rate_key, limit=limit, window_seconds=60)
         if not is_allowed:
             return JSONResponse(

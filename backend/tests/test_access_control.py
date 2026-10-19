@@ -205,6 +205,10 @@ class TestAccessControl(unittest.TestCase):
             "/api/modules/assessments/exam-simulation/{grade}/{term}",
             "/apk", "/apk/download", "/download/apk",
             "/api/payments/webhook", "/api/payments/provider-webhook",
+            # Public on purpose: guests use them on the welcome page and the free chapter.
+            "/api/payments/prices", "/api/modules/mindmaps",
+            "/api/curriculum/textbook-info/{edition_id}",
+            "/api/curriculum/word-gloss",  # rate-limited and cached in main.py: it calls the AI model
         }
         public.update('/api/auth/' + suffix for suffix in (
             'signup', 'verify-otp', 'create-password-enroll', 'login', 'login-otp',
@@ -215,9 +219,20 @@ class TestAccessControl(unittest.TestCase):
                 getattr(d.call, '__name__', '') in ('get_current_user', 'get_optional_user') or authenticated(d)
                 for d in dependency.dependencies
             )
-        for route in app.routes:
-            if isinstance(route, APIRoute) and route.path not in public:
-                self.assertTrue(authenticated(route.dependant), route.path)
+        def api_routes(routes):
+            # Newer FastAPI keeps included routers nested instead of flattening them into
+            # app.routes; walk both shapes so no endpoint escapes this check.
+            for route in routes:
+                if isinstance(route, APIRoute):
+                    yield route
+                elif hasattr(route, 'original_router'):
+                    yield from api_routes(route.original_router.routes)
+                elif getattr(route, 'routes', None):
+                    yield from api_routes(route.routes)
+        routes = list(api_routes(app.routes))
+        self.assertGreater(len(routes), 100, "route walk is not seeing the API; the check would pass vacuously")
+        unguarded = sorted(r.path for r in routes if r.path not in public and not authenticated(r.dependant))
+        self.assertEqual(unguarded, [], "routes without an identity check that aren't declared public")
 
 
     def test_content_access_matrix_and_revocation(self):

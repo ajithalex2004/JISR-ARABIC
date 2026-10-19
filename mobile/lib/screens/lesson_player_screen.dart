@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../api_service.dart';
 import '../auth_service.dart';
 import '../arab_english_service.dart';
 import '../widgets/interactive_arabic_text.dart';
 import '../models/curriculum_models.dart';
+import '../speech_practice.dart';
 
 class LessonPlayerScreen extends StatefulWidget {
   final CurriculumLessonPackage package;
@@ -54,43 +56,108 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   bool _isEvaluatingSpeech = false;
   bool _speechEvaluated = false;
   Map<String, dynamic>? _speechResult;
+  // Speaking practice: the phone listens, and only what it heard is sent for scoring.
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _speechReady = false;
+  bool _isRecording = false;
+  String _heard = '';
+  String? _speechNotice;
   final TextEditingController _writingCtrl = TextEditingController();
   bool _writingSubmitted = false;
   bool _isSubmittingWriting = false;
 
+  /// Tap once to start listening, tap again (or pause) to stop; the transcript is then scored.
   Future<void> _recordAndEvaluateSpeech(String targetSpeech) async {
     if (_isEvaluatingSpeech) return;
-    setState(() => _isEvaluatingSpeech = true);
-
+    if (_isRecording) {
+      await _speech.stop();
+      return; // the final result / status callback finishes the attempt
+    }
+    setState(() {
+      _speechNotice = null;
+      _speechEvaluated = false;
+      _speechResult = null;
+      _heard = '';
+    });
     try {
-      final api = widget.api ?? ApiService();
-      final res = await api.evaluateSpeech({
-        'child_id': widget.childId,
-        'lesson_id': widget.package.lessonId,
-        'target_phrase': targetSpeech,
-        'spoken_text': targetSpeech,
-      }, token: widget.token);
-
+      if (!_speechReady) {
+        _speechReady = await _speech.initialize(
+          onStatus: (status) {
+            if ((status == 'done' || status == 'notListening') && _isRecording) {
+              _finishAttempt(targetSpeech);
+            }
+          },
+          onError: (_) {
+            if (_isRecording) _finishAttempt(targetSpeech);
+          },
+        );
+      }
+      if (!_speechReady) {
+        setState(() => _speechNotice = 'يرجى السماح باستخدام الميكروفون للتدرب على النطق.\nPlease allow microphone access to practise speaking.');
+        return;
+      }
+      final localeId = pickArabicLocale((await _speech.locales()).map((l) => l.localeId));
+      if (localeId == null) {
+        setState(() => _speechNotice = 'هذا الجهاز لا يدعم التعرف على الكلام العربي، لذلك لا يمكن تقييم النطق.\nThis phone has no Arabic speech recognition, so speaking can\'t be scored here.');
+        return;
+      }
+      setState(() => _isRecording = true);
+      await _speech.listen(
+        onResult: (result) {
+          if (!mounted) return;
+          setState(() => _heard = result.recognizedWords);
+          if (result.finalResult) _finishAttempt(targetSpeech);
+        },
+        listenOptions: stt.SpeechListenOptions(
+          listenFor: const Duration(seconds: 20),
+          pauseFor: const Duration(seconds: 3),
+          localeId: localeId,
+          partialResults: true,
+          cancelOnError: true,
+          listenMode: stt.ListenMode.dictation,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Speech practice error: $e');
       if (mounted) {
         setState(() {
-          _isEvaluatingSpeech = false;
-          _speechEvaluated = true;
-          _speechResult = res is Map<String, dynamic> ? res : null;
+          _isRecording = false;
+          _speechNotice = 'تعذّر بدء التسجيل. حاول مرة أخرى.\nCouldn\'t start recording. Please try again.';
         });
       }
+    }
+  }
+
+  Future<void> _finishAttempt(String targetSpeech) async {
+    if (!_isRecording || !mounted) return;
+    final body = buildSpeechEvaluation(
+      targetPhrase: targetSpeech,
+      transcript: _heard,
+      childId: widget.childId,
+      lessonId: widget.package.lessonId,
+    );
+    setState(() => _isRecording = false);
+    if (body == null) {
+      setState(() => _speechNotice = 'لم نسمعك بوضوح. اضغط على الميكروفون وأعد قراءة الجملة.\nWe didn\'t catch that. Tap the mic and read the sentence again.');
+      return;
+    }
+    setState(() => _isEvaluatingSpeech = true);
+    try {
+      final api = widget.api ?? ApiService();
+      final res = await api.evaluateSpeech(body, token: widget.token);
+      if (!mounted) return;
+      setState(() {
+        _isEvaluatingSpeech = false;
+        _speechEvaluated = res is Map<String, dynamic>;
+        _speechResult = res is Map<String, dynamic> ? res : null;
+        if (!_speechEvaluated) _speechNotice = 'تعذّر تقييم النطق الآن. حاول مرة أخرى.\nCouldn\'t score your speaking right now. Please try again.';
+      });
     } catch (_) {
+      // No made-up score: tell the child it didn't work instead.
       if (mounted) {
         setState(() {
           _isEvaluatingSpeech = false;
-          _speechEvaluated = true;
-          _speechResult = {
-            'overall_score': 94.0,
-            'accuracy_percentage': 94.0,
-            'fluency_rating': 'ممتاز (Excellent)',
-            'feedback_ar': 'نطق متميز ومخارج حروف واضحة ودقيقة جداً! أحسنت يا بطل!',
-            'phoneme_scores': {'ث/س': 96.0, 'ت/ط': 92.0, 'ة/ه': 98.0},
-            'detected_mistakes': <String>[],
-          };
+          _speechNotice = 'تعذّر تقييم النطق الآن. تحقق من الاتصال وحاول مرة أخرى.\nCouldn\'t score your speaking right now. Check your connection and try again.';
         });
       }
     }
@@ -153,6 +220,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
         _showFahimHint = false;
         _speechEvaluated = false;
         _speechResult = null;
+        _speechNotice = null;
+        _heard = '';
         _writingCtrl.clear();
         _writingSubmitted = false;
         _selectedAnswers.clear();
@@ -163,6 +232,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
 
   @override
   void dispose() {
+    _speech.cancel();
     _writingCtrl.dispose();
     super.dispose();
   }
@@ -1947,18 +2017,18 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: _isEvaluatingSpeech ? const Color(0xFFEF4444) : const Color(0xFF6C5CE7),
+                  color: (_isRecording || _isEvaluatingSpeech) ? const Color(0xFFEF4444) : const Color(0xFF6C5CE7),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: (_isEvaluatingSpeech ? Colors.red : const Color(0xFF6C5CE7)).withValues(alpha: 0.4),
+                      color: ((_isRecording || _isEvaluatingSpeech) ? Colors.red : const Color(0xFF6C5CE7)).withValues(alpha: 0.4),
                       blurRadius: 14,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: Icon(
-                  _isEvaluatingSpeech ? Icons.graphic_eq : Icons.mic,
+                  _isRecording ? Icons.stop : (_isEvaluatingSpeech ? Icons.graphic_eq : Icons.mic),
                   color: Colors.white,
                   size: 28,
                 ),
@@ -1966,9 +2036,19 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              _isEvaluatingSpeech ? 'جاري الاستماع وتحليل مخارج الحروف وفق معايير وزارة التربية...' : 'اضغط على الميكروفون للتحدث وقراءة الجملة',
+              _isRecording
+                  ? 'أستمع إليك الآن... اقرأ الجملة ثم اضغط للإيقاف'
+                  : (_isEvaluatingSpeech ? 'جاري تحليل مخارج الحروف...' : 'اضغط على الميكروفون للتحدث وقراءة الجملة'),
               style: const TextStyle(color: Color(0xFFC7D2FE), fontSize: 10),
             ),
+            if (_heard.isNotEmpty && (_isRecording || _isEvaluatingSpeech || _speechEvaluated)) ...[
+              const SizedBox(height: 6),
+              Text('سمعنا: $_heard', textDirection: TextDirection.rtl, style: const TextStyle(color: Colors.white, fontSize: 12)),
+            ],
+            if (_speechNotice != null) ...[
+              const SizedBox(height: 8),
+              Text(_speechNotice!, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFFFDE68A), fontSize: 11)),
+            ],
 
             if (_speechEvaluated && _speechResult != null) ...[
               const SizedBox(height: 12),
@@ -1988,7 +2068,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '${_speechResult!['fluency_rating'] ?? 'ممتاز'} (دقة النطق: ${_speechResult!['accuracy_percentage'] ?? 94}%)',
+                            '${_speechResult!['fluency_rating'] ?? ''} (دقة النطق: ${_speechResult!['accuracy_percentage'] ?? '—'}%)',
                             style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -1996,7 +2076,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      _speechResult!['feedback_ar'] ?? 'نطق سليم ومتميز!',
+                      _speechResult!['feedback_ar'] ?? '',
                       style: const TextStyle(color: Color(0xFFD1FAE5), fontSize: 11),
                     ),
                     if (_speechResult!['phoneme_scores'] != null) ...[
@@ -2005,7 +2085,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                         spacing: 6,
                         runSpacing: 4,
                         children: (_speechResult!['phoneme_scores'] as Map<String, dynamic>).entries.map((e) {
-                          final score = (e.value as num?)?.toDouble() ?? 95.0;
+                          final score = (e.value as num?)?.toDouble() ?? 0.0;
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(

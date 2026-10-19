@@ -1,5 +1,7 @@
 # JISR Production Backend Dependencies
-fastapi>=0.110.0
+# Pinned to a minor version: FastAPI 0.143 changed how app.routes exposes included routers,
+# which silently disabled a security test. Upgrade deliberately and re-run the tests.
+fastapi>=0.143.0,<0.144
 uvicorn[standard]>=0.28.0
 sqlalchemy>=2.0.28
 psycopg2-binary>=2.9.9

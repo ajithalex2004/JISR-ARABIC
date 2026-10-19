@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../api_service.dart';
+import '../playback_words.dart';
 import '../tashkeel.dart';
 
 /// Arabic–English matching highlights (POST /api/curriculum/alignments): which words of a
@@ -17,8 +18,10 @@ class AlignmentChunk {
     final chunks = <AlignmentChunk>[];
     for (final item in json) {
       if (item is! Map) return null;
-      final ar = (item['ar'] as List?)?.whereType<int>().toList() ?? const <int>[];
-      final en = (item['en'] as List?)?.whereType<int>().toList() ?? const <int>[];
+      final ar =
+          (item['ar'] as List?)?.whereType<int>().toList() ?? const <int>[];
+      final en =
+          (item['en'] as List?)?.whereType<int>().toList() ?? const <int>[];
       if (ar.isEmpty || en.isEmpty) return null;
       chunks.add(AlignmentChunk(ar, en));
     }
@@ -26,7 +29,8 @@ class AlignmentChunk {
   }
 }
 
-List<String> splitWords(String text) => text.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+List<String> splitWords(String text) =>
+    text.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
 
 /// Alignments fetched so far. Widgets rebuild on [revision] when new ones arrive.
 class AlignmentStore {
@@ -38,12 +42,18 @@ class AlignmentStore {
 
   static String _key(String ar, String en) => '${ar.trim()}\u0000${en.trim()}';
 
-  static List<AlignmentChunk>? lookup(String ar, String en) => _known[_key(ar, en)];
+  static List<AlignmentChunk>? lookup(String ar, String en) =>
+      _known[_key(ar, en)];
 
   static final Set<String> _requestedPages = {};
 
   /// Fetches the matches for a textbook page's lines (signed-in users); true if any arrived.
-  static Future<bool> requestPage(ApiService api, int pdfPage, String? editionId, {String? token}) async {
+  static Future<bool> requestPage(
+    ApiService api,
+    int pdfPage,
+    String? editionId, {
+    String? token,
+  }) async {
     final pageKey = '$editionId/$pdfPage';
     if (!_requestedPages.add(pageKey)) return false;
     try {
@@ -74,11 +84,16 @@ class AlignmentStore {
   }
 
   /// Fetches alignments for pairs not yet asked about in this session; true if any arrived.
-  static Future<bool> request(ApiService api, List<MapEntry<String, String>> pairs) async {
+  static Future<bool> request(
+    ApiService api,
+    List<MapEntry<String, String>> pairs,
+  ) async {
     final wanted = <MapEntry<String, String>>[];
     for (final p in pairs) {
       final key = _key(p.key, p.value);
-      if (p.key.trim().isEmpty || p.value.trim().isEmpty || _requested.contains(key)) continue;
+      if (p.key.trim().isEmpty || p.value.trim().isEmpty || _requested.contains(key)) {
+        continue;
+      }
       _requested.add(key);
       wanted.add(p);
     }
@@ -87,7 +102,11 @@ class AlignmentStore {
     try {
       final data = await api.post(
         '/api/curriculum/alignments',
-        body: {'pairs': [for (final p in batch) {'ar': p.key, 'en': p.value}]},
+        body: {
+          'pairs': [
+            for (final p in batch) {'ar': p.key, 'en': p.value},
+          ],
+        },
         timeout: const Duration(seconds: 30),
       );
       final list = data is Map ? data['alignments'] : null;
@@ -141,88 +160,140 @@ class _AlignedSentenceViewState extends State<AlignedSentenceView> {
 
   static const _highlight = Color(0xFFE0F2FE);
   static const _highlightBorder = Color(0xFF0284C7);
+  static const _playing = Color(0xFFFDE68A);
+  static const _playingBorder = Color(0xFFD97706);
 
   int _chunkOfAr(int i) => widget.chunks.indexWhere((c) => c.ar.contains(i));
   int _chunkOfEn(int i) => widget.chunks.indexWhere((c) => c.en.contains(i));
 
-  Widget _word(String text, bool matched, VoidCallback? onTap, TextStyle style, {bool arabic = false}) {
+  Widget _word(
+    String text,
+    bool matched,
+    VoidCallback? onTap,
+    TextStyle style, {
+    bool arabic = false,
+    bool playing = false,
+  }) {
+    final lit = playing && !matched;
     return InkWell(
       borderRadius: BorderRadius.circular(6),
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: arabic ? 4 : 2, vertical: 1),
         decoration: BoxDecoration(
-          color: matched ? _highlight : Colors.transparent,
+          color: matched ? _highlight : (lit ? _playing : Colors.transparent),
           borderRadius: BorderRadius.circular(6),
           border: Border(
             bottom: BorderSide(
-              color: matched ? _highlightBorder : (onTap != null && !arabic ? const Color(0xFFCBD5E1) : Colors.transparent),
-              width: matched ? 2 : 1,
+              color: matched
+                  ? _highlightBorder
+                  : lit
+                  ? _playingBorder
+                  : (onTap != null && !arabic
+                        ? const Color(0xFFCBD5E1)
+                        : Colors.transparent),
+              width: matched || lit ? 2 : 1,
             ),
           ),
         ),
-        child: Text(text, style: matched ? style.copyWith(color: const Color(0xFF0C4A6E)) : style),
+        child: Text(
+          text,
+          style: matched
+              ? style.copyWith(color: const Color(0xFF0C4A6E))
+              : style,
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final current = _active != null && _active! >= 0 && _active! < widget.chunks.length ? widget.chunks[_active!] : null;
+    final current =
+        _active != null && _active! >= 0 && _active! < widget.chunks.length
+        ? widget.chunks[_active!]
+        : null;
     final arWords = splitWords(widget.ar);
     final enWords = splitWords(widget.en);
-    final arStyle = widget.arStyle ??
-        const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), height: 1.8);
-    const enStyle = TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.5);
+    final arStyle =
+        widget.arStyle ??
+        const TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF1E293B),
+          height: 1.8,
+        );
+    const enStyle = TextStyle(
+      fontSize: 13,
+      color: Color(0xFF475569),
+      height: 1.5,
+    );
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: TashkeelState.notifier,
-      builder: (context, _, _) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Directionality(
-            textDirection: TextDirection.rtl,
-            child: Wrap(
-              spacing: 2,
-              runSpacing: 4,
-              children: [
-                for (var i = 0; i < arWords.length; i++)
-                  _word(
-                    TashkeelState.display(arWords[i]),
-                    current?.ar.contains(i) ?? false,
-                    () {
-                      setState(() => _active = _chunkOfAr(i));
-                      widget.onVocalize?.call(arWords[i].replaceAll(RegExp(r'[؟!\.,،؛:\x27"()\[\]\-—]'), ''));
-                    },
-                    arStyle,
-                    arabic: true,
-                  ),
-              ],
-            ),
-          ),
-          const Divider(height: 20),
-          Wrap(
-            spacing: 3,
-            runSpacing: 4,
+    return ValueListenableBuilder<SpokenWord?>(
+      valueListenable: PlaybackProgress.notifier,
+      builder: (context, spoken, _) {
+        // While this sentence plays, the spoken Arabic word and its English match light up.
+        final spokenIndex = spoken?.indexIn(widget.ar) ?? -1;
+        final playingChunk = spokenIndex >= 0 ? _chunkOfAr(spokenIndex) : -1;
+        final playing = playingChunk >= 0 ? widget.chunks[playingChunk] : null;
+        return ValueListenableBuilder<bool>(
+          valueListenable: TashkeelState.notifier,
+          builder: (context, _, _) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (var i = 0; i < enWords.length; i++)
-                _word(
-                  enWords[i],
-                  current?.en.contains(i) ?? false,
-                  _chunkOfEn(i) >= 0 ? () => setState(() => _active = _chunkOfEn(i)) : null,
-                  enStyle,
+              Directionality(
+                textDirection: TextDirection.rtl,
+                child: Wrap(
+                  spacing: 2,
+                  runSpacing: 4,
+                  children: [
+                    for (var i = 0; i < arWords.length; i++)
+                      _word(
+                        TashkeelState.display(arWords[i]),
+                        current?.ar.contains(i) ?? false,
+                        () {
+                          setState(() => _active = _chunkOfAr(i));
+                          widget.onVocalize?.call(
+                            arWords[i].replaceAll(
+                              RegExp(r'[؟!\.,،؛:\x27"()\[\]\-—]'),
+                              '',
+                            ),
+                          );
+                        },
+                        arStyle,
+                        arabic: true,
+                        playing: i == spokenIndex,
+                      ),
+                  ],
                 ),
+              ),
+              const Divider(height: 20),
+              Wrap(
+                spacing: 3,
+                runSpacing: 4,
+                children: [
+                  for (var i = 0; i < enWords.length; i++)
+                    _word(
+                      enWords[i],
+                      current?.en.contains(i) ?? false,
+                      _chunkOfEn(i) >= 0
+                          ? () => setState(() => _active = _chunkOfEn(i))
+                          : null,
+                      enStyle,
+                      playing: playing?.en.contains(i) ?? false,
+                    ),
+                ],
+              ),
+              if (widget.showNote) ...[
+                const SizedBox(height: 4),
+                const Text(
+                  'Tap a word to see its match. Matches suggested by AI.',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                ),
+              ],
             ],
           ),
-          if (widget.showNote) ...[
-            const SizedBox(height: 4),
-            const Text(
-              'Tap a word to see its match. Matches suggested by AI.',
-              style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -11,6 +11,7 @@ import 'api_service.dart';
 import 'auth_service.dart';
 import 'arab_english_service.dart';
 import 'tashkeel.dart';
+import 'playback_words.dart';
 import 'dialogs/ask_fahim_dialog.dart';
 import 'dialogs/auth_dialog.dart';
 import 'dialogs/feedback_dialog.dart';
@@ -185,6 +186,11 @@ class _MainScreenState extends State<MainScreen> {
         }
       });
 
+      // Device speech reports each word as it is spoken, for word-by-word highlighting.
+      _flutterTts.setProgressHandler((text, start, end, word) {
+        if (_isPlaying) PlaybackProgress.update(text, wordIndexAtChar(text, start));
+      });
+
       _flutterTts.setCompletionHandler(() async {
         if (_isPlaying && _currentRepeatIndex < _repeatCount && _currentSpeechText.isNotEmpty) {
           _currentRepeatIndex++;
@@ -194,6 +200,7 @@ class _MainScreenState extends State<MainScreen> {
             return;
           }
         }
+        PlaybackProgress.clear();
         if (mounted) {
           setState(() {
             _isPlaying = false;
@@ -205,6 +212,7 @@ class _MainScreenState extends State<MainScreen> {
       });
 
       _flutterTts.setErrorHandler((msg) {
+        PlaybackProgress.clear();
         if (mounted) {
           setState(() {
             _isPlaying = false;

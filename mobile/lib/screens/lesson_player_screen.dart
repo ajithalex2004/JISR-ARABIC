@@ -10,6 +10,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../api_service.dart';
 import '../auth_service.dart';
+import '../playback_words.dart';
 import '../tashkeel.dart';
 import '../widgets/root_tree_sheet.dart';
 import '../widgets/aligned_sentence.dart';
@@ -340,7 +341,9 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   }) {
     final words = text.split(RegExp(r'\s+')).where((w) => w.trim().isNotEmpty).toList();
 
-    return ValueListenableBuilder<int>(
+    return ValueListenableBuilder<SpokenWord?>(
+      valueListenable: PlaybackProgress.notifier,
+      builder: (context, spoken, _) => ValueListenableBuilder<int>(
       valueListenable: WordGloss.revision,
       builder: (context, _, _) => ValueListenableBuilder<bool>(
       valueListenable: TashkeelState.notifier,
@@ -354,11 +357,11 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       textDirection: TextDirection.rtl,
       spacing: 4,
       runSpacing: 4,
-      children: words.map((word) {
+      children: words.indexed.map((entry) {
+        final (wordIndex, word) = entry;
         final cleanWord = word.replaceAll(RegExp(r'[؟!\.,،؛:\x27"()\[\]\-—]'), '').trim();
         final translation = WordGloss.meaning(word, text);
-        final isPlaying = widget.activeWord.isNotEmpty &&
-            (cleanWord == widget.activeWord || word.contains(widget.activeWord));
+        final isPlaying = isSpokenWord(spoken, text, wordIndex, word, widget.activeWord);
 
         return Tooltip(
           message: '$cleanWord: $translation\n🔊 Click to Pronounce',
@@ -437,6 +440,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
           ),
         );
       }).toList(),
+    ),
     ),
     ),
     );

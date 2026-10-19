@@ -4,6 +4,7 @@ import { audioManager } from '../../services/audio';
 import { getWordTranslation, fetchWordGloss, WordDefinition } from '../../services/arabicDictionary';
 import { ArabEnglishHelper, useArabEnglish } from '../../services/arabEnglishService';
 import { stripTashkeel, useTashkeel } from '../../services/tashkeel';
+import { localWordIndex, playbackWords } from '../../services/playbackWords';
 
 interface ArabicWordSpansProps {
   text: string;
@@ -46,7 +47,9 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
   const [arabEnglishEnabled] = useArabEnglish();
   const [tashkeelMode] = useTashkeel();
   const hideTashkeel = tashkeelMode === 'plain';
-  const [activePlayingWord, setActivePlayingWord] = useState<string>('');
+  // While audio plays: the spoken word's position in this text, or a single clicked word.
+  const [spokenIndex, setSpokenIndex] = useState<number>(-1);
+  const [spokenWord, setSpokenWord] = useState<string>('');
   const [activeTouchedIndex, setActiveTouchedIndex] = useState<number | null>(null);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null);
@@ -54,14 +57,13 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
 
   useEffect(() => {
     const unsubscribe = audioManager.subscribe((state) => {
-      if (state.isPlaying && state.activeWord) {
-        setActivePlayingWord(state.activeWord);
-      } else {
-        setActivePlayingWord('');
-      }
+      const playedWords = state.isPlaying ? playbackWords(state.text) : [];
+      setSpokenIndex(state.isPlaying ? localWordIndex(state.text, state.activeWordIndex, text) : -1);
+      // A single word played on its own (a tapped word) lights up wherever it appears.
+      setSpokenWord(playedWords.length === 1 ? playedWords[0].replace(/[؟!\.,،؛:\'\"()\[\]\-—]/g, '') : '');
     });
     return unsubscribe;
-  }, []);
+  }, [text]);
 
   // Close floating portal tooltip when user scrolls any scrollable ancestor
   useEffect(() => {
@@ -195,7 +197,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
             return <span key={idx}>{hideTashkeel ? stripTashkeel(token) : token}</span>;
           }
 
-          const isPlaying = activePlayingWord && cleanWord && (cleanWord === activePlayingWord || token.includes(activePlayingWord));
+          const isPlaying = spokenIndex >= 0 ? wordIndex === spokenIndex : !!spokenWord && cleanWord === spokenWord;
           const isHighlighted = hoveredIdx === idx || activeTouchedIndex === idx;
           const isMatched = !!highlightedWords?.includes(wordIndex);
           const arabEn = cleanWord ? ArabEnglishHelper.transliterateWord(cleanWord) : '';

@@ -630,3 +630,24 @@ class Subscription(Base):
     cancel_at_period_end = Column(Boolean, default=False)
     canceled_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class SentenceAlignment(Base):
+    """Which words of an Arabic sentence match which words of its English translation.
+
+    chunks_json is a list of {"ar": [token indexes], "en": [token indexes]} over the
+    whitespace-separated words of each sentence. Suggested by AI and checked by
+    backend/modules/curriculum/alignment.py; status "approved" or "rejected" records a
+    teacher's review, and rejected alignments are never shown.
+    """
+    __tablename__ = "sentence_alignments"
+
+    id = Column(String(64), primary_key=True)                    # sha256 of the normalized pair
+    arabic = Column(Text, nullable=False)
+    english = Column(Text, nullable=False)
+    chunks_json = Column(Text, nullable=False)
+    status = Column(String(20), default="ai", nullable=False)     # ai | approved | rejected
+    provider = Column(String(40), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    reviewed_by = Column(String(36), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)

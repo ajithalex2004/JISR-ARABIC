@@ -12,6 +12,8 @@ import { audioManager } from '../../services/audio';
 import { api } from '../../services/api';
 import { PronunciationSandbox } from '../audio/PronunciationSandbox';
 import { RootTreeExplorer } from '../learning/RootTreeExplorer';
+import { AlignedSentence } from '../audio/AlignedSentence';
+import { useAlignments } from '../../services/alignment';
 
 interface LessonViewerProps {
   lessonId: string;
@@ -136,6 +138,25 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
     } finally {
       setIsLoadingChapterPage(false);
     }
+  };
+
+  // Sentences on the open tab that have an English translation, for Arabic–English matching highlights.
+  const lessonContent = data?.content;
+  const alignmentPairs: { ar: string; en: string }[] = !lessonContent
+    ? []
+    : activeTab === 'vocab'
+    ? lessonContent.vocabulary_cards.map((c) => ({ ar: c.example_ar, en: c.example_en }))
+    : activeTab === 'instructions'
+    ? lessonContent.instruction_decoder.map((i) => ({ ar: i.sample_sentence_ar, en: i.sample_sentence_en }))
+    : activeTab === 'grammar'
+    ? lessonContent.grammar_lab.sections.flatMap((sec) => sec.examples.map((ex) => ({ ar: ex.phrase_ar, en: ex.translation_en })))
+    : activeTab === 'studio'
+    ? (lessonContent.listen_speak_studio?.audio_scripts ?? []).map((sc) => ({ ar: sc.text_ar, en: sc.text_en }))
+    : [];
+  const alignments = useAlignments(alignmentPairs.filter((p) => p.ar && p.en));
+  const alignmentFor = (ar: string, en: string) => {
+    const i = alignmentPairs.filter((p) => p.ar && p.en).findIndex((p) => p.ar === ar && p.en === en);
+    return i >= 0 ? alignments[i] ?? null : null;
   };
 
   if (isLoading) {
@@ -464,15 +485,13 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                       <span>listen sentence</span>
                     </button>
                   </div>
-                  <div className="text-right">
-                    <ArabicWordSpans
-                      text={card.example_ar}
-                      className="text-sm text-slate-900 leading-relaxed font-arabic"
-                    />
-                  </div>
-                  <div className="text-xs text-slate-500 italic">
-                    {card.example_en}
-                  </div>
+                  <AlignedSentence
+                    ar={card.example_ar}
+                    en={card.example_en}
+                    alignment={alignmentFor(card.example_ar, card.example_en)}
+                    arClassName="text-sm text-slate-900 leading-relaxed font-arabic"
+                    enClassName="text-xs text-slate-500 italic"
+                  />
                 </div>
               </div>
             ))}
@@ -665,9 +684,14 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                       >
                         <Volume2 className="w-4 h-4" />
                       </button>
-                      <div className="flex-1 text-right">
-                        <ArabicWordSpans text={script.text_ar} className="text-base font-bold text-slate-900" />
-                        <div className="text-xs text-slate-500 mt-0.5 text-left italic">{script.text_en}</div>
+                      <div className="flex-1">
+                        <AlignedSentence
+                          ar={script.text_ar}
+                          en={script.text_en}
+                          alignment={alignmentFor(script.text_ar, script.text_en)}
+                          arClassName="text-base font-bold text-slate-900"
+                          enClassName="text-xs text-slate-500 mt-0.5 text-left italic"
+                        />
                       </div>
                     </div>
                   ))}
@@ -714,8 +738,13 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
 
                 <div className="pt-1 text-right">
                   <span className="text-[10px] text-slate-400 uppercase font-bold block text-left">Textbook Example:</span>
-                  <ArabicWordSpans text={inst.sample_sentence_ar} className="text-sm font-arabic font-medium" />
-                  <div className="text-[11px] text-slate-500 italic text-left">{inst.sample_sentence_en}</div>
+                  <AlignedSentence
+                    ar={inst.sample_sentence_ar}
+                    en={inst.sample_sentence_en}
+                    alignment={alignmentFor(inst.sample_sentence_ar, inst.sample_sentence_en)}
+                    arClassName="text-sm font-arabic font-medium"
+                    enClassName="text-[11px] text-slate-500 italic text-left"
+                  />
                 </div>
               </div>
             ))}
@@ -748,16 +777,23 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
                   {sec.examples.map((ex, exIdx) => (
                     <div key={exIdx} className="p-3 bg-slate-50 border border-slate-200 text-right space-y-1">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-start gap-2">
                         <button
                           onClick={() => audioManager.playArabic(ex.phrase_ar)}
-                          className="p-1 bg-emerald-800 text-white"
+                          className="p-1 bg-emerald-800 text-white shrink-0"
                         >
                           <Volume2 className="w-3 h-3" />
                         </button>
-                        <ArabicWordSpans text={ex.phrase_ar} className="text-base font-bold text-slate-900" />
+                        <div className="flex-1 space-y-1">
+                          <AlignedSentence
+                            ar={ex.phrase_ar}
+                            en={ex.translation_en}
+                            alignment={alignmentFor(ex.phrase_ar, ex.translation_en)}
+                            arClassName="text-base font-bold text-slate-900"
+                            enClassName="text-xs text-slate-500 italic text-left"
+                          />
+                        </div>
                       </div>
-                      <div className="text-xs text-slate-500 italic text-left">{ex.translation_en}</div>
                     </div>
                   ))}
                 </div>

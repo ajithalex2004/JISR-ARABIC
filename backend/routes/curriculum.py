@@ -5,7 +5,7 @@ from backend.api.dependencies import get_current_user, get_optional_user
 from backend.modules.identity.access import Principal, require_child, optional_child, require_roles, FAMILY_ROLES, PARENT_ROLES, STAFF_ROLES
 """HTTP adapter: request parsing, dependency injection, and service delegation."""
 from fastapi import APIRouter, Depends, HTTPException, Query
-from backend.schemas import SubmitDiagnosticRequest, OnboardingProfileUpdateRequest, ActiveGradeRequest
+from backend.schemas import SubmitDiagnosticRequest, OnboardingProfileUpdateRequest, ActiveGradeRequest, AlignmentRequest
 from backend.modules.curriculum import service as service
 router = APIRouter(prefix='/api/curriculum', tags=['Curriculum'])
 
@@ -106,3 +106,9 @@ def root_family(root: str=Query('', max_length=20), word: str=Query('', max_leng
     if result is None:
         raise HTTPException(status_code=422, detail="Send a vocabulary word or a 3-4 letter Arabic root such as ك-ت-ب.")
     return result
+
+@router.post('/alignments')
+def sentence_alignments(payload: AlignmentRequest, db: Session=Depends(get_db)):
+    """Arabic-English matching chunks for each sentence pair (null where none is available)."""
+    from backend.modules.curriculum.alignment import get_alignments
+    return {"alignments": get_alignments(db, [(p.ar, p.en) for p in payload.pairs])}

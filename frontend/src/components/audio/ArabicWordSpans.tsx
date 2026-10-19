@@ -11,6 +11,10 @@ interface ArabicWordSpansProps {
   onWordClick?: (word: string) => void;
   tooltipPlacement?: 'top' | 'bottom';
   showAudioPrompt?: boolean;
+  /** Word positions (whitespace-separated, from 0) to mark as matching the English translation. */
+  highlightedWords?: number[];
+  /** Called with a word's position when it is hovered, focused or tapped, and null when it is left. */
+  onWordHover?: (wordIndex: number | null) => void;
 }
 
 interface TooltipState {
@@ -35,7 +39,9 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
   className = '',
   onWordClick,
   tooltipPlacement = 'top',
-  showAudioPrompt = true
+  showAudioPrompt = true,
+  highlightedWords,
+  onWordHover
 }) => {
   const [arabEnglishEnabled] = useArabEnglish();
   const [tashkeelMode] = useTashkeel();
@@ -96,6 +102,8 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
 
   // Split text by whitespace, preserving Arabic characters, diacritics and ligatures intact
   const tokens = text.split(/(\s+)/);
+  let wordCount = -1;
+  const wordIndexes = tokens.map((t) => (t && !/^\s+$/.test(t) ? ++wordCount : -1));
 
   const handleMouseEnter = (token: string, idx: number, e: React.MouseEvent<HTMLSpanElement>) => {
     setHoveredIdx(idx);
@@ -176,6 +184,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
     <>
       <span className={`inline font-arabic text-right ${className}`} dir="rtl">
         {tokens.map((token, idx) => {
+          const wordIndex = wordIndexes[idx];
           // If whitespace token, render as is
           if (/^\s+$/.test(token)) {
             return <span key={idx}>{token}</span>;
@@ -188,21 +197,33 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
 
           const isPlaying = activePlayingWord && cleanWord && (cleanWord === activePlayingWord || token.includes(activePlayingWord));
           const isHighlighted = hoveredIdx === idx || activeTouchedIndex === idx;
+          const isMatched = !!highlightedWords?.includes(wordIndex);
           const arabEn = cleanWord ? ArabEnglishHelper.transliterateWord(cleanWord) : '';
 
           return (
             <span
               key={idx}
               className="relative inline-block mx-[2px] align-bottom my-0.5"
-              onMouseEnter={(e) => handleMouseEnter(token, idx, e)}
-              onMouseLeave={handleMouseLeave}
+              onMouseEnter={(e) => {
+                handleMouseEnter(token, idx, e);
+                onWordHover?.(wordIndex);
+              }}
+              onMouseLeave={() => {
+                handleMouseLeave();
+                onWordHover?.(null);
+              }}
             >
               {/* Clickable & Hoverable Arabic Word Token */}
               <span
                 tabIndex={0}
                 role="button"
                 aria-label={token}
-                onClick={(e) => handleSpeakWord(token, idx, e)}
+                onClick={(e) => {
+                  handleSpeakWord(token, idx, e);
+                  onWordHover?.(wordIndex);
+                }}
+                onFocus={() => onWordHover?.(wordIndex)}
+                onBlur={() => onWordHover?.(null)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -212,6 +233,8 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
                 className={`arabic-word-target select-text inline-flex flex-col items-center justify-center px-1.5 py-0.5 rounded-lg transition-all duration-150 cursor-pointer ${
                   isPlaying
                     ? 'bg-amber-300 text-slate-950 font-bold ring-2 ring-amber-500 scale-105 shadow-md'
+                    : isMatched
+                    ? 'bg-sky-100 text-sky-950 font-bold ring-2 ring-sky-500 underline decoration-sky-600 decoration-2 underline-offset-4'
                     : isHighlighted
                     ? 'bg-purple-100 text-[#58337E] font-bold ring-2 ring-[#6C5CE7] shadow-sm'
                     : 'hover:bg-purple-100/80 hover:text-[#58337E] hover:ring-1 hover:ring-purple-400'

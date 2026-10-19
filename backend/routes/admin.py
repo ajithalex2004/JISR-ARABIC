@@ -193,6 +193,27 @@ def upload_curriculum_pdf(
         "poll_url": f"/api/tasks/{task.id}"
     }
 
+@router.post('/textbooks/read-pages')
+def read_all_textbook_pages(db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """Queue page reading for every uploaded textbook with pages failed or not yet read."""
+    require_roles(actor, ('admin',))
+    from backend.modules.curriculum.content_progress import content_progress
+    from backend.modules.curriculum.page_reading import queue_all_book_reads
+    cells = [cell for row in content_progress(db)["grades"] for cell in row["terms"]]
+    return queue_all_book_reads(cells, actor.id)
+
+@router.post('/textbooks/{edition_id}/read-pages')
+def read_textbook_pages(edition_id: str, actor: Principal = Depends(get_current_user)):
+    """Read the unread and failed pages of one uploaded textbook, from the PDF already stored."""
+    require_roles(actor, ('admin',))
+    from backend.modules.curriculum.page_reading import books_being_read, queue_book_read
+    if edition_id in books_being_read():
+        raise HTTPException(status_code=409, detail='This book is already being read')
+    try:
+        return queue_book_read(edition_id, actor.id)
+    except LookupError:
+        raise HTTPException(status_code=404, detail='No uploaded PDF for this book: upload it in Upload & OCR first')
+
 @router.get('/curriculum-review')
 def curriculum_review(term: int | None = None, grade: int | None = None, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
     require_roles(actor, ('admin',))

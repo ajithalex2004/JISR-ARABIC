@@ -67,7 +67,9 @@ def content_progress(db: Session) -> Dict[str, Any]:
         elif states & {"content_pending", "approved"}:
             entry["in_review"] += 1
 
+    from backend.modules.curriculum.page_reading import books_being_read
     curated = curated_pages()
+    reading = books_being_read()
     uploads = content_root() / "uploads"
     rows: List[Dict[str, Any]] = []
     for grade in GRADES:
@@ -77,11 +79,15 @@ def content_progress(db: Session) -> Dict[str, Any]:
             edition = editions.get(book_id)
             read = pages.get(book_id, {"read": 0, "failed": 0})
             lesson_counts = lessons.get((grade, term), {"total": 0, "published": 0, "in_review": 0})
+            pdf_stored = (uploads / f"{book_id}.pdf").is_file()
             cell = {
                 "grade": grade,
                 "term": term,
                 "edition_id": book_id,
-                "uploaded": (uploads / f"{book_id}.pdf").is_file() or bool(read["read"] or read["failed"]),
+                "uploaded": pdf_stored or bool(read["read"] or read["failed"]),
+                # The PDF is on disk, so its pages can be read again without re-uploading.
+                "pdf_stored": pdf_stored,
+                "reading_queued": book_id in reading,
                 "total_pages": edition.total_pages if edition else None,
                 "pages_read": read["read"],
                 "pages_failed": read["failed"],
@@ -106,6 +112,8 @@ def content_progress(db: Session) -> Dict[str, Any]:
     summary["books_missing_list"] = [f"Grade {cell['grade']} Term {cell['term']}" for cell in missing]
     summary["books_unread"] = sum(1 for cell in all_cells if cell["uploaded"] and not cell["from_book"])
     summary["pages_failed"] = sum(cell["pages_failed"] for cell in all_cells)
+    from backend.modules.curriculum.page_reading import needs_reading
+    summary["books_to_read"] = sum(1 for cell in all_cells if needs_reading(cell) and not cell["reading_queued"])
     summary["lessons_published"] = sum(cell["lessons"]["published"] for cell in all_cells)
     summary["lessons_total"] = sum(cell["lessons"]["total"] for cell in all_cells)
     summary["lessons_auto_generated"] = summary["lessons_total"] - summary["lessons_published"]

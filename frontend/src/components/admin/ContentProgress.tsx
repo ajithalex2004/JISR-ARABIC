@@ -12,13 +12,15 @@ type Cell = {
   pages_failed: number;
   pages_curated: number;
   from_book: boolean;
+  pdf_stored: boolean;
+  reading_queued: boolean;
   lessons: { total: number; published: number; in_review: number; not_started: number; auto_generated: number };
   stage: Stage;
 };
 type Progress = {
   summary: Record<Stage, number> & {
     lessons_published: number; lessons_total: number; lessons_auto_generated: number;
-    books_missing: number; books_missing_list: string[]; books_unread: number; pages_failed: number;
+    books_missing: number; books_missing_list: string[]; books_unread: number; pages_failed: number; books_to_read: number;
   };
   grades: { grade: number; terms: Cell[] }[];
 };
@@ -33,9 +35,14 @@ const STAGES: Record<Stage, { label: string; className: string; next: string }> 
   no_book: { label: 'No book', className: 'bg-white border-slate-200 text-slate-400', next: 'Upload the textbook PDF in Upload & OCR.' },
 };
 
-function CellCard({ cell }: { cell: Cell }) {
+function needsReading(cell: Cell) {
+  return cell.pdf_stored && (cell.pages_failed > 0 || !cell.total_pages || cell.pages_read < cell.total_pages);
+}
+
+function CellCard({ cell, busy, onRead }: { cell: Cell; busy: boolean; onRead: (cell: Cell) => void }) {
   const stage = STAGES[cell.stage];
   const { lessons } = cell;
+  const unread = cell.total_pages ? Math.max(0, cell.total_pages - cell.pages_read - cell.pages_failed) : 0;
   return <div className={`border p-2 text-xs space-y-0.5 ${stage.className}`} title={stage.next}>
     <div className="font-bold">{stage.label}</div>
     {!cell.uploaded && !cell.from_book && cell.stage !== 'no_book' && <div className="font-semibold">Book not uploaded</div>}
@@ -51,12 +58,20 @@ function CellCard({ cell }: { cell: Cell }) {
       Students see {lessons.auto_generated} auto-generated (not teacher-reviewed)
     </div>}
     {cell.stage !== 'published' && cell.stage !== 'no_book' && <div className="opacity-75 italic">Next: {stage.next}</div>}
+    {cell.reading_queued && <div className="font-semibold text-sky-900">Reading pages… refresh to see progress</div>}
+    {!cell.reading_queued && needsReading(cell) && <button type="button" disabled={busy} onClick={() => onRead(cell)}
+      className="mt-1 border border-slate-500 bg-white text-slate-900 px-2 py-0.5 font-semibold disabled:opacity-50">
+      {cell.pages_read === 0 && cell.pages_failed === 0 ? 'Read pages'
+        : `Read ${[cell.pages_failed && `${cell.pages_failed} failed`, unread && `${unread} unread`].filter(Boolean).join(' + ') || 'remaining'} pages`}
+    </button>}
   </div>;
 }
 
 export function ContentProgress() {
   const [progress, setProgress] = useState<Progress | null>(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const load = async () => {
     setError('');
@@ -65,16 +80,36 @@ export function ContentProgress() {
   };
   useEffect(() => { load(); }, []);
 
+  const read = async (cell?: Cell) => {
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const res = await api.adminReadTextbookPages(cell?.edition_id);
+      const count = cell ? 1 : res.queued.length;
+      setNotice(count
+        ? `Reading started for ${cell ? `Grade ${cell.grade} Term ${cell.term}` : `${count} book${count === 1 ? '' : 's'}`}. Books are read one after another; pages already read are skipped.`
+        : 'No uploaded book has pages left to read.');
+      await load();
+    } catch (e: any) { setError(e.message); }
+    finally { setBusy(false); }
+  };
+
   const s = progress?.summary;
   return <section className="border border-slate-300 bg-white p-4 space-y-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="font-bold text-emerald-950">Content progress</h2>
-      <button type="button" onClick={load} className="border border-slate-400 px-3 py-1.5 text-sm">Refresh</button>
+      <div className="flex flex-wrap gap-2">
+        {s && s.books_to_read > 0 && <button type="button" disabled={busy} onClick={() => read()}
+          className="border border-emerald-700 bg-emerald-700 text-white px-3 py-1.5 text-sm font-semibold disabled:opacity-50">
+          Read all uploaded books ({s.books_to_read})
+        </button>}
+        <button type="button" onClick={load} className="border border-slate-400 px-3 py-1.5 text-sm">Refresh</button>
+      </div>
     </div>
     <p className="text-sm text-slate-600">
       Each textbook goes through: upload the PDF → pages are read → AI drafts the lessons → you review and publish.
     </p>
     {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
+    {notice && <p role="status" className="text-sm border border-sky-300 bg-sky-50 text-sky-950 p-3">{notice}</p>}
     {s && <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 text-sm">
       <div className="border border-emerald-300 bg-emerald-50 p-3"><div className="text-xs text-slate-500">Terms published from the book</div><div className="text-lg font-bold">{s.published} / 36</div></div>
       <div className="border border-amber-400 bg-amber-50 p-3"><div className="text-xs text-slate-500">Published, not from the book</div><div className="text-lg font-bold">{s.published_unsourced}</div></div>
@@ -108,7 +143,7 @@ export function ContentProgress() {
         <tbody>
           {progress.grades.map(row => <tr key={row.grade}>
             <td className="py-1 pr-2 font-semibold text-slate-800 align-top">Grade {row.grade}</td>
-            {row.terms.map(cell => <td key={cell.term} className="py-1 px-1 align-top"><CellCard cell={cell} /></td>)}
+            {row.terms.map(cell => <td key={cell.term} className="py-1 px-1 align-top"><CellCard cell={cell} busy={busy} onRead={read} /></td>)}
           </tr>)}
         </tbody>
       </table>

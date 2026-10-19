@@ -3,10 +3,11 @@ import { Settings, Plus, Upload, CheckCircle2, AlertTriangle, FileCode, Layers }
 import { api } from '../../services/api';
 import { AdminManagement } from './AdminManagement';
 import { CurriculumReview } from './CurriculumReview';
+import { WordMatchReview } from './WordMatchReview';
 import { TextbookPdfUploader } from './TextbookPdfUploader';
 import { TextbookPdfLibrary } from './TextbookPdfLibrary';
 
-type AdminMode = 'PDF_LIBRARY' | 'UPLOAD_PDF' | 'CURRICULUM_REVIEW' | 'ADD_TERM' | 'ADD_CLASS' | 'ADD_LESSON' | 'UPDATE_EDITION' | 'COVERAGE' | 'QUALITY';
+type AdminMode = 'PDF_LIBRARY' | 'UPLOAD_PDF' | 'CURRICULUM_REVIEW' | 'WORD_MATCHES' | 'ADD_TERM' | 'ADD_CLASS' | 'ADD_LESSON' | 'UPDATE_EDITION' | 'COVERAGE' | 'QUALITY';
 
 export const AdminWorkflow: React.FC = () => {
   const [activeMode, setActiveMode] = useState<AdminMode>('PDF_LIBRARY');
@@ -164,6 +165,7 @@ export const AdminWorkflow: React.FC = () => {
           { id: 'PDF_LIBRARY' as const, label: '📚 Textbook Library (مكتبة الكتب)' },
           { id: 'UPLOAD_PDF' as const, label: '📤 Upload & OCR (رفع الكتب)' },
           { id: 'CURRICULUM_REVIEW' as const, label: '🔍 Curriculum Review (مراجعة المنهاج)' },
+          { id: 'WORD_MATCHES' as const, label: '🔗 Word Matches (مطابقة الكلمات)' },
           { id: 'ADD_TERM' as const, label: '➕ Add Term' },
           { id: 'ADD_CLASS' as const, label: '🏫 Add Class' },
           { id: 'ADD_LESSON' as const, label: '📝 Add Lesson' },
@@ -209,6 +211,8 @@ export const AdminWorkflow: React.FC = () => {
       )}
 
       {activeMode === 'CURRICULUM_REVIEW' && <CurriculumReview />}
+
+      {activeMode === 'WORD_MATCHES' && <WordMatchReview />}
 
       {/* MODE 1: ADD_TERM */}
       {activeMode === 'ADD_TERM' && (

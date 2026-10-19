@@ -84,8 +84,11 @@ def _catalogue_ids() -> frozenset:
     return frozenset(ids)
 
 
-def validate_chunks(arabic: str, english: str, chunks) -> Optional[List[dict]]:
-    """The chunks, cleaned and sorted, if they describe a usable alignment; otherwise None."""
+def validate_chunks(arabic: str, english: str, chunks, require_coverage: bool = True) -> Optional[List[dict]]:
+    """The chunks, cleaned and sorted, if they describe a usable alignment; otherwise None.
+
+    A teacher's edit skips the coverage rule: they may deliberately leave words unmatched.
+    """
     ar_words, en_words = words(arabic), words(english)
     if not isinstance(chunks, list) or not chunks:
         return None
@@ -113,7 +116,7 @@ def validate_chunks(arabic: str, english: str, chunks) -> Optional[List[dict]]:
     if not arabic_words or not english_words:
         return None
     coverage = sum(1 for i in arabic_words if i in used_ar) / len(arabic_words)
-    if coverage < (1.0 if len(arabic_words) <= 2 else MIN_COVERAGE):
+    if require_coverage and coverage < (1.0 if len(arabic_words) <= 2 else MIN_COVERAGE):
         return None
     return sorted(clean, key=lambda c: c["ar"][0])
 
@@ -243,3 +246,74 @@ def get_page_alignments(db: Session, pdf_page: int, edition_id: Optional[str] = 
     pairs = list(dict.fromkeys(page_line_pairs(page)))
     results = get_alignments(db, pairs, trusted=True, max_new=MAX_NEW_PER_PAGE)
     return [{"ar": a, "en": e, "chunks": c} for (a, e), c in zip(pairs, results) if c]
+
+
+REVIEW_STATUSES = ("ai", "approved", "rejected", "unusable")
+
+
+def _review_item(row) -> dict:
+    return {
+        "id": row.id,
+        "arabic": row.arabic,
+        "english": row.english,
+        "chunks": json.loads(row.chunks_json or "[]"),
+        "status": row.status,
+        "provider": row.provider,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "reviewed_by": row.reviewed_by,
+        "reviewed_at": row.reviewed_at.isoformat() if row.reviewed_at else None,
+    }
+
+
+def list_for_review(db: Session, status: str = "ai", query: str = "", limit: int = 20, offset: int = 0) -> dict:
+    """Stored alignments with one status, newest first, plus the count for every status."""
+    from sqlalchemy import func, or_
+    from backend.models import SentenceAlignment
+
+    counts = dict(db.query(SentenceAlignment.status, func.count()).group_by(SentenceAlignment.status).all())
+    q = db.query(SentenceAlignment).filter(SentenceAlignment.status == status)
+    query = (query or "").strip()
+    if query:
+        like = f"%{query}%"
+        q = q.filter(or_(SentenceAlignment.arabic.ilike(like), SentenceAlignment.english.ilike(like)))
+    total = q.count()
+    rows = q.order_by(SentenceAlignment.created_at.desc(), SentenceAlignment.id).offset(offset).limit(limit).all()
+    return {
+        "counts": {s: counts.get(s, 0) for s in REVIEW_STATUSES},
+        "total": total,
+        "items": [_review_item(r) for r in rows],
+    }
+
+
+def review_alignment(db: Session, alignment_id: str, action: str, reviewer_id: Optional[str],
+                     chunks=None) -> dict:
+    """Apply a teacher's decision: approve (optionally with edited chunks), reject, or regenerate.
+
+    Regenerate deletes the stored alignment, so the AI aligns the sentence again the next time
+    a learner opens it. Raises ValueError for an unknown alignment, action or invalid chunks.
+    """
+    import datetime
+    from backend.models import SentenceAlignment
+
+    row = db.get(SentenceAlignment, alignment_id)
+    if row is None:
+        raise LookupError("Alignment not found")
+    if action == "regenerate":
+        db.delete(row)
+        db.commit()
+        return {"id": alignment_id, "status": "deleted"}
+    if action not in ("approve", "reject"):
+        raise ValueError("action must be approve, reject or regenerate")
+    if action == "approve" and chunks is not None:
+        clean = validate_chunks(row.arabic, row.english, chunks, require_coverage=False)
+        if clean is None:
+            raise ValueError("Each match needs at least one Arabic and one English word; Arabic words in a "
+                             "match must be next to each other, and a word can belong to only one match.")
+        row.chunks_json = json.dumps(clean)
+    elif action == "approve" and row.status == "unusable":
+        raise ValueError("The AI couldn't match this sentence: pair the words yourself, or ask the AI again.")
+    row.status = "approved" if action == "approve" else "rejected"
+    row.reviewed_by = reviewer_id
+    row.reviewed_at = datetime.datetime.utcnow()
+    db.commit()
+    return _review_item(row)

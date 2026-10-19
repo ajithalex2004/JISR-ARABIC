@@ -657,3 +657,35 @@ def get_lesson_version(lesson_id: str, version_id: str, db: Session = Depends(ge
     if not v:
         raise HTTPException(status_code=404, detail='Lesson version not found')
     return {"id": v.id, "version_tag": v.version_tag, "status": v.status, "content": _json.loads(v.content_json)}
+
+
+class AlignmentReviewRequest(BaseModel):
+    action: str
+    chunks: Optional[list] = None
+
+
+@router.get('/alignments')
+def list_sentence_alignments(status: str = 'ai', q: str = '', limit: int = 20, offset: int = 0,
+                             db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """Arabic-English word matches for teacher review (admins and tutors)."""
+    require_roles(actor, ('admin', 'tutor'))
+    from backend.modules.curriculum import alignment
+    if status not in alignment.REVIEW_STATUSES:
+        raise HTTPException(status_code=422, detail="Unknown status")
+    return alignment.list_for_review(db, status=status, query=q[:100], limit=max(1, min(limit, 50)),
+                                     offset=max(0, offset))
+
+
+@router.post('/alignments/{alignment_id}/review')
+def review_sentence_alignment(alignment_id: str, payload: AlignmentReviewRequest, db: Session = Depends(get_db),
+                              actor: Principal = Depends(get_current_user)):
+    """Approve (optionally with edited matches), reject, or ask the AI to match a sentence again."""
+    require_roles(actor, ('admin', 'tutor'))
+    from backend.modules.curriculum import alignment
+    try:
+        return alignment.review_alignment(db, alignment_id, payload.action, getattr(actor, "id", None),
+                                          chunks=payload.chunks)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))

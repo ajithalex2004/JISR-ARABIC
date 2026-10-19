@@ -10,6 +10,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../api_service.dart';
 import '../auth_service.dart';
+import '../tashkeel.dart';
 import '../arab_english_service.dart';
 import '../widgets/interactive_arabic_text.dart';
 import '../models/curriculum_models.dart';
@@ -339,6 +340,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
 
     return ValueListenableBuilder<int>(
       valueListenable: WordGloss.revision,
+      builder: (context, _, _) => ValueListenableBuilder<bool>(
+      valueListenable: TashkeelState.notifier,
       builder: (context, _, _) => Wrap(
       alignment: textAlign == TextAlign.right
           ? WrapAlignment.end
@@ -419,7 +422,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                word,
+                TashkeelState.display(word),
                 textDirection: TextDirection.rtl,
                 style: style ??
                     const TextStyle(
@@ -432,6 +435,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
           ),
         );
       }).toList(),
+    ),
     ),
     );
   }
@@ -467,6 +471,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const ArabEnglishToggleSwitch(compact: true),
+                const SizedBox(width: 6),
+                const TashkeelToggleSwitch(),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: widget.onOpenAskFahim,

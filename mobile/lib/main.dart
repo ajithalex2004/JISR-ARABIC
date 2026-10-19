@@ -10,6 +10,7 @@ import 'cloud_audio.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
 import 'arab_english_service.dart';
+import 'tashkeel.dart';
 import 'dialogs/ask_fahim_dialog.dart';
 import 'dialogs/auth_dialog.dart';
 import 'dialogs/feedback_dialog.dart';
@@ -1035,6 +1036,8 @@ class _MainScreenState extends State<MainScreen> {
         ),
         actions: [
           const ArabEnglishToggleSwitch(compact: true),
+          const SizedBox(width: 4),
+          const Center(child: TashkeelToggleSwitch()),
           Container(
             margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 3),
             decoration: BoxDecoration(

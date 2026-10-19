@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api_service.dart';
 import '../arab_english_service.dart';
+import '../tashkeel.dart';
 import '../auth_service.dart';
 import '../chapter1_data.dart';
 import '../models/curriculum_models.dart';
@@ -833,6 +834,8 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
                             ),
                             const SizedBox(width: 8),
                             const ArabEnglishToggleSwitch(compact: true),
+                            const SizedBox(width: 6),
+                            const TashkeelToggleSwitch(),
                           ],
                         ),
                         Row(
@@ -1070,14 +1073,17 @@ class _TextbookReaderScreenState extends State<TextbookReaderScreen> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        pAr,
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
-                          height: 1.8,
+                      ValueListenableBuilder<bool>(
+                        valueListenable: TashkeelState.notifier,
+                        builder: (context, _, _) => Text(
+                          TashkeelState.display(pAr),
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                            height: 1.8,
+                          ),
                         ),
                       ),
                       ValueListenableBuilder<bool>(

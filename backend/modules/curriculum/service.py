@@ -208,7 +208,8 @@ def get_lesson_content(lesson_id: str, child_id: Optional[str]=None, is_reviewer
     reviewer = bool(actor is not None and getattr(actor, "role", None) in {"admin", "tutor"}) and is_reviewer
     lesson = require_lesson(db, actor, lesson_id, child_id, is_reviewer=is_reviewer)
 
-    cache_key = f"lesson_package:{lesson_id}"
+    from backend.redis_client import lesson_package_key
+    cache_key = lesson_package_key(lesson_id)
     cached_pkg = cache_get(cache_key)
 
     if cached_pkg is not None:

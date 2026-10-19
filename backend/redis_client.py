@@ -320,9 +320,18 @@ def cache_clear() -> bool:
     return True
 
 
+# Bump when the cached lesson package changes shape, so packages cached by older code are ignored
+# instead of being served for up to a day (v2: content_source; published versions only).
+LESSON_PACKAGE_CACHE_VERSION = "v2"
+
+
+def lesson_package_key(lesson_id: str) -> str:
+    return f"lesson_package:{LESSON_PACKAGE_CACHE_VERSION}:{lesson_id}"
+
+
 def invalidate_lesson_cache(lesson_id: str, grade: Optional[int] = None, term: Optional[int] = None):
     """Evict cached lesson content and associated syllabus/lesson lists."""
-    cache_delete(f"lesson_package:{lesson_id}")
+    cache_delete(lesson_package_key(lesson_id))
     if grade and term:
         cache_delete(f"lessons_base:{grade}:{term}")
     else:

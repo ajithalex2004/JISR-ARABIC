@@ -23,7 +23,7 @@ from backend.models import (
 from backend.security import create_access_token, decode_access_token, hash_password
 from backend.redis_client import (
     cache_set, cache_get, cache_delete, cache_delete_pattern, cache_clear,
-    invalidate_lesson_cache, invalidate_school_cache
+    invalidate_lesson_cache, invalidate_school_cache, lesson_package_key
 )
 
 
@@ -269,7 +269,7 @@ class TestPillar4Caching(unittest.TestCase):
         self.assertIn("hint", activity)  # Hints are preserved pedagogical scaffolds
 
         # 2. Verify raw canonical package was stored in cache with answers intact
-        cached_pkg = cache_get(f"lesson_package:{lesson_id}")
+        cached_pkg = cache_get(lesson_package_key(lesson_id))
         self.assertIsNotNone(cached_pkg)
         cached_act = cached_pkg["content"]["activities"][0]
         self.assertEqual(cached_act["correct_index"], 1)
@@ -304,7 +304,7 @@ class TestPillar4Caching(unittest.TestCase):
         parent_headers = self.auth_headers("usr_parent", "parent")
         res = self.client.get(f"/api/curriculum/lesson/{lesson_id}?child_id=child_demo", headers=parent_headers)
         self.assertEqual(res.status_code, 200)
-        self.assertIsNotNone(cache_get(f"lesson_package:{lesson_id}"))
+        self.assertIsNotNone(cache_get(lesson_package_key(lesson_id)))
 
         # Also warm base lesson list
         res_list = self.client.get("/api/curriculum/lessons?grade=5&term=1")
@@ -320,7 +320,7 @@ class TestPillar4Caching(unittest.TestCase):
         self.assertEqual(pub_res.status_code, 200)
 
         # 3. Verify cache is evicted
-        self.assertIsNone(cache_get(f"lesson_package:{lesson_id}"))
+        self.assertIsNone(cache_get(lesson_package_key(lesson_id)))
         self.assertIsNone(cache_get("lessons_base:5:1"))
 
         # 4. Next read fetches version 2
@@ -337,7 +337,7 @@ class TestPillar4Caching(unittest.TestCase):
         self.assertEqual(rollback_res.status_code, 200)
 
         # 6. Verify cache evicted after rollback
-        self.assertIsNone(cache_get(f"lesson_package:{lesson_id}"))
+        self.assertIsNone(cache_get(lesson_package_key(lesson_id)))
 
         # 7. Next read serves version 1
         res_v1 = self.client.get(f"/api/curriculum/lesson/{lesson_id}?child_id=child_demo", headers=parent_headers)

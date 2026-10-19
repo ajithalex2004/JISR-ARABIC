@@ -5,6 +5,7 @@ Settings (environment):
                               {"gemini-3.5-flash-lite": {"input": 0.1, "output": 0.4}}.
                               Models without a price are counted in tokens but not in dollars.
   FAHIM_AI_DAILY_LIMIT        AI requests per learner per day for learner features (default 60, 0 = off)
+  FAHIM_SPEECH_DAILY_LIMIT    speaking-practice recordings transcribed per learner per day (default 40, 0 = off)
   FAHIM_AI_MONTHLY_BUDGET_USD Monthly AI budget; alerts at 50%, 80% and 100% (unset = no budget)
   FAHIM_AI_BUDGET_HARD_STOP   1 = once the budget is spent, learner features pause until next month
 Recording never breaks the AI call it describes.
@@ -107,6 +108,25 @@ def record(*, feature: str, provider: str, model: str, input_tokens: int = 0, ou
     if cost:
         check_budget()
     return cost
+
+
+def learner_feature_calls_today(learner_id: str, feature: str) -> int:
+    """Successful calls of one feature by this learner since midnight (server time)."""
+    from backend.models import AIUsage
+
+    start = _now().replace(hour=0, minute=0, second=0, microsecond=0)
+    try:
+        db = _session()
+        try:
+            return db.query(func.count(AIUsage.id)).filter(
+                AIUsage.learner_id == learner_id, AIUsage.created_at >= start,
+                AIUsage.feature == feature, AIUsage.ok.is_(True),
+            ).scalar() or 0
+        finally:
+            db.close()
+    except Exception as exc:
+        logger.debug("Could not read AI usage: %s", exc)
+        return 0
 
 
 def learner_calls_today(learner_id: str) -> int:

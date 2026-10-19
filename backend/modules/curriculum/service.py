@@ -214,18 +214,22 @@ def get_lesson_content(lesson_id: str, child_id: Optional[str]=None, is_reviewer
     if cached_pkg is not None:
         pkg = cached_pkg
     else:
-        # Check active version
+        # Only a version that went through publishing is served; drafts awaiting review never are.
         version = db.query(LessonVersion).filter(
             LessonVersion.lesson_id == lesson_id,
-            LessonVersion.is_active == True
+            LessonVersion.is_active == True,
+            LessonVersion.status == "published",
         ).first()
 
         if not version:
+            # No published version yet: built from the syllabus templates and not reviewed by a teacher.
             content = generate_dynamic_lesson_content(lesson)
-            version_tag = "v1.0.0-moe-verified"
+            version_tag = "auto-generated"
             version_id = f"ver_{lesson.id}"
             content_hash = hashlib.sha256(json.dumps(content, ensure_ascii=False).encode("utf-8")).hexdigest()
+            content_source = "auto_generated"
         else:
+            content_source = "published"
             content = json.loads(version.content_json)
             actual_hash = hashlib.sha256(version.content_json.encode("utf-8")).hexdigest()
             if len(version.content_hash or "") == 64 and actual_hash != version.content_hash:
@@ -246,6 +250,9 @@ def get_lesson_content(lesson_id: str, child_id: Optional[str]=None, is_reviewer
             },
             "version_tag": version_tag,
             "version_id": version_id,
+            # "published": a lesson version approved and published in the admin workflow;
+            # "auto_generated": built from syllabus templates, not yet reviewed by a teacher.
+            "content_source": content_source,
             "content_hash": content_hash,
             "content": content
         }

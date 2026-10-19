@@ -44,11 +44,13 @@ class TestContentProgress(unittest.TestCase):
         self.assertEqual(len(cells), 36)
         g1 = cells[(1, 1)]
         self.assertEqual((g1["stage"], g1["pages_read"]), ("in_review", 3))
-        self.assertEqual(g1["lessons"], {"total": 3, "published": 1, "in_review": 1, "not_started": 1})
+        self.assertEqual(g1["lessons"], {"total": 3, "published": 1, "in_review": 1, "not_started": 1, "auto_generated": 2})
         g2 = cells[(2, 1)]
         self.assertEqual((g2["stage"], g2["pages_read"], g2["pages_failed"], g2["total_pages"]), ("reading", 1, 1, 10))
         self.assertEqual(cells[(3, 1)]["stage"], "no_book")
         self.assertEqual(report["summary"]["lessons_published"], 1)
+        # Lessons without a published version reach students as auto-generated content.
+        self.assertEqual(report["summary"]["lessons_auto_generated"], 2)
         self.assertEqual(report["summary"]["no_book"], 34)
 
 

@@ -442,6 +442,7 @@ class SpeechEvaluationRequest(BaseModel):
     target_phrase: str = Field(..., max_length=500)
     spoken_text: Optional[str] = Field(None, max_length=500)
     audio_base64: Optional[str] = Field(None, max_length=7000000)
+    audio_mime_type: Optional[str] = Field("audio/wav", max_length=40)
     phoneme_targets: Optional[List[str]] = None
 
 class SpeechEvaluationResponse(BaseModel):

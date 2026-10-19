@@ -1,5 +1,6 @@
 """Audio policy and cache metadata for the three-level speech strategy."""
 import hashlib
+from typing import Optional
 import os
 import re
 import json
@@ -222,7 +223,71 @@ def _levenshtein_distance(s1: str, s2: str) -> int:
     return previous_row[-1]
 
 
-def evaluate_pronunciation(req, db=None) -> dict:
+SPEECH_FEATURE = "speech_transcription"
+# Formats Gemini accepts as audio input.
+SPEECH_MIME_TYPES = {"audio/wav", "audio/x-wav", "audio/mp3", "audio/mpeg", "audio/aac", "audio/aiff",
+                     "audio/ogg", "audio/flac"}
+MAX_SPEECH_BYTES = 5 * 1024 * 1024  # about 2.5 minutes of 16 kHz mono WAV
+_TRANSCRIBE_PROMPT = (
+    "This is a recording of a child (a non-native Arabic learner) reading an Arabic sentence aloud. "
+    "Write down exactly the Arabic words you hear, in Arabic script, as pronounced: do not correct "
+    "mistakes, do not complete missing words and do not translate. If you hear no Arabic speech, "
+    'return an empty transcript. Reply as JSON: {"transcript": "..."}'
+)
+
+
+def speech_daily_limit() -> int:
+    """Server transcriptions per learner per day (FAHIM_SPEECH_DAILY_LIMIT, default 40, 0 = no limit)."""
+    try:
+        return max(0, int(os.getenv("FAHIM_SPEECH_DAILY_LIMIT", "40")))
+    except ValueError:
+        return 40
+
+
+def transcribe_speech(audio_base64: str, mime_type: Optional[str], learner_id: str) -> str:
+    """Arabic transcript of a learner's recording, using Gemini through the AI gateway.
+
+    For phones and browsers without Arabic speech recognition. Counts towards the learner's
+    own daily transcription limit; raises ApplicationError for anything the learner should see.
+    """
+    import base64
+    import binascii
+    from backend.ai import gateway, usage
+    from backend.ai.errors import AILimitReached, AIUnavailable
+    from backend.errors import ApplicationError
+
+    mime = (mime_type or "audio/wav").split(";")[0].strip().lower()
+    if mime not in SPEECH_MIME_TYPES:
+        raise ApplicationError(415, f"Unsupported audio format {mime}. Record as WAV, AAC, MP3, OGG or FLAC.")
+    try:
+        audio = base64.b64decode(audio_base64, validate=True)
+    except (binascii.Error, ValueError):
+        raise ApplicationError(400, "The recording could not be read. Please record again.")
+    if not audio:
+        raise ApplicationError(422, "The recording is empty. Please record again.")
+    if len(audio) > MAX_SPEECH_BYTES:
+        raise ApplicationError(413, "The recording is too long. Read just the one sentence.")
+
+    limit = speech_daily_limit()
+    if limit and usage.learner_feature_calls_today(learner_id, SPEECH_FEATURE) >= limit:
+        raise ApplicationError(429, f"You've practised speaking {limit} times today. Great work! Come back tomorrow for more.")
+    try:
+        response = gateway.generate(gateway.AIRequest(
+            feature=SPEECH_FEATURE, prompt=_TRANSCRIBE_PROMPT, attachments=[(audio, mime)], json=True,
+            temperature=0.0, learner_id=learner_id, providers=["gemini"], timeout=45.0,
+        ))
+    except AILimitReached as exc:
+        raise ApplicationError(429, str(exc))
+    except AIUnavailable:
+        raise ApplicationError(503, "Speaking practice can't be scored right now. Please try again in a few minutes.")
+    try:
+        transcript = str(json.loads(response.text or "{}").get("transcript", ""))
+    except (ValueError, AttributeError):
+        transcript = response.text or ""
+    return " ".join(transcript.split())[:500]
+
+
+def evaluate_pronunciation(req, db=None, learner_id: Optional[str] = None) -> dict:
     """
     Evaluates student spoken Arabic against target phrase using CBSE Curriculum phonological rubric.
     Analyses key phoneme confusions:
@@ -237,6 +302,10 @@ def evaluate_pronunciation(req, db=None) -> dict:
     """
     target = req.target_phrase.strip()
     spoken = (req.spoken_text or "").strip()
+
+    if not spoken and req.audio_base64 and learner_id:
+        # No on-device recognition: the server transcribes the recording.
+        spoken = transcribe_speech(req.audio_base64, getattr(req, "audio_mime_type", None), learner_id)
 
     if not spoken:
         from backend.errors import ApplicationError

@@ -68,7 +68,18 @@ def evaluate_speech(
     """
     if actor and req.child_id:
         optional_child(db, actor, req.child_id)
-    return service.evaluate_pronunciation(req, db=db)
+    learner_id = None
+    if req.audio_base64 and not (req.spoken_text or "").strip():
+        # Transcribing a recording is a paid AI call: only for a signed-in learner, who is
+        # allowed to act for this child, and it counts towards that child's daily limit.
+        from backend.modules.identity.access import require_child, require_roles
+        from backend.errors import ApplicationError
+        require_roles(actor)
+        if not req.child_id:
+            raise ApplicationError(400, "Choose a learner to score this recording.")
+        require_child(db, actor, req.child_id)
+        learner_id = req.child_id
+    return service.evaluate_pronunciation(req, db=db, learner_id=learner_id)
 
 @router.get('/cache/{filename}')
 def get_cached_audio(filename: str, actor=Depends(get_optional_user)):

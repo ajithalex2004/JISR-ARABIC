@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'cloud_audio.dart';
 
 import 'api_service.dart';
 import 'auth_service.dart';
@@ -105,6 +106,7 @@ class _MainScreenState extends State<MainScreen> {
   final AuthService _auth = AuthService();
   final ApiService _api = ApiService();
   final FlutterTts _flutterTts = FlutterTts();
+  late final CloudArabicAudio _cloudAudio = CloudArabicAudio(_api);
 
   // Session state
   Map<String, dynamic>? _activeChild;
@@ -148,6 +150,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void dispose() {
     _flutterTts.stop();
+    _cloudAudio.dispose();
     super.dispose();
   }
 
@@ -160,6 +163,15 @@ class _MainScreenState extends State<MainScreen> {
         await _flutterTts.setLanguage('ar-SA');
       }
       _applyTtsSpeed();
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+        // Without this, iPhones play nothing while the silent switch is on.
+        await _flutterTts.setSharedInstance(true);
+        await _flutterTts.setIosAudioCategory(
+          IosTextToSpeechAudioCategory.playback,
+          [IosTextToSpeechAudioCategoryOptions.defaultToSpeaker, IosTextToSpeechAudioCategoryOptions.mixWithOthers],
+          IosTextToSpeechAudioMode.defaultMode,
+        );
+      }
       await _flutterTts.setPitch(1.0);
       await _flutterTts.setVolume(1.0);
 
@@ -579,6 +591,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _stopAudio() async {
+    await _cloudAudio.stop();
     try {
       await _flutterTts.stop();
     } catch (_) {}
@@ -612,6 +625,31 @@ class _MainScreenState extends State<MainScreen> {
     try {
       await _flutterTts.stop();
       final hasArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(cleanSpeech);
+      // Arabic: the server's cloud voice first (works on every phone), device speech as backup.
+      if (hasArabic) {
+        final played = await _cloudAudio.play(
+          cleanSpeech,
+          speed: _playbackSpeed,
+          repeats: _repeatCount,
+          onDone: () {
+            if (mounted && _currentSpeechText == cleanSpeech) {
+              setState(() {
+                _isPlaying = false;
+                _speakingStatus = _isArabic ? 'الصوت جاهز' : 'Audio Ready';
+                _activeWord = '';
+                _currentRepeatIndex = 0;
+              });
+            }
+          },
+        );
+        if (played) {
+          if (mounted) setState(() => _speakingStatus = _isArabic ? 'جارٍ النطق الصوتي...' : 'Speaking Arabic...');
+          return;
+        }
+        if (!mounted || _currentSpeechText != cleanSpeech || !_isPlaying) return;
+      } else {
+        await _cloudAudio.stop();
+      }
       if (hasArabic) {
         final isAeAvailable = await _flutterTts.isLanguageAvailable("ar-AE");
         await _flutterTts.setLanguage(isAeAvailable == true ? 'ar-AE' : 'ar-SA');

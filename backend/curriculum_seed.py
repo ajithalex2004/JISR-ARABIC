@@ -150,7 +150,7 @@ BALL_GAMES_CONTENT_V02 = {
             "definition_ar": "كُلُّ جِسْمٍ مُسْتَدِيرٍ.",
             "example_ar": "هُنَاكَ أَنْوَاعٌ مُخْتَلِفَةٌ لِلْكُرَةِ فِي الْمَتْجَرِ.",
             "example_en": "There are different types of balls in the store.",
-            "root": "ك-ر-ر",
+            "root": "ك-ر-و",
             "category": "sports"
         },
         {

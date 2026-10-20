@@ -82,8 +82,11 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <TashkeelToggleSwitch compact />
-          <ArabEnglishToggleSwitch compact />
+          {/* Phones only: the full-size switches sit in the header row below on larger screens. */}
+          <div className="flex items-center gap-3 sm:hidden">
+            <TashkeelToggleSwitch compact />
+            <ArabEnglishToggleSwitch compact />
+          </div>
           <span className="text-purple-300/40">|</span>
           <span className="text-purple-200 text-[11px] font-semibold">Fahim v2.4</span>
         </div>

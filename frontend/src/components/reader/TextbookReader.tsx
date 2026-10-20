@@ -6,8 +6,6 @@ import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { AlignedEnglish } from '../audio/AlignedSentence';
 import { AlignmentChunk } from '../../services/alignment';
 import { localWordIndex } from '../../services/playbackWords';
-import { ArabEnglishToggleSwitch } from '../common/ArabEnglishToggleSwitch';
-import { TashkeelToggleSwitch } from '../common/TashkeelToggleSwitch';
 import { User, ChildProfile } from '../../types';
 
 interface TextbookReaderProps {
@@ -384,8 +382,6 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
             </button>
           </div>
 
-          <TashkeelToggleSwitch />
-          <ArabEnglishToggleSwitch />
         </div>
       </div>
 

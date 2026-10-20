@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from backend.database import get_db
-from backend.api.dependencies import get_current_user
+from backend.api.dependencies import get_current_user, get_optional_user
 from backend.modules.identity.access import Principal, require_roles
 """HTTP adapter: request parsing, dependency injection, and service delegation."""
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
@@ -537,11 +537,16 @@ def get_quality_report(db: Session = Depends(get_db), actor: Principal = Depends
 
 @router.get('/ocr-page/{pdf_page}')
 def get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session = Depends(get_db),
-                 actor: Principal = Depends(get_current_user)):
-    """Fetch OCR transcription, image reference, and confidence for a book page (any signed-in user).
+                 actor: Optional[Principal] = Depends(get_optional_user)):
+    """Fetch OCR transcription, image reference, and confidence for a book page.
 
-    The processed text and translations are the platform's own work, so they need a login;
-    page images stay public (scans of the published Ministry books, shown in the mobile player)."""
+    The processed text and translations are the platform's own work, so they need a login,
+    except the pages of a book's free first chapter (Term 1), which guests may read like the
+    lesson itself; page images stay public (scans of the published Ministry books)."""
+    if actor is None:
+        from backend.modules.curriculum.access import free_chapter_pages
+        if pdf_page not in free_chapter_pages(edition_id, db):
+            raise HTTPException(status_code=401, detail='Sign in to read this page')
     return service.get_ocr_page(pdf_page=pdf_page, edition_id=edition_id, db=db)
 
 class SolveQuestionPayload(BaseModel):

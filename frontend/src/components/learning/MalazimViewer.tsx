@@ -6,7 +6,6 @@ import {
 import { api } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
-import { ArabEnglishToggleSwitch } from '../common/ArabEnglishToggleSwitch';
 import { User, ChildProfile } from '../../types';
 
 interface MalazimViewerProps {
@@ -174,7 +173,6 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
         </div>
 
         <div className="flex items-center gap-4 flex-wrap">
-          <ArabEnglishToggleSwitch />
           {/* Dual Mode Switcher Tabs */}
           <div className="flex border-2 border-amber-400 bg-slate-900 p-1 rounded-sm">
           <button

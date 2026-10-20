@@ -159,7 +159,8 @@ export const Header: React.FC<HeaderProps> = ({
             title="Ask Fahim - Your Conversational Arabic Teacher"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>اسأل فهيم</span>
+            <span className="hidden sm:inline">اسأل فهيم (Ask Fahim)</span>
+            <span className="sm:hidden">Ask Fahim</span>
           </button>
 
 
@@ -298,7 +299,8 @@ export const Header: React.FC<HeaderProps> = ({
               className="text-xs py-2 px-4 rounded-full flex items-center gap-1.5 shadow-md bg-[#6C5CE7] text-white font-bold hover:bg-[#58337E] transition-colors"
             >
               <UserIcon className="w-3.5 h-3.5" />
-              <span>دخول / حساب جديد</span>
+              <span className="hidden sm:inline">دخول / حساب جديد (Sign in)</span>
+              <span className="sm:hidden">Sign in</span>
             </button>
           )}
         </div>

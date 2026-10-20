@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { LessonPackage, ChildProfile, MistakeEntry } from '../../types';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
+import { ArabEnglishHelper, useArabEnglish } from '../../services/arabEnglishService';
+import { stripTashkeel, useTashkeel } from '../../services/tashkeel';
 import { audioManager } from '../../services/audio';
 import { api } from '../../services/api';
 import { PronunciationSandbox } from '../audio/PronunciationSandbox';
@@ -20,6 +22,23 @@ interface LessonViewerProps {
   onOpenPaywall: () => void;
   onOpenReader?: (page?: number) => void;
   backLabel?: string;
+}
+
+/** A sentence-builder tile: the Arabic word with its Arabizi underneath (when Arab-English is on). */
+function TileLabel({ word }: { word: string }) {
+  const [arabEnglish] = useArabEnglish();
+  const [tashkeelMode] = useTashkeel();
+  const clean = word.replace(/[؟!.,،؛:"'()[\]]/g, '');
+  return (
+    <span className="flex flex-col items-center leading-tight">
+      <span>{tashkeelMode === 'plain' ? stripTashkeel(word) : word}</span>
+      {arabEnglish && clean && (
+        <span dir="ltr" className="font-sans text-[11px] font-semibold opacity-75 mt-0.5">
+          {ArabEnglishHelper.transliterateWord(clean)}
+        </span>
+      )}
+    </span>
+  );
 }
 
 const CHAPTER_1_PAGES = [
@@ -407,7 +426,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
             activeTab === 'mistakes' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
           }`}
         >
-          9. سجل المراجعة ({mistakes.length})
+          9. سجل المراجعة (Review Log · {mistakes.length})
         </button>
         <button
           onClick={() => setActiveTab('exam')}
@@ -628,7 +647,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                     title="View scanned authentic textbook image"
                   >
                     <BookOpen className="w-3.5 h-3.5 text-emerald-800" />
-                    <span>عرض الصفحة الأصلية</span>
+                    <span>عرض الصفحة الأصلية (View original page)</span>
                   </button>
                 )}
               </div>
@@ -880,7 +899,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                         className="bg-emerald-800 text-white font-arabic text-base font-bold px-3 py-1.5 border border-emerald-950 shadow-sm hover:bg-red-800 transition-colors"
                         title="Click to remove"
                       >
-                        {tile}
+                        <TileLabel word={tile} />
                       </button>
                     ))
                   )}
@@ -899,7 +918,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                       onClick={() => handleAddTile(tile)}
                       className="bg-white hover:bg-emerald-100 text-slate-900 font-arabic text-lg font-bold px-4 py-2 border-2 border-slate-700 shadow-sm transition-all"
                     >
-                      {tile}
+                      <TileLabel word={tile} />
                     </button>
                   ))}
                 </div>

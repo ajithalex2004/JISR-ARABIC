@@ -1,15 +1,13 @@
-"""Homework helper (Ask Fahim): explain a school worksheet without doing it for the student.
+"""Homework helper (Ask Fahim): explain a school worksheet question by question.
 
 A student photographs a printed worksheet (or uploads a PDF or Word file). The AI reads every
 question and returns, per question: the Arabic as printed, an English translation, what the
-question asks, and a Socratic hint (the rule or vocabulary clue), never the answer. The student
-then sends their own answer, typed or as a photo of their handwriting, and is told whether it is
-right, with a nudge if it is not.
+question asks, a hint (the rule or vocabulary clue), and the answer with its English meaning.
+The app shows the hint first and the answer only when asked, so the student can try first. The
+student can send their own answer, typed or as a photo of their handwriting, to be told whether
+it is right, and the correct answer when it is not.
 
-Safeguards against giving answers away:
-- The AI also writes down each answer, but it stays on the server (cache, keyed by scan id);
-  it is never sent to the student, and is used only to check their answer.
-- A hint or feedback that still contains the answer is replaced by a generic nudge.
+A hint that still contains the answer is replaced by a generic one, so the hint stays a hint.
 """
 import base64
 import io
@@ -34,18 +32,18 @@ GENERIC_HINT_EN = ("Read the question again slowly and look for the key word. Wh
 GENERIC_HINT_AR = "اِقْرَأِ السُّؤَالَ مَرَّةً أُخْرَى بِهُدُوءٍ، وَابْحَثْ عَنِ الكَلِمَةِ المُهِمَّةِ فِيهِ."
 
 SCAN_SYSTEM = """You are Fahim, a kind Arabic teacher helping a non-native school child (Grade {grade}) with
-homework at home. Their parents cannot read Arabic. You explain; you never do the homework.
+homework at home. Their parents cannot read Arabic. You explain each question and give its answer.
 
 Read the worksheet and find every question or exercise item (number them as printed; split
 sub-items such as 1a, 1b). For each item give:
 - question_ar: the Arabic exactly as printed, with any vowel marks shown.
 - question_en: a faithful English translation.
 - asks_en: one or two simple sentences saying what the student must do.
-- hint_en and hint_ar: a Socratic hint, the grammar rule or vocabulary clue needed, as a guiding
-  question or reminder. NEVER state, spell, translate into, or point to the answer, and never
-  name the correct option of a multiple-choice item.
+- hint_en and hint_ar: a hint, the grammar rule or vocabulary clue needed, as a guiding question
+  or reminder. The hint is shown before the answer, so do not state the answer in it.
 - answer_format: one of choose, fill_blank, write, match, read, other.
-- answer: the correct answer, for the teacher's private check only (it is never shown).
+- answer: the correct answer in Arabic, with vowel marks, as the student should write it.
+- answer_en: the answer's English meaning, with a one-sentence reason (the rule it uses).
 Set is_homework to false when the file is not a school worksheet (then return no questions)."""
 
 CHECK_SYSTEM = """You are Fahim, a kind Arabic teacher checking a non-native school child's (Grade {grade})
@@ -54,8 +52,8 @@ reference answer. Accept answers that are correct even if worded differently, an
 vowel marks. If the student's answer is a photo of handwriting, first write down what it says.
 
 verdict: correct, almost (small slip such as spelling or one letter), not_yet, or unreadable.
-feedback_en and feedback_ar: short and encouraging. If not correct, point to WHERE the slip is
-and which rule to revisit, as a question. NEVER give, spell or translate into the correct answer."""
+feedback_en and feedback_ar: short and encouraging. If not correct, say where the slip is and
+which rule it breaks, then give the correct answer."""
 
 SCAN_SCHEMA = {
     "type": "OBJECT",
@@ -71,6 +69,7 @@ SCAN_SCHEMA = {
             "hint_ar": {"type": "STRING"},
             "answer_format": {"type": "STRING"},
             "answer": {"type": "STRING"},
+            "answer_en": {"type": "STRING"},
         }, "required": ["number", "question_ar", "question_en", "asks_en", "hint_en", "hint_ar", "answer"]}},
     },
     "required": ["is_homework", "questions"],
@@ -186,7 +185,7 @@ def scan_homework(*, file_base64: str, mime_type: str, file_name: str = "", grad
     result = _generate("homework_scan", SCAN_SYSTEM.format(grade=grade), prompt, SCAN_SCHEMA, attachments,
                        learner_id, tier="strong")
 
-    questions, private = [], []
+    questions = []
     if result.get("is_homework", True):
         for item in (result.get("questions") or [])[:MAX_QUESTIONS]:
             if not isinstance(item, dict) or not _text(item.get("question_ar")):
@@ -202,17 +201,18 @@ def scan_homework(*, file_base64: str, mime_type: str, file_name: str = "", grad
                 "hint_ar": _text(item.get("hint_ar")),
                 "answer_format": _text(item.get("answer_format"), 20) or "other",
                 "hint_trimmed": False,
+                "answer": answer,
+                "answer_en": _text(item.get("answer_en"), 1000),
             }
-            # The hint must never hand over the answer: fall back to a general nudge.
+            # The hint comes before the answer, so it must not contain it: fall back to a general nudge.
             if any(gives_away(question[key], answer, question_ar) for key in ("hint_en", "hint_ar", "asks_en")):
                 question.update(hint_en=GENERIC_HINT_EN, hint_ar=GENERIC_HINT_AR, hint_trimmed=True)
                 if gives_away(question["asks_en"], answer, question_ar):
                     question["asks_en"] = "Answer the question in Arabic."
             questions.append(question)
-            private.append({**question, "answer": answer})
 
     scan_id = uuid.uuid4().hex
-    cache_set(f"homework:{scan_id}", {"owner": owner_id, "grade": grade, "questions": private}, SCAN_TTL_SECONDS)
+    cache_set(f"homework:{scan_id}", {"owner": owner_id, "grade": grade, "questions": questions}, SCAN_TTL_SECONDS)
     return {
         "scan_id": scan_id,
         "is_homework": bool(result.get("is_homework", True)) and bool(questions),
@@ -255,14 +255,12 @@ def check_answer(*, scan_id: str, question_number: str, answer_text: Optional[st
 
     verdict = result.get("verdict") if result.get("verdict") in VERDICTS else "not_yet"
     feedback_en, feedback_ar = _text(result.get("feedback_en")), _text(result.get("feedback_ar"))
-    if verdict != "correct" and any(gives_away(t, question["answer"], question["question_ar"])
-                                    for t in (feedback_en, feedback_ar)):
-        feedback_en = "Not quite yet. " + question["hint_en"]
-        feedback_ar = "لَيْسَ بَعْدُ. " + question["hint_ar"]
     return {
         "question_number": question_number,
         "verdict": verdict,
         "student_answer_read": _text(result.get("student_answer_read"), 1000),
         "feedback_en": feedback_en,
         "feedback_ar": feedback_ar,
+        "answer": question["answer"],
+        "answer_en": question.get("answer_en", ""),
     }

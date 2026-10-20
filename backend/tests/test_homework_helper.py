@@ -1,4 +1,4 @@
-"""Ask Fahim homework helper: explains worksheet questions with hints, never hands out answers."""
+"""Ask Fahim homework helper: explains worksheet questions with a hint first, then the answer."""
 import base64
 import datetime
 import io
@@ -94,24 +94,22 @@ class TestHomeworkHelper(unittest.TestCase):
         return self.client.post("/api/ai/homework/scan", headers=headers,
                                 json=body or {"file_base64": PNG, "mime_type": "image/png", "grade": 3})
 
-    def test_scan_explains_questions_and_never_returns_answers(self):
+    def test_scan_explains_questions_with_hints_and_answers(self):
         res = self.scan(self.auth("s1"))
         self.assertEqual(res.status_code, 200, res.text)
         data = res.json()
         self.assertTrue(data["is_homework"])
-        self.assertNotIn("أَزْرَقُ", res.text)
-        self.assertNotIn("answer\"", res.text)
         first, second = data["questions"]
         self.assertEqual((first["question_en"], first["hint_trimmed"]), ("What colour is the sky?", False))
-        # The hint that gave the answer away is replaced by a general nudge.
+        self.assertEqual((first["answer"], second["answer"]), ("أَزْرَقُ", "أَخْضَرُ"))
+        # The hint is shown before the answer, so one that gives the answer away is replaced.
         self.assertTrue(second["hint_trimmed"])
         self.assertEqual(second["hint_en"], homework.GENERIC_HINT_EN)
-        self.assertNotIn("اخضر", res.text)
         request = self.requests[0]
         self.assertEqual((request.feature, request.attachments[0][1]), ("homework_scan", "image/png"))
         self.assertIn("Grade 3", request.system)
 
-    def test_check_uses_the_private_answer_and_never_leaks_it(self):
+    def test_check_gives_the_verdict_and_the_answer(self):
         headers = self.auth("s1")
         scan_id = self.scan(headers).json()["scan_id"]
         self.replies.append({"verdict": "not_yet", "student_answer_read": "أحمر",
@@ -120,8 +118,8 @@ class TestHomeworkHelper(unittest.TestCase):
                                json={"scan_id": scan_id, "question_number": "1", "answer_text": "أحمر"})
         self.assertEqual(res.status_code, 200, res.text)
         self.assertEqual(res.json()["verdict"], "not_yet")
-        self.assertNotIn("أزرق", res.text)
-        self.assertIn("Lesson 3", res.json()["feedback_en"])
+        self.assertEqual(res.json()["feedback_en"], "Not quite: the right word is azraq, أزرق.")
+        self.assertEqual(res.json()["answer"], "أَزْرَقُ")
         prompt = json.loads(self.requests[-1].prompt)
         self.assertEqual((prompt["reference_answer"], prompt["student_answer"]), ("أَزْرَقُ", "أحمر"))
 

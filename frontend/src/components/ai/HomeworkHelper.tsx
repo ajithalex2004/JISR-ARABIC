@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Camera, Upload, Loader2, Lightbulb, Volume2, CheckCircle2, AlertCircle, RotateCcw, PenLine, ShieldCheck } from 'lucide-react';
+import { Camera, Upload, Loader2, Lightbulb, Volume2, CheckCircle2, AlertCircle, RotateCcw, PenLine, Eye } from 'lucide-react';
 import { api } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
@@ -12,9 +12,11 @@ type Question = {
   hint_en: string;
   hint_ar: string;
   answer_format: string;
+  answer: string;
+  answer_en: string;
 };
 type Scan = { scan_id: string; is_homework: boolean; title_en: string; questions: Question[] };
-type Check = { verdict: 'correct' | 'almost' | 'not_yet' | 'unreadable'; student_answer_read: string; feedback_en: string; feedback_ar: string };
+type Check = { verdict: 'correct' | 'almost' | 'not_yet' | 'unreadable'; student_answer_read: string; feedback_en: string; feedback_ar: string; answer: string; answer_en: string };
 
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -55,6 +57,7 @@ async function photoPayload(file: File): Promise<{ data: string; type: string }>
 
 function QuestionCard({ q, scanId, childId }: { q: Question; scanId: string; childId?: string }) {
   const [showHint, setShowHint] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
   const [answer, setAnswer] = useState('');
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<Check | null>(null);
@@ -103,6 +106,23 @@ function QuestionCard({ q, scanId, childId }: { q: Question; scanId: string; chi
         className="text-sm font-semibold text-amber-800 flex items-center gap-1 hover:underline">
         <Lightbulb className="w-4 h-4" /> Stuck? Show a hint
       </button>}
+
+    {q.answer && (showAnswer
+      ? <div className="border border-emerald-300 bg-emerald-50 rounded-lg p-2 text-sm text-emerald-950 space-y-1">
+        <div className="font-semibold flex items-center gap-1"><Eye className="w-4 h-4" /> Answer</div>
+        <div className="flex items-start gap-2">
+          <p dir="rtl" className="flex-1 font-arabic text-lg leading-loose">{q.answer}</p>
+          <button type="button" aria-label="Listen to the answer" onClick={() => audioManager.playArabic(q.answer)}
+            className="shrink-0 p-1.5 rounded-lg border border-emerald-300 text-emerald-800 hover:bg-emerald-100">
+            <Volume2 className="w-4 h-4" />
+          </button>
+        </div>
+        {q.answer_en && <p>{q.answer_en}</p>}
+      </div>
+      : <button type="button" onClick={() => setShowAnswer(true)}
+        className="text-sm font-semibold text-emerald-800 flex items-center gap-1 hover:underline">
+        <Eye className="w-4 h-4" /> Show the answer
+      </button>)}
 
     <div className="space-y-1.5">
       <label className="text-xs font-semibold text-slate-600 flex items-center gap-1" htmlFor={`answer-${q.number}`}>
@@ -161,8 +181,8 @@ export function HomeworkHelper({ childId, grade }: { childId?: string; grade?: n
   return <div className="flex-1 overflow-y-auto my-3 space-y-3">
     <div className="border border-purple-200 bg-purple-50 rounded-xl p-3 text-sm text-purple-950 space-y-2">
       <p className="font-semibold">Homework helper · مُسَاعِدُ الوَاجِبِ</p>
-      <p>Snap your worksheet or upload it. Fahim explains each question in English and gives a hint, then checks your own answer before you hand it in.</p>
-      <p className="text-xs flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> Fahim never gives the answers: the work stays yours.</p>
+      <p>Snap your worksheet or upload it. Fahim explains each question in English, gives a hint and the answer, and checks your own answer before you hand it in.</p>
+      <p className="text-xs flex items-center gap-1"><Lightbulb className="w-3.5 h-3.5" /> Try the hint first, then open the answer to compare.</p>
       <div className="flex flex-wrap gap-2">
         <button type="button" disabled={busy} onClick={() => cameraInput.current?.click()}
           className="px-3 py-2 rounded-lg bg-purple-700 text-white font-semibold flex items-center gap-1.5 disabled:opacity-50">

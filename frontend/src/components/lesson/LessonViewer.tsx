@@ -41,6 +41,20 @@ function TileLabel({ word }: { word: string }) {
   );
 }
 
+/** The lesson's tabs, each with its own colour: a light tint, and solid with white text when open. */
+const LESSON_TABS: { id: FeatureTab; label: string; off: string; on: string }[] = [
+  { id: 'vocab', label: 'قاموس المفردات (Glossary)', off: 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100', on: 'bg-emerald-700 text-white border-emerald-800 shadow-sm' },
+  { id: 'studio', label: 'نص القراءة والاستماع (Reading & Listening)', off: 'bg-sky-50 text-sky-900 border-sky-300 hover:bg-sky-100', on: 'bg-sky-700 text-white border-sky-800 shadow-sm' },
+  { id: 'grammar', label: 'القواعد والتراكيب (Grammar)', off: 'bg-violet-50 text-violet-900 border-violet-300 hover:bg-violet-100', on: 'bg-violet-700 text-white border-violet-800 shadow-sm' },
+  { id: 'builder', label: 'باني الجمل (Sentence Builder)', off: 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100', on: 'bg-amber-600 text-white border-amber-700 shadow-sm' },
+  { id: 'practice', label: 'تمارين الكتاب الوزاري (Exercises)', off: 'bg-rose-50 text-rose-900 border-rose-300 hover:bg-rose-100', on: 'bg-rose-700 text-white border-rose-800 shadow-sm' },
+  { id: 'mission', label: 'مهمة التحدث والنطق (Speaking)', off: 'bg-orange-50 text-orange-900 border-orange-300 hover:bg-orange-100', on: 'bg-orange-600 text-white border-orange-700 shadow-sm' },
+  { id: 'instructions', label: 'لغة التعليمات (Instructions)', off: 'bg-teal-50 text-teal-900 border-teal-300 hover:bg-teal-100', on: 'bg-teal-700 text-white border-teal-800 shadow-sm' },
+  { id: 'prep', label: 'الاستعداد للدرس (Prep Check)', off: 'bg-indigo-50 text-indigo-900 border-indigo-300 hover:bg-indigo-100', on: 'bg-indigo-700 text-white border-indigo-800 shadow-sm' },
+  { id: 'mistakes', label: 'سجل المراجعة', off: 'bg-fuchsia-50 text-fuchsia-900 border-fuchsia-300 hover:bg-fuchsia-100', on: 'bg-fuchsia-700 text-white border-fuchsia-800 shadow-sm' },
+  { id: 'exam', label: 'اختبار الفصل (Chapter Quiz)', off: 'bg-lime-50 text-lime-900 border-lime-400 hover:bg-lime-100', on: 'bg-lime-700 text-white border-lime-800 shadow-sm' },
+];
+
 const CHAPTER_1_PAGES = [
   { page: 8, pnum: 6, titleAr: 'نواتج التعلم', titleEn: 'Learning Outcomes' },
   { page: 9, pnum: 7, titleAr: 'قاموسي', titleEn: 'My Glossary' },
@@ -354,88 +368,18 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
         </div>
       </div>
 
-      {/* Curriculum Learning Tabs Bar */}
-      <div className="flex overflow-x-auto border-b border-slate-300 text-xs font-bold gap-1 pb-1">
-        <button
-          onClick={() => setActiveTab('vocab')}
-          className={`px-3 py-2 border transition-all shrink-0 ${
-            activeTab === 'vocab' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          1. قاموس المفردات (Glossary)
-        </button>
-        <button
-          onClick={() => setActiveTab('studio')}
-          className={`px-3 py-2 border transition-all shrink-0 ${
-            activeTab === 'studio' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          2. نص القراءة والاستماع (Reading & Listening)
-        </button>
-        <button
-          onClick={() => setActiveTab('grammar')}
-          className={`px-3 py-2 border transition-all shrink-0 ${
-            activeTab === 'grammar' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          3. القواعد والتراكيب (Grammar)
-        </button>
-        <button
-          onClick={() => setActiveTab('builder')}
-          className={`px-3 py-2 border transition-all shrink-0 ${
-            activeTab === 'builder' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          4. باني الجمل (Sentence Builder)
-        </button>
-        <button
-          onClick={() => setActiveTab('practice')}
-          className={`px-3 py-2 border transition-all shrink-0 ${
-            activeTab === 'practice' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          5. تمارين الكتاب الوزاري (Exercises)
-        </button>
-        <button
-          onClick={() => setActiveTab('mission')}
-          className={`px-3 py-2 border transition-all shrink-0 ${
-            activeTab === 'mission' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          6. مهمة التحدث والنطق (Speaking)
-        </button>
-        <button
-          onClick={() => setActiveTab('instructions')}
-          className={`px-3 py-2 border transition-all shrink-0 ${
-            activeTab === 'instructions' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          7. لغة التعليمات (Instructions)
-        </button>
-        <button
-          onClick={() => setActiveTab('prep')}
-          className={`px-3 py-2 border transition-all shrink-0 ${
-            activeTab === 'prep' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          8. الاستعداد للدرس (Prep Check)
-        </button>
-        <button
-          onClick={() => setActiveTab('mistakes')}
-          className={`px-3 py-2 border transition-all shrink-0 ${
-            activeTab === 'mistakes' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          9. سجل المراجعة (Review Log · {mistakes.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('exam')}
-          className={`px-3 py-2 border transition-all shrink-0 ${
-            activeTab === 'exam' ? 'bg-emerald-900 text-white border-emerald-900' : 'bg-white text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          10. اختبار الفصل (Chapter Quiz)
-        </button>
+      {/* Curriculum Learning Tabs Bar: each tab has its own colour (tinted, solid when open) */}
+      <div className="flex overflow-x-auto border-b border-slate-300 text-xs font-bold gap-1.5 pb-1.5">
+        {LESSON_TABS.map((tab, i) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            aria-pressed={activeTab === tab.id}
+            className={`px-3 py-2 border-2 rounded-md transition-all shrink-0 ${activeTab === tab.id ? tab.on : tab.off}`}
+          >
+            {i + 1}. {tab.label}{tab.id === 'mistakes' ? ` (Review Log · ${mistakes.length})` : ''}
+          </button>
+        ))}
       </div>
 
       {/* TAB 1: VOCABULARY & GLOSSARY (Printed Page 7) */}

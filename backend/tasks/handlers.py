@@ -264,6 +264,21 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
         sample_dir = content_root() / "pdf_pages_sample" / book_edition_id
         sample_dir.mkdir(parents=True, exist_ok=True)
 
+        # The PDF is the truth for the page count: editions created before the upload carry a guess
+        # (e.g. 120), and an earlier, longer PDF of the same book leaves pages past the real end.
+        if total_pages:
+            if edition and edition.id == book_edition_id:
+                edition.total_pages = total_pages
+            db.query(ScannedPage).filter(
+                ScannedPage.book_edition_id == book_edition_id,
+                ScannedPage.pdf_page > total_pages,
+            ).delete(synchronize_session=False)
+            for stale in sample_dir.glob("page_*.png"):
+                number = stale.stem.split("_")[-1]
+                if number.isdigit() and int(number) > total_pages:
+                    stale.unlink(missing_ok=True)
+            db.commit()
+
         # Re-uploading the same PDF (e.g. after a restart cut processing short) resumes: pages
         # already read are kept instead of being sent to OCR again. A different PDF is redone.
         marker = sample_dir / ".source_sha256"

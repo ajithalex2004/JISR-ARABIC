@@ -262,8 +262,22 @@ def get_lesson_content(lesson_id: str, child_id: Optional[str]=None, is_reviewer
     pkg_copy = copy.deepcopy(pkg)
     if not reviewer:
         pkg_copy["content"] = learner_content(pkg_copy["content"])
+    # The book and PDF pages of this lesson's chapter, for the Reading tab (kept out of the
+    # cache so they follow re-imports of the textbook).
+    pkg_copy["lesson"]["edition_id"] = f"moe_gr{lesson.grade}_vol{lesson.term}_2023"
+    pkg_copy["lesson"]["chapter_pages"] = lesson_chapter_pages(lesson, db)
 
     return pkg_copy
+
+
+def lesson_chapter_pages(lesson, db) -> list:
+    if not isinstance(lesson, Lesson):
+        return []
+    from backend.modules.curriculum.drafting import chapter_pages
+    try:
+        return chapter_pages(lesson, db)
+    except Exception:
+        return []
 
 
 def get_diagnostic_questions(grade: int=5, stream: Optional[str]=None):

@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'arabic_setup.dart';
 import 'cloud_audio.dart';
 
 import 'api_service.dart';
@@ -485,6 +486,9 @@ class _MainScreenState extends State<MainScreen> {
       }
       _activeView = 'catalogue';
     });
+    if (_token != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowArabicSetup());
+    }
     if (_activeChild != null) {
       _auth.storage.write(key: 'active_child_id', value: _activeChild!['id']?.toString());
       if (_activeChild!['default_grade'] != null) {
@@ -612,6 +616,40 @@ class _MainScreenState extends State<MainScreen> {
         _currentRepeatIndex = 0;
       });
     }
+  }
+
+  bool _arabicSetupOffered = false;
+
+  /// First sign-in on this phone: check it can type and speak Arabic (also in the menu).
+  Future<void> _maybeShowArabicSetup() async {
+    if (_arabicSetupOffered) return;
+    _arabicSetupOffered = true;
+    try {
+      final done = await _auth.storage.read(key: arabicSetupDoneKey);
+      final snooze = await _auth.storage.read(key: arabicSetupSnoozeKey);
+      if (!shouldOfferArabicSetup(done: done, snoozeUntil: snooze)) return;
+    } catch (_) {}
+    await _showArabicSetup();
+  }
+
+  Future<void> _showArabicSetup() async {
+    if (!mounted) return;
+    final finished = await showDialog<bool>(
+      context: context,
+      builder: (context) => ArabicSetupDialog(
+        ios: Theme.of(context).platform == TargetPlatform.iOS,
+        voiceCheck: hasArabicTtsVoice(_flutterTts),
+        onTestVoice: () => _vocalizeText('مَرْحَبًا بِكَ فِي جِسْر'),
+      ),
+    );
+    try {
+      if (finished == true) {
+        await _auth.storage.write(key: arabicSetupDoneKey, value: DateTime.now().toIso8601String());
+      } else {
+        await _auth.storage.write(
+            key: arabicSetupSnoozeKey, value: DateTime.now().add(arabicSetupSnooze).toIso8601String());
+      }
+    } catch (_) {}
   }
 
   Future<void> _vocalizeText(String text) async {
@@ -1765,6 +1803,24 @@ class _MainScreenState extends State<MainScreen> {
                       setState(() => _activeView = 'admin');
                     },
                   ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F3FF),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.keyboard_alt_outlined, color: Color(0xFF6D28D9), size: 18),
+                  ),
+                  title: Text(
+                    _isArabic ? 'لوحة المفاتيح والصوت العربي' : 'Arabic keyboard & voice',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _showArabicSetup();
+                  },
+                ),
               ],
             ),
           ),

@@ -91,7 +91,7 @@ export default function Landing({ onEnter, signedIn = false }: { onEnter: (i: En
         <Features />
         <Curriculum />
         <Parents />
-        <Pricing onEnter={onEnter} signedIn={signedIn} />
+        <Pricing onEnter={onEnter} />
         <Faq />
         <FinalCta onEnter={onEnter} signedIn={signedIn} />
       </main>

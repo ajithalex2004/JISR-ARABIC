@@ -66,6 +66,16 @@ class TestFreeChapterPages(unittest.TestCase):
         self.assertEqual(self.client.get("/api/admin/ocr-page/14?edition_id=moe_gr5_vol2_2023").status_code, 401)
         self.assertEqual(self.client.get("/api/admin/ocr-page/30", headers=self.auth()).status_code, 200)
 
+    def test_lesson_package_names_its_book_and_pages(self):
+        res = self.client.get("/api/curriculum/lesson/c1")
+        self.assertEqual(res.status_code, 200, res.text)
+        lesson = res.json()["lesson"]
+        self.assertEqual(lesson["edition_id"], "moe_gr5_vol1_2023")
+        self.assertEqual(lesson["chapter_pages"], list(range(8, 18)))
+        # Every page the lesson lists is one a guest may read.
+        with self.session() as db:
+            self.assertTrue(set(lesson["chapter_pages"]) <= free_chapter_pages(lesson["edition_id"], db))
+
 
 if __name__ == "__main__":
     unittest.main()

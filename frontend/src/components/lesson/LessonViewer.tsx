@@ -122,16 +122,33 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
     }
   };
 
+  // This lesson's own textbook pages (book and PDF pages from the server). Class 5 Term 1 keeps
+  // its hand-written page titles; older servers without chapter_pages fall back to those pages.
+  const lessonGrade: number | undefined = data?.lesson?.grade;
+  const isClass5Term1 = lessonGrade === 5 && data?.lesson?.term === 1;
+  const editionId: string | undefined = data?.lesson?.edition_id;
+  const serverPages: number[] = Array.isArray(data?.lesson?.chapter_pages) ? data!.lesson.chapter_pages : [];
+  const chapterPages: { page: number; pnum?: number; titleAr?: string; titleEn?: string }[] =
+    (serverPages.length ? serverPages : isClass5Term1 ? CHAPTER_1_PAGES.map((c) => c.page) : [])
+      .map((page) => (isClass5Term1 && CHAPTER_1_PAGES.find((c) => c.page === page)) || { page });
+  const chapterKey = chapterPages.map((c) => c.page).join(',');
+
   useEffect(() => {
-    if (activeTab === 'studio') {
+    if (!chapterPages.length) return;
+    // Class 5 Chapter 1 opens on its main reading (PDF page 14); other chapters on their first page.
+    setSelectedChapterPdfPage(chapterPages.some((c) => c.page === 14) && isClass5Term1 ? 14 : chapterPages[0].page);
+  }, [lessonId, chapterKey]);
+
+  useEffect(() => {
+    if (activeTab === 'studio' && chapterPages.some((c) => c.page === selectedChapterPdfPage)) {
       loadChapterPage(selectedChapterPdfPage);
     }
-  }, [selectedChapterPdfPage, activeTab]);
+  }, [selectedChapterPdfPage, activeTab, editionId, chapterKey]);
 
   const loadChapterPage = async (pdfPage: number) => {
     setIsLoadingChapterPage(true);
     try {
-      const pageRes = await api.getOcrPage(pdfPage);
+      const pageRes = await api.getOcrPage(pdfPage, editionId);
       setChapterPageData(pageRes);
     } catch (err) {
       console.error('Failed to load chapter page:', err);
@@ -508,14 +525,14 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="bg-emerald-900 text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
-                  الفصل الأول كاملاً (Complete Chapter 1)
+                  الفصل كاملاً (Complete Chapter)
                 </span>
                 <span className="text-xs text-slate-500 font-sans">
-                  Printed Pages 6 to 15 · 10 Complete Verified Pages
+                  Class {lessonGrade ?? '—'} · Term {data?.lesson?.term ?? '—'} · {chapterPages.length} textbook page{chapterPages.length === 1 ? '' : 's'}
                 </span>
               </div>
               <h2 className="text-lg font-black text-slate-900 font-arabic">
-                أَلْعَابُ الكُرَةِ · نصوص وتمارين الفصل كاملاً مع الترجمة الصوتية والإنجليزية
+                {content.title_ar} · نصوص وتمارين الفصل كاملاً مع الترجمة الصوتية والإنجليزية
               </h2>
               <p className="text-xs text-slate-600 mt-0.5">
                 Browse every official page of the chapter below. Every sentence has an English translation directly underneath and word-level audio tooltips.
@@ -537,14 +554,17 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
           <div className="bg-white border border-slate-300 p-2 space-y-1.5 shadow-2xs">
             <div className="flex items-center justify-between px-1">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                اختر صفحة من الفصل الأول (Select Chapter Page):
+                اختر صفحة من الفصل (Select Chapter Page):
               </span>
               <span className="text-[11px] font-bold text-emerald-800 font-mono">
-                10 صفحات متوفرة (10 Pages Available)
+                {chapterPages.length} صفحات متوفرة ({chapterPages.length} Pages Available)
               </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1.5">
-              {CHAPTER_1_PAGES.map((item) => {
+              {chapterPages.length === 0 && (
+                <p className="col-span-full text-xs text-slate-500 p-2">The textbook pages for this chapter are not available yet.</p>
+              )}
+              {chapterPages.map((item, index) => {
                 const isSelected = selectedChapterPdfPage === item.page;
                 return (
                   <button
@@ -559,13 +579,13 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                     <span className={`text-[10px] font-mono px-1 py-0.5 rounded-xs mb-1 block ${
                       isSelected ? 'bg-emerald-800 text-amber-300 font-bold' : 'bg-slate-200 text-slate-700'
                     }`}>
-                      ص {item.pnum} (p.{item.pnum})
+                      {item.pnum ? `ص ${item.pnum} (p.${item.pnum})` : `PDF p.${item.page}`}
                     </span>
                     <span className="font-arabic text-xs font-bold truncate block" title={item.titleAr}>
-                      {item.titleAr}
+                      {item.titleAr || `الصفحة ${index + 1}`}
                     </span>
                     <span className={`text-[9.5px] truncate block mt-0.5 ${isSelected ? 'text-emerald-200' : 'text-slate-500'}`} title={item.titleEn}>
-                      {item.titleEn}
+                      {item.titleEn || `Page ${index + 1} of ${chapterPages.length}`}
                     </span>
                   </button>
                 );
@@ -579,7 +599,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-3 gap-2">
               <div>
                 <span className="text-xs font-mono text-slate-500 block">
-                  PDF Page {selectedChapterPdfPage} · Printed Page {chapterPageData?.printed_page || '—'} · UAE Ministry Level 5
+                  PDF Page {selectedChapterPdfPage} · Printed Page {chapterPageData?.printed_page || '—'} · UAE Ministry Level {lessonGrade ?? '—'}
                 </span>
                 <h3 className="text-xl font-black text-slate-900 font-arabic mt-0.5">
                   {chapterPageData?.title_ar || 'جاري التحميل...'}
@@ -659,7 +679,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
             )}
 
             {/* If Page 14 (Printed Page 12: Main Reading), Also Show Sentence-by-Sentence Audio Scripts */}
-            {selectedChapterPdfPage === 14 && content.listen_speak_studio?.audio_scripts && (
+            {isClass5Term1 && selectedChapterPdfPage === 14 && content.listen_speak_studio?.audio_scripts && (
               <div className="pt-4 border-t-2 border-slate-200">
                 <div className="mb-3">
                   <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider block">

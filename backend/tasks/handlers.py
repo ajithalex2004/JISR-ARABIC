@@ -233,7 +233,8 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
             reader = None
 
     from backend.ai.errors import AIUnavailable
-    from backend.modules.curriculum.page_ocr import has_usable_text, transcribe_page_image
+    from backend.modules.curriculum.page_ocr import (FRAGMENTED_STATUS, has_usable_text, is_fragmented,
+                                                     transcribe_page_image)
 
     pdfium_doc = None
     try:
@@ -299,7 +300,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
                     ScannedPage.pdf_page == p_num,
                     ScannedPage.review_status.in_(_READ_STATUSES),
                 ).first()
-                if done:
+                if done and not is_fragmented(done.ocr_text_ar):
                     update_progress(min(98, int(15 + ((i + 1) / max(1, page_count)) * 80)))
                     continue
 
@@ -317,7 +318,8 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
             if pdfium_doc and 0 <= zero_idx < len(pdfium_doc):
                 png_bytes = _render_page_png(pdfium_doc, zero_idx, img_path)
 
-            # 3. No usable text in the PDF itself: read it off the page image with Gemini
+            # 3. No usable text in the PDF itself (none, or a text layer that splits words into
+            #    letters): read it off the page image with Gemini
             if has_usable_text(extracted_text):
                 review_status = "automatic_extracted"
                 confidence = 0.95
@@ -329,7 +331,12 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
                     # and let a re-upload of the same PDF continue from this page.
                     paused = {"page": p_num, "reason": str(exc)}
                     break
-                if ocr_text:
+                if ocr_text and is_fragmented(ocr_text):
+                    # Kept for admins to inspect; never shown to learners, and read again next time.
+                    extracted_text = ocr_text
+                    review_status = FRAGMENTED_STATUS
+                    confidence = 0.0
+                elif ocr_text:
                     extracted_text = ocr_text
                     review_status = "ai_ocr"
                     confidence = 0.85

@@ -154,10 +154,31 @@ def upgrade():
     if renamed:
         print(f"Renamed the curriculum stream of {renamed} learner profile(s) to CBSE Curriculum")
     with engine.connect() as conn:
+        flagged = flag_fragmented_pages(conn)
+        conn.commit()
+    if flagged:
+        print(f"Flagged {flagged} scanned page(s) whose text is split into letters; read those books again in Admin > Content")
+    with engine.connect() as conn:
         seeded = seed_promo_codes(conn)
         conn.commit()
     if seeded:
         print("Created promo code JISR10 (10% off, first 10 families, valid 30 days; edit it in Admin > Promo codes)")
+
+
+def flag_fragmented_pages(conn) -> int:
+    """Mark stored pages whose text is split into letters (a broken PDF text layer) so learners never
+    see them and Admin > Content offers to read them again; returns how many pages were flagged."""
+    from backend.modules.curriculum.page_ocr import FRAGMENTED_STATUS, is_fragmented
+    if "scanned_pages" not in inspect(conn).get_table_names():
+        return 0
+    rows = conn.execute(text(
+        "SELECT id, ocr_text_ar FROM scanned_pages WHERE ocr_text_ar IS NOT NULL "
+        "AND (review_status IS NULL OR review_status <> :flag)"), {"flag": FRAGMENTED_STATUS}).fetchall()
+    broken = [row[0] for row in rows if is_fragmented(row[1])]
+    for page_id in broken:
+        conn.execute(text("UPDATE scanned_pages SET review_status = :flag, confidence = 0 WHERE id = :id"),
+                     {"flag": FRAGMENTED_STATUS, "id": page_id})
+    return len(broken)
 
 
 def seed_promo_codes(conn) -> bool:

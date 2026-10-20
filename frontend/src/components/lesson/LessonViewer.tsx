@@ -690,7 +690,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                       <span className="font-bold text-slate-800 not-italic block mb-0.5 text-left font-sans">
                         English Translation (الترجمة الإنجليزية):
                       </span>
-                      {chapterPageData.paragraphs_en?.[idx] || 'Translation verified for this section.'}
+                      {chapterPageData.paragraphs_en?.[idx] || <span className="not-italic text-slate-400">English translation not available yet for this paragraph.</span>}
                     </div>
                   </div>
                 ))}

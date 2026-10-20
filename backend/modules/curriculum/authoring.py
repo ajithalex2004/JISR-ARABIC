@@ -109,7 +109,7 @@ def _translate_ar_to_en(text_ar: str) -> str:
     if not text_ar or not text_ar.strip():
         return ""
     cleaned = text_ar.strip()
-    if cleaned in _TRANSLATION_CACHE:
+    if _cached_translation(cleaned):
         return _TRANSLATION_CACHE[cleaned]
 
     # 1. Try Google Translate gtx
@@ -122,7 +122,7 @@ def _translate_ar_to_en(text_ar: str) -> str:
             if data and isinstance(data, list) and len(data) > 0 and isinstance(data[0], list):
                 res = "".join(seg[0] for seg in data[0] if seg and len(seg) > 0 and seg[0])
                 if res.strip():
-                    _TRANSLATION_CACHE[cleaned] = res.strip()
+                    _store_translation(cleaned, res.strip())
                     return res.strip()
     except Exception:
         pass
@@ -136,12 +136,77 @@ def _translate_ar_to_en(text_ar: str) -> str:
             data = json.loads(resp.read().decode("utf-8"))
             res = data.get("responseData", {}).get("translatedText", "")
             if res and not str(res).startswith("MYMEMORY WARNING:") and res != cleaned:
-                _TRANSLATION_CACHE[cleaned] = res.strip()
+                _store_translation(cleaned, res.strip())
                 return res.strip()
     except Exception:
         pass
 
-    return f"Lesson text: {cleaned[:80]}"
+    # No translation: say nothing rather than echo the Arabic as if it were English.
+    return ""
+
+
+_TRANSLATION_KEY = "translation:ar-en:v1:"
+_TRANSLATION_TTL = 30 * 24 * 3600
+_AI_TRANSLATION_BATCH = 40
+_AI_TRANSLATION_SYSTEM = (
+    "You translate lines of a UAE school Arabic textbook (Ministry of Education, CBSE Arabic) into clear, "
+    "natural English for non-native child learners and their parents. Translate every line faithfully, "
+    "keep numbering and punctuation, do not add explanations, and return exactly one translation per line, "
+    "in the same order."
+)
+
+
+def _translation_key(line: str) -> str:
+    import hashlib
+    return _TRANSLATION_KEY + hashlib.sha1(line.encode("utf-8")).hexdigest()
+
+
+def _cached_translation(line: str) -> str:
+    if line in _TRANSLATION_CACHE:
+        return _TRANSLATION_CACHE[line]
+    from backend.redis_client import cache_get
+    try:
+        found = cache_get(_translation_key(line))
+    except Exception:
+        found = None
+    if isinstance(found, str) and found:
+        _TRANSLATION_CACHE[line] = found
+        return found
+    return ""
+
+
+def _store_translation(line: str, english: str) -> None:
+    _TRANSLATION_CACHE[line] = english
+    from backend.redis_client import cache_set
+    try:
+        cache_set(_translation_key(line), english, ttl_seconds=_TRANSLATION_TTL)
+    except Exception:
+        pass
+
+
+def _translate_lines_ai(lines: list[str]) -> dict:
+    """English for many textbook lines in a few AI calls (Gemini, else the fallback provider)."""
+    from backend.ai import gateway
+    if not lines or not gateway.available():
+        return {}
+    from backend.modules.curriculum.drafting import parse_model_json
+    schema = {"type": "OBJECT", "properties": {"translations": {"type": "ARRAY", "items": {"type": "STRING"}}},
+              "required": ["translations"]}
+    out: dict = {}
+    for start in range(0, len(lines), _AI_TRANSLATION_BATCH):
+        chunk = lines[start:start + _AI_TRANSLATION_BATCH]
+        try:
+            reply = gateway.generate(gateway.AIRequest(
+                feature="page_translation", system=_AI_TRANSLATION_SYSTEM, json=True, schema=schema,
+                prompt=json.dumps({"lines": chunk}, ensure_ascii=False), temperature=0.1, max_tokens=8192))
+            translations = parse_model_json(reply.text).get("translations")
+        except Exception:
+            break  # AI unavailable: the remaining lines use the web translators
+        if isinstance(translations, list) and len(translations) == len(chunk):
+            for ar, en in zip(chunk, translations):
+                if isinstance(en, str) and en.strip():
+                    out[ar] = en.strip()
+    return out
 
 
 _EXAMPLE_PREFIXES = ("مثال", "مِثال", "مِثَال", "مثَال")
@@ -212,11 +277,29 @@ def translate_paragraph(text_ar: str) -> str:
 
 
 def translate_paragraphs(paragraphs: list[str]) -> list[str]:
+    """English for a page's paragraphs, line by line. Lines are translated once (cached for 30 days):
+    by the AI in one batch for the page, else by the web translators line by line."""
     from concurrent.futures import ThreadPoolExecutor
     if not paragraphs:
         return []
-    with ThreadPoolExecutor(max_workers=min(4, len(paragraphs))) as pool:
-        return list(pool.map(translate_paragraph, paragraphs))
+    split = [[l.strip() for l in (p or "").split("\n") if l.strip()] for p in paragraphs]
+    unique = list(dict.fromkeys(line for lines in split for line in lines))
+    known = {line: _cached_translation(line) for line in unique}
+    for ar, en in _translate_lines_ai([line for line in unique if not known[line]]).items():
+        known[ar] = en
+        _store_translation(ar, en)
+    missing = [line for lines in split for line in lines if not known.get(line)]
+    if missing:
+        with ThreadPoolExecutor(max_workers=min(8, len(missing))) as pool:
+            for ar, en in zip(missing, pool.map(_translate_ar_to_en, missing)):
+                if en:
+                    known[ar] = en
+    english = []
+    for lines in split:
+        found = [known.get(line, "") for line in lines]
+        # Keep the line structure when some lines are translated; nothing at all stays empty.
+        english.append("\n".join(found) if any(found) else "")
+    return english
 
 
 def _clean_ocr_paragraphs(raw_text: str, printed_page: int) -> list[str]:

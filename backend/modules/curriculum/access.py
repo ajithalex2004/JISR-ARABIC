@@ -46,6 +46,20 @@ def require_lesson(db, actor, lesson_id, child_id=None, is_reviewer=False):
     return lesson
 
 
+def free_chapter_pages(edition_id, db) -> set:
+    """PDF pages of a book's free first chapter: Term 1 books only (default: Class 5, Term 1)."""
+    import re
+    match = re.fullmatch(r"moe_gr(\d{1,2})_vol(\d)_2023", edition_id or "moe_gr5_vol1_2023")
+    if not match or int(match.group(2)) != 1:
+        return set()
+    lessons = db.query(Lesson).filter(Lesson.grade == int(match.group(1)), Lesson.term == 1).order_by(Lesson.lesson_order)
+    lesson = lessons.filter(Lesson.is_first_chapter_demo == True).first() or lessons.first()  # noqa: E712
+    if lesson is None:
+        return set()
+    from backend.modules.curriculum.drafting import chapter_pages
+    return set(chapter_pages(lesson, db))
+
+
 PRIVATE_FIELDS = frozenset({"correct_answer", "correct_index", "correct_option", "target_ar",
                             "model_answer", "model_answer_ar", "model_answer_en",
                             "solution_walkthrough", "solution_walkthrough_ar", "solution_walkthrough_en"})

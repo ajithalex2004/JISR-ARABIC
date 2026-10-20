@@ -6,7 +6,6 @@ import {
 import { api } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
-import { ArabEnglishToggleSwitch } from '../common/ArabEnglishToggleSwitch';
 import { User, ChildProfile } from '../../types';
 
 interface CapsulesGridProps {
@@ -169,7 +168,6 @@ export const CapsulesGrid: React.FC<CapsulesGridProps> = ({ user, activeChild, i
         </div>
 
         <div className="flex items-center gap-4 flex-wrap">
-          <ArabEnglishToggleSwitch />
           {/* Progress Badge Counter */}
           <div className="bg-slate-800 border border-slate-700 p-3 flex items-center gap-3">
           <div className="w-10 h-10 bg-amber-400 text-slate-950 flex items-center justify-center font-bold">

@@ -5,7 +5,6 @@ import {
   ChevronRight, CheckCircle, ShieldCheck, Settings, GitFork, Link2
 } from 'lucide-react';
 import { User, ChildProfile } from '../../types';
-import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 
 interface SidebarProps {
   user: User | null;
@@ -174,7 +173,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="text-xl font-bold font-arabic text-[#10B981]">جِــسْـــر</span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium tracking-wide">
-                UAE Arabic Platform · <ArabicWordSpans text="مِنْهَاجُ اللُّغَةِ العَرَبِيَّةِ" tooltipPlacement="bottom" className="text-slate-600 font-semibold" />
+                UAE Arabic Platform
+                <span lang="ar" style={{ textAlign: 'left' }} className="block font-arabic text-[13px] text-slate-600 font-semibold">مِنْهَاجُ اللُّغَةِ العَرَبِيَّةِ</span>
               </p>
             </div>
           </div>

@@ -46,7 +46,7 @@ function Nav({ onEnter, signedIn }: { onEnter: (i: EnterIntent) => void; signedI
   );
 }
 
-function Footer({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+function Footer({ onEnter, signedIn }: { onEnter: (i: EnterIntent) => void; signedIn: boolean }) {
   return (
     <footer className="jl-footer">
       <div className="jl-wrap jl-footer__grid">
@@ -57,7 +57,7 @@ function Footer({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
         <nav aria-label="Footer">
           <ul>
             {NAV.map(([href, label]) => <li key={href}><a href={href}>{label}</a></li>)}
-            <li><button type="button" className="jl-linkbtn" onClick={() => onEnter('explore')}>Open the app</button></li>
+            <li><button type="button" className="jl-linkbtn" onClick={() => onEnter(signedIn ? 'explore' : 'signup')}>Open the app</button></li>
           </ul>
         </nav>
       </div>
@@ -95,7 +95,7 @@ export default function Landing({ onEnter, signedIn = false }: { onEnter: (i: En
         <Faq />
         <FinalCta onEnter={onEnter} signedIn={signedIn} />
       </main>
-      <Footer onEnter={onEnter} />
+      <Footer onEnter={onEnter} signedIn={signedIn} />
     </div>
   );
 }

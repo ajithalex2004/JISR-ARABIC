@@ -41,7 +41,8 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 }) => {
   const [selectedPlan, setSelectedPlan] = useState<'term' | 'annual' | 'voucher'>('annual');
   const [terms, setTerms] = useState<number[]>([term]);
-  const [autoRenew, setAutoRenew] = useState(true);
+  // Auto-renew is opt-in: unticked whenever the window opens, so a parent always chooses it.
+  const [autoRenew, setAutoRenew] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState('');
   const [quote, setQuote] = useState<PriceQuote | null>(null);
@@ -54,6 +55,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   useEffect(() => { setTerms([term]); }, [term]);
+  useEffect(() => { if (isOpen) setAutoRenew(false); }, [isOpen]);
 
   const plan: 'term' | 'annual' = selectedPlan === 'annual' || terms.length === 3 ? 'annual' : 'term';
   const chosenTerms = plan === 'annual' ? [1, 2, 3] : terms;

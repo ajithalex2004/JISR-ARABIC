@@ -9,8 +9,8 @@ import 'package:image_picker/image_picker.dart';
 import '../api_service.dart';
 
 /// Ask Fahim homework helper (POST /api/ai/homework/scan and /check): a worksheet photo, PDF or
-/// Word file is explained question by question with a hint; the student's own answer is checked.
-/// Fahim never gives the answers: they stay on the server.
+/// Word file is explained question by question with a hint, then the answer when the student asks
+/// for it; the student's own answer is checked.
 
 const String docxMime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -31,6 +31,8 @@ class HomeworkQuestion {
   final String asksEn;
   final String hintEn;
   final String hintAr;
+  final String answer;
+  final String answerEn;
 
   const HomeworkQuestion({
     required this.number,
@@ -39,6 +41,8 @@ class HomeworkQuestion {
     required this.asksEn,
     required this.hintEn,
     required this.hintAr,
+    this.answer = '',
+    this.answerEn = '',
   });
 
   factory HomeworkQuestion.fromJson(Map json) => HomeworkQuestion(
@@ -48,6 +52,8 @@ class HomeworkQuestion {
         asksEn: json['asks_en']?.toString() ?? '',
         hintEn: json['hint_en']?.toString() ?? '',
         hintAr: json['hint_ar']?.toString() ?? '',
+        answer: json['answer']?.toString() ?? '',
+        answerEn: json['answer_en']?.toString() ?? '',
       );
 }
 
@@ -157,8 +163,8 @@ class _HomeworkHelperViewState extends State<HomeworkHelperView> {
                   style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF4C1D95))),
               const SizedBox(height: 4),
               const Text(
-                'Snap your worksheet or upload it. Fahim explains each question in English and gives a hint, '
-                'then checks your own answer before you hand it in. Fahim never gives the answers.',
+                'Snap your worksheet or upload it. Fahim explains each question in English, gives a hint and '
+                'the answer, and checks your own answer before you hand it in. Try the hint first!',
                 style: TextStyle(fontSize: 12, color: Color(0xFF4C1D95)),
               ),
               const SizedBox(height: 8),
@@ -252,6 +258,7 @@ class _HomeworkQuestionCardState extends State<HomeworkQuestionCard> {
   final ApiService _api = ApiService();
   final _answer = TextEditingController();
   bool _showHint = false;
+  bool _showAnswer = false;
   bool _checking = false;
   Map? _result;
   String? _error;
@@ -368,6 +375,30 @@ class _HomeworkQuestionCardState extends State<HomeworkQuestionCard> {
                   onPressed: () => setState(() => _showHint = true),
                   icon: const Icon(Icons.lightbulb_outline_rounded, size: 18),
                   label: const Text('Stuck? Show a hint'),
+                ),
+              ),
+            if (q.answer.isNotEmpty && _showAnswer)
+              Container(
+                margin: const EdgeInsets.only(top: 6),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF6EE7B7)),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  const Text('✅ Answer', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(q.answer, textDirection: TextDirection.rtl, style: const TextStyle(fontSize: 18)),
+                  if (q.answerEn.isNotEmpty) Text(q.answerEn),
+                ]),
+              )
+            else if (q.answer.isNotEmpty)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _showAnswer = true),
+                  icon: const Icon(Icons.visibility_outlined, size: 18),
+                  label: const Text('Show the answer'),
                 ),
               ),
             const SizedBox(height: 6),

@@ -403,8 +403,22 @@ export class ArabEnglishHelper {
       .replace(/٠/g, '0');
   }
 
+  // Spellings already worked out: every visible word is spelled again whenever the page re-renders.
+  private static readonly wordCache = new Map<string, string>();
+
   public static transliterateWord(rawWord: string, isFirstWord = false): string {
     if (!rawWord) return '';
+    const key = isFirstWord ? `^${rawWord}` : rawWord;
+    let spelled = this.wordCache.get(key);
+    if (spelled === undefined) {
+      spelled = this.spellWord(rawWord, isFirstWord);
+      if (this.wordCache.size > 20000) this.wordCache.clear();
+      this.wordCache.set(key, spelled);
+    }
+    return spelled;
+  }
+
+  private static spellWord(rawWord: string, isFirstWord: boolean): string {
 
     if (this.wordMap[rawWord]) {
       const w = this.wordMap[rawWord];

@@ -69,7 +69,8 @@ async def distributed_rate_limit(request: Request, call_next):
     is_auth_checkout = (path.startswith("/api/auth/") or path.startswith("/api/payments/checkout")) and request.method == "POST"
     is_heavy_ai_audio = path.startswith(("/api/ai/", "/api/audio/synthesize"))
     # Word tooltips call this on hover, so it gets a higher per-IP budget than the AI tutor.
-    is_word_gloss = path in ("/api/curriculum/word-gloss", "/api/curriculum/root-family", "/api/curriculum/alignments") \
+    is_word_gloss = path in ("/api/curriculum/word-gloss", "/api/curriculum/word-glosses", "/api/curriculum/root-family",
+                             "/api/curriculum/alignments") \
         or path.startswith("/api/curriculum/page-alignments/")
 
     if is_auth_checkout or is_heavy_ai_audio or is_word_gloss:

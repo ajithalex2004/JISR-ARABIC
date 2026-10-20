@@ -5,7 +5,7 @@ from backend.api.dependencies import get_current_user, get_optional_user
 from backend.modules.identity.access import Principal, require_child, optional_child, require_roles, FAMILY_ROLES, PARENT_ROLES, STAFF_ROLES
 """HTTP adapter: request parsing, dependency injection, and service delegation."""
 from fastapi import APIRouter, Depends, HTTPException, Query
-from backend.schemas import SubmitDiagnosticRequest, OnboardingProfileUpdateRequest, ActiveGradeRequest, AlignmentRequest
+from backend.schemas import SubmitDiagnosticRequest, OnboardingProfileUpdateRequest, ActiveGradeRequest, AlignmentRequest, WordGlossesRequest
 from backend.modules.curriculum import service as service
 router = APIRouter(prefix='/api/curriculum', tags=['Curriculum'])
 
@@ -97,6 +97,14 @@ def word_gloss(word: str=Query(..., max_length=40), context: str=Query('', max_l
     """English meaning of one Arabic word, for tooltips when the client dictionary has no entry."""
     from backend.modules.curriculum.glossary import gloss_word
     return gloss_word(word, context) or {"translation": None, "part_of_speech": None, "source": None}
+
+@router.post('/word-glosses')
+def word_glosses(payload: WordGlossesRequest):
+    """English meanings for the unknown words of one sentence, fetched ahead so word tooltips open instantly."""
+    from backend.modules.curriculum.glossary import gloss_words
+    glosses = gloss_words([w[:40] for w in payload.words], payload.context)
+    return {"glosses": {word: ({"translation": g["translation"], "part_of_speech": g["part_of_speech"]} if g else None)
+                        for word, g in glosses.items()}}
 
 @router.get('/root-family')
 def root_family(root: str=Query('', max_length=20), word: str=Query('', max_length=60)):

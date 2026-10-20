@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { audioManager } from '../../services/audio';
-import { getWordTranslation, fetchWordGloss, WordDefinition } from '../../services/arabicDictionary';
+import { getWordTranslation, fetchWordGloss, isGlossRequested, prefetchWordGlosses, WordDefinition } from '../../services/arabicDictionary';
 import { ArabEnglishHelper, useArabEnglish } from '../../services/arabEnglishService';
 import { stripTashkeel, useTashkeel } from '../../services/tashkeel';
 import { localWordIndex, playbackWords } from '../../services/playbackWords';
@@ -54,6 +54,27 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null);
   const lastSpokenRef = useRef<{ word: string; time: number }>({ word: '', time: 0 });
+  const rootRef = useRef<HTMLSpanElement>(null);
+
+  // Fetch the meanings of words the local dictionary lacks once the passage is (nearly) on screen,
+  // so tapping a word shows its meaning at once instead of waiting about two seconds for the AI.
+  useEffect(() => {
+    const node = rootRef.current;
+    if (!node || !text) return;
+    const prefetch = () => prefetchWordGlosses(text.split(/\s+/), text);
+    if (typeof IntersectionObserver === 'undefined') {
+      prefetch();
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        observer.disconnect();
+        prefetch();
+      }
+    }, { rootMargin: '300px' });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [text]);
 
   useEffect(() => {
     const unsubscribe = audioManager.subscribe((state) => {
@@ -78,12 +99,14 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
   }, [tooltipState]);
 
   // Words the local dictionary doesn't know: ask the server, using this passage as context.
-  // The short delay avoids a request for every word the pointer merely passes over.
+  // The short delay avoids a request for every word the pointer merely passes over; a meaning
+  // already fetched (or on its way) is shown at once.
   const pendingIndex = tooltipState?.loading ? tooltipState.index : null;
   const pendingToken = tooltipState?.loading ? tooltipState.token : '';
   useEffect(() => {
     if (pendingIndex === null) return;
     let cancelled = false;
+    const delay = isGlossRequested(pendingToken, text) ? 0 : 200;
     const timer = setTimeout(() => {
       fetchWordGloss(pendingToken, text).then((definition) => {
         if (cancelled) return;
@@ -93,7 +116,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
             : current
         );
       });
-    }, 200);
+    }, delay);
     return () => {
       cancelled = true;
       clearTimeout(timer);
@@ -184,7 +207,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
 
   return (
     <>
-      <span className={`inline font-arabic text-right ${className}`} dir="rtl">
+      <span ref={rootRef} className={`inline font-arabic text-right ${className}`} dir="rtl">
         {tokens.map((token, idx) => {
           const wordIndex = wordIndexes[idx];
           // If whitespace token, render as is
@@ -200,7 +223,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
           const isPlaying = spokenIndex >= 0 ? wordIndex === spokenIndex : !!spokenWord && cleanWord === spokenWord;
           const isHighlighted = hoveredIdx === idx || activeTouchedIndex === idx;
           const isMatched = !!highlightedWords?.includes(wordIndex);
-          const arabEn = cleanWord ? ArabEnglishHelper.transliterateWord(cleanWord) : '';
+          const arabEn = arabEnglishEnabled && cleanWord ? ArabEnglishHelper.transliterateWord(cleanWord) : '';
 
           return (
             <span

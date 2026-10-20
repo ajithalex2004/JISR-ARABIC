@@ -11,12 +11,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../api_service.dart';
 import '../arab_english_service.dart';
+import '../widgets/homework_helper.dart';
 
 class AskFahimDialog extends StatefulWidget {
   final String contextLessonId;
   final String? childId;
   final String? token;
-  final String initialMode; // 'text', 'voice', 'pdf', 'camera', 'exam'
+  final String initialMode; // 'text', 'voice', 'pdf', 'camera', 'exam', 'homework'
   final bool isArabic;
   final Function(String text)? onVocalize;
   final String? initialFileName;
@@ -1430,7 +1431,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
     setState(() {
       _activeMode = mode;
       // Preserve PDF or camera attachment if user switches to voice or text tab
-      if (mode != 'pdf' && mode != 'camera' && mode != 'exam' && mode != 'voice' && mode != 'text') {
+      if (mode != 'pdf' && mode != 'camera' && mode != 'exam' && mode != 'voice' && mode != 'text' && mode != 'homework') {
         _attachedFileName = null;
         _attachmentType = null;
         _attachedBase64 = null;
@@ -1558,6 +1559,8 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                     _modeTab('camera', Icons.photo_camera_rounded, widget.isArabic ? 'كاميرا' : 'Camera'),
                     const SizedBox(width: 2),
                     _modeTab('exam', Icons.assignment_outlined, widget.isArabic ? 'امتحان' : 'Exam Paper'),
+                    const SizedBox(width: 2),
+                    _modeTab('homework', Icons.lightbulb_outline_rounded, widget.isArabic ? 'الواجب' : 'Homework'),
                   ],
                 ),
               ),
@@ -1566,7 +1569,9 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
 
             // Body View
             Expanded(
-              child: _activeMode == 'exam'
+              child: _activeMode == 'homework'
+                  ? HomeworkHelperView(token: widget.token, childId: widget.childId, onVocalize: widget.onVocalize)
+                  : _activeMode == 'exam'
                   ? _buildExamPaperView()
                   : _buildConversationalChatView(),
             ),

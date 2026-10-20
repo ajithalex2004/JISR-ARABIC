@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
-  X, Sparkles, Send, UserCheck, MessageSquare, Volume2,
+  X, Sparkles, Send, UserCheck, MessageSquare, Volume2, Camera,
   FileText, Upload, CheckCircle2, AlertCircle, BookOpen, ShieldCheck, Loader2
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ArabEnglishToggleSwitch } from '../common/ArabEnglishToggleSwitch';
+import { HomeworkHelper } from './HomeworkHelper';
 
 interface AskFahimModalProps {
   isOpen: boolean;
@@ -24,7 +25,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
   childId,
   grade = 5
 }) => {
-  const [activeTab, setActiveTab] = useState<'chat' | 'paper'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'homework' | 'paper'>('chat');
   const [question, setQuestion] = useState<string>('');
   const [messages, setMessages] = useState<Array<{ sender: 'user' | 'fahim'; text_ar: string; text_en?: string; escalated?: boolean }>>([
     {
@@ -171,7 +172,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
         </div>
 
         {/* Mode Navigation Tabs */}
-        <div className="flex gap-2 pt-3 pb-1 border-b border-slate-100">
+        <div className="flex flex-wrap gap-2 pt-3 pb-1 border-b border-slate-100">
           <button
             onClick={() => setActiveTab('chat')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
@@ -182,6 +183,17 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span>Chat Tutor (حوار مع فاهم)</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('homework')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
+              activeTab === 'homework'
+                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>Homework Helper (مساعد الواجب)</span>
           </button>
           <button
             onClick={() => setActiveTab('paper')}
@@ -195,6 +207,8 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
             <span>Exam Paper Assistant (مساعد أوراق الامتحانات)</span>
           </button>
         </div>
+
+        {activeTab === 'homework' && <HomeworkHelper childId={childId} grade={grade} />}
 
         {/* TAB 1: Chat Tutor */}
         {activeTab === 'chat' && (

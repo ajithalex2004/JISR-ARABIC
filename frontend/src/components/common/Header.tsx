@@ -115,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Curriculum indicator for desktop */}
           <div className="hidden lg:flex items-center gap-2 text-xs">
             <span className="font-bold text-[#58337E] font-arabic text-sm">
-              <ArabicWordSpans text="مِنْهَاجُ اللُّغَةِ العَرَبِيَّةِ" tooltipPlacement="bottom" />
+              <span lang="ar">مِنْهَاجُ اللُّغَةِ العَرَبِيَّةِ</span>
             </span>
             <span className="text-slate-300">|</span>
             <span className="text-slate-500 font-medium">

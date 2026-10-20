@@ -186,9 +186,48 @@ export function App() {
       } catch (e) {
         // No active session
       }
+      setSessionChecked(true);
     };
     restoreSession();
   }, []);
+
+  // Signed-out visitors (e.g. from a class on the landing page, /?grade=N) get only that class's
+  // free chapter: Term 1, Chapter 1. Everything else asks them to create an account.
+  const [sessionChecked, setSessionChecked] = useState<boolean>(false);
+  const [guestLessonId, setGuestLessonId] = useState<string>('');
+  // No saved sign-in: a guest from the start (no need to wait for the session check).
+  const [hasSavedToken] = useState<boolean>(() => {
+    try { return !!localStorage.getItem('fahim_token'); } catch { return false; }
+  });
+  // The class picked on the landing page; the catalogue's own grade default must not replace it.
+  const [guestGrade] = useState<number>(() => appGrade);
+  const isGuest = !user && (sessionChecked || !hasSavedToken);
+  useEffect(() => {
+    if (!isGuest) return;
+    let alive = true;
+    api.getLessons(guestGrade, 1)
+      .then(list => {
+        const free = (Array.isArray(list) ? list : []).find(l => l.is_first_chapter_demo) || (Array.isArray(list) ? list[0] : undefined);
+        if (alive && free) setGuestLessonId(free.id);
+      })
+      .catch(() => { /* the free chapter stays unavailable; sign-up still works */ });
+    return () => { alive = false; };
+  }, [isGuest, guestGrade]);
+  useEffect(() => {
+    if (isGuest && guestLessonId && (currentView !== 'lesson' || selectedLessonId !== guestLessonId)) {
+      setSelectedLessonId(guestLessonId);
+      setCurrentView('lesson');
+    }
+  }, [isGuest, guestLessonId, currentView, selectedLessonId]);
+  const promptSignup = () => {
+    setAuthModalMode('signup_email');
+    setIsAuthOpen(true);
+  };
+  const selectView = (view: string) => {
+    if (isGuest && view !== 'lesson') return promptSignup();
+    setCurrentView(view);
+  };
+  const openAskFahim = () => (isGuest ? promptSignup() : setIsAskFahimOpen(true));
 
   const handleAuthSuccess = (auth: AuthResponse, _isNewSignup?: boolean) => {
     authFromLanding.current = false;
@@ -274,7 +313,7 @@ export function App() {
         selectedGrade={appGrade}
         currentView={currentView}
         onSelectView={(view) => {
-          setCurrentView(view);
+          selectView(view);
           setIsMobileMenuOpen(false);
         }}
         onOpenAuth={() => {
@@ -282,7 +321,7 @@ export function App() {
           setIsAuthOpen(true);
         }}
         onLogout={handleLogout}
-        onOpenAskFahim={() => setIsAskFahimOpen(true)}
+        onOpenAskFahim={openAskFahim}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
@@ -302,13 +341,13 @@ export function App() {
           }}
           onOpenOnboarding={() => setIsOnboardingOpen(true)}
           currentView={currentView}
-          onSelectView={setCurrentView}
+          onSelectView={selectView}
           onOpenAuth={() => {
             setAuthModalMode('login');
             setIsAuthOpen(true);
           }}
           onLogout={handleLogout}
-          onOpenAskFahim={() => setIsAskFahimOpen(true)}
+          onOpenAskFahim={openAskFahim}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
@@ -339,7 +378,10 @@ export function App() {
           </div>
         )}
         {currentView !== 'admin' && (((currentView === 'tutor' || currentView === 'word-matches') && !['tutor', 'admin'].includes(user?.role || '')) || (currentView === 'parent' && !['parent', 'admin'].includes(user?.role || ''))) && <div role="alert" className="m-4 border border-amber-500 bg-amber-50 p-4">This page is not available for your account. Please sign in with the appropriate role.</div>}
-        {currentView === 'catalogue' && (
+        {isGuest && currentView !== 'lesson' && (
+          <div role="status" className="m-8 text-center text-slate-600">Opening your free chapter…</div>
+        )}
+        {currentView === 'catalogue' && !isGuest && (
           <CatalogueView
             user={user}
             activeChild={activeChild}
@@ -350,7 +392,7 @@ export function App() {
             onOpenPaywall={handleOpenPaywall}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
             onSelectView={setCurrentView}
-            onOpenAskFahim={() => setIsAskFahimOpen(true)}
+            onOpenAskFahim={openAskFahim}
           />
         )}
 
@@ -358,9 +400,11 @@ export function App() {
           <LessonViewer
             lessonId={selectedLessonId || 'lesson_01_ball_games'}
             activeChild={activeChild}
-            onBack={() => setCurrentView('catalogue')}
-            onOpenPaywall={() => handleOpenPaywall(appGrade)}
+            onBack={() => (isGuest ? goToWelcome() : setCurrentView('catalogue'))}
+            backLabel={isGuest ? 'Back to home' : undefined}
+            onOpenPaywall={() => (isGuest ? promptSignup() : handleOpenPaywall(appGrade))}
             onOpenReader={(page) => {
+              if (isGuest) return promptSignup();
               if (page) setReaderInitialPage(page);
               setCurrentView('reader');
             }}
@@ -424,7 +468,7 @@ export function App() {
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
             onSelectView={setCurrentView}
             onLogout={handleLogout}
-            onOpenAskFahim={() => setIsAskFahimOpen(true)}
+            onOpenAskFahim={openAskFahim}
           />
         )}
         {currentView === 'subscriptions' && (

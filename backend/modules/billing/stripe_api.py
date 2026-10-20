@@ -4,6 +4,7 @@ Configured with STRIPE_SECRET_KEY. Only the calls the app needs: hosted Checkout
 payments and auto-renewing subscriptions), one-time promo coupons, and subscription updates.
 """
 import os
+from urllib.parse import urlencode
 from typing import Any, Dict, List, Tuple
 
 from backend.errors import ApplicationError
@@ -44,8 +45,15 @@ def request(method: str, path: str, params: Dict[str, Any] | None = None, *, ide
     headers = {"Authorization": f"Bearer {key}"}
     if idempotency_key:
         headers["Idempotency-Key"] = idempotency_key
+    # Encoded here: httpx's `data=` takes only a dict, and Stripe's nested keys need repeated pairs.
+    body = None
+    if method.upper() == "GET":
+        path = f"{path}?{urlencode(_flatten(params))}" if params else path
+    else:
+        body = urlencode(_flatten(params or {}))
+        headers["Content-Type"] = "application/x-www-form-urlencoded"
     try:
-        response = httpx.request(method, f"{API}{path}", data=_flatten(params or {}), headers=headers, timeout=30)
+        response = httpx.request(method, f"{API}{path}", content=body, headers=headers, timeout=30)
     except httpx.HTTPError as exc:
         raise ApplicationError(502, f"Could not reach the payment provider: {exc}") from exc
     data = response.json() if response.content else {}

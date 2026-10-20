@@ -190,7 +190,10 @@ class CheckoutAndSubscriptionsTest(unittest.TestCase):
 
     # --- Stripe ----------------------------------------------------------------------------
 
-    def test_stripe_checkout_session_for_an_annual_subscription(self):
+    def _stripe_checkout(self, **kwargs):
+        """Checkout against a fake Stripe; each call is built as a real httpx request, as on the wire."""
+        import httpx
+        from urllib.parse import parse_qsl, urlsplit
         calls = []
 
         class Response:
@@ -200,8 +203,12 @@ class CheckoutAndSubscriptionsTest(unittest.TestCase):
             def json(self):
                 return self._payload
 
-        def fake_request(method, url, data=None, headers=None, timeout=None):
-            calls.append((method, url, dict(data or [])))
+        def fake_request(method, url, content=None, headers=None, timeout=None):
+            sent = httpx.Request(method, url, content=content, headers=headers)
+            sent.read()
+            if method == "POST":
+                self.assertEqual(sent.headers["content-type"], "application/x-www-form-urlencoded")
+            calls.append((method, urlsplit(url).path, dict(parse_qsl(sent.content.decode() or urlsplit(url).query))))
             if url.endswith("/coupons/JISR-ONCE-10_0") and method == "GET":
                 return Response(404, {"error": {"message": "No such coupon"}})
             if url.endswith("/checkout/sessions"):
@@ -210,16 +217,26 @@ class CheckoutAndSubscriptionsTest(unittest.TestCase):
 
         with patch.dict(os.environ, {"FAHIM_PAYMENT_PROVIDER": "stripe", "STRIPE_SECRET_KEY": "sk_test_x"}), \
                 patch("httpx.request", side_effect=fake_request):
-            res = self._checkout(0, plan="annual", auto_renew=True, promo_code="JISR10")
+            res = self._checkout(0, **kwargs)
         self.assertEqual(res.status_code, 200, res.text)
         self.assertEqual(res.json(), {"provider": "stripe", "checkout_url": "https://checkout.stripe.com/c/pay/cs_1"})
-        session = next(data for method, url, data in calls if url.endswith("/checkout/sessions"))
+        return next(data for method, path, data in calls if path.endswith("/checkout/sessions"))
+
+    def test_stripe_checkout_session_for_an_annual_subscription(self):
+        session = self._stripe_checkout(plan="annual", auto_renew=True, promo_code="JISR10")
         self.assertEqual(session["mode"], "subscription")
         self.assertEqual(session["line_items[0][price_data][unit_amount]"], "2550")
         self.assertEqual(session["line_items[0][price_data][recurring][interval]"], "year")
         self.assertEqual(session["discounts[0][coupon]"], "JISR-ONCE-10_0")
         self.assertEqual(session["subscription_data[metadata][terms]"], "1,2,3")
         self.assertEqual(session["customer_email"], "p0@test.local")
+
+    def test_stripe_checkout_session_for_one_term_with_a_promo(self):
+        session = self._stripe_checkout(plan="term", terms=[2], promo_code="JISR10")
+        self.assertEqual(session["mode"], "payment")
+        self.assertEqual(session["line_items[0][price_data][unit_amount]"], "900")
+        self.assertEqual(session["metadata[terms]"], "2")
+        self.assertIn("Term 2", session["line_items[0][price_data][product_data][name]"])
 
     def _webhook(self, event_type, obj, event_id="evt_1"):
         body = json.dumps({"id": event_id, "type": event_type, "data": {"object": obj}}).encode()

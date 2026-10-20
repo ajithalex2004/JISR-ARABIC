@@ -73,7 +73,7 @@ export function Curriculum() {
   );
 }
 
-export function Pricing({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+export function Pricing({ onEnter, signedIn = false }: { onEnter: (i: EnterIntent) => void; signedIn?: boolean }) {
   return (
     <section id="pricing" className="jl-section jl-pricing" aria-labelledby="jl-pricing-title">
       <div className="jl-wrap">
@@ -91,7 +91,7 @@ export function Pricing({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
               </p>
               <p className="jl-plan__cadence">{p.cadence}</p>
               <ul className="jl-plan__points">{p.points.map((pt) => <li key={pt}>{pt}</li>)}</ul>
-              <button type="button" className={`jl-btn ${p.featured ? 'jl-btn--primary' : 'jl-btn--line'} jl-btn--block`} onClick={() => onEnter(p.intent)}>{p.cta}</button>
+              <button type="button" className={`jl-btn ${p.featured ? 'jl-btn--primary' : 'jl-btn--line'} jl-btn--block`} onClick={() => onEnter(signedIn && p.id === 'free' ? 'explore' : p.intent)}>{p.cta}</button>
             </li>
           ))}
         </ul>

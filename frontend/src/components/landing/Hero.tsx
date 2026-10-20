@@ -102,7 +102,7 @@ export function Hero({ onEnter, signedIn = false }: { onEnter: (i: EnterIntent) 
             <button type="button" className="jl-btn jl-btn--primary" onClick={() => onEnter(signedIn ? 'explore' : 'signup')}>
               {signedIn ? 'Go to my dashboard' : 'Start free'} <span aria-hidden="true" className="jl-btn__arrow">→</span>
             </button>
-            <button type="button" className="jl-btn jl-btn--ghost" onClick={() => onEnter('explore')}>
+            <button type="button" className="jl-btn jl-btn--ghost" onClick={() => onEnter(signedIn ? 'explore' : 'signup')}>
               Try a free lesson
             </button>
           </div>

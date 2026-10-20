@@ -436,6 +436,21 @@ class QuestionPaperSolveResponse(BaseModel):
     model_used: str = "gemini-3.5-flash-lite"
     escalation_summary: str = "All questions resolved autonomously using CBSE Curriculum grounding"
 
+class HomeworkScanRequest(BaseModel):
+    file_base64: str = Field(..., max_length=14000000)
+    mime_type: str = Field(..., max_length=120)
+    file_name: Optional[str] = Field(None, max_length=255)
+    grade: Optional[int] = Field(None, ge=1, le=12)
+    child_id: Optional[str] = None
+
+class HomeworkCheckRequest(BaseModel):
+    scan_id: str = Field(..., max_length=64)
+    question_number: str = Field(..., max_length=20)
+    answer_text: Optional[str] = Field(None, max_length=1000)
+    answer_image_base64: Optional[str] = Field(None, max_length=7000000)
+    answer_image_type: Optional[str] = Field(None, max_length=100)
+    child_id: Optional[str] = None
+
 class SpeechEvaluationRequest(BaseModel):
     child_id: Optional[str] = None
     lesson_id: Optional[str] = "lesson_01_ball_games"

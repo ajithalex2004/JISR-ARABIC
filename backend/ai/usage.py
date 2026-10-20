@@ -21,7 +21,7 @@ from sqlalchemy import func
 logger = logging.getLogger("fahim.ai")
 
 # Features a learner can call at will; these count towards the daily limit.
-LEARNER_FEATURES = ("ask_fahim", "learn_with_fahim", "paper_solver")
+LEARNER_FEATURES = ("ask_fahim", "learn_with_fahim", "paper_solver", "homework_scan", "homework_check")
 BUDGET_THRESHOLDS = (50, 80, 100)
 
 _session_factory = None

@@ -781,6 +781,26 @@ export const api = {
     return res.json();
   },
 
+  // Homework helper: explains a worksheet with hints; answers stay on the server.
+  async scanHomework(data: { file_base64: string; mime_type: string; file_name?: string; grade?: number; child_id?: string }) {
+    const res = await authenticatedFetch(`${API_BASE}/api/ai/homework/scan`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Fahim could not read this worksheet'));
+    return res.json();
+  },
+
+  async checkHomeworkAnswer(data: {
+    scan_id: string; question_number: string; answer_text?: string;
+    answer_image_base64?: string; answer_image_type?: string; child_id?: string;
+  }) {
+    const res = await authenticatedFetch(`${API_BASE}/api/ai/homework/check`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Fahim could not check this answer'));
+    return res.json();
+  },
+
   async solveQuestionPaper(data: {
     paper_title?: string;
     document_base64?: string;

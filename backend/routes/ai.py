@@ -11,6 +11,8 @@ from backend.schemas import (
     SocraticLearnResponse,
     QuestionPaperSolveRequest,
     QuestionPaperSolveResponse,
+    HomeworkScanRequest,
+    HomeworkCheckRequest,
 )
 from backend.modules.tutoring import assistant as service
 
@@ -105,3 +107,39 @@ def solve_question_paper(
             raise ApplicationError(402, "AI Exam Paper Assistant requires an active unlocked term pass or Admin access.")
 
     return service.solve_question_paper(req=req, db=db)
+
+
+def _homework_learner(db: Session, actor: Optional[Principal], child_id: Optional[str]) -> tuple:
+    """The signed-in user and the learner whose daily AI limit the homework helper counts against."""
+    from backend.errors import ApplicationError
+    if actor is None:
+        raise ApplicationError(401, "Sign in to use the homework helper.")
+    if not child_id:
+        if actor.child_id:
+            child_id = actor.child_id
+        elif actor.role == "parent":
+            first_c = visible_children(db, actor).first()
+            child_id = first_c.id if first_c else None
+    optional_child(db, actor, child_id)
+    return actor.id, child_id or actor.id
+
+@router.post('/homework/scan')
+def homework_scan(req: HomeworkScanRequest, db: Session = Depends(get_db), actor: Optional[Principal] = Depends(get_optional_user)):
+    """
+    Homework helper: read a worksheet (photo, PDF or Word) and explain each question with a
+    Socratic hint. Answers are never returned; they stay on the server to check the student's own.
+    """
+    from backend.modules.tutoring import homework
+    owner_id, learner_id = _homework_learner(db, actor, req.child_id)
+    grade = service._child_grade(db, learner_id) or req.grade or 5
+    return homework.scan_homework(file_base64=req.file_base64, mime_type=req.mime_type, file_name=req.file_name or "",
+                                  grade=grade, learner_id=learner_id, owner_id=owner_id)
+
+@router.post('/homework/check')
+def homework_check(req: HomeworkCheckRequest, db: Session = Depends(get_db), actor: Optional[Principal] = Depends(get_optional_user)):
+    """Homework helper: check the student's typed or handwritten answer, without revealing the right one."""
+    from backend.modules.tutoring import homework
+    owner_id, learner_id = _homework_learner(db, actor, req.child_id)
+    return homework.check_answer(scan_id=req.scan_id, question_number=req.question_number, answer_text=req.answer_text,
+                                 answer_image_base64=req.answer_image_base64, answer_image_type=req.answer_image_type,
+                                 learner_id=learner_id, owner_id=owner_id)

@@ -65,5 +65,5 @@ export function Root() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  return <Suspense fallback={<Loading />}>{landing ? <Landing onEnter={enterApp} signedIn={!!readStorage('local', 'fahim_token')} /> : <App />}</Suspense>;
+  return <Suspense fallback={<Loading />}>{landing ? <Landing onEnter={enterApp} /> : <App />}</Suspense>;
 }

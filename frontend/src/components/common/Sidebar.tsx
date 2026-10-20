@@ -208,7 +208,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Navigation Menu (القائمة الرئيسية)
           </div>
 
-          {menuItems.map((item) => {
+          {/* Guests (signed out) have no progress to show: no mastery heatmap or ranks. */}
+          {menuItems.filter((item) => user || (item.id !== 'mastery' && item.id !== 'ranks')).map((item) => {
             const Icon = item.icon;
             const isActive = item.isView ? item.isView(currentView) : false;
             const isHighlighted = item.highlight;
@@ -288,7 +289,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#6C5CE7] to-[#8E44AD] hover:opacity-95 shadow-md shadow-purple-500/20 flex items-center justify-center gap-2 transition-transform transform active:scale-95"
           >
             <UserIcon className="w-3.5 h-3.5 text-purple-200" />
-            <span>تسجيل الدخول / حساب جديد</span>
+            <span>تسجيل الدخول / حساب جديد (Sign in / Sign up)</span>
           </button>
         )}
       </div>

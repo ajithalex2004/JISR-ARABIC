@@ -307,7 +307,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
               className="shrink-0 flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-2xl shadow transition-all"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>اسأل فهيم عن هذا الفصل</span>
+              <span>اسأل فهيم عن هذا الفصل (Ask Fahim about this chapter)</span>
             </button>
           </div>
 

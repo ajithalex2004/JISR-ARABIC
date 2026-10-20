@@ -21,6 +21,7 @@ interface LessonViewerProps {
   onBack: () => void;
   onOpenPaywall: () => void;
   onOpenReader?: (page?: number) => void;
+  backLabel?: string;
 }
 
 const CHAPTER_1_PAGES = [
@@ -53,7 +54,8 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   activeChild,
   onBack,
   onOpenPaywall,
-  onOpenReader
+  onOpenReader,
+  backLabel = 'Back to Catalogue'
 }) => {
   const [data, setData] = useState<{ lesson: any; content: LessonPackage; version_id?: string } | null>(null);
   const [activeTab, setActiveTab] = useState<FeatureTab>('vocab');
@@ -298,7 +300,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
           className="btn-secondary text-xs flex items-center gap-1 font-bold"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Catalogue</span>
+          <span>{backLabel}</span>
         </button>
 
         <div className="text-center">

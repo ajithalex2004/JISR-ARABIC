@@ -1,21 +1,27 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { DEMO_SENTENCES, MARQUEE_WORDS } from './content';
 
 type Speed = 1 | 0.6;
+type AudioModule = typeof import('../../services/audio');
 
-/** Speak with the app's own audio engine (cloud voice, browser voice as fallback). Loaded on
- *  first tap so the landing bundle stays small. */
-async function speak(text: string, speed: Speed) {
-  try {
-    const { audioManager } = await import('../../services/audio');
-    audioManager.playArabic(text, { speed, repeats: 1 });
-  } catch {
-    if ('speechSynthesis' in window) {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ar-SA'; u.rate = speed;
-      window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
-    }
+// The app's own audio engine (cloud voice, browser voice as fallback), loaded after the page so the
+// landing bundle stays small. It must be loaded before the tap: phones only allow sound started
+// during the tap itself, and waiting for the download would end the tap.
+let audioModule: AudioModule | null = null;
+const loadAudio = () => import('../../services/audio').then((m) => { audioModule = m; return m; });
+
+function speak(text: string, speed: Speed) {
+  if (audioModule) {
+    audioModule.audioManager.playArabic(text, { speed, repeats: 1 });
+    return;
   }
+  // Not loaded yet (very first tap on a slow connection): the device voice, started within the tap.
+  if ('speechSynthesis' in window) {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ar-SA'; u.rate = speed;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }
+  loadAudio().catch(() => {});
 }
 
 export function WordDemo() {
@@ -23,6 +29,7 @@ export function WordDemo() {
   const [wordIdx, setWordIdx] = useState(0);
   const [speed, setSpeed] = useState<Speed>(1);
   const [touched, setTouched] = useState(false);
+  useEffect(() => { loadAudio().catch(() => {}); }, []);
   const sentence = DEMO_SENTENCES[sentenceIdx];
   const word = sentence.words[wordIdx];
 

@@ -11,11 +11,18 @@ export interface PlaybackState {
 }
 
 export type PlaybackSpeed = 1.0 | 0.6 | 0.3;
+
+// A tenth of a second of silence, played on the first tap to unlock audio on phones.
+const SILENT_WAV = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
 export type RepeatCount = 1 | 2 | 3;
 
 class AudioManager {
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private currentAudio: HTMLAudioElement | null = null;
+  // One player reused for every clip: phone browsers (iPhone Safari above all) only let a page play
+  // sound on an element first started during a tap, and the clip arrives after the tap is over.
+  private player: HTMLAudioElement | null = null;
+  private unlocked = false;
   private isPlaying: boolean = false;
   private pendingRepeats: number = 0;
   private currentText: string = "";
@@ -53,6 +60,35 @@ class AudioManager {
       const saudi = this.availableVoices.find(v => /ar[-_]SA/i.test(v.lang));
       const uae = this.availableVoices.find(v => /ar[-_]AE/i.test(v.lang));
       this.selectedVoice = googleAr || saudi || uae || this.availableVoices[0];
+    }
+  }
+
+  private ensurePlayer(): HTMLAudioElement {
+    if (!this.player) {
+      this.player = new Audio();
+      this.player.preload = 'auto';
+    }
+    return this.player;
+  }
+
+  /**
+   * Call synchronously inside a tap or click handler, before anything is awaited: starts the shared
+   * player (and the device voice) with silence so phones allow the real clip to play when it arrives.
+   * playArabic() does this itself, so callers only need it when they await before playArabic().
+   */
+  public unlock() {
+    if (this.unlocked || typeof window === 'undefined') return;
+    this.unlocked = true;
+    const player = this.ensurePlayer();
+    player.src = SILENT_WAV;
+    // An AbortError only means the real clip took over the player, which is still unlocked.
+    player.play().catch((e) => { if (e?.name !== 'AbortError') this.unlocked = false; });
+    if ('speechSynthesis' in window) {
+      try {
+        const primer = new SpeechSynthesisUtterance(' ');
+        primer.volume = 0;
+        window.speechSynthesis.speak(primer);
+      } catch (e) {}
     }
   }
 
@@ -129,7 +165,8 @@ class AudioManager {
       try {
         this.currentAudio.pause();
         this.currentAudio.currentTime = 0;
-        this.currentAudio.src = '';
+        // The shared player keeps its source: clearing it would fire a late error on the next clip.
+        if (this.currentAudio !== this.player) this.currentAudio.src = '';
       } catch (e) {
         // Ignore audio pause errors
       }
@@ -163,6 +200,8 @@ class AudioManager {
 
     // Stop any currently playing audio completely
     this.stop();
+    // Still inside the tap here (nothing awaited yet): unlock playback for the clip fetched below.
+    this.unlock();
 
     const playbackId = this.activePlaybackId;
     const speed = options?.speed ?? this.speed;
@@ -197,8 +236,10 @@ class AudioManager {
           const fullAudioUrl = metadata.audio_url.startsWith('http')
             ? metadata.audio_url
             : `${API_BASE}${metadata.audio_url}`;
-          const audio = new Audio(fullAudioUrl);
+          const audio = this.ensurePlayer();
+          audio.src = fullAudioUrl;
           this.currentAudio = audio;
+          audio.defaultPlaybackRate = speed;
           audio.playbackRate = speed;
 
           audio.onended = () => {

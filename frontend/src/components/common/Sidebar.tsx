@@ -173,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="text-xl font-bold font-arabic text-[#10B981]">جِــسْـــر</span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium tracking-wide">
-                UAE Arabic Platform
+                CBSE Arabic Platform
                 <span lang="ar" style={{ textAlign: 'left' }} className="block font-arabic text-[13px] text-slate-600 font-semibold">مِنْهَاجُ اللُّغَةِ العَرَبِيَّةِ</span>
               </p>
             </div>

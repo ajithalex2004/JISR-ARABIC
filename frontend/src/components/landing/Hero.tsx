@@ -107,14 +107,12 @@ export function Hero({ onEnter, signedIn = false }: { onEnter: (i: EnterIntent) 
             </a>
           </div>
           <ul className="jl-proof jl-rise" style={{ ['--d' as string]: 4 }} aria-label="At a glance">
-            <li><strong>Chapter 1</strong> free every term</li>
-            <li><strong>$10</strong> a term</li>
             <li><strong>Any</strong> phone, tablet or laptop</li>
           </ul>
         </div>
         <div className="jl-hero__art"><BridgeArt /></div>
       </div>
-      <a href="#demo" className="jl-scrollcue" aria-label="Scroll to the live demo"><span /></a>
+      <a href="#demo" className="jl-scrollcue" aria-label="Scroll down to the live demo"><span /><em className="jl-scrollcue__label">Scroll down</em></a>
     </section>
   );
 }

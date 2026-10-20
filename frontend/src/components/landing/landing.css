@@ -191,7 +191,13 @@
   position: absolute; left: 50%; bottom: 28px; width: 28px; height: 46px; margin-left: -14px;
   border: 1.5px solid rgba(245, 239, 230, 0.4);
 }
-.jl-scrollcue span { position: absolute; left: 50%; top: 9px; width: 3px; height: 8px; margin-left: -1.5px; background: var(--gold); animation: jl-cue 1.8s var(--ease) infinite; }
+.jl-scrollcue__label {
+  position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%);
+  white-space: nowrap; font-style: normal; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(245, 239, 230, 0.75);
+}
+.jl-scrollcue:hover .jl-scrollcue__label { color: var(--gold); }
+.jl-scrollcue > span { position: absolute; left: 50%; top: 9px; width: 3px; height: 8px; margin-left: -1.5px; background: var(--gold); animation: jl-cue 1.8s var(--ease) infinite; }
 
 /* Hero entrance: plays on load (independent of the scroll observer). */
 .jl-rise { animation: jl-rise 1s var(--ease) both; animation-delay: calc(var(--d, 0) * 110ms + 80ms); }

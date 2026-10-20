@@ -12,6 +12,8 @@ import { WordMatchReview } from './components/admin/WordMatchReview';
 import { AuthModal } from './components/auth/AuthModal';
 import { PaywallModal } from './components/payment/PaywallModal';
 import { AskFahimModal } from './components/ai/AskFahimModal';
+import { ArabicSetupModal } from './components/onboarding/ArabicSetupModal';
+import { OPEN_ARABIC_SETUP_EVENT, shouldOfferArabicSetup } from './services/arabicSetup';
 import { OnboardingWizardModal } from './components/onboarding/OnboardingWizardModal';
 import { SocraticLearnStudio } from './components/learning/SocraticLearnStudio';
 import { MindmapsViewer } from './components/learning/MindmapsViewer';
@@ -127,6 +129,17 @@ export function App() {
       setAppGrade(activeChild.default_grade);
     }
   }, [activeChild?.default_grade, user?.role]);
+
+  // First sign-in on this device: check it can type and speak Arabic (Profile reopens it).
+  const [isArabicSetupOpen, setIsArabicSetupOpen] = useState<boolean>(false);
+  useEffect(() => {
+    if (user && shouldOfferArabicSetup()) setIsArabicSetupOpen(true);
+  }, [user?.id]);
+  useEffect(() => {
+    const open = () => setIsArabicSetupOpen(true);
+    window.addEventListener(OPEN_ARABIC_SETUP_EVENT, open);
+    return () => window.removeEventListener(OPEN_ARABIC_SETUP_EVENT, open);
+  }, []);
 
   // Arriving from the landing page's "Start free" / "Sign in" (/?auth=signup|login).
   useEffect(() => {
@@ -487,6 +500,8 @@ export function App() {
           setCurrentView('catalogue');
         }}
       />
+
+      <ArabicSetupModal isOpen={isArabicSetupOpen && !isAuthOpen && !isOnboardingOpen} onClose={() => setIsArabicSetupOpen(false)} />
 
       <AskFahimModal
         isOpen={isAskFahimOpen}

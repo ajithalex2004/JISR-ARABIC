@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   User, MessageSquare, TrendingUp, ShoppingBag, Globe, GraduationCap,
-  MessageCircle, LogOut, Trash2, ChevronLeft, Plus, Sparkles, Award, Wallet
+  MessageCircle, LogOut, Trash2, ChevronLeft, Plus, Sparkles, Award, Wallet, Keyboard
 } from 'lucide-react';
+import { OPEN_ARABIC_SETUP_EVENT } from '../../services/arabicSetup';
 import { User as UserType, ChildProfile } from '../../types';
 import { api } from '../../services/api';
 
@@ -110,6 +111,25 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   تقدمي (My Progress)
                 </div>
                 <div className="text-xs text-slate-400">سجل الإتقان ونقاط الضعف والقوة (Mastery & knowledge heatmap)</div>
+              </div>
+            </div>
+            <ChevronLeft className="w-5 h-5 text-slate-400 group-hover:text-[#6C5CE7] transition-transform group-hover:-translate-x-1" />
+          </button>
+
+          {/* Arabic keyboard & voice on this device */}
+          <button
+            onClick={() => window.dispatchEvent(new Event(OPEN_ARABIC_SETUP_EVENT))}
+            className="w-full p-4 flex items-center justify-between hover:bg-purple-50/50 transition-colors text-right group"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                <Keyboard className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-slate-800 font-arabic group-hover:text-[#6C5CE7] transition-colors">
+                  لوحة المفاتيح والصوت العربي (Arabic keyboard & voice)
+                </div>
+                <div className="text-xs text-slate-400">تجهيز العربية على هذا الجهاز (Set up Arabic on this device)</div>
               </div>
             </div>
             <ChevronLeft className="w-5 h-5 text-slate-400 group-hover:text-[#6C5CE7] transition-transform group-hover:-translate-x-1" />

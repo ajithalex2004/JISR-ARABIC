@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend.config import content_root
 from backend.models import BookEdition, Lesson, LessonVersion, ScannedPage
+from backend.modules.curriculum.page_ocr import FRAGMENTED_STATUS
 
 GRADES = range(1, 13)
 TERMS = (1, 2, 3)
@@ -50,7 +51,7 @@ def content_progress(db: Session) -> Dict[str, Any]:
         entry = pages.setdefault(book, {"read": 0, "failed": 0})
         if status in READ_STATUSES:
             entry["read"] += count
-        elif status == "extraction_failed":
+        elif status in ("extraction_failed", FRAGMENTED_STATUS):  # text split into letters: read again
             entry["failed"] += count
 
     # Latest state of each lesson: published if any version is live, in review if a draft awaits approval.

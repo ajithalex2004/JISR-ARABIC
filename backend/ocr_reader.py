@@ -1381,7 +1381,9 @@ def get_page_ocr_data(pdf_page: int, edition_id: str | None = None) -> Dict[str,
             if edition_id:
                 q = q.filter(ScannedPage.book_edition_id == edition_id)
             sp = q.first()
-            if sp and sp.ocr_text_ar and sp.review_status != "automatic_unverified":
+            from backend.modules.curriculum.page_ocr import readable_scan
+            # Text split into letters is never shown: the hand-checked page or the image stands in.
+            if readable_scan(sp) and sp.review_status != "automatic_unverified":
                 from backend.modules.curriculum.authoring import _clean_ocr_paragraphs, translate_paragraphs
                 paras = _clean_ocr_paragraphs(sp.ocr_text_ar, sp.printed_page)
                 paras_en = translate_paragraphs(paras)

@@ -98,8 +98,9 @@ export const TextbookPdfLibrary: React.FC = () => {
     pdf_filename: `Grade${selectedGrade}_Vol${selectedTerm}.pdf`
   };
 
-  // Pages whose Arabic text was read (from the PDF, by OCR, or curated); failed pages don't count.
-  const readablePages = pages.filter((p) => p.review_status !== 'extraction_failed' && p.ocr_text_ar).length;
+  // Pages whose Arabic text was read (from the PDF, by OCR, or curated); failed pages and text
+  // split into letters (hidden from learners until the page is read again) don't count.
+  const readablePages = pages.filter((p) => !['extraction_failed', 'text_fragmented'].includes(p.review_status) && p.ocr_text_ar).length;
 
   const currentPage = pages[currentPageIndex] || {
     pdf_page: 1,
@@ -441,6 +442,12 @@ export const TextbookPdfLibrary: React.FC = () => {
                   دقة النص: {(currentPage.confidence * 100).toFixed(0)}%
                 </span>
               </div>
+
+              {currentPage.review_status === 'text_fragmented' && (
+                <div className="text-xs font-bold text-red-800 bg-red-50 border border-red-300 px-2 py-1">
+                  Text split into letters: hidden from students. Read the book's pages again in Admin › Content.
+                </div>
+              )}
 
               <div
                 dir="rtl"

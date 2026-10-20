@@ -20,6 +20,7 @@ ARABIC_RE = re.compile(r"[\u0600-\u06ff]")
 
 def get_quality_report(*, db: Session):
     """Run deterministic pre-publication checks over OCR pages and lesson packages."""
+    from backend.modules.curriculum.page_ocr import is_fragmented, short_word_share
     issues = []
     pages_checked = 0
     lessons_checked = 0
@@ -38,6 +39,9 @@ def get_quality_report(*, db: Session):
             previous = page.pdf_page
             if not (page.ocr_text_ar or "").strip() or not ARABIC_RE.search(page.ocr_text_ar or ""):
                 issues.append({"type": "missing_arabic", "edition_id": edition, "pdf_page": page.pdf_page})
+            elif is_fragmented(page.ocr_text_ar):
+                issues.append({"type": "fragmented_text", "edition_id": edition, "pdf_page": page.pdf_page,
+                               "short_word_share": round(short_word_share(page.ocr_text_ar), 2)})
             if page.review_status != "reviewed":
                 issues.append({"type": "unreviewed_ocr", "edition_id": edition, "pdf_page": page.pdf_page, "review_status": page.review_status})
 
@@ -444,7 +448,8 @@ def _get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | No
         if edition_id:
             q = q.filter(ScannedPage.book_edition_id == edition_id)
         page_obj = q.first()
-        if page_obj:
+        from backend.modules.curriculum.page_ocr import readable_scan
+        if readable_scan(page_obj):
             # Calibrate printed page number
             calc_printed = page_obj.printed_page or pdf_page
 
@@ -553,6 +558,7 @@ def get_textbook_info(edition_id: str, db: Session):
 def get_textbook_pages(edition_id: str, db: Session):
     """Fetch all indexed pages with OCR text preview, English translation, and image references for a specific textbook edition."""
     from backend.models import ScannedPage
+    from backend.modules.curriculum.page_ocr import FRAGMENTED_STATUS, readable_scan
     is_gr8 = bool("gr8" in edition_id.lower() or "grade8" in edition_id.lower())
     is_gr7 = bool("gr7" in edition_id.lower() or "grade7" in edition_id.lower())
     is_gr6 = bool("gr6" in edition_id.lower() or "grade6" in edition_id.lower())
@@ -602,7 +608,8 @@ def get_textbook_pages(edition_id: str, db: Session):
                 "ocr_text_ar": ocr_text,
                 "translation_en": trans_en,
                 "confidence": p.confidence or 0.95,
-                "review_status": p.review_status,
+                # Learners never see text split into letters; admins see why (read the book again).
+                "review_status": p.review_status if readable_scan(p) or not p.ocr_text_ar else FRAGMENTED_STATUS,
                 "image_url": f"/api/admin/page-image/{p.pdf_page}?edition_id={edition_id}"
             })
 

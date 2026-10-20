@@ -209,6 +209,7 @@ class TestAccessControl(unittest.TestCase):
             "/api/payments/prices", "/api/modules/mindmaps",
             "/api/curriculum/textbook-info/{edition_id}",
             "/api/curriculum/word-gloss",  # rate-limited and cached in main.py: it calls the AI model
+            "/api/curriculum/word-glosses",  # rate-limited like word-gloss: one AI call per sentence, cached
             "/api/curriculum/root-family",  # rate-limited like word-gloss; AI only for catalogue roots
             "/api/curriculum/alignments",  # rate-limited like word-gloss; AI only for catalogue sentences
         }

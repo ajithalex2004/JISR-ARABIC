@@ -9,7 +9,9 @@ from backend.modules.curriculum import glossary
 
 class TestWordGloss(unittest.TestCase):
     def setUp(self):
+        from backend import redis_client
         glossary._cache.clear()
+        redis_client._fallback_cache.clear()
 
     def _gemini(self, text):
         client = MagicMock()
@@ -57,6 +59,44 @@ class TestWordGloss(unittest.TestCase):
         with patch.object(glossary, "gloss_word", return_value=None):
             res = TestClient(app).get("/api/curriculum/word-gloss", params={"word": "توفير"})
         self.assertIsNone(res.json()["translation"])
+
+    def test_batch_glosses_a_sentence_with_one_ai_call(self):
+        sentence = "ذهب الطلاب بسرعة إلى حديقتنا"
+        p, client = self._gemini('{"glosses": [{"n": 1, "translation": "quickly", "part_of_speech": "adverb"},'
+                                 ' {"n": 2, "translation": "our garden", "part_of_speech": "noun"}]}')
+        with p:
+            result = glossary.gloss_words(["بِسُرْعَةٍ", "حَدِيقَتِنَا", "hello"], sentence)
+        client.models.generate_content.assert_called_once()
+        self.assertEqual(result["بِسُرْعَةٍ"]["translation"], "quickly")
+        self.assertEqual(result["حَدِيقَتِنَا"]["part_of_speech"], "noun")
+        self.assertNotIn("hello", result)
+        # The single-word lookup a tap makes for the same sentence is now answered from the cache.
+        with patch("backend.modules.tutoring.assistant._get_gemini_client", return_value=None):
+            self.assertEqual(glossary.gloss_word("بِسُرْعَةٍ", sentence)["translation"], "quickly")
+
+    def test_batch_survives_a_restart_through_the_shared_cache(self):
+        p, _ = self._gemini('{"glosses": [{"n": 1, "translation": "quickly", "part_of_speech": "adverb"}]}')
+        with p:
+            glossary.gloss_words(["بِسُرْعَةٍ"], "ذهب بسرعة")
+        glossary._cache.clear()  # a new server process
+        with patch("backend.modules.tutoring.assistant._get_gemini_client", return_value=None), \
+             patch.object(glossary, "_google_word_translation", return_value=None):
+            self.assertEqual(glossary.gloss_word("بِسُرْعَةٍ", "ذهب بسرعة")["translation"], "quickly")
+
+    def test_batch_falls_back_to_machine_translation_for_words_the_ai_skips(self):
+        p, _ = self._gemini('{"glosses": [{"n": 1, "translation": "quickly"}, {"n": 9, "translation": "x"}]}')
+        with p, patch.object(glossary, "_google_word_translation", return_value="Garden"):
+            result = glossary.gloss_words(["بِسُرْعَةٍ", "حَدِيقَة"], "")
+        self.assertEqual((result["بِسُرْعَةٍ"]["source"], result["حَدِيقَة"]["translation"]),
+                         ("gemini", "Garden"))
+
+    def test_batch_endpoint(self):
+        with patch.object(glossary, "gloss_words", return_value={
+                "بِسُرْعَةٍ": {"translation": "quickly", "part_of_speech": "adverb", "source": "gemini"}, "x": None}):
+            res = TestClient(app).post("/api/curriculum/word-glosses", json={"words": ["بِسُرْعَةٍ", "x"], "context": "s"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["glosses"], {"بِسُرْعَةٍ": {"translation": "quickly", "part_of_speech": "adverb"}, "x": None})
+        self.assertEqual(TestClient(app).post("/api/curriculum/word-glosses", json={"words": []}).status_code, 422)
 
 
 if __name__ == "__main__":

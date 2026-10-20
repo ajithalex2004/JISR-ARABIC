@@ -3795,14 +3795,35 @@ export function getWordTranslation(rawWord: string, depth = 0): WordDefinition {
 
 const glossCache = new Map<string, Promise<WordDefinition | null>>();
 
+const glossWord = (rawWord: string) => rawWord.replace(/[؟!\.,،؛:\'\"()[\]\-—/\\«»<>]/g, '').trim();
+const glossContext = (context: string) => context.replace(/\s+/g, ' ').trim().slice(0, 300);
+const glossKey = (word: string, ctx: string) => `${word}\u0000${ctx}`;
+
+function toDefinition(data: any): WordDefinition | null {
+  const translation = typeof data?.translation === 'string' ? data.translation.trim() : '';
+  if (!translation || hasArabicLetters(translation)) return null;
+  return { translation, partOfSpeech: data.part_of_speech || undefined } as WordDefinition;
+}
+
+function remember(key: string, request: Promise<WordDefinition | null>) {
+  glossCache.set(key, request);
+  // Don't pin network failures for the whole session; a later hover can retry.
+  request.then((def) => { if (!def) setTimeout(() => glossCache.delete(key), 30000); });
+}
+
+/** Whether a server meaning for this word in this passage is already fetched or on its way. */
+export function isGlossRequested(rawWord: string, context = ''): boolean {
+  return glossCache.has(glossKey(glossWord(rawWord), glossContext(context)));
+}
+
 /**
  * Looks up a word the local dictionary does not cover via the backend, which uses the
  * surrounding sentence for a context-aware meaning. Results (including misses) are cached.
  */
 export function fetchWordGloss(rawWord: string, context = ''): Promise<WordDefinition | null> {
-  const word = rawWord.replace(/[؟!\.,،؛:\'\"()[\]\-—/\\«»<>]/g, '').trim();
-  const ctx = context.replace(/\s+/g, ' ').trim().slice(0, 300);
-  const key = `${word}\u0000${ctx}`;
+  const word = glossWord(rawWord);
+  const ctx = glossContext(context);
+  const key = glossKey(word, ctx);
   const cached = glossCache.get(key);
   if (cached) return cached;
 
@@ -3811,14 +3832,36 @@ export function fetchWordGloss(rawWord: string, context = ''): Promise<WordDefin
   if (ctx) url.searchParams.set('context', ctx);
   const request = fetch(url.toString())
     .then((res) => (res.ok ? res.json() : null))
-    .then((data) => {
-      const translation = typeof data?.translation === 'string' ? data.translation.trim() : '';
-      if (!translation || hasArabicLetters(translation)) return null;
-      return { translation, partOfSpeech: data.part_of_speech || undefined } as WordDefinition;
-    })
+    .then(toDefinition)
     .catch(() => null);
-  glossCache.set(key, request);
-  // Don't pin network failures for the whole session; a later hover can retry.
-  request.then((def) => { if (!def) setTimeout(() => glossCache.delete(key), 30000); });
+  remember(key, request);
   return request;
+}
+
+/**
+ * Fetches, in one request per 40 words, the meanings of every word of a passage the local
+ * dictionary does not cover, so a tooltip opens with its meaning instead of waiting on the server.
+ */
+export function prefetchWordGlosses(rawWords: string[], context = ''): void {
+  const ctx = glossContext(context);
+  const words = Array.from(new Set(rawWords.map(glossWord))).filter((word) =>
+    word && hasArabicLetters(word) && !glossCache.has(glossKey(word, ctx)) && !getWordTranslation(word).translation);
+  for (let i = 0; i < words.length; i += 40) {
+    const batch = words.slice(i, i + 40);
+    const response = fetch(createApiUrl('/api/curriculum/word-glosses').toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ words: batch, context: ctx }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => (data?.glosses && typeof data.glosses === 'object' ? data.glosses : {}))
+      .catch(() => ({} as Record<string, unknown>));
+    for (const word of batch) {
+      const key = glossKey(word, ctx);
+      const request = response.then((glosses: Record<string, unknown>) => toDefinition(glosses[word]));
+      glossCache.set(key, request);
+      // A word the batch couldn't answer is asked again on its own when the student taps it.
+      request.then((def) => { if (!def && glossCache.get(key) === request) glossCache.delete(key); });
+    }
+  }
 }

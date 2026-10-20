@@ -720,5 +720,10 @@ class SentencePair(BaseModel):
     en: str = Field(..., min_length=1, max_length=600)
 
 
+class WordGlossesRequest(BaseModel):
+    words: list[str] = Field(..., min_length=1, max_length=40)
+    context: str = Field('', max_length=600)
+
+
 class AlignmentRequest(BaseModel):
     pairs: list[SentencePair] = Field(..., min_length=1, max_length=40)

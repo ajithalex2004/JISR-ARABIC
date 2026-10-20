@@ -99,5 +99,22 @@ class TestTextbookOcr(unittest.TestCase):
             self.assertEqual([p.pdf_page for p in db.query(ScannedPage).all()], [2])
 
 
+    def test_page_count_comes_from_the_pdf_and_pages_past_its_end_are_dropped(self):
+        with self.session() as db:
+            db.get(BookEdition, "moe_gr1_vol1_2023").total_pages = 120  # a guess made before the upload
+            # Left over from an earlier, longer PDF of the same book.
+            db.add(ScannedPage(book_edition_id="moe_gr1_vol1_2023", pdf_page=5, printed_page=5, ocr_text_ar="قديم",
+                               review_status="ai_ocr"))
+            db.commit()
+        old_image = self.content / "pdf_pages_sample" / "moe_gr1_vol1_2023" / "page_5.png"
+        old_image.parent.mkdir(parents=True)
+        old_image.write_bytes(b"png")
+        self._run("نَصٌّ عَرَبِيٌّ طَوِيلٌ لِلصَّفْحَةِ مِنَ الْكِتَابِ", page_count=None)
+        with self.session() as db:
+            self.assertEqual(db.get(BookEdition, "moe_gr1_vol1_2023").total_pages, 2)
+            self.assertEqual(sorted(p.pdf_page for p in db.query(ScannedPage).all()), [1, 2])
+        self.assertFalse(old_image.exists())
+
+
 if __name__ == "__main__":
     unittest.main()

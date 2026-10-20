@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/common/Header';
 import { Sidebar } from './components/common/Sidebar';
 import { AudioToolbar } from './components/audio/AudioToolbar';
@@ -141,6 +141,16 @@ export function App() {
     return () => window.removeEventListener(OPEN_ARABIC_SETUP_EVENT, open);
   }, []);
 
+  // Opened from the landing page: closing it without signing in goes back there, not into the app.
+  const authFromLanding = useRef(false);
+  const closeAuth = () => {
+    setIsAuthOpen(false);
+    if (authFromLanding.current) {
+      authFromLanding.current = false;
+      goToWelcome();
+    }
+  };
+
   // Arriving from the landing page's "Start free" / "Sign in" (/?auth=signup|login).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -150,6 +160,7 @@ export function App() {
     window.history.replaceState(null, '', window.location.pathname + (params.toString() ? `?${params}` : '') + window.location.hash);
     // Opens even when already signed in, so a parent can switch accounts (e.g. to a student PIN).
     setAuthModalMode(intent === 'signup' ? 'signup_email' : 'login');
+    authFromLanding.current = true;
     setIsAuthOpen(true);
   }, []);
 
@@ -180,6 +191,7 @@ export function App() {
   }, []);
 
   const handleAuthSuccess = (auth: AuthResponse, _isNewSignup?: boolean) => {
+    authFromLanding.current = false;
     setUser(auth.user);
     const chosenChild = auth.active_child || (auth.user.children && auth.user.children.length > 0 ? auth.user.children[0] : null);
     if (chosenChild) {
@@ -459,7 +471,7 @@ export function App() {
       <AuthModal
         isOpen={isAuthOpen}
         initialMode={authModalMode}
-        onClose={() => setIsAuthOpen(false)}
+        onClose={closeAuth}
         onSuccess={handleAuthSuccess}
         onChildAdded={handleChildAdded}
       />

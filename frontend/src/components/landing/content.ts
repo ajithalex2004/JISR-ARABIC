@@ -65,7 +65,7 @@ export const PLANS = [
   {
     id: 'free', name: 'Try it', price: 'Free', cadence: 'Chapter 1 of each term',
     points: ['The full reader with line-by-line English', 'Native audio for every word', 'No card needed'],
-    cta: 'Try a free lesson', intent: 'explore' as const,
+    cta: 'Try a free lesson', intent: 'signup' as const,
   },
   {
     id: 'term', name: 'One term', price: '$10', cadence: 'per term · per child',

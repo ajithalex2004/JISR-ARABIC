@@ -26,8 +26,23 @@ _PROMPT = (
 )
 
 
+_MARKS = re.compile(r"[\u0610-\u061A\u064B-\u065F\u0670\u0640]")
+_WORD = re.compile(r"[\u0600-\u06FF]+")
+_LETTER = re.compile(r"[\u0621-\u064A]")
+
+
+def looks_fragmented(text: str) -> bool:
+    """Whether Arabic text is broken into loose letters, as some PDF text layers come out
+    ("ت داَ رْ فُ ري"). On real textbook pages at most about a quarter of the words have one or
+    two letters; on broken ones most do."""
+    words = [w for w in (_MARKS.sub("", t) for t in _WORD.findall(text or "")) if _LETTER.search(w)]
+    if len(words) < 20:
+        return False
+    return sum(1 for w in words if len(w) <= 2) / len(words) > 0.5
+
+
 def has_usable_text(text: str) -> bool:
-    return len(_ARABIC.findall(text or "")) >= MIN_ARABIC_CHARS
+    return len(_ARABIC.findall(text or "")) >= MIN_ARABIC_CHARS and not looks_fragmented(text)
 
 
 def transcribe_page_image(png_bytes: bytes, *, page_label: str = "") -> Optional[str]:

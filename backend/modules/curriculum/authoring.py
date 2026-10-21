@@ -20,6 +20,7 @@ ARABIC_RE = re.compile(r"[\u0600-\u06ff]")
 
 def get_quality_report(*, db: Session):
     """Run deterministic pre-publication checks over OCR pages and lesson packages."""
+    from backend.modules.curriculum.page_ocr import looks_fragmented
     issues = []
     pages_checked = 0
     lessons_checked = 0
@@ -38,6 +39,8 @@ def get_quality_report(*, db: Session):
             previous = page.pdf_page
             if not (page.ocr_text_ar or "").strip() or not ARABIC_RE.search(page.ocr_text_ar or ""):
                 issues.append({"type": "missing_arabic", "edition_id": edition, "pdf_page": page.pdf_page})
+            elif looks_fragmented(page.ocr_text_ar):
+                issues.append({"type": "fragmented_text", "edition_id": edition, "pdf_page": page.pdf_page})
             if page.review_status != "reviewed":
                 issues.append({"type": "unreviewed_ocr", "edition_id": edition, "pdf_page": page.pdf_page, "review_status": page.review_status})
 

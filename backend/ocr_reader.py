@@ -1381,7 +1381,9 @@ def get_page_ocr_data(pdf_page: int, edition_id: str | None = None) -> Dict[str,
             if edition_id:
                 q = q.filter(ScannedPage.book_edition_id == edition_id)
             sp = q.first()
-            if sp and sp.ocr_text_ar and sp.review_status != "automatic_unverified":
+            from backend.modules.curriculum.page_ocr import looks_fragmented
+            # A record whose text came out as loose letters is skipped for the page's other sources.
+            if sp and sp.ocr_text_ar and sp.review_status != "automatic_unverified" and not looks_fragmented(sp.ocr_text_ar):
                 from backend.modules.curriculum.authoring import _clean_ocr_paragraphs, translate_paragraphs
                 paras = _clean_ocr_paragraphs(sp.ocr_text_ar, sp.printed_page)
                 paras_en = translate_paragraphs(paras)

@@ -233,7 +233,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
             reader = None
 
     from backend.ai.errors import AIUnavailable
-    from backend.modules.curriculum.page_ocr import has_usable_text, transcribe_page_image
+    from backend.modules.curriculum.page_ocr import has_usable_text, looks_fragmented, transcribe_page_image
 
     pdfium_doc = None
     try:
@@ -299,7 +299,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
                     ScannedPage.pdf_page == p_num,
                     ScannedPage.review_status.in_(_READ_STATUSES),
                 ).first()
-                if done:
+                if done and not looks_fragmented(done.ocr_text_ar or ""):
                     update_progress(min(98, int(15 + ((i + 1) / max(1, page_count)) * 80)))
                     continue
 

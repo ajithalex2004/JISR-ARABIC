@@ -44,6 +44,7 @@ def _stage(cell: Dict[str, Any]) -> str:
 
 def content_progress(db: Session) -> Dict[str, Any]:
     editions = {e.id: e for e in db.query(BookEdition).all()}
+    from backend.modules.curriculum.page_ocr import looks_fragmented
     pages: Dict[str, Dict[str, int]] = {}
     for book, status, count in (db.query(ScannedPage.book_edition_id, ScannedPage.review_status, func.count())
                                 .group_by(ScannedPage.book_edition_id, ScannedPage.review_status)):
@@ -52,6 +53,12 @@ def content_progress(db: Session) -> Dict[str, Any]:
             entry["read"] += count
         elif status == "extraction_failed":
             entry["failed"] += count
+    # Pages whose text came out as loose letters count as failed, so "Read pages" reads them again.
+    for book, text in db.query(ScannedPage.book_edition_id, ScannedPage.ocr_text_ar).filter(
+            ScannedPage.review_status.in_(READ_STATUSES)):
+        if looks_fragmented(text or ""):
+            pages[book]["read"] -= 1
+            pages[book]["failed"] += 1
 
     # Latest state of each lesson: published if any version is live, in review if a draft awaits approval.
     version_states: Dict[str, set] = {}

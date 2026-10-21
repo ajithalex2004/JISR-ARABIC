@@ -186,7 +186,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <ChevronDown className="w-3 h-3 text-slate-400" />
                   </div>
                   <div className="text-[#6C5CE7] text-[10px] font-semibold">
-                    {user?.role === 'admin' ? `مسؤول (الصف ${selectedGrade || 5})` : activeChild ? `الصف ${selectedGrade || activeChild.default_grade || 5} · Grade ${selectedGrade || activeChild.default_grade || 5}` : user.role}
+                    {user?.role === 'admin' ? `Admin · Class ${selectedGrade || 5}` : activeChild ? `الصف ${selectedGrade || activeChild.default_grade || 5} · Grade ${selectedGrade || activeChild.default_grade || 5}` : user.role}
                   </div>
                 </div>
               </button>
@@ -197,7 +197,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-3xl border border-purple-100 shadow-2xl z-50 p-3 space-y-2">
                   <div className="px-3 py-2 bg-purple-50/60 rounded-2xl mb-1">
                     <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">
-                      الحساب الحالي
+                      Current account · <span className="font-arabic normal-case">الحساب الحالي</span>
                     </span>
                     <div className="text-xs font-bold text-slate-900 truncate">{user.email}</div>
                   </div>
@@ -207,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {allChildren.length > 0 && (
                     <div className="mb-2">
                       <div className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1 flex items-center justify-between">
-                        <span>ملفات الطلاب</span>
+                        <span>Student profiles · <span className="font-arabic normal-case">ملفات الطلاب</span></span>
                         <Users className="w-3 h-3 text-slate-400" />
                       </div>
                       <div className="space-y-1">
@@ -233,7 +233,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 <div className="truncate">
                                   <div className="font-semibold truncate">{child.name}</div>
                                   <div className="text-[10px] text-slate-400">
-                                    الصف {child.default_grade} · رمز: <span className="font-mono">{child.has_pin ? '••••' : '—'}</span>
+                                    Class {child.default_grade} · PIN: <span className="font-mono">{child.has_pin ? '••••' : '—'}</span>
                                   </div>
                                 </div>
                               </div>
@@ -253,9 +253,9 @@ export const Header: React.FC<HeaderProps> = ({
                       setIsDropdownOpen(false);
                       onSelectView('profile');
                     }}
-                    className="w-full text-right p-2 text-xs text-[#58337E] hover:bg-purple-50 rounded-2xl flex items-center justify-between font-bold transition-colors"
+                    className="w-full text-left p-2 text-xs text-[#58337E] hover:bg-purple-50 rounded-2xl flex items-center justify-between font-bold transition-colors"
                   >
-                    <span>عرض الملف الشخصي والإعدادات</span>
+                    <span className="text-left">View profile &amp; settings <span style={{ textAlign: 'left' }} className="block font-arabic font-semibold text-[11px] opacity-80">عرض الملف الشخصي والإعدادات</span></span>
                     <UserIcon className="w-4 h-4 text-[#6C5CE7]" />
                   </button>}
 
@@ -268,9 +268,9 @@ export const Header: React.FC<HeaderProps> = ({
                         setIsDropdownOpen(false);
                         if (onOpenAddChild) onOpenAddChild();
                       }}
-                      className="w-full text-right p-2 text-xs text-[#6C5CE7] hover:bg-purple-50 rounded-2xl flex items-center justify-between font-bold transition-colors border border-dashed border-purple-200"
+                      className="w-full text-left p-2 text-xs text-[#6C5CE7] hover:bg-purple-50 rounded-2xl flex items-center justify-between font-bold transition-colors border border-dashed border-purple-200"
                     >
-                      <span>+ إضافة ملف طالب جديد</span>
+                      <span className="text-left">+ Add new student <span style={{ textAlign: 'left' }} className="block font-arabic font-semibold text-[11px] opacity-80">إضافة ملف طالب جديد</span></span>
                       <Plus className="w-4 h-4 text-[#6C5CE7]" />
                     </button>
                   )}
@@ -284,9 +284,9 @@ export const Header: React.FC<HeaderProps> = ({
                         setIsDropdownOpen(false);
                         onLogout();
                       }}
-                      className="w-full text-right p-2 text-xs text-red-600 hover:bg-red-50 rounded-2xl flex items-center justify-between font-bold transition-colors"
+                      className="w-full text-left p-2 text-xs text-red-600 hover:bg-red-50 rounded-2xl flex items-center justify-between font-bold transition-colors"
                     >
-                      <span>تسجيل الخروج</span>
+                      <span className="text-left">Sign out <span style={{ textAlign: 'left' }} className="block font-arabic font-semibold text-[11px] opacity-80">تسجيل الخروج</span></span>
                       <LogOut className="w-4 h-4 text-red-500" />
                     </button>
                   </div>

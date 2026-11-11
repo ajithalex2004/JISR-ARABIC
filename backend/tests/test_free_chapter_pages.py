@@ -9,7 +9,10 @@ from sqlalchemy.pool import StaticPool
 
 from backend.database import Base, get_db
 from backend.main import app
-from backend.models import Lesson, Unit, User, UserSession
+import hashlib
+import json
+
+from backend.models import Lesson, LessonVersion, Unit, User, UserSession
 from backend.modules.curriculum.access import free_chapter_pages
 from backend.redis_client import _fallback_rate_buckets
 from backend.security import create_access_token, decode_access_token, hash_password
@@ -32,6 +35,11 @@ class TestFreeChapterPages(unittest.TestCase):
                        start_page=7, is_first_chapter_demo=True),
                 Lesson(id="c2", unit_id="u1", grade=5, term=1, lesson_order=2, title_ar="د", title_en="L2", start_page=17),
             ])
+            db.commit()
+            # A real published lesson (lessons without one are "Coming soon" and don't open).
+            content = json.dumps({"title_ar": "د", "vocabulary_cards": [{"word_ar": "كُرَةٌ"}]}, ensure_ascii=False)
+            db.add(LessonVersion(id="v1", lesson_id="c1", content_json=content,
+                                 content_hash=hashlib.sha256(content.encode("utf-8")).hexdigest()))
             db.commit()
 
         def scoped_db():

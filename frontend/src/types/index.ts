@@ -122,8 +122,10 @@ export interface LessonSummary {
   start_page: number;
   is_first_chapter_demo: boolean;
   is_accessible: boolean;
-  status: 'published' | 'draft' | 'content_pending' | 'awaiting_textbook';
+  status: 'published' | 'draft' | 'content_pending' | 'awaiting_textbook' | 'coming_soon';
   lock_reason?: string;
+  /** No real content yet (placeholder): learners see "Coming soon"; admins can still open it. */
+  coming_soon?: boolean;
 }
 
 export interface TermSummary {
@@ -137,6 +139,8 @@ export interface TermSummary {
   demo_chapter_name?: string;
   status: string;
   status_label_en?: string;
+  /** No real lessons in this term yet: shown as "Coming soon" and not sold. */
+  coming_soon?: boolean;
 }
 
 export interface VocabularyCard {

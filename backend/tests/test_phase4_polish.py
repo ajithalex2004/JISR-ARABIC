@@ -31,6 +31,7 @@ from backend.modules.progress.reporting import send_weekly_digest
 from backend.schemas import SendWeeklyDigestRequest
 from backend.modules.identity.access import Principal
 from backend.errors import ApplicationError
+from backend.tests.content_helpers import publish_real_content
 
 
 class TestPhase4Polish(unittest.TestCase):
@@ -43,6 +44,7 @@ class TestPhase4Polish(unittest.TestCase):
         self.Session = sessionmaker(bind=self.engine)
         Base.metadata.create_all(self.engine)
         self.db = self.Session()
+        publish_real_content(self.db, "lesson_01_ball_games")
 
         def override_db():
             db = self.Session()

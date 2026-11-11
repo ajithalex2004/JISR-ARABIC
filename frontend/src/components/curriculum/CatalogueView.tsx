@@ -126,6 +126,9 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
 
   const currentTermInfo = terms.find((t) => t.term === selectedTerm);
   const isTermUnlocked = currentTermInfo?.is_unlocked ?? true;
+  // Placeholder lessons (no real content yet): learners see them as "Coming soon".
+  const isComingSoon = (l: LessonSummary) => l.status === 'coming_soon';
+  const termComingSoon = lessons.length > 0 && lessons.every(isComingSoon);
 
   // Group lessons dynamically by Unit
   const unitsMap = lessons.reduce((acc, lesson) => {
@@ -143,7 +146,8 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
   }, {} as Record<string, { id: string; title_ar: string; title_en: string; lessons: typeof lessons }>);
 
   const unitsList = Object.values(unitsMap);
-  const firstLesson = lessons[0];
+  // The featured chapter is the first one a learner can actually open.
+  const firstLesson = lessons.find((l) => !isComingSoon(l));
   const isBallGames = firstLesson?.title_ar === 'أَلْعَابُ الكُرَةِ';
 
   return (
@@ -255,7 +259,8 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
           ].map((t) => {
             const isSelected = selectedTerm === t.term;
             const termData = terms.find((item) => item.term === t.term);
-            const isLocked = termData && !termData.is_unlocked;
+            const isLocked = termData && !termData.is_unlocked && termData.status !== 'coming_soon';
+            const isSoon = termData?.status === 'coming_soon';
             return (
               <button
                 key={t.term}
@@ -271,6 +276,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
                 <span>{t.labelAr}</span>
                 <span className="text-[10px] opacity-75 font-normal">({t.labelEn})</span>
                 {isLocked && <Lock className="w-3 h-3 text-amber-300 ml-0.5" />}
+                {isSoon && <span className="text-[9px] font-bold bg-white/25 rounded px-1 ml-0.5">Soon</span>}
               </button>
             );
           })}
@@ -279,7 +285,9 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
         <div className="text-xs text-slate-500 font-medium px-2 flex items-center gap-2">
           <span>{lessons.length} فصول معتمدة في هذا الفصل</span>
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          <span className="text-emerald-700 font-bold">{isTermUnlocked ? 'متاح بالكامل' : 'يحتاج اشتراك'}</span>
+          <span className="text-emerald-700 font-bold">
+            {termComingSoon ? 'قريباً (Coming soon)' : isTermUnlocked ? 'متاح بالكامل' : 'يحتاج اشتراك'}
+          </span>
         </div>
       </div>
 
@@ -382,6 +390,20 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
           </button>
         </div>
       </div>
+
+      {termComingSoon && (
+        <div className="bg-amber-50 border-2 border-amber-200 rounded-3xl p-6 flex items-start gap-4">
+          <Clock className="w-8 h-8 text-amber-600 shrink-0" />
+          <div>
+            <h3 className="text-lg font-black text-amber-900">
+              قريباً · Grade {selectedGrade} Term {selectedTerm} is coming soon
+            </h3>
+            <p className="text-sm text-amber-800 mt-1">
+              We're preparing these lessons from the textbook. You can see the chapters below; each one opens here as soon as it's ready.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 2. FEATURED SHOWCASE: COMPLETE CHAPTER 1 */}
       {firstLesson && (
@@ -583,7 +605,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
               {lessons.length} Complete Curriculum Lessons from the Official UAE Student Textbook: <span className="font-bold text-[#58337e]">العَرَبِيَّةُ تَجْمَعُنَا</span>
             </p>
           </div>
-          {!isTermUnlocked && (
+          {!isTermUnlocked && !termComingSoon && (
             <button
               onClick={() => onOpenPaywall(selectedGrade, selectedTerm, currentTermInfo?.demo_chapter_name)}
               className="text-xs font-bold text-[#6c5ce7] hover:text-[#5b47fb] flex items-center gap-1.5 bg-purple-50 px-3.5 py-2 rounded-xl transition-colors border border-purple-200 self-start sm:self-auto"
@@ -606,8 +628,9 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {unitGroup.lessons.map((lesson) => {
-                const isDemo = lesson.is_first_chapter_demo;
-                const canPlay = isDemo || isTermUnlocked;
+                const soon = isComingSoon(lesson);
+                const isDemo = lesson.is_first_chapter_demo && !soon;
+                const canPlay = !soon && (lesson.is_accessible ?? (isDemo || isTermUnlocked));
 
                 return (
                   <div
@@ -621,7 +644,16 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
                         <span className="text-[11px] font-bold text-slate-500">
                           الدرس {lesson.lesson_order} (L{lesson.lesson_order}) · ص {lesson.start_page} (p.{lesson.start_page})
                         </span>
-                        {isDemo ? (
+                        {lesson.coming_soon && !soon ? (
+                          // Admins open placeholders to work on them; learners see "Coming soon".
+                          <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            Placeholder · learners see Coming soon
+                          </span>
+                        ) : soon ? (
+                          <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5" /> قريباً (Coming soon)
+                          </span>
+                        ) : isDemo ? (
                           <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
                             متاح مجاناً (Free Access)
                           </span>
@@ -649,7 +681,12 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
                     </div>
 
                     <div className="pt-3 mt-3 border-t border-slate-100">
-                      {canPlay ? (
+                      {soon ? (
+                        <div className="w-full bg-amber-50 text-amber-700 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 border border-amber-200">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>قريباً · Coming soon</span>
+                        </div>
+                      ) : canPlay ? (
                         <button
                           onClick={() => onSelectLesson(lesson.id)}
                           className={`w-full py-2 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${

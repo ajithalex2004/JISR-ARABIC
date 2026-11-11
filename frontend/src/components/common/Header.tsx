@@ -87,8 +87,13 @@ export const Header: React.FC<HeaderProps> = ({
             <TashkeelToggleSwitch compact />
             <ArabEnglishToggleSwitch compact />
           </div>
-          <span className="text-purple-300/40">|</span>
-          <span className="text-purple-200 text-[11px] font-semibold">Fahim v2.4</span>
+          {/* Build tag: for admins checking which version is live, not for learners. */}
+          {user?.role === 'admin' && (
+            <>
+              <span className="text-purple-300/40">|</span>
+              <span className="text-purple-200 text-[11px] font-semibold">Fahim v2.4</span>
+            </>
+          )}
         </div>
       </div>
 

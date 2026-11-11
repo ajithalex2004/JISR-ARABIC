@@ -402,6 +402,7 @@ export function App() {
             activeChild={activeChild}
             onBack={() => (isGuest ? goToWelcome() : setCurrentView('catalogue'))}
             backLabel={isGuest ? 'Back to home' : undefined}
+            showContentVersion={user?.role === 'admin'}
             onOpenPaywall={() => (isGuest ? promptSignup() : handleOpenPaywall(appGrade))}
             onOpenReader={(page) => {
               if (isGuest) return promptSignup();

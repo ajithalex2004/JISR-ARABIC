@@ -62,7 +62,7 @@ def get_quality_report(*, db: Session):
             # they are presented as publishable content.
             activity_ids = set()
             duplicate_ids = set()
-            def inspect_node(node, path="content"):
+            def inspect_node(node, path="content", in_options=False):
                 if isinstance(node, dict):
                     for key, value in node.items():
                         field_path = f"{path}.{key}"
@@ -70,14 +70,16 @@ def get_quality_report(*, db: Session):
                             issues.append({"type": "missing_arabic_field", "lesson_id": lesson.id, "field": field_path})
                         if key.endswith("_en") and isinstance(value, str) and not value.strip():
                             issues.append({"type": "missing_english_field", "lesson_id": lesson.id, "field": field_path})
-                        if key == "id" and isinstance(value, str):
+                        # Option ids (a, b, opt_a ...) only need to be unique within their question,
+                        # as in the publish check below; counting them reported every lesson.
+                        if key == "id" and isinstance(value, str) and not in_options:
                             if value in activity_ids:
                                 duplicate_ids.add(value)
                             activity_ids.add(value)
-                        inspect_node(value, field_path)
+                        inspect_node(value, field_path, in_options or key == "options")
                 elif isinstance(node, list):
                     for index, value in enumerate(node):
-                        inspect_node(value, f"{path}[{index}]")
+                        inspect_node(value, f"{path}[{index}]", in_options)
             inspect_node(content)
             for duplicate_id in sorted(duplicate_ids):
                 issues.append({"type": "duplicate_activity_id", "lesson_id": lesson.id, "activity_id": duplicate_id})
@@ -727,6 +729,9 @@ def add_lesson(req: AdminAddLessonRequest, *, db: Session, actor=None):
     # 2. Check existing lesson
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:
+        # One free chapter per class: the first Term 1 lesson, and only if the class has none yet
+        # (lessons imported one by one each used to arrive as lesson_order 1 and all became free).
+        has_free = db.query(Lesson).filter(Lesson.grade == req.grade, Lesson.is_first_chapter_demo == True).first()  # noqa: E712
         lesson = Lesson(
             id=lesson_id,
             unit_id=req.unit_id,
@@ -736,7 +741,7 @@ def add_lesson(req: AdminAddLessonRequest, *, db: Session, actor=None):
             title_ar=req.title_ar,
             title_en=req.title_en,
             start_page=req.start_page,
-            is_first_chapter_demo=(req.lesson_order == 1),
+            is_first_chapter_demo=(req.lesson_order == 1 and req.term == 1 and has_free is None),
             status="content_pending"
         )
         db.add(lesson)

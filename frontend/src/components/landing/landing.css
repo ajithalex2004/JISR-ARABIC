@@ -591,3 +591,102 @@
   .jl-hero { padding: 100px 0 48px; }
   .jl-hero__grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ---------- Rest of the page: white, SID360 sizes ----------
+   Measured on sid360.com at 1440px: sections alternate white / very light grey with 60px top and
+   bottom padding, 1160px content, 42px section headings (650-750 weight), 11px kickers, 15-18px
+   body text, rounded cards, pill buttons, a dark rounded closing card and a light footer. */
+.jl { background: #fff; }
+.jl-wrap { max-width: calc(1160px + 2 * var(--gutter)); }
+.jl-section { padding-block: 60px; }
+.jl-head { margin-bottom: 40px; }
+.jl-h2 { font-size: clamp(1.9rem, 2.9vw, 2.625rem); line-height: 1.14; letter-spacing: -0.035em; font-weight: 750; max-width: 20ch; }
+.jl-h3 { font-size: clamp(1.15rem, 1.6vw, 1.375rem); }
+.jl-kicker, .jl-eyebrow { font-size: 11px; letter-spacing: 0.15em; margin-bottom: 14px; }
+.jl-sub { font-size: 17px; line-height: 1.6; margin-top: 14px; }
+.jl-btn { border-radius: 999px; min-height: 48px; font-size: 15px; }
+.jl-btn--sm { min-height: 42px; }
+.jl-chip { border-radius: 999px; }
+
+/* Section backgrounds, alternating like SID360 */
+.jl-demo, .jl-features, .jl-parents, .jl-faq { background: #fff; color: var(--text); }
+.jl-story, .jl-curriculum, .jl-pricing { background: #f7f6fa; }
+
+/* Strip under the hero (was a dark band) */
+.jl-marquee { background: #fff; color: var(--text); border-block: 1px solid var(--line); padding: 16px 0; }
+.jl-marquee__item { border-right-color: var(--line); padding-inline: 26px; }
+.jl-marquee__item span { color: var(--plum); font-size: 1.5rem; }
+.jl-marquee__item small { color: var(--muted); font-size: 0.75rem; }
+
+/* Cards: rounded and light */
+.jl-demo__stage, .jl-page, .jl-dash, .jl-grades ul { border-radius: 20px; overflow: hidden; }
+.jl-plan { border-radius: 20px; } /* no overflow clip: the SAVE badge sits on its top edge */
+.jl-demo__stage, .jl-page, .jl-dash { box-shadow: 0 24px 48px -32px rgba(20, 11, 34, 0.28); }
+.jl-demo__card { border-radius: 18px; }
+.jl-play { border-radius: 50%; }
+.jl-word { border-radius: 12px; }
+.jl-step { min-height: 36vh; }
+.jl-step__body { font-size: 1rem; }
+
+/* Features: white cards instead of the dark grid */
+.jl-features .jl-kicker { color: var(--plum); }
+.jl-features .jl-h2 em { background: linear-gradient(100deg, var(--plum), var(--violet) 55%, var(--emerald)); -webkit-background-clip: text; background-clip: text; }
+.jl-bento { gap: 16px; border: 0; }
+.jl-tile { background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 20px; min-height: 280px; padding: 26px 24px 24px; }
+.jl-tile:hover { background: #faf9fc; }
+.jl-tile--mastery { min-height: 220px; }
+.jl-tile p { color: var(--muted); font-size: 15px; }
+.jl-tile__ar { color: rgba(88, 51, 126, 0.45); }
+.jl-tile:hover .jl-tile__ar { color: var(--plum); }
+.jl-art { color: var(--plum); }
+.jl-art--chat span { background: rgba(20, 11, 34, 0.06); border-radius: 12px; }
+.jl-art--chat .is-reply { background: var(--plum); color: #fff; }
+.jl-art--chat b { color: var(--plum); }
+.jl-art--map path { stroke: rgba(88, 51, 126, 0.35); }
+.jl-art--map circle { fill: #fff; }
+.jl-art--pages i { box-shadow: 0 10px 20px -12px rgba(20, 11, 34, 0.45); }
+.jl-art--timer span { color: var(--text); }
+.jl-art--timer small { color: var(--muted); }
+.jl-art--heat i { border-radius: 3px; }
+
+/* Curriculum, parents, pricing, FAQ */
+.jl-grade { background: #fff; min-height: 96px; }
+.jl-grade strong { font-size: 1.9rem; }
+.jl-stats dd { font-size: clamp(1.5rem, 2.4vw, 2rem); }
+.jl-points li { border-top-width: 1px; border-top-color: var(--line); }
+.jl-points p { font-size: 15px; }
+.jl-plan { padding: 30px 26px 26px; }
+.jl-plan__badge { border-radius: 999px; }
+.jl-plan__price strong { font-size: clamp(2.4rem, 3.6vw, 3rem); }
+.jl-plan__points li { font-size: 15px; }
+.jl-fineprint { font-size: 0.85rem; margin-top: 28px; }
+.jl-qa summary { font-size: clamp(1rem, 1.3vw, 1.0625rem); padding: 20px 0; }
+.jl-qa p { font-size: 15px; }
+
+/* Closing call to action: a dark rounded card on white, like SID360's */
+.jl-final { background: #fff; padding: 24px 0 72px; }
+.jl-final > .jl-wrap {
+  width: calc(100% - 2 * var(--gutter)); max-width: 1160px; padding: clamp(40px, 6vw, 72px) clamp(24px, 5vw, 64px);
+  border-radius: 24px; color: var(--paper);
+  background: radial-gradient(700px 360px at 50% 120%, rgba(139, 92, 246, 0.5), transparent 70%), var(--ink);
+}
+.jl-final__ar { font-size: clamp(2.6rem, 6vw, 4.5rem); }
+.jl-final .jl-display--sm { font-size: clamp(2.2rem, 3.6vw, 3rem); line-height: 1.1; letter-spacing: -0.035em; }
+.jl-final .jl-lede { font-size: 17px; }
+.jl-final .jl-btn--ghost:hover { --bg: rgba(245, 239, 230, 0.1); }
+
+/* Footer: light, like SID360's */
+.jl-footer { background: #f7f6fa; color: var(--muted); border-top: 1px solid var(--line); padding: 48px 0 24px; font-size: 0.9rem; }
+.jl-footer .jl-logo { color: var(--text); }
+.jl-footer .jl-logo__ar { color: var(--plum); }
+.jl-footer a:hover, .jl-footer .jl-linkbtn:hover { color: var(--text); }
+.jl-footer__base { border-top-color: var(--line); margin-top: 36px; }
+.jl-footer__base [lang='ar'] { color: var(--plum); }
+
+@media (max-width: 1080px) {
+  .jl-bento { gap: 12px; }
+}
+@media (max-width: 640px) {
+  .jl-section { padding-block: 48px; }
+  .jl-final > .jl-wrap { border-radius: 18px; }
+}

@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#140B22;--gold:#E0B04B}
+*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;font-family:Inter}
+.frame{width:1080px;height:1920px;position:relative;overflow:hidden}
+/* worksheet scene: 1296x2304 so it can zoom to 1080x1920 */
+#sheet{width:1296px;height:2304px;background:radial-gradient(1200px 900px at 30% 20%,#a8784c,#6e4a2c 60%,#4a3020);position:relative;overflow:hidden}
+.paper{position:absolute;left:150px;top:330px;width:1000px;height:1420px;background:#fdfbf6;transform:rotate(-3deg);
+  box-shadow:0 40px 80px rgba(0,0,0,.45);padding:90px 80px;direction:rtl;font-family:Amiri;color:#1d1d2b}
+.paper:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(transparent 0 118px,#c9d6ea 118px 120px);opacity:.55;pointer-events:none}
+.paper h2{font-size:66px;text-align:center;margin-bottom:34px;color:#7a2b2b}
+.paper p{font-size:56px;line-height:120px;position:relative}
+.paper .blank{display:inline-block;width:260px;border-bottom:4px dotted #555;height:50px;vertical-align:middle;margin:0 10px}
+.paper .n{color:#7a2b2b;font-weight:700;margin-left:16px}
+.pencil{position:absolute;left:820px;top:1660px;width:620px;height:46px;transform:rotate(-28deg);border-radius:6px;
+  background:linear-gradient(#f6c344,#e9a91b 60%,#c98a10);box-shadow:0 18px 30px rgba(0,0,0,.4)}
+.pencil:before{content:"";position:absolute;left:-70px;top:0;border-right:70px solid #f1d3a6;border-top:23px solid transparent;border-bottom:23px solid transparent}
+.pencil:after{content:"";position:absolute;right:-50px;top:0;width:50px;height:46px;background:#e7a0a0;border-left:14px solid #c0c0c0;border-radius:0 8px 8px 0}
+/* captions */
+.hook{position:absolute;left:90px;right:150px;top:390px;display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.hook span{background:#fff;color:var(--ink);font-weight:800;font-size:58px;line-height:1.12;letter-spacing:-.03em;padding:12px 24px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.hook span:first-child{border-left:12px solid var(--gold)}
+.sub{position:absolute;left:80px;right:150px;bottom:500px;display:flex;justify-content:center}
+.sub div{background:rgba(20,11,34,.88);color:#fff;font-weight:800;font-size:50px;line-height:1.18;letter-spacing:-.02em;text-align:center;padding:16px 30px;border-radius:18px;box-shadow:0 12px 34px rgba(0,0,0,.35)}
+.sub b{color:var(--gold)}
+</style></head><body>
+<section id="sheet"><div class="paper">
+<h2>تَمْرِينٌ: أَكْمِلِ الجُمَلَ</h2>
+<p><span class="n">١.</span> كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ <span class="blank"></span> الأُولَى.</p>
+<p><span class="n">٢.</span> هُنَاكَ أَنْوَاعٌ مُخْتَلِفَةٌ لِلْكُرَةِ فِي <span class="blank"></span>.</p>
+<p><span class="n">٣.</span> الكِتَابُ صَغِيرُ <span class="blank"></span>.</p>
+<p><span class="n">٤.</span> الكُرَةُ مُسْتَدِيرَةُ <span class="blank"></span>.</p>
+<p><span class="n">٥.</span> مَا لُعْبَتُكَ المُفَضَّلَةُ؟ وَلِمَاذَا؟</p>
+<p><span class="blank" style="width:760px"></span></p>
+<p><span class="blank" style="width:760px"></span></p>
+</div><div class="pencil"></div></section>
+<div id="caps"></div>
+<script>
+const C=[
+ ['hook1','hook',['Arabic homework again?','Oh no…']],
+ ['hook2','hook',['8 years in the UAE.','Still a challenge.']],
+ ['s3','sub','Then I discovered <b>JISR Arabic</b>'],
+ ['s3b','sub','Designed around<br><b>CBSE Arabic</b> lessons'],
+ ['s4','sub','Tap any word for its<br><b>English meaning</b>'],
+ ['s5','sub','It reads words aloud.<br>You can <b>slow it down</b>'],
+ ['s6','sub','Every sentence comes with an<br><b>English translation</b>'],
+ ['s7','sub','No more daily<br><b>homework struggle</b>'],
+];
+const caps=document.getElementById('caps');
+for(const [id,kind,t] of C){const s=document.createElement('section');s.className='frame';s.id=id;
+ s.innerHTML= kind==='hook'?`<div class="hook">${t.map(x=>`<span>${x}</span>`).join('')}</div>`:`<div class="sub"><div>${t}</div></div>`;caps.appendChild(s);}
+</script></body></html>

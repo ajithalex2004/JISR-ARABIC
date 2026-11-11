@@ -296,6 +296,35 @@ def get_lesson_content(lesson_id: str, child_id: Optional[str]=None, is_reviewer
     return pkg_copy
 
 
+def lesson_journey(child_id: str, grade: int, term: int, *, db: Session):
+    """Per-lesson activity of one learner in a class and term: questions answered, how many
+    right, and when they last practised. Only what the learner actually did; no estimates."""
+    from sqlalchemy import case, func
+    from backend.models import LearnerAttempt
+    lesson_ids = [row[0] for row in db.query(Lesson.id).filter(Lesson.grade == grade, Lesson.term == term).all()]
+    rows = []
+    if lesson_ids:
+        rows = db.query(
+            LearnerAttempt.lesson_id,
+            func.count(LearnerAttempt.id),
+            func.sum(case((LearnerAttempt.is_correct == True, 1), else_=0)),  # noqa: E712
+            func.max(LearnerAttempt.created_at),
+        ).filter(
+            LearnerAttempt.child_id == child_id,
+            LearnerAttempt.lesson_id.in_(lesson_ids),
+        ).group_by(LearnerAttempt.lesson_id).all()
+    return {
+        "child_id": child_id,
+        "grade": grade,
+        "term": term,
+        "lessons": [
+            {"lesson_id": lesson_id, "attempts": int(count or 0), "correct": int(correct or 0),
+             "last_activity": last.isoformat() if last else None}
+            for lesson_id, count, correct, last in rows
+        ],
+    }
+
+
 def lesson_chapter_pages(lesson, db) -> list:
     if not isinstance(lesson, Lesson):
         return []

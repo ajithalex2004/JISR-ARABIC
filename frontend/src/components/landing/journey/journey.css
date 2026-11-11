@@ -1,0 +1,168 @@
+/* The journey phone in the welcome-page hero. Scoped under .jp; uses the landing's .jl tokens.
+   The phone's screen is the app's light paper look, inside the dark hero. */
+
+.jp { display: flex; flex-direction: column; align-items: center; gap: 18px; min-width: 0; }
+.jp-phone {
+  width: min(360px, 100%); aspect-ratio: 360 / 740; background: #0b0614; border-radius: 52px; padding: 13px;
+  box-shadow: 0 0 0 1px rgba(245, 239, 230, 0.12), 0 40px 90px -30px rgba(139, 92, 246, 0.55);
+}
+.jp-screen {
+  position: relative; height: 100%; background: var(--paper); color: var(--text); border-radius: 40px; overflow: hidden;
+  display: flex; flex-direction: column; font-size: 0.875rem; line-height: 1.45;
+}
+.jp-screen [lang='ar'] { font-family: var(--font-ar); unicode-bidi: isolate; }
+.jp-status { display: flex; justify-content: space-between; align-items: center; padding: 13px 26px 5px; font-size: 0.8rem; font-weight: 600; }
+.jp-island { width: 92px; height: 25px; background: #0b0614; border-radius: 20px; }
+.jp-bars { display: flex; gap: 2px; align-items: flex-end; height: 12px; }
+.jp-bars i { width: 3px; background: var(--text); border-radius: 1px; }
+.jp-bars i:nth-child(1) { height: 4px; } .jp-bars i:nth-child(2) { height: 7px; } .jp-bars i:nth-child(3) { height: 10px; } .jp-bars i:nth-child(4) { height: 12px; }
+
+.jp-head { display: flex; align-items: center; gap: 10px; padding: 6px 16px 11px; border-bottom: 1px solid var(--line); }
+.jp-avatar { width: 34px; height: 34px; border-radius: 11px; background: var(--plum); color: var(--gold); display: grid; place-items: center; font-size: 1.2rem; line-height: 1; flex: none; padding-bottom: 4px; }
+.jp-who { display: grid; line-height: 1.2; min-width: 0; }
+.jp-who strong { font-size: 0.92rem; }
+.jp-who span { font-size: 0.74rem; color: #0b8a5f; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jp-tag { margin-left: auto; font-size: 0.68rem; font-weight: 700; background: rgba(88, 51, 126, 0.1); color: var(--plum); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+
+.jp-views { position: relative; flex: 1; min-height: 0; }
+.jp-view {
+  position: absolute; inset: 0; padding: 12px 15px 15px; display: flex; flex-direction: column; gap: 9px; overflow: hidden;
+  opacity: 0; transform: translateY(10px); visibility: hidden;
+  transition: opacity 350ms var(--ease), transform 350ms var(--ease), visibility 0s 350ms;
+}
+.jp-view.is-active { opacity: 1; transform: none; visibility: visible; transition-delay: 0s; }
+.jp-view h3 { margin: 0; font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; }
+.jp-sub { margin: 0; font-size: 0.74rem; color: var(--muted); display: block; }
+.jp-next { margin-top: auto; display: flex; gap: 8px; padding-top: 6px; }
+.jp-btn { flex: 1; font: 700 0.8rem var(--font); border-radius: 999px; padding: 11px 10px; border: 0; cursor: pointer; }
+.jp-btn--go { background: #0b8a5f; color: #fff; }
+.jp-btn--alt { background: rgba(20, 11, 34, 0.06); color: var(--text); }
+.jp-link { background: none; border: 0; padding: 0 0 0 6px; font: 700 0.78rem var(--font); color: var(--plum); text-decoration: underline; cursor: pointer; }
+.jp-msg { background: rgba(20, 11, 34, 0.05); border-radius: 14px; padding: 10px 12px; font-size: 0.8rem; color: var(--text); }
+.jp-msg--soon { background: rgba(224, 176, 75, 0.18); }
+.jp-loading { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); background: var(--ink); color: var(--paper); font-size: 0.72rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; }
+
+/* 1 Journey */
+.jp-titlerow { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.jp-titlerow > div:first-child { min-width: 0; }
+.jp-terms { display: flex; gap: 2px; background: rgba(20, 11, 34, 0.06); border-radius: 10px; padding: 2px; flex: none; }
+.jp-terms button { font: 700 0.7rem var(--font); border: 0; background: none; color: var(--muted); border-radius: 8px; padding: 4px 7px; cursor: pointer; }
+.jp-terms button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+.jp-path { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-y: auto; min-height: 0; scrollbar-width: thin; }
+.jp-path li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 9px; align-items: center; padding: 5px 0; position: relative; }
+.jp-path li + li::before { content: ''; position: absolute; left: 16px; top: -5px; height: 10px; width: 2px; background: var(--line); }
+.jp-node { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.8rem; background: #fff; color: var(--muted); border: 2px solid var(--line); }
+.jp-path li.is-now .jp-node { background: #0b8a5f; color: #fff; border-color: #0b8a5f; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18); }
+.jp-path li.is-done .jp-node { background: rgba(16, 185, 129, 0.14); color: #0b8a5f; border-color: transparent; }
+.jp-path li.is-open .jp-node { color: var(--plum); border-color: rgba(88, 51, 126, 0.35); }
+.jp-path li.is-soon, .jp-path li.is-locked { opacity: 0.72; }
+.jp-t { min-width: 0; display: grid; }
+.jp-t [lang='ar'] { font-size: 0.98rem; font-weight: 700; line-height: 1.55; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jp-t small { font-size: 0.7rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jp-state { font-size: 0.64rem; font-weight: 700; border-radius: 999px; padding: 2px 8px; white-space: nowrap; color: var(--muted); }
+.jp-state--now { background: rgba(16, 185, 129, 0.15); color: #0b8a5f; }
+.jp-state--done { background: rgba(16, 185, 129, 0.12); color: #0b8a5f; }
+.jp-state--open { background: rgba(88, 51, 126, 0.1); color: var(--plum); }
+.jp-state--soon { background: rgba(224, 176, 75, 0.22); color: #7a5410; }
+.jp-path--skeleton li { grid-template-columns: 34px 1fr; }
+.jp-bar { height: 12px; border-radius: 6px; background: rgba(20, 11, 34, 0.08); }
+.jp-path--skeleton .jp-node { border-color: transparent; background: rgba(20, 11, 34, 0.08); }
+
+/* 2 Words */
+.jp-word { background: var(--plum); color: #fff; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 2px; }
+.jp-word__ar { font-size: 2rem; font-weight: 700; line-height: 1.6; text-align: right; }
+.jp-word__say { font-size: 1rem; font-weight: 700; color: var(--gold); }
+.jp-word__mean { font-size: 0.85rem; opacity: 0.9; }
+.jp-listen { margin-top: 8px; display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; background: rgba(255, 255, 255, 0.15); border: 0; color: #fff; border-radius: 999px; padding: 7px 14px 7px 7px; font: 700 0.78rem var(--font); cursor: pointer; }
+.jp-listen__play { width: 26px; height: 26px; border-radius: 50%; background: #fff; display: grid; place-items: center; }
+.jp-listen__play svg { width: 11px; height: 11px; fill: var(--plum); }
+.jp-wave { display: flex; gap: 3px; align-items: center; height: 16px; }
+.jp-wave i { width: 3px; height: 30%; border-radius: 2px; background: #fff; }
+.jp-listen.is-playing .jp-wave i { animation: jp-wave 0.9s ease-in-out infinite; }
+.jp-listen.is-playing .jp-wave i:nth-child(2) { animation-delay: 0.1s; } .jp-listen.is-playing .jp-wave i:nth-child(3) { animation-delay: 0.2s; }
+.jp-listen.is-playing .jp-wave i:nth-child(4) { animation-delay: 0.3s; } .jp-listen.is-playing .jp-wave i:nth-child(5) { animation-delay: 0.4s; }
+@keyframes jp-wave { 50% { height: 100%; } }
+.jp-words { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.jp-words button { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 8px 5px; display: grid; gap: 1px; text-align: center; cursor: pointer; color: var(--text); font-family: var(--font); min-width: 0; }
+.jp-words [lang='ar'] { font-size: 0.98rem; font-weight: 700; line-height: 1.6; }
+.jp-words small { font-size: 0.66rem; color: var(--plum); font-weight: 600; overflow-wrap: anywhere; line-height: 1.3; }
+.jp-words .jp-words__mean { color: var(--muted); font-weight: 500; }
+
+/* 3 Read */
+.jp-page { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 12px; display: grid; gap: 6px; }
+.jp-page__pg { font-size: 0.68rem; color: var(--muted); }
+.jp-sentence { display: flex; flex-wrap: wrap; gap: 2px 6px; }
+.jp-tok { display: flex; flex-direction: column; align-items: center; border: 0; background: none; padding: 3px 5px; border-radius: 10px; cursor: pointer; color: var(--text); font-family: var(--font); }
+.jp-tok [lang='ar'] { font-size: 1.22rem; font-weight: 700; line-height: 1.7; }
+.jp-tok small { font-size: 0.64rem; color: var(--plum); font-weight: 600; }
+.jp-tok.is-on { background: rgba(224, 176, 75, 0.22); box-shadow: inset 0 0 0 2px var(--gold); }
+.jp-page__en { margin: 0; font-size: 0.74rem; color: var(--muted); font-style: italic; }
+.jp-gloss { background: var(--ink); color: var(--paper); border-radius: 16px; padding: 11px 13px; display: grid; gap: 1px; }
+.jp-gloss [lang='ar'] { font-size: 1.2rem; font-weight: 700; text-align: right; color: var(--gold); line-height: 1.6; }
+.jp-gloss b { font-size: 0.82rem; }
+.jp-gloss span:last-child { font-size: 0.76rem; color: var(--muted-dark); }
+
+/* 4 Ask Fahim */
+.jp-chat { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; }
+.jp-bubble { border-radius: 18px; padding: 9px 12px; font-size: 0.8rem; line-height: 1.5; max-width: 90%; }
+.jp-bubble [lang='ar'] { font-size: 1rem; font-weight: 700; }
+.jp-bubble--me { align-self: flex-end; background: var(--plum); color: #fff; border-bottom-right-radius: 6px; }
+.jp-bubble--him { align-self: flex-start; background: #fff; border: 1px solid var(--line); border-bottom-left-radius: 6px; }
+.jp-bubble__ar { display: block; margin: 4px 0 2px; text-align: right; line-height: 1.7; }
+.jp-bubble em { display: block; color: var(--muted); font-size: 0.74rem; }
+.jp-typing { display: inline-flex; gap: 4px; padding: 4px 0; }
+.jp-typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: jp-dot 1s infinite; }
+.jp-typing i:nth-child(2) { animation-delay: 0.15s; } .jp-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes jp-dot { 50% { opacity: 0.25; } }
+.jp-note { margin: 0; font-size: 0.68rem; color: var(--muted); }
+
+/* 5 Quick check */
+.jp-q { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 12px; display: grid; gap: 1px; text-align: center; font-size: 0.78rem; color: var(--muted); }
+.jp-q__ar { font-size: 1.7rem; font-weight: 700; color: var(--text); line-height: 1.6; }
+.jp-q small { color: var(--plum); font-weight: 700; }
+.jp-opts { display: grid; gap: 7px; }
+.jp-opt { text-align: left; border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: 9px 13px; font: 600 0.82rem var(--font); color: var(--text); cursor: pointer; }
+.jp-opt.is-right { border-color: #0b8a5f; background: rgba(16, 185, 129, 0.12); }
+.jp-opt.is-wrong { border-color: var(--gold); background: rgba(224, 176, 75, 0.15); }
+.jp-feedback { font-size: 0.78rem; font-weight: 700; color: #0b8a5f; min-height: 1.2em; }
+
+/* 6 Progress */
+.jp-ringrow { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 12px; }
+.jp-ring { width: 72px; height: 72px; flex: none; }
+.jp-ring circle { fill: none; stroke-width: 9; }
+.jp-ring__bg { stroke: var(--line); }
+.jp-ring__fg { stroke: #0b8a5f; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 1s var(--ease); }
+.jp-ring text { font: 700 15px var(--font); fill: var(--text); }
+.jp-ringrow strong { font-size: 0.86rem; display: block; }
+.jp-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.8rem; }
+.jp-steps li { display: flex; align-items: center; gap: 8px; }
+.jp-steps li::before { content: ''; width: 7px; height: 7px; background: var(--gold); flex: none; }
+.jp-steps--done li::before { display: none; }
+.jp-steps i { width: 18px; height: 18px; border-radius: 50%; background: #0b8a5f; color: #fff; font-style: normal; font-size: 0.65rem; display: grid; place-items: center; flex: none; }
+
+/* Controls under the phone */
+.jp-player { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center; color: var(--muted-dark); }
+.jp-dots { display: flex; gap: 8px; align-items: center; }
+.jp-dots button { width: 9px; height: 9px; border-radius: 999px; background: rgba(245, 239, 230, 0.35); border: 0; padding: 0; cursor: pointer; transition: width 300ms var(--ease), background 300ms var(--ease); }
+.jp-dots button[aria-current='step'] { width: 32px; background: var(--gold); }
+.jp-dots button:disabled { opacity: 0.3; cursor: default; }
+.jp-stepname { font-size: 0.85rem; font-weight: 600; min-width: 128px; }
+.jp-pause { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line-dark); background: rgba(245, 239, 230, 0.06); display: grid; place-items: center; cursor: pointer; color: var(--paper); }
+.jp-pause svg { width: 15px; height: 15px; fill: currentColor; }
+
+/* Class picker in the hero copy */
+.jl-classpick { margin-top: 28px; }
+.jl-classpick__label { display: block; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-dark); margin-bottom: 10px; }
+.jl-classpick__row { display: flex; flex-wrap: wrap; gap: 4px; border: 1px solid var(--line-dark); background: rgba(245, 239, 230, 0.04); padding: 5px; border-radius: 16px; width: fit-content; max-width: 100%; }
+.jl-classpick__row button { font: 700 0.9rem var(--font); color: var(--paper); background: none; border: 0; border-radius: 11px; padding: 8px 12px; min-width: 40px; cursor: pointer; }
+.jl-classpick__row button:hover:not([aria-pressed='true']) { background: rgba(245, 239, 230, 0.08); }
+.jl-classpick__row button[aria-pressed='true'] { background: var(--gold); color: var(--ink); }
+.jl-classpick__hint { margin: 8px 0 0; font-size: 0.82rem; color: var(--muted-dark); }
+
+@media (max-width: 960px) {
+  .jl-hero__art .jp { margin-inline: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jp-view, .jp-dots button, .jp-ring__fg { transition: none; }
+  .jp-listen.is-playing .jp-wave i, .jp-typing i { animation: none; }
+}

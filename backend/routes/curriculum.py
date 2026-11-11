@@ -36,12 +36,18 @@ def list_lessons(grade: int=Query(5), term: int=Query(1), child_id: Optional[str
     optional_child(db, actor, child_id)
     return service.list_lessons(grade=grade, term=term, child_id=child_id, db=db, actor=actor)
 
+@router.get('/journey')
+def lesson_journey(child_id: str=Query(...), grade: int=Query(...), term: int=Query(1), db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
+    """A learner's activity on each lesson of a class and term (for the journey on the welcome page)."""
+    require_child(db, actor, child_id, FAMILY_ROLES)
+    return service.lesson_journey(child_id=child_id, grade=grade, term=term, db=db)
+
 @router.get('/lesson/{lesson_id}')
 def get_lesson_content(lesson_id: str, child_id: Optional[str]=Query(None), is_reviewer: bool=Query(False), db: Session=Depends(get_db), actor: Optional[Principal]=Depends(get_optional_user)):
     """
     Get full lesson package.
     Hides assessment answers from client until submission.
-    Enforces the $33 per-term paywall for non-demo chapters unless purchased.
+    Enforces the per-term paywall for non-demo chapters unless purchased.
     """
     return service.get_lesson_content(lesson_id=lesson_id, child_id=child_id, is_reviewer=is_reviewer, db=db, actor=actor)
 

@@ -145,7 +145,9 @@ def list_lessons(grade: int=5, term: int=1, child_id: Optional[str]=None, *, db:
             cached_base = []
             for l in lessons:
                 unit = db.query(Unit).filter(Unit.id == l.unit_id).first()
-                is_demo = (l.is_first_chapter_demo or l.lesson_order == 1) and term == 1
+                # Same rule as opening the lesson (access.py): the flag, not lesson_order 1, which
+                # once made every lesson of a class imported as order 1 look free.
+                is_demo = bool(l.is_first_chapter_demo) and term == 1
                 cached_base.append({
                     "id": l.id,
                     "unit_id": l.unit_id,

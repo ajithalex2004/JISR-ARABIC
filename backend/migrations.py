@@ -158,6 +158,7 @@ def upgrade():
         conn.commit()
     if renumbered or unfreed:
         print(f"Lessons: renumbered {renumbered} by page; {unfreed} no longer marked as a free chapter")
+    print(f"Cleared {refresh_lesson_caches()} cached lesson list(s) and package(s)")
     with engine.connect() as conn:
         seeded = seed_promo_codes(conn)
         conn.commit()
@@ -232,6 +233,17 @@ def repair_lesson_order_and_free_chapters(conn) -> tuple[int, int]:
                 conn.execute(text("UPDATE lessons SET is_first_chapter_demo=:f WHERE id=:id"), {"f": False, "id": lesson.id})
                 unfreed += 1
     return renumbered, unfreed
+
+
+def refresh_lesson_caches() -> int:
+    """Drop cached lesson lists, lesson packages and syllabi; returns how many entries went.
+
+    They are cached for a day, so a data fix made at deploy (such as the lesson repair above)
+    would otherwise reach learners only when the old entries expire. Run on every upgrade,
+    i.e. every API deploy; the entries are rebuilt from the database on first use.
+    """
+    from backend.redis_client import cache_delete_pattern
+    return sum(cache_delete_pattern(p) for p in ("lessons_base:*", "lesson_package:*", "syllabus:*"))
 
 
 def rename_curriculum_streams(conn) -> int:

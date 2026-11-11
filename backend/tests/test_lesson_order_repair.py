@@ -6,7 +6,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.database import Base
-from backend.migrations import repair_lesson_order_and_free_chapters
+from backend.migrations import refresh_lesson_caches, repair_lesson_order_and_free_chapters
+from backend.modules.curriculum.service import list_lessons
+from backend.redis_client import cache_clear, cache_get, cache_set, lesson_package_key
 from backend.models import Lesson, Unit
 
 # Production's Grade 1 Term 1: stored in this order, every one lesson_order 1 and free.
@@ -45,6 +47,32 @@ class TestLessonOrderRepair(unittest.TestCase):
         self.assertEqual(g5, {"g5_a": (1, True), "g5_b": (2, False)})
         with self.engine.connect() as conn:
             self.assertEqual(repair_lesson_order_and_free_chapters(conn), (0, 0))
+
+    def test_deploy_clears_cached_lists_so_a_fix_shows_at_once(self):
+        cache_clear()
+        list_lessons(grade=1, term=1, db=self.db)  # caches the list as it is now: all free
+        cache_set(lesson_package_key("lesson_g1_t1_ch05"), {"stale": True})
+        self.assertIsNotNone(cache_get("lessons_base:1:1"))
+        with self.engine.connect() as conn:
+            repair_lesson_order_and_free_chapters(conn)
+            conn.commit()
+        self.assertGreaterEqual(refresh_lesson_caches(), 2)
+        self.assertIsNone(cache_get("lessons_base:1:1"))
+        self.assertIsNone(cache_get(lesson_package_key("lesson_g1_t1_ch05")))
+        self.db.expire_all()
+        free = [l["id"] for l in list_lessons(grade=1, term=1, db=self.db) if l["is_first_chapter_demo"]]
+        self.assertEqual(free, ["lesson_g1_t1_ch01"])
+
+    def test_list_marks_free_by_the_flag_not_lesson_order_1(self):
+        cache_clear()
+        g5 = {l["id"]: l["is_first_chapter_demo"] for l in list_lessons(grade=5, term=1, db=self.db)}
+        self.assertEqual(g5, {"g5_a": True, "g5_b": False})
+        lesson = self.db.query(Lesson).filter(Lesson.id == "g5_a").one()
+        lesson.is_first_chapter_demo = False  # order 1 alone no longer makes it free
+        self.db.commit()
+        cache_clear()
+        self.assertFalse(any(l["is_first_chapter_demo"] for l in list_lessons(grade=5, term=1, db=self.db)))
+        cache_clear()
 
 
 if __name__ == "__main__":

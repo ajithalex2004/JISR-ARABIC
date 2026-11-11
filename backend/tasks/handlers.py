@@ -233,7 +233,7 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
             reader = None
 
     from backend.ai.errors import AIUnavailable
-    from backend.modules.curriculum.page_ocr import has_usable_text, transcribe_page_image
+    from backend.modules.curriculum.page_ocr import has_usable_text, is_fragmented_text, transcribe_page_image
 
     pdfium_doc = None
     try:
@@ -299,6 +299,9 @@ def handle_process_textbook_ocr(params: Dict[str, Any], update_progress: Callabl
                     ScannedPage.pdf_page == p_num,
                     ScannedPage.review_status.in_(_READ_STATUSES),
                 ).first()
+                # A text layer stored before fragmented text was detected is read again with OCR.
+                if done and done.review_status == "automatic_extracted" and is_fragmented_text(done.ocr_text_ar):
+                    done = None
                 if done:
                     update_progress(min(98, int(15 + ((i + 1) / max(1, page_count)) * 80)))
                     continue

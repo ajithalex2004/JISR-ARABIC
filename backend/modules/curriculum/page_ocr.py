@@ -26,8 +26,25 @@ _PROMPT = (
 )
 
 
+_ARABIC_LETTER = re.compile(r"[ء-ي]")
+
+
+def is_fragmented_text(text: str) -> bool:
+    """True when a PDF text layer has broken vowelled Arabic into one-or-two-letter lines.
+
+    Some Ministry PDFs carry a text layer in which every letter with its tashkeel is its own
+    line ("ت\\nداَ\\nرْ\\nفُ ..."). It has plenty of Arabic characters but no readable words, so
+    it must not be stored as the page's text or shown to learners.
+    """
+    lines = [l for l in (text or "").splitlines() if _ARABIC_LETTER.search(l)]
+    if len(lines) < 8:
+        return False
+    short = sum(1 for l in lines if len(_ARABIC_LETTER.findall(l)) <= 2)
+    return short / len(lines) >= 0.4
+
+
 def has_usable_text(text: str) -> bool:
-    return len(_ARABIC.findall(text or "")) >= MIN_ARABIC_CHARS
+    return len(_ARABIC.findall(text or "")) >= MIN_ARABIC_CHARS and not is_fragmented_text(text)
 
 
 def transcribe_page_image(png_bytes: bytes, *, page_label: str = "") -> Optional[str]:

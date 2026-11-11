@@ -22,6 +22,8 @@ interface LessonViewerProps {
   onOpenPaywall: () => void;
   onOpenReader?: (page?: number) => void;
   backLabel?: string;
+  /** Show the content version tag (admins reviewing drafts). */
+  showContentVersion?: boolean;
 }
 
 /** A sentence-builder tile: the Arabic word with its Arabizi underneath (when Arab-English is on). */
@@ -86,7 +88,8 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   onBack,
   onOpenPaywall,
   onOpenReader,
-  backLabel = 'Back to Catalogue'
+  backLabel = 'Back to Catalogue',
+  showContentVersion = false
 }) => {
   const [data, setData] = useState<{ lesson: any; content: LessonPackage; version_id?: string } | null>(null);
   const [activeTab, setActiveTab] = useState<FeatureTab>('vocab');
@@ -362,9 +365,10 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
 
         <div className="flex flex-wrap items-center justify-center gap-2">
           <span className="bg-emerald-800 text-white text-xs font-bold px-2.5 py-1 uppercase tracking-wider">
-            {data.lesson.is_first_chapter_demo ? 'Interactive Demo Active' : 'Full Term Pack'}
+            {data.lesson.is_first_chapter_demo ? 'Free chapter' : 'Full Term Pack'}
           </span>
-          <span className="text-xs text-slate-500 font-mono">v{content.version}</span>
+          {/* The content version (e.g. vai-draft) helps admins review drafts; learners don't need it. */}
+          {showContentVersion && <span className="text-xs text-slate-500 font-mono">v{content.version}</span>}
         </div>
       </div>
 

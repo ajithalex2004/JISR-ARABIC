@@ -154,6 +154,11 @@ def upgrade():
     if renamed:
         print(f"Renamed the curriculum stream of {renamed} learner profile(s) to CBSE Curriculum")
     with engine.connect() as conn:
+        renumbered, unfreed = repair_lesson_order_and_free_chapters(conn)
+        conn.commit()
+    if renumbered or unfreed:
+        print(f"Lessons: renumbered {renumbered} by page; {unfreed} no longer marked as a free chapter")
+    with engine.connect() as conn:
         seeded = seed_promo_codes(conn)
         conn.commit()
     if seeded:
@@ -186,6 +191,47 @@ STREAM_RENAMES = (
     ("MoE ", "CBSE Curriculum "),
     (" MoE", " CBSE Curriculum"),
 )
+
+
+def repair_lesson_order_and_free_chapters(conn) -> tuple[int, int]:
+    """Renumber lessons that share a lesson_order and keep one free chapter per class.
+
+    Lessons imported one at a time each arrived as lesson_order 1, and lesson_order 1 made a
+    lesson the free chapter, so every Grade 1 Term 1 lesson became free. Only groups that are
+    actually broken are changed: a (grade, term) whose orders repeat is renumbered by start
+    page; a class with more than one free lesson keeps only its first Term 1 lesson free.
+    Returns (lessons renumbered, lessons no longer free).
+    """
+    if "lessons" not in inspect(conn).get_table_names():
+        return 0, 0
+    rows = conn.execute(text(
+        "SELECT id, grade, term, lesson_order, start_page, is_first_chapter_demo FROM lessons")).fetchall()
+    groups = {}
+    for row in rows:
+        groups.setdefault((row.grade, row.term), []).append(row)
+    renumbered = 0
+    for lessons in groups.values():
+        orders = [l.lesson_order for l in lessons]
+        if len(set(orders)) == len(orders):
+            continue
+        for position, lesson in enumerate(sorted(lessons, key=lambda l: (l.start_page or 0, l.id)), start=1):
+            if lesson.lesson_order != position:
+                conn.execute(text("UPDATE lessons SET lesson_order=:o WHERE id=:id"), {"o": position, "id": lesson.id})
+                renumbered += 1
+    unfreed = 0
+    by_grade = {}
+    for row in rows:
+        by_grade.setdefault(row.grade, []).append(row)
+    for lessons in by_grade.values():
+        free = [l for l in lessons if l.is_first_chapter_demo]
+        if len(free) <= 1:
+            continue
+        keep = min(free, key=lambda l: (l.term or 0, l.start_page or 0, l.id))
+        for lesson in free:
+            if lesson.id != keep.id:
+                conn.execute(text("UPDATE lessons SET is_first_chapter_demo=:f WHERE id=:id"), {"f": False, "id": lesson.id})
+                unfreed += 1
+    return renumbered, unfreed
 
 
 def rename_curriculum_streams(conn) -> int:

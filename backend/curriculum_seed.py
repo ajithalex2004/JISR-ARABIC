@@ -581,6 +581,7 @@ def seed_database(db: Session, include_demo_data: bool = True):
         ("unit_05_communication", "moe_gr5_vol3_2023", 5, "التواصل", "Communication"),
         ("unit_06_intelligence", "moe_gr5_vol3_2023", 6, "كلنا أذكياء", "We Are All Intelligent"),
     ]
+    from backend.modules.curriculum.title_tashkeel import vowel_title
     for u_id, ed_id, u_num, ar_title, en_title in units_data:
         unit = db.query(Unit).filter(Unit.id == u_id).first()
         if not unit:
@@ -588,7 +589,7 @@ def seed_database(db: Session, include_demo_data: bool = True):
                 id=u_id,
                 book_edition_id=ed_id,
                 unit_number=u_num,
-                title_ar=ar_title,
+                title_ar=vowel_title(ar_title),
                 title_en=en_title
             )
             db.add(unit)
@@ -636,7 +637,7 @@ def seed_database(db: Session, include_demo_data: bool = True):
                 grade=grade,
                 term=term,
                 lesson_order=order,
-                title_ar=ar,
+                title_ar=vowel_title(ar),
                 title_en=en,
                 start_page=page,
                 is_first_chapter_demo=is_demo,
@@ -649,7 +650,7 @@ def seed_database(db: Session, include_demo_data: bool = True):
             existing.term = term
             existing.lesson_order = order
             existing.status = st
-            existing.title_ar = ar
+            existing.title_ar = vowel_title(ar)
             existing.title_en = en
             existing.start_page = page
             existing.is_first_chapter_demo = is_demo

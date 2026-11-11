@@ -377,7 +377,8 @@ class ArabEnglishHelper {
         outTokens.add(transWord);
       }
 
-      final formattedLine = outTokens.join('');
+      // Words left without a spelling leave no gaps behind.
+      final formattedLine = outTokens.join('').replaceAll(RegExp(r'\s{2,}'), ' ').replaceAllMapped(RegExp(r'\s+([,.;?!])'), (m) => m[1]!).trim();
       resultLines.add('$prefix${_capitalizeFirst(formattedLine)}');
     }
 
@@ -427,9 +428,13 @@ class ArabEnglishHelper {
       return isFirstWord ? _capitalizeFirst(w) : w;
     }
 
+    // Without tashkeel the vowels can only be guessed (المدرسة -> "al-mdrsah"), so a word that has
+    // none and is not in the lists above gets no Arab-English line at all.
+    if (!RegExp(r'[\u064B-\u0652]').hasMatch(rawWord)) return '';
+
     // Letter-by-letter spelling (article, long vowels, ة, shadda, tanween): arab_english_spelling.dart
     String finalWord = spellArabicWord(rawWord);
-    if (finalWord.isEmpty) return rawWord;
+    if (finalWord.isEmpty) return '';
 
     if (isFirstWord) {
       finalWord = _capitalizeFirst(finalWord);

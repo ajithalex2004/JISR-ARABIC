@@ -368,7 +368,8 @@ export class ArabEnglishHelper {
         outTokens.push(transWord);
       }
 
-      const formattedLine = outTokens.join('');
+      // Words left without a spelling leave no gaps behind.
+      const formattedLine = outTokens.join('').replace(/\s{2,}/g, ' ').replace(/\s+([,.;?!])/g, '$1').trim();
       resultLines.push(`${prefix}${this.capitalizeFirst(formattedLine)}`);
     }
 
@@ -432,9 +433,13 @@ export class ArabEnglishHelper {
       return isFirstWord ? this.capitalizeFirst(w) : w;
     }
 
+    // Without tashkeel the vowels can only be guessed (المدرسة -> "al-mdrsah"), so a word that has
+    // none and is not in the lists above gets no Arab-English line at all.
+    if (!/[\u064B-\u0652]/.test(rawWord)) return '';
+
     // Letter-by-letter spelling (article, long vowels, ة, shadda, tanween): arabEnglishSpelling.ts
     let finalWord = spellArabicWord(rawWord);
-    if (!finalWord) return rawWord;
+    if (!finalWord) return '';
 
     if (isFirstWord) {
       finalWord = this.capitalizeFirst(finalWord);

@@ -1,6 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { EnterIntent } from '../../entry/Root';
 import { prefersReducedMotion } from './useReveal';
+import { JourneyPhone } from './journey/JourneyPhone';
+import { loadSession, type Session } from './journey/journeyApi';
+
+const CLASSES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 // Hangers of the bridge: x positions between the two feet of the arch.
 const HANGERS = [120, 170, 220, 270, 330, 380, 430, 480];
@@ -60,6 +64,18 @@ export function BridgeArt() {
 
 export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
   const ref = useRef<HTMLElement>(null);
+  // undefined while checking for a login; null for visitors.
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [grade, setGrade] = useState(5);
+
+  useEffect(() => {
+    const ctl = new AbortController();
+    loadSession(ctl.signal).then((s) => {
+      setSession(s);
+      if (s && CLASSES.includes(s.grade)) setGrade(s.grade);
+    });
+    return () => ctl.abort();
+  }, []);
 
   // Gentle pointer parallax on the art, for mouse/trackpad users who haven't asked for less motion.
   useEffect(() => {
@@ -92,13 +108,27 @@ export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
             <span className="jl-dot" aria-hidden="true" /> CBSE Arabic · Classes 1–10 · UAE
           </p>
           <h1 id="jl-hero-title" className="jl-display jl-rise" style={{ ['--d' as string]: 1 }}>
-            JISR,<br /><em>finally</em> bridge<br /> the gap.
+            JISR,<br /><em>finally</em> bridge<br /> the Gap.
           </h1>
+          <p className="jl-hero__tagline jl-rise" style={{ ['--d' as string]: 2 }}>Your Bridge to Master CBSE Arabic</p>
           <p className="jl-lede jl-rise" style={{ ['--d' as string]: 2 }}>
             Your child’s CBSE Arabic textbook, line by line in English, with a native voice for every word.
-            Built for non-native learners in UAE schools, and for the parents helping with homework.
+            Every chapter becomes a short journey: new words, the book page, Ask Fahim and a quick check.
           </p>
-          <div className="jl-actions jl-rise" style={{ ['--d' as string]: 3 }}>
+          <div className="jl-classpick jl-rise" style={{ ['--d' as string]: 3 }}>
+            <span className="jl-classpick__label" id="jl-classpick">{session ? 'Your child’s class' : 'Pick your child’s class'}</span>
+            <div className="jl-classpick__row" role="group" aria-labelledby="jl-classpick">
+              {CLASSES.map((c) => (
+                <button key={c} type="button" aria-pressed={grade === c} aria-label={`Class ${c}`} onClick={() => setGrade(c)}>
+                  {grade === c ? `Class ${c}` : c}
+                </button>
+              ))}
+            </div>
+            <p className="jl-classpick__hint">
+              {session ? `Signed in: the phone shows ${session.childName}’s real chapters and progress.` : 'The phone shows that class’s real chapters, live from the app.'}
+            </p>
+          </div>
+          <div className="jl-actions jl-rise" style={{ ['--d' as string]: 4 }}>
             <button type="button" className="jl-btn jl-btn--primary" onClick={() => onEnter('signup')}>
               Start free <span aria-hidden="true" className="jl-btn__arrow">→</span>
             </button>
@@ -106,11 +136,14 @@ export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
               Try a free lesson
             </a>
           </div>
-          <ul className="jl-proof jl-rise" style={{ ['--d' as string]: 4 }} aria-label="At a glance">
+          <ul className="jl-proof jl-rise" style={{ ['--d' as string]: 5 }} aria-label="At a glance">
             <li><strong>Any</strong> phone, tablet or laptop</li>
+            <li>From <strong>USD 10</strong></li>
           </ul>
         </div>
-        <div className="jl-hero__art"><BridgeArt /></div>
+        <div className="jl-hero__art">
+          <JourneyPhone grade={grade} session={session} onOpenApp={() => onEnter(session ? 'explore' : 'login')} onSignup={() => onEnter('signup')} />
+        </div>
       </div>
       <a href="#demo" className="jl-scrollcue" aria-label="Scroll down to the live demo"><span /><em className="jl-scrollcue__label">Scroll down</em></a>
     </section>

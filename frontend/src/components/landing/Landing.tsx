@@ -69,10 +69,10 @@ export default function Landing({ onEnter }: { onEnter: (i: EnterIntent) => void
   const root = useRef<HTMLDivElement>(null);
   useReveal(root);
   useEffect(() => {
-    // The landing is dark; match the mobile browser chrome while it's on screen.
+    // The landing opens on a white header and hero; match the mobile browser chrome.
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     const prevColor = meta?.content;
-    if (meta) meta.content = '#140B22';
+    if (meta) meta.content = '#FFFFFF';
     return () => { if (meta && prevColor) meta.content = prevColor; };
   }, []);
   return (

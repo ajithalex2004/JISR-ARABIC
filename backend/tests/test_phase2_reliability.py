@@ -18,6 +18,8 @@ from sqlalchemy.orm import sessionmaker
 
 from backend.main import app, _extract_real_client_ip, _is_trusted_proxy
 from backend.database import Base, get_db
+from backend.api.dependencies import get_current_user
+from backend.modules.identity.access import Principal
 from backend.tasks.queue import enqueue_task, list_recent_tasks, get_queue_metrics
 from backend.errors import ApplicationError
 
@@ -119,9 +121,20 @@ class TestPhase2Reliability(unittest.TestCase):
             mock_redis.keys.assert_not_called()
             self.assertEqual(len(tasks), 2)
 
+    def _signed_in(self):
+        app.dependency_overrides[get_current_user] = lambda: Principal(
+            id="p1", email="parent@example.ae", role="parent", is_verified=True)
+        self.addCleanup(app.dependency_overrides.pop, get_current_user, None)
+
+    def test_ai_endpoints_need_a_login(self):
+        for path in ("/api/ai/ask-fahim", "/api/ai/socratic-learn", "/api/ai/solve-question-paper",
+                     "/api/ai/homework/scan", "/api/ai/homework/check"):
+            self.assertEqual(self.client.post(path, json={}).status_code, 401, path)
+
     def test_ai_payload_character_limits_enforced(self):
         """Requests with excessive length must be rejected with 422."""
         excessive_question = "أ" * 2001
+        self._signed_in()  # the AI endpoints need a login; validation is what is tested here
         res = self.client.post("/api/ai/ask-fahim", json={"question": excessive_question})
         self.assertEqual(res.status_code, 422)
 
@@ -132,6 +145,7 @@ class TestPhase2Reliability(unittest.TestCase):
             "attachment_base64": "SGVsbG8gV29ybGQ=",
             "attachment_type": "application/x-dosexec",
         }
+        self._signed_in()
         res = self.client.post("/api/ai/ask-fahim", json=payload)
         self.assertEqual(res.status_code, 400)
         self.assertIn("Unsupported attachment type", res.json()["detail"])

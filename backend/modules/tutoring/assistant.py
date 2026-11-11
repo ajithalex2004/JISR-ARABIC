@@ -1987,8 +1987,8 @@ def _solve_question_paper_query(
                 "  🇬🇧 Question 13 (Educational Values & Sportsmanship):\n"
                 "• التَّعَاوُنُ، وَالالتِزَامُ بِاللَّعِبِ النَّظِيفِ، وَاحْتِرَامُ المُنَافِسِ وَالحَكَمِ، وَتَقَبُّلُ النَّتَائِجِ بِرُوحٍ رِيَاضِيَّةٍ عَالِيَةٍ.\n"
                 "  🇬🇧 Teamwork, fair play, respect for opponents and referee, and gracious sportsmanship - p. 8.\n\n"
-                "🌟 جَمِيعُ الإِجَابَاتِ مُعْتَمَدَةٌ وَمُطَابِقَةٌ 100% لِمَعَايِيرِ الوِزَارَةِ مَعَ الشَّرْحِ التَّفْصِيلِيِّ.\n"
-                "🇬🇧 All 13 questions are 100% verified and aligned with UAE Ministry of Education benchmarks."
+                "🌟 هَذِهِ إِجَابَاتُ وَرَقَةِ دَرْسِ (أَلْعَابُ الكُرَةِ) لِلصَّفِّ الخَامِسِ مَعَ الشَّرْحِ.\n"
+                "🇬🇧 These are the answers for the Class 5 Ball Games unit paper, with explanations."
             ),
             "answer_en": (
                 f"Full Question Paper Solution (Q1 through Q13) for '{paper_label}':\n"
@@ -2086,6 +2086,24 @@ def _solve_textbook_study_query(clean_q: str, query_lower: str, target_lesson: s
     return None
 
 
+BALL_GAMES_LESSON = "lesson_01_ball_games"
+
+
+def _fahim_unavailable_response(question: str = "") -> Dict[str, Any]:
+    """What Fahim says when the AI cannot answer: never another lesson's fixed answers."""
+    return {
+        "teacher_name": "Ask Fahim (اسأل فاهم)",
+        "question_en": question,
+        "answer_ar": "عُذْرًا، لَا أَسْتَطِيعُ الإِجَابَةَ الآنَ. حَاوِلْ مَرَّةً أُخْرَى بَعْدَ قَلِيلٍ، أَوِ اسْأَلْ مُعَلِّمَكَ.",
+        "answer_en": "Sorry, I can't answer right now. Please try again in a little while, or ask your teacher.",
+        "page_reference": None,
+        "lesson_title": "Ask Fahim",
+        "escalated_to_tutor": False,
+        "tutor_escalation_message": None,
+        "unavailable": True,
+    }
+
+
 def _generate_admin_fahim_answer(
     req: AskFahimRequest,
     target_lesson: str,
@@ -2133,8 +2151,9 @@ def _generate_admin_fahim_answer(
                 gem_ans["teacher_name"] = "Ask Fahim (إشراف أكاديمي معتمد)"
                 return gem_ans
 
-    # 1. Question Paper / Exam solving for Admin (fallback only if no attachment or client unavailable)
-    if any(k in q_lower for k in [
+    # 1. Question Paper / Exam solving for Admin (fallback only if no attachment or client unavailable).
+    # The solver's answers are the Class 5 Ball Games paper, so it only answers in that lesson.
+    if target_lesson == BALL_GAMES_LESSON and any(k in q_lower for k in [
         "ورقة", "امتحان", "اختبار", "السؤال", "سؤال", "س1", "س2", "س3", "س4", "س5", "س6", "س7", "س8", "س9", "س10", "س11", "س12", "س13",
         "question", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "full paper", "exam paper", "حل ورقة"
     ]):
@@ -2190,11 +2209,11 @@ def _generate_admin_fahim_answer(
             "answer_ar": (
                 "أهلاً بك يا مشرفنا! تم تحليل صورة التمرين بنجاح. الحل النموذجي المعتمد وفق المنهاج الإماراتي هو: "
                 "ضبط الكلمات بالشكل التام وتطبيق القاعدة النحوية المناسبة (الفاعل مرفوع بالضمة، والمفعول به منصوب بالفتحة، والمبتدأ والخبر متطابقان). "
-                "الإجابة مكتملة وصحيحة 100% وجاهزة للتطبيق."
+                "راجِعِ الحلَّ مع معلمك قبل التسليم."
             ),
             "answer_en": (
                 "Snapshot analyzed successfully. The verified CBSE Curriculum solution is to apply complete vowel diacritics "
-                "and correct grammatical agreement (nominative subject, accusative object). The solution is 100% verified."
+                "and correct grammatical agreement (nominative subject, accusative object). Check it with your teacher before handing it in."
             ),
             "page_reference": "Textbook Exercise Scanner",
             "lesson_title": "حل تمارين الكتاب (Exercise Solver)",
@@ -2467,7 +2486,9 @@ def _ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None
             "full paper", "exam paper", "solve paper", "حل هذا التمرين", "حل التمرين", "solve this exercise"
         ])
     )
-    if is_paper_query:
+    # The solver's answers are the Class 5 Ball Games paper: in any other lesson they would answer
+    # a different lesson's questions (common words like "question" or "سؤال" trigger it).
+    if is_paper_query and target_lesson == BALL_GAMES_LESSON:
         paper_res = _solve_question_paper_query(effective_query, query_lower, doc_text=doc_text, paper_name=effective_att_name)
         if paper_res:
             return _enrich_fahim_response(paper_res, effective_query)
@@ -2580,6 +2601,11 @@ def _ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None
                 "escalated_to_tutor": False,
                 "tutor_escalation_message": None
             }, effective_query)
+
+    # 8.5. The fixed guidance below is Class 5 material. Other classes' lessons (lesson_g{N}_...)
+    # get an honest "try again" rather than another class's model answers.
+    if target_lesson.startswith("lesson_g"):
+        return _enrich_fahim_response(_fahim_unavailable_response(effective_query), effective_query)
 
     # 9. Direct pedagogical response for general / unindexed questions
     # Rather than escalating and leaving the student unanswered, Fahim delivers verified curriculum guidance

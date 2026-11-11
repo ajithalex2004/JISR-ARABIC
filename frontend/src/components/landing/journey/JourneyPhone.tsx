@@ -72,11 +72,13 @@ export function JourneyPhone({ grade, session, onOpenApp, onSignup }: Props) {
   const done = useMemo(() => new Map(activity.map((a) => [a.lesson_id, a])), [activity]);
   const soon = (l: JourneyLesson) => l.status === 'coming_soon';
   const termSoon = items.length > 0 && items.every(soon);
-  // The chapter the tour opens: the first one this visitor can open that they haven't practised yet.
+  // The welcome page shows one open chapter per class, for everyone (signed in or not, whatever
+  // they've paid for): the class's free first chapter of Term 1. Every other chapter shows locked.
   const focus = useMemo(() => {
-    const open = items.filter((l) => l.is_accessible && !soon(l));
-    return open.find((l) => !done.has(l.id)) ?? open[0] ?? null;
-  }, [items, done]);
+    if (term !== 1) return null;
+    const real = items.filter((l) => !soon(l));
+    return real.find((l) => l.is_first_chapter_demo) ?? real[0] ?? null;
+  }, [items, term]);
 
   useEffect(() => {
     if (lessons.state !== 'ok') return;
@@ -223,7 +225,7 @@ function JourneyView({ grade, term, setTerm, lessons, done, focusId, termSoon, o
         <ol className="jp-path">
           {items.map((l) => {
             const a = done.get(l.id);
-            const state = l.status === 'coming_soon' ? 'soon' : a ? 'done' : l.id === focusId ? 'now' : l.is_accessible ? 'open' : 'locked';
+            const state = l.status === 'coming_soon' ? 'soon' : l.id === focusId ? (a ? 'done' : 'now') : 'locked';
             const label = { soon: 'Soon', done: `${a?.correct ?? 0}/${a?.attempts ?? 0} right`, now: 'Now', open: 'Open', locked: 'Locked' }[state];
             return (
               <li key={l.id} className={`is-${state}`}>

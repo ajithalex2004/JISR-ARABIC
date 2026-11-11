@@ -329,6 +329,10 @@ def _clean_ocr_paragraphs(raw_text: str, printed_page: int) -> list[str]:
         lines = [l.strip() for l in block.split("\n") if l.strip()]
         parts.extend(_group_lines([l for l in lines if re.search(r'[\u0600-\u06FF]', l)]))
 
+    # The publisher's copyright notice ("... لا يسمح بإعادة إصدار هذه الصفحة ...") is printed on
+    # pages but is not lesson text: drop any paragraph carrying it.
+    parts = [p for p in parts if not re.search(r'لا\s?يسمح بإعادة إصدار|محفوظة لوزارة التربية', p)]
+
     # Strip standalone trailing page numbers from paragraphs
     cleaned_parts = []
     for p in parts:

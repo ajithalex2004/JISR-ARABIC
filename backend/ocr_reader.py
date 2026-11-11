@@ -1381,7 +1381,14 @@ def get_page_ocr_data(pdf_page: int, edition_id: str | None = None) -> Dict[str,
             if edition_id:
                 q = q.filter(ScannedPage.book_edition_id == edition_id)
             sp = q.first()
-            if sp and sp.ocr_text_ar and sp.review_status != "automatic_unverified":
+            from backend.modules.curriculum.page_ocr import is_fragmented_text
+            # Class 5 Term 1 pages have teacher-written text and translations (TEXTBOOK_PAGES_DATA,
+            # below); like Grades 6-8 above, they win over a machine read of the PDF.
+            authored_gr5 = bool((TEXTBOOK_PAGES_DATA.get(page_key_int) or TEXTBOOK_PAGES_DATA.get(page_key_str))
+                                and (not edition_id or (('gr5' in edition_id.lower() or 'grade5' in edition_id.lower())
+                                                        and ('vol1' in edition_id.lower() or 'term1' in edition_id.lower()))))
+            if (sp and sp.ocr_text_ar and sp.review_status != "automatic_unverified"
+                    and not authored_gr5 and not is_fragmented_text(sp.ocr_text_ar)):
                 from backend.modules.curriculum.authoring import _clean_ocr_paragraphs, translate_paragraphs
                 paras = _clean_ocr_paragraphs(sp.ocr_text_ar, sp.printed_page)
                 paras_en = translate_paragraphs(paras)

@@ -45,6 +45,19 @@ class TestRootMatching(unittest.TestCase):
         self.assertIsNotNone(roots.root_letter_positions("الكُرَةُ", "ك-ر-و", strict=True))
         self.assertIsNotNone(roots.root_letter_positions("جِهَةٌ", "و-ج-ه", strict=True))
 
+    def test_strict_mode_keeps_waw_and_ya_roots_apart(self):
+        # The Root Tree once listed "he rented", "renting" (ك-ر-ي) under ball (ك-ر-و).
+        for word in ("كَرَى", "يَكْرِي", "مُكْرٍي"):
+            self.assertIsNone(roots.root_letter_positions(word, "ك-ر-و", strict=True), word)
+        for word in ("الكُرَةُ", "كُرَاتٌ", "كُرَوِيٌّ"):
+            self.assertIsNotNone(roots.root_letter_positions(word, "ك-ر-و", strict=True), word)
+        self.assertIsNotNone(roots.root_letter_positions("دَعَا", "د-ع-و", strict=True))
+        self.assertIsNotNone(roots.root_letter_positions("رَمَى", "ر-م-ي", strict=True))
+        self.assertIsNone(roots.root_letter_positions("يَرْمُو", "ر-م-ي", strict=True))
+        self.assertIsNotNone(roots.root_letter_positions("قَالَ", "ق-و-ل", strict=True))
+        # Lenient mode (highlighting letters in a known word) is unchanged.
+        self.assertIsNotNone(roots.root_letter_positions("كَرَى", "ك-ر-و"))
+
     def test_every_catalogue_card_contains_its_root(self):
         by_root, by_word = roots._catalogue()
         missing = [(w["word_ar"], r) for r, words in by_root.items() for w in words
@@ -78,6 +91,18 @@ class TestRootFamilyEndpoint(unittest.TestCase):
         self.assertEqual(first["family_source"], "ai")
         self.assertEqual([w["word_ar"] for w in first["family"]], ["كَتَبَ", "مَكْتَبَةٌ"])
         self.assertEqual(first["curriculum_words"][0]["lesson_id"], "lesson_05_reading")
+
+    def test_words_from_the_other_weak_root_and_their_meaning_are_dropped(self):
+        rent = [
+            {"word_ar": "كَرَى", "root": "ك-ر-و", "meaning_en": "he rented", "kind": "verb"},
+            {"word_ar": "يَكْرِي", "root": "ك-ر-و", "meaning_en": "he rents", "kind": "verb"},
+            {"word_ar": "كُرَوِيٌّ", "root": "ك-ر-و", "meaning_en": "spherical", "kind": "adjective"},
+        ]
+        with patch("backend.ai.gateway.available", return_value=True), \
+             patch("backend.ai.gateway.generate", return_value=_ai(rent, core="renting or hiring")):
+            data = self.client.get("/api/curriculum/root-family", params={"word": "الكُرَةُ"}).json()
+        self.assertEqual([w["word_ar"] for w in data["family"]], ["كُرَوِيٌّ"])
+        self.assertIsNone(data["core_meaning_en"])  # one surviving word is not enough to trust it
 
     def test_word_lookup_uses_corrected_catalogue_root(self):
         with patch("backend.ai.gateway.available", return_value=False):

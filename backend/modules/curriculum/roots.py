@@ -17,7 +17,8 @@ from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-FAMILY_CACHE_VERSION = "v1"
+# v2: و/ي radicals kept apart; families cached under v1 may mix roots, so they are regenerated.
+FAMILY_CACHE_VERSION = "v2"
 FAMILY_CACHE_TTL = 30 * 86400
 MAX_FAMILY_WORDS = 8
 
@@ -34,6 +35,8 @@ _SYSTEM_PROMPT = (
     "built from that root, be written with full tashkeel, and be standard MSA. Prefer a variety: "
     "the past-tense verb, the doer (فاعل), the done-to (مفعول), a place (مَفْعَل), a verbal noun. "
     "Give each word's own root; leave out any word whose root is different. "
+    "Roots whose weak letter is و and roots whose weak letter is ي are different roots with different "
+    "meanings (دعو is not دعي); never mix them, and give the core meaning of exactly the root asked for. "
     'Reply with JSON only: {"core_meaning_en": "<2-5 words>", "words": [{"word_ar": "...", "root": "<x-y-z>", '
     '"meaning_en": "<1-5 words>", "pattern": "<the وزن, e.g. فَاعِل>", '
     '"kind": "verb|noun|adjective|doer|object|place|instrument|plural|other"}]}'
@@ -57,12 +60,29 @@ def split_roots(text: Optional[str]) -> List[str]:
     return [r for r in (normalize_root(part) for part in (text or "").split("/")) if r]
 
 
-def _same_letter(word_letter: str, root_letter: str) -> bool:
+_WAW_KIND = set("و")
+_YA_KIND = set("يى")
+
+
+def _opposite_weak(root_letter: str) -> set:
+    """The weak letters that belong to a *different* root: ي/ى for a و radical and vice versa."""
+    if root_letter in _WAW_KIND:
+        return _YA_KIND
+    if root_letter in _YA_KIND:
+        return _WAW_KIND
+    return set()
+
+
+def _same_letter(word_letter: str, root_letter: str, strict: bool = False) -> bool:
     if word_letter == root_letter:
         return True
     if root_letter in _HAMZA or root_letter == "ا":
         return word_letter in _HAMZA or word_letter == "ا"
     if root_letter in _WEAK:
+        # Strict: و and ي radicals are different roots (ك-ر-و ball vs ك-ر-ي renting), so one
+        # may stand in for the other only as alif or hamza, never as the other weak letter.
+        if strict and word_letter in _opposite_weak(root_letter):
+            return False
         return word_letter in _WEAK or word_letter in _HAMZA
     return False
 
@@ -74,10 +94,12 @@ def root_letter_positions(word: str, root: str, strict: bool = False) -> Optiona
     letters. A weak root letter (و ي ا) may be missing, as in قَالَ from ق-و-ل, and a doubled
     letter may be written once with shadda, as in مَدَّ from م-د-د. With ``strict`` only a first
     or last weak letter may be missing (وَجَدَ -> جِهَة, كُرَة from ك-ر-و), which stops مَدْرَسَة
-    passing as a word from د-و-ر.
+    passing as a word from د-و-ر. Strict mode also keeps و and ي radicals apart: كَرَى (he
+    rented, from ك-ر-ي) is not a word from ك-ر-و, although كُرَة is.
     """
     letters = strip_tashkeel(word)
     root_letters = root.split("-")
+    last = len(root_letters) - 1
 
     def match(i: int, end: int) -> Optional[List[int]]:
         if i < 0:
@@ -85,18 +107,25 @@ def root_letter_positions(word: str, root: str, strict: bool = False) -> Optiona
         target = root_letters[i]
         candidates = [j for j in range(end - 1, -1, -1) if letters[j] == target]
         candidates += [j for j in range(end - 1, -1, -1)
-                       if letters[j] != target and _same_letter(letters[j], target)]
+                       if letters[j] != target and _same_letter(letters[j], target, strict)]
         for j in candidates:
             rest = match(i - 1, j)
             if rest is not None:
                 return rest + [j]
         doubled = i + 1 < len(root_letters) and root_letters[i + 1] == target
-        edge = i in (0, len(root_letters) - 1)
+        edge = i in (0, last)
         if (target in _WEAK and (edge or not strict)) or doubled:
-            return match(i - 1, end)
+            rest = match(i - 1, end)
+            if rest is not None and strict and i == last and not doubled:
+                # The final weak radical is "missing" only because the word ends in the other
+                # weak letter after the last root letter, which makes it a different root.
+                tail = letters[(rest[-1] + 1) if rest else 0:end]
+                if any(c in _opposite_weak(target) for c in tail):
+                    return None
+            return rest
         return None
 
-    return match(len(root_letters) - 1, len(letters))
+    return match(last, len(letters))
 
 
 @lru_cache(maxsize=1)
@@ -170,7 +199,10 @@ def _ai_family(root: str) -> Optional[dict]:
             "kind": kind if kind in _KINDS else "other",
         })
     core = str(data.get("core_meaning_en", "")).strip()[:60]
-    return {"core_meaning_en": core if core and not re.search(r"[؀-ۿ]", core) else None,
+    # A core meaning is only trusted when the answer it came with held up: if most suggested
+    # words failed the root check, the model was likely describing another root.
+    trusted = len(words) >= 2
+    return {"core_meaning_en": core if trusted and core and not re.search(r"[؀-ۿ]", core) else None,
             "words": words[:MAX_FAMILY_WORDS], "provider": response.provider}
 
 

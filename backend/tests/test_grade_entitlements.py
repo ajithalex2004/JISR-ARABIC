@@ -121,7 +121,9 @@ class TestGradeEntitlements(unittest.TestCase):
             return db
 
         from unittest.mock import patch
-        with patch("backend.modules.curriculum.access.optional_child"):
+        # Both lessons have real content here; this test is only about grade entitlement.
+        with patch("backend.modules.curriculum.access.optional_child"), \
+                patch("backend.modules.curriculum.coming_soon.lesson_is_coming_soon", return_value=False):
             with self.assertRaises(ApplicationError) as ctx:
                 require_lesson(db_for(demo_g5), actor, "lesson_01_ball_games", child_id="child_ann")
             self.assertEqual(ctx.exception.status_code, 402)

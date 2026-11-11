@@ -12,6 +12,8 @@ class CurriculumLessonItem {
   final bool isFirstChapterDemo;
   final bool isAccessible;
   final String? lockReason;
+  /// No real content yet: the server lists it as "Coming soon" and won't open it.
+  final bool comingSoon;
 
   const CurriculumLessonItem({
     required this.id,
@@ -24,12 +26,15 @@ class CurriculumLessonItem {
     required this.isFirstChapterDemo,
     required this.isAccessible,
     this.lockReason,
+    this.comingSoon = false,
   });
 
   factory CurriculumLessonItem.fromMap(Map<String, dynamic> map) {
-    final bool isDemo = map['is_first_chapter_demo'] == true ||
-        map['id'] == 'lesson_01_ball_games' ||
-        map['lesson_order'] == 1;
+    final bool comingSoon = map['status'] == 'coming_soon';
+    final bool isDemo = !comingSoon &&
+        (map['is_first_chapter_demo'] == true ||
+            map['id'] == 'lesson_01_ball_games' ||
+            map['lesson_order'] == 1);
 
     return CurriculumLessonItem(
       id: map['id']?.toString() ?? '',
@@ -44,8 +49,9 @@ class CurriculumLessonItem {
           ? map['start_page'] as int
           : (int.tryParse(map['start_page']?.toString() ?? '1') ?? 1),
       isFirstChapterDemo: isDemo,
-      isAccessible: map['is_accessible'] == true || isDemo,
+      isAccessible: !comingSoon && (map['is_accessible'] == true || isDemo),
       lockReason: map['lock_reason']?.toString(),
+      comingSoon: comingSoon,
     );
   }
 }

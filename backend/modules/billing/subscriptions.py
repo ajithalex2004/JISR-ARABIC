@@ -97,6 +97,12 @@ def start_checkout(*, child_id: str, grade: int, plan: str, terms, term, promo_c
     child = _child(child_id, db)
     chosen = _plan_terms(plan, terms, term)
     _check_auto_renew(chosen, auto_renew)
+    # Terms with no real lessons yet are "Coming soon": nothing to sell.
+    from backend.modules.curriculum.coming_soon import coming_soon_terms
+    soon = sorted(coming_soon_terms(db, grade, chosen))
+    if soon:
+        raise ApplicationError(409, f"Class {grade} Term{'s' if len(soon) > 1 else ''} {', '.join(map(str, soon))} "
+                                    f"{'are' if len(soon) > 1 else 'is'} coming soon and can't be bought yet.")
     promo = (promo_code or "").strip().upper()
     promo_pct = _promo_pct(promo, child.parent_id, db) if promo else 0.0
     price = pricing.quote(chosen, promo_pct=promo_pct)

@@ -10,6 +10,7 @@ from backend.migrations import refresh_lesson_caches, repair_lesson_order_and_fr
 from backend.modules.curriculum.service import list_lessons
 from backend.redis_client import cache_clear, cache_get, cache_set, lesson_package_key
 from backend.models import Lesson, Unit
+from backend.tests.content_helpers import publish_real_content
 
 # Production's Grade 1 Term 1: stored in this order, every one lesson_order 1 and free.
 GRADE1 = [("lesson_g1_t1_ch03", 26), ("lesson_g1_t1_ch10", 96), ("lesson_g1_t1_ch09", 86), ("lesson_g1_t1_ch01", 6),
@@ -29,6 +30,7 @@ class TestLessonOrderRepair(unittest.TestCase):
             self.db.add(Lesson(id=lesson_id, unit_id="u", grade=5, term=1, lesson_order=order, title_ar="د", title_en="L",
                                start_page=page, is_first_chapter_demo=(order == 1)))
         self.db.commit()
+        publish_real_content(self.db, *[l for l, _ in GRADE1], "g5_a", "g5_b")
 
     def tearDown(self):
         self.db.close()

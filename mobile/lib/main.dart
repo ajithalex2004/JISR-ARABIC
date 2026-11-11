@@ -967,8 +967,9 @@ class _MainScreenState extends State<MainScreen> {
         : kClass5Term1Catalogue;
 
     return rawList.map((item) {
-      final isFirstChapterDemo = _currentTerm == 1 && (item.order == 1 || item.isFirstChapterDemo);
-      final accessible = hasPaid || isFirstChapterDemo;
+      final isFirstChapterDemo =
+          !item.comingSoon && _currentTerm == 1 && (item.order == 1 || item.isFirstChapterDemo);
+      final accessible = !item.comingSoon && (hasPaid || isFirstChapterDemo);
       return CurriculumLessonItem(
         id: item.id,
         order: item.order,
@@ -979,9 +980,12 @@ class _MainScreenState extends State<MainScreen> {
         startPage: item.startPage,
         isFirstChapterDemo: isFirstChapterDemo,
         isAccessible: accessible,
+        comingSoon: item.comingSoon,
         lockReason: accessible
             ? null
-            : (_currentTerm == 1
+            : item.comingSoon
+                ? 'Coming soon'
+                : (_currentTerm == 1
                 ? r'Subscription required (USD 10/term)'
                 : r'Term subscription required (USD 10/term)'),
       );

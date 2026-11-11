@@ -67,8 +67,12 @@ class CheckoutAndSubscriptionsTest(unittest.TestCase):
         self.env = patch.dict(os.environ, {"FAHIM_ENV": "development", "FAHIM_PAYMENT_PROVIDER": "",
                                            "STRIPE_SECRET_KEY": "", "FAHIM_PAYMENT_WEBHOOK_SECRET": SECRET})
         self.env.start()
+        # The fixture has no lessons; terms are treated as having real content (tested in test_coming_soon).
+        self.soon = patch("backend.modules.curriculum.coming_soon.coming_soon_terms", return_value=set())
+        self.soon.start()
 
     def tearDown(self):
+        self.soon.stop()
         self.env.stop()
         self.client.close()
         app.dependency_overrides.pop(get_db, None)

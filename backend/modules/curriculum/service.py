@@ -122,6 +122,13 @@ def list_terms(grade: int=5, child_id: Optional[str]=None, *, db: Session, actor
             "status": "published"
         }
     ]
+    # A term with no real lessons yet is shown as "Coming soon" and can't be bought.
+    from backend.modules.curriculum.coming_soon import COMING_SOON_STATUS, coming_soon_terms
+    soon = coming_soon_terms(db, grade)
+    for t in terms:
+        t["coming_soon"] = t["term"] in soon
+        if t["coming_soon"] and not is_admin:
+            t.update(status=COMING_SOON_STATUS, has_demo=False, status_label_en="Coming soon")
     return terms
 
 
@@ -142,6 +149,8 @@ def list_lessons(grade: int=5, term: int=1, child_id: Optional[str]=None, *, db:
         ).order_by(Lesson.lesson_order).all()
 
         if lessons:
+            from backend.modules.curriculum.coming_soon import coming_soon_ids
+            placeholders = coming_soon_ids(db, [l.id for l in lessons])
             cached_base = []
             for l in lessons:
                 unit = db.query(Unit).filter(Unit.id == l.unit_id).first()
@@ -158,7 +167,8 @@ def list_lessons(grade: int=5, term: int=1, child_id: Optional[str]=None, *, db:
                     "title_en": l.title_en,
                     "start_page": l.start_page,
                     "is_first_chapter_demo": is_demo,
-                    "status": l.status
+                    "status": l.status,
+                    "coming_soon": l.id in placeholders,
                 })
         else:
             dynamic_items = get_syllabus_for_grade_and_term(grade, term)
@@ -168,7 +178,9 @@ def list_lessons(grade: int=5, term: int=1, child_id: Optional[str]=None, *, db:
                 cached_base.append({
                     **item,
                     "is_first_chapter_demo": is_demo,
-                    "status": "published"
+                    "status": "published",
+                    # No lessons in the database: only the syllabus outline, so nothing real to open.
+                    "coming_soon": True,
                 })
         cache_set(base_cache_key, cached_base, ttl_seconds=86400)
 
@@ -184,8 +196,14 @@ def list_lessons(grade: int=5, term: int=1, child_id: Optional[str]=None, *, db:
         if access:
             is_term_unlocked = True
 
+    from backend.modules.curriculum.coming_soon import learner_view
     result = []
     for item in cached_base:
+        if item.get("coming_soon") and not is_admin:
+            # Placeholder content: listed as "Coming soon" so learners see what is planned,
+            # but it neither opens nor counts as a free chapter.
+            result.append(learner_view(item))
+            continue
         is_demo = item.get("is_first_chapter_demo", False)
         is_accessible = is_admin or is_demo or is_term_unlocked
         raw_status = item.get("status", "published")

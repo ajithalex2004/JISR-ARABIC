@@ -108,8 +108,9 @@ export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
             <span className="jl-dot" aria-hidden="true" /> CBSE Arabic · Classes 1–10 · UAE
           </p>
           <h1 id="jl-hero-title" className="jl-display jl-rise" style={{ ['--d' as string]: 1 }}>
-            JISR,<br /><em>finally</em> bridge<br /> the gap.
+            JISR,<br /><em>finally</em> bridge<br /> the Gap.
           </h1>
+          <p className="jl-hero__tagline jl-rise" style={{ ['--d' as string]: 2 }}>Your Bridge to Master CBSE Arabic</p>
           <p className="jl-lede jl-rise" style={{ ['--d' as string]: 2 }}>
             Your child’s CBSE Arabic textbook, line by line in English, with a native voice for every word.
             Every chapter becomes a short journey: new words, the book page, Ask Fahim and a quick check.

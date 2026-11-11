@@ -506,3 +506,50 @@
 }
 @media (prefers-reduced-motion: no-preference) { html:has(.jl) { scroll-behavior: smooth; } }
 @media print { .jl-nav, .jl-marquee, .jl-scrollcue { display: none; } .jl-hero, .jl-features, .jl-final, .jl-footer { color: #000; background: #fff; } }
+
+/* ---------- White header and hero (as on the SID360-style homepage) ----------
+   Overrides the landing's dark nav and hero; the sections below keep their own colours. */
+.jl-nav, .jl-nav.is-scrolled {
+  background: rgba(255, 255, 255, 0.94); color: var(--ink);
+  backdrop-filter: saturate(140%) blur(14px); -webkit-backdrop-filter: saturate(140%) blur(14px);
+  box-shadow: 0 1px 0 var(--line);
+}
+.jl-nav .jl-logo__ar { color: var(--plum); }
+.jl-nav .jl-btn--line-light { --fg: var(--ink); --bd: rgba(20, 11, 34, 0.35); }
+.jl-nav .jl-btn--line-light:hover { --bg: rgba(20, 11, 34, 0.05); --bd: var(--ink); }
+.jl-nav.is-open { background: #fff; }
+.jl-nav.is-open .jl-burger i::before, .jl-nav.is-open .jl-burger i::after { background: var(--ink); }
+@media (max-width: 960px) {
+  .jl-nav__links { background: #fff; border-top: 1px solid var(--line); }
+  .jl-nav__links ul a { border-bottom-color: var(--line); }
+}
+
+.jl-hero {
+  color: var(--ink);
+  background:
+    radial-gradient(900px 520px at 82% 35%, rgba(139, 92, 246, 0.10), transparent 62%),
+    radial-gradient(700px 420px at 8% 92%, rgba(16, 185, 129, 0.07), transparent 60%),
+    #ffffff;
+}
+.jl-hero::before { background-image: radial-gradient(rgba(20, 11, 34, 0.05) 1px, transparent 1px); }
+.jl-hero .jl-eyebrow { color: var(--plum); }
+.jl-hero .jl-display em { background: linear-gradient(100deg, var(--plum), var(--violet) 55%, var(--emerald)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.jl-hero__tagline { margin: 18px 0 0; font-size: clamp(1.25rem, 2.1vw, 1.7rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; color: var(--plum); }
+.jl-hero .jl-lede { color: var(--muted); margin-top: 18px; }
+.jl-hero .jl-proof { color: var(--muted); }
+.jl-hero .jl-proof strong { color: var(--ink); }
+.jl-hero .jl-btn--ghost:hover { --bg: rgba(20, 11, 34, 0.05); }
+.jl-hero .jl-scrollcue { border-color: rgba(20, 11, 34, 0.3); }
+.jl-hero .jl-scrollcue__label { color: var(--muted); }
+
+.jl-hero .jl-classpick__label, .jl-hero .jl-classpick__hint { color: var(--muted); }
+.jl-hero .jl-classpick__row { border-color: var(--line); background: #fff; box-shadow: 0 1px 2px rgba(20, 11, 34, 0.04); }
+.jl-hero .jl-classpick__row button { color: var(--ink); }
+.jl-hero .jl-classpick__row button:hover:not([aria-pressed='true']) { background: rgba(88, 51, 126, 0.08); }
+.jl-hero .jl-classpick__row button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+
+.jl-hero .jp-phone { box-shadow: 0 0 0 1px rgba(20, 11, 34, 0.08), 0 40px 80px -30px rgba(40, 20, 80, 0.4); }
+.jl-hero .jp-player { color: var(--muted); }
+.jl-hero .jp-dots button { background: rgba(20, 11, 34, 0.22); }
+.jl-hero .jp-dots button[aria-current='step'] { background: var(--plum); }
+.jl-hero .jp-pause { border-color: var(--line); background: #fff; color: var(--ink); }

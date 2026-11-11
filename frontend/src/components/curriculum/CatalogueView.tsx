@@ -329,7 +329,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
                 />
                 <path
                   className="text-[#22c55e]"
-                  strokeDasharray={`${activeChild?.diagnostic_score || 85}, 100`}
+                  strokeDasharray={`${activeChild?.diagnostic_score || 0}, 100`}
                   strokeWidth="3.5"
                   strokeLinecap="round"
                   stroke="currentColor"
@@ -338,15 +338,18 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
                 />
               </svg>
               <span className="absolute text-xs font-black text-white">
-                {activeChild?.diagnostic_score ? `${activeChild.diagnostic_score}%` : '85%'}
+                {activeChild?.diagnostic_score ? `${activeChild.diagnostic_score}%` : '—'}
               </span>
             </div>
             <div>
               <div className="text-xs text-purple-200 font-semibold uppercase tracking-wider">Curriculum Mastery</div>
               <div className="text-sm font-bold text-white">
-                {activeChild?.diagnostic_level ? activeChild.diagnostic_level.toUpperCase() : 'INTERMEDIATE'}
+                {/* No placement check yet: say so instead of showing a made-up 85% / INTERMEDIATE. */}
+                {activeChild?.diagnostic_level ? activeChild.diagnostic_level.toUpperCase() : 'Not assessed yet'}
               </div>
-              <div className="text-[11px] text-emerald-300 font-medium">Chapter 1 Active</div>
+              {!activeChild?.diagnostic_score && (
+                <div className="text-[11px] text-emerald-300 font-medium">Take the placement check to see it</div>
+              )}
             </div>
           </div>
         </div>

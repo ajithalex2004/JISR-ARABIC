@@ -84,9 +84,8 @@ class TestPhase0SecurityHardening(unittest.TestCase):
             "raw_text": "سؤال عن النحو",
         }
         res = self.client.post("/api/ai/solve-question-paper", json=payload)
-        # Must be rejected because caller is not authenticated as admin, and no unlocked term exists
-        self.assertEqual(res.status_code, 402)
-        self.assertIn("requires an active unlocked term pass or Admin access", res.json()["detail"])
+        # Rejected: the AI endpoints need a login, so an anonymous "admin_supervisor" gets nowhere.
+        self.assertEqual(res.status_code, 401)
 
     def test_otp_never_leaked_in_logs_and_fails_closed_in_production(self):
         """Ensure OTP codes never enter logger records, and fail closed when SMTP is unconfigured in production."""

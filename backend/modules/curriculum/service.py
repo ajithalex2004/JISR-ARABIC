@@ -205,7 +205,7 @@ def get_lesson_content(lesson_id: str, child_id: Optional[str]=None, is_reviewer
     """
     Get full lesson package.
     Hides assessment answers from client until submission.
-    Enforces the $33 per-term paywall for non-demo chapters unless purchased.
+    Enforces the per-term paywall (USD 10) for non-demo chapters unless purchased.
     """
     reviewer = bool(actor is not None and getattr(actor, "role", None) in {"admin", "tutor"}) and is_reviewer
     lesson = require_lesson(db, actor, lesson_id, child_id, is_reviewer=is_reviewer)

@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.orm import Session
 from backend.database import get_db
-from backend.api.dependencies import get_optional_user
+from backend.api.dependencies import get_current_user, get_optional_user
 from backend.modules.identity.access import Principal, optional_child, visible_children
 """HTTP adapter: request parsing, dependency injection, and service delegation."""
 from fastapi import APIRouter, Depends
@@ -19,7 +19,7 @@ from backend.modules.tutoring import assistant as service
 router = APIRouter(prefix='/api/ai', tags=['Ask & Learn AI Tutor'])
 
 @router.post('/ask-fahim')
-def ask_fahim(req: AskFahimRequest, db: Session=Depends(get_db), actor: Optional[Principal]=Depends(get_optional_user)):
+def ask_fahim(req: AskFahimRequest, db: Session=Depends(get_db), actor: Optional[Principal]=Depends(get_current_user)):
     """
     Conversational teacher: 'Ask Fahim' (اسأل فاهم).
     Safely responds using approved curriculum context.
@@ -43,7 +43,7 @@ def ask_fahim(req: AskFahimRequest, db: Session=Depends(get_db), actor: Optional
     return service.ask_fahim(req=req, db=db, actor=actor)
 
 @router.post('/socratic-learn', response_model=SocraticLearnResponse)
-def socratic_learn(req: SocraticLearnRequest, db: Session=Depends(get_db), actor: Optional[Principal]=Depends(get_optional_user)):
+def socratic_learn(req: SocraticLearnRequest, db: Session=Depends(get_db), actor: Optional[Principal]=Depends(get_current_user)):
     """
     Socratic AI Tutor (تعلّم مع فاهم).
     Walks student step-by-step through reasoning, providing hints rather than direct answers.
@@ -67,7 +67,7 @@ def socratic_learn(req: SocraticLearnRequest, db: Session=Depends(get_db), actor
 def solve_question_paper(
     req: QuestionPaperSolveRequest,
     db: Session = Depends(get_db),
-    actor: Optional[Principal] = Depends(get_optional_user),
+    actor: Optional[Principal] = Depends(get_current_user),
 ):
     """
     Question Paper Exam Assistant (مساعد حل أوراق الامتحانات).
@@ -124,7 +124,7 @@ def _homework_learner(db: Session, actor: Optional[Principal], child_id: Optiona
     return actor.id, child_id or actor.id
 
 @router.post('/homework/scan')
-def homework_scan(req: HomeworkScanRequest, db: Session = Depends(get_db), actor: Optional[Principal] = Depends(get_optional_user)):
+def homework_scan(req: HomeworkScanRequest, db: Session = Depends(get_db), actor: Optional[Principal] = Depends(get_current_user)):
     """
     Homework helper: read a worksheet (photo, PDF or Word) and explain each question with a
     Socratic hint. Answers are never returned; they stay on the server to check the student's own.
@@ -136,7 +136,7 @@ def homework_scan(req: HomeworkScanRequest, db: Session = Depends(get_db), actor
                                   grade=grade, learner_id=learner_id, owner_id=owner_id)
 
 @router.post('/homework/check')
-def homework_check(req: HomeworkCheckRequest, db: Session = Depends(get_db), actor: Optional[Principal] = Depends(get_optional_user)):
+def homework_check(req: HomeworkCheckRequest, db: Session = Depends(get_db), actor: Optional[Principal] = Depends(get_current_user)):
     """Homework helper: check the student's typed or handwritten answer, without revealing the right one."""
     from backend.modules.tutoring import homework
     owner_id, learner_id = _homework_learner(db, actor, req.child_id)

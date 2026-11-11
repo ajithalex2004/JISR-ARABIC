@@ -21,7 +21,7 @@ export const AdminWorkflow: React.FC = () => {
   const [termNumber, setTermNumber] = useState<number>(2);
   const [termTitleAr, setTermTitleAr] = useState<string>('الفصل الدراسي الثاني');
   const [termTitleEn, setTermTitleEn] = useState<string>('Term 2');
-  const [termPrice, setTermPrice] = useState<number>(33.0);
+  const [termPrice, setTermPrice] = useState<number>(10.0);
 
   // ADD_CLASS form
   const [classNumber, setClassNumber] = useState<number>(6);
@@ -222,7 +222,7 @@ export const AdminWorkflow: React.FC = () => {
               Add / Configure Term Container
             </h2>
             <p className="text-xs text-slate-600">
-              Registers Term 2, Term 3, or other terms with custom pricing (default USD 33 per term).
+              Registers Term 2, Term 3, or other terms. Learners are charged the standard USD 10 per term (USD 25.50 for the full year) whatever price is entered here.
             </p>
           </div>
 
@@ -394,7 +394,7 @@ export const AdminWorkflow: React.FC = () => {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              const res = await api.adminAddTerm({ grade: 5, term: 1, title_ar: 'طبعة حديثة', title_en: 'New Edition', price_usd: 33 });
+              const res = await api.adminAddTerm({ grade: 5, term: 1, title_ar: 'طبعة حديثة', title_en: 'New Edition', price_usd: 10 });
               setSuccessMsg(`Edition ${academicYear} registered safely.`);
             }}
             className="space-y-3 max-w-md"

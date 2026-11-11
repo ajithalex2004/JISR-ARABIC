@@ -618,7 +618,7 @@ def get_textbook_pages(edition_id: str, db: Session):
 def add_term(req: AdminAddTermRequest, *, db: Session):
     """
     ADD_TERM mode:
-    Configures a new term container with price (e.g. USD 33) and persists it in the database.
+    Configures a new term container with price (informational; checkout uses billing.pricing) and persists it in the database.
     """
     if req.grade < 1 or req.grade > 12:
         raise ApplicationError(status_code=400, detail="Grade must be between 1 and 12")

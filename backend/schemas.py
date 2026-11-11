@@ -335,7 +335,8 @@ class AdminAddTermRequest(BaseModel):
     term: int
     title_ar: str
     title_en: str
-    price_usd: float = 20.0
+    # Informational: checkout charges billing.pricing.PRICE_PER_TERM_USD (USD 10), not this value.
+    price_usd: float = 10.0
 
 class AdminAddClassRequest(BaseModel):
     grade_number: int

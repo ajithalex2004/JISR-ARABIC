@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: jisr
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - content-pvc.yaml
+  - redis.yaml
+  - migrate-job.yaml
+  - api.yaml
+  - worker.yaml
+  - web.yaml
+  - ingress.yaml
+
+secretGenerator:
+  - name: jisr-secrets
+    envs:
+      - secrets.env
+    options:
+      labels:
+        jisr.deploy/phase: pre
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: jisr-arabic
+
+# Set the real image names and tags in the overlay (k8s/overlays/production).
+images:
+  - name: jisr-api
+    newName: registry.example.com/jisr/api
+    newTag: latest
+  - name: jisr-web
+    newName: registry.example.com/jisr/web
+    newTag: latest

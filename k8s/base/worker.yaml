@@ -1,0 +1,52 @@
+# Background tasks: textbook page rendering, OCR, AI lesson drafts, audio, bulk enrolment.
+# Shares the content volume with the API, which serves what the worker writes.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app.kubernetes.io/name: worker
+    app.kubernetes.io/part-of: jisr-arabic
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: worker
+        app.kubernetes.io/part-of: jisr-arabic
+    spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 10001
+      containers:
+        - name: worker
+          image: jisr-api
+          args: ["worker"]
+          envFrom:
+            - configMapRef: {name: jisr-config}
+            - secretRef: {name: jisr-secrets}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+          livenessProbe:
+            exec:
+              command: ["python", "-c", "import os; os.kill(1, 0)"]
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            # Page rendering and OCR are memory-heavy.
+            requests: {cpu: 250m, memory: 768Mi}
+            limits: {memory: 2Gi}
+          volumeMounts:
+            - name: content
+              mountPath: /app/content
+      volumes:
+        - name: content
+          persistentVolumeClaim:
+            claimName: jisr-content

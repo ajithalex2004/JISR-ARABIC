@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jisr
+  labels:
+    app.kubernetes.io/part-of: jisr-arabic
+    jisr.deploy/phase: pre

@@ -168,3 +168,7 @@ Thumbs.db
 ehthumbs.db
 desktop.ini
 .content-upload-progress.json
+
+# Kubernetes secrets (k8s/): only the *.example templates are committed
+k8s/**/secrets.env
+k8s/**/postgres.env

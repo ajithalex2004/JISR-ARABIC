@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources:
+  - postgres.yaml
+
+secretGenerator:
+  - name: postgres-credentials
+    envs:
+      - postgres.env
+    options:
+      labels:
+        jisr.deploy/phase: pre

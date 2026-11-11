@@ -1,0 +1,17 @@
+# Shared content volume on SeaweedFS (ReadWriteMany), mounted by the API and the worker.
+# Holds pdf_pages_sample/ (~1.7 GB), vision-output-new/ (~1.1 GB), uploads/ and audio-cache/.
+#
+# Needs the SeaweedFS CSI driver (github.com/seaweedfs/seaweedfs-csi-driver). Its Helm chart
+# creates the StorageClass "seaweedfs-storage"; change storageClassName if yours differs.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jisr-content
+  labels:
+    jisr.deploy/phase: pre
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: seaweedfs-storage
+  resources:
+    requests:
+      storage: 20Gi

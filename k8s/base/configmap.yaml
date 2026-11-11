@@ -1,0 +1,40 @@
+# Settings that are not secret. Secrets (database URL, keys, passwords) go in secrets.env.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jisr-config
+  labels:
+    jisr.deploy/phase: pre
+data:
+  FAHIM_ENV: "production"
+  REDIS_URL: "redis://redis:6379/0"
+
+  # The website's address(es), comma-separated. Must match the browser origin exactly.
+  FAHIM_CORS_ORIGINS: "https://app.jisrarabic.com"
+  FAHIM_APP_URL: "https://app.jisrarabic.com"
+
+  # Textbook page images, OCR text, uploaded PDFs and the audio cache live on the shared
+  # SeaweedFS volume mounted at /app/content (see content-pvc.yaml).
+  FAHIM_CONTENT_DIR: "/app/content"
+  FAHIM_AUDIO_CACHE_DIR: "/app/content/audio-cache"
+  STORAGE_BACKEND: "local"
+
+  # Migrations run once per deploy in the jisr-migrate Job, not in every API pod.
+  RUN_MIGRATIONS: "0"
+  # The background worker runs in its own Deployment.
+  FAHIM_DISABLE_IN_PROCESS_WORKER: "1"
+
+  # Database connections are per uvicorn process: pods x WEB_CONCURRENCY x (POOL + OVERFLOW).
+  # 4 API pods x 2 x 10 = 80, plus the worker's 10: keep the total under Postgres max_connections.
+  WEB_CONCURRENCY: "2"
+  DB_POOL_SIZE: "5"
+  DB_MAX_OVERFLOW: "5"
+  DB_POOL_TIMEOUT: "30"
+  FASTAPI_THREAD_LIMIT: "200"
+
+  FAHIM_PAYMENT_PROVIDER: "stripe"
+  FAHIM_SMTP_FROM: "JISR Arabic <noreply@jisrarabic.com>"
+
+  # Traffic reaches the pods only through the ingress controller (private pod network), so the
+  # X-Forwarded-For it sets is trusted for client IPs and rate limits.
+  FORWARDED_ALLOW_IPS: "*"

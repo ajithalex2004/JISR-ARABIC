@@ -352,7 +352,15 @@ _SECONDARY_THEMES = {
 }
 
 def get_syllabus_for_grade_and_term(grade: int, term: int) -> List[Dict[str, Any]]:
-    """Returns official structured CBSE Curriculum chapters for any grade (1-12) and term (1-3)."""
+    """Returns official structured CBSE Curriculum chapters for any grade (1-12) and term (1-3),
+    with vowelled Arabic titles (title_tashkeel)."""
+    from backend.modules.curriculum.title_tashkeel import vowel_title
+    return [{**item, "title_ar": vowel_title(item["title_ar"]), "unit_title_ar": vowel_title(item["unit_title_ar"])}
+            for item in _syllabus_plain(grade, term)]
+
+
+def _syllabus_plain(grade: int, term: int) -> List[Dict[str, Any]]:
+    """The syllabus as authored (titles without tashkeel)."""
     grade = max(1, min(12, grade))
     term = max(1, min(3, term))
 
@@ -432,6 +440,7 @@ def get_syllabus_for_grade_and_term(grade: int, term: int) -> List[Dict[str, Any
 
 def get_dynamic_lesson_spec(lesson_id: str) -> Optional[DynamicLesson]:
     """Parse or match a dynamic lesson ID into a structured DynamicLesson object."""
+    from backend.modules.curriculum.title_tashkeel import vowel_title
     # Check Grade 5 explicit lessons first
     if 5 in _GRADE_CURRICULUM_DATA:
         for t_num, t_items in _GRADE_CURRICULUM_DATA[5].items():
@@ -441,10 +450,10 @@ def get_dynamic_lesson_spec(lesson_id: str) -> Optional[DynamicLesson]:
                         id=item["id"],
                         grade=5,
                         term=t_num,
-                        title_ar=item["title_ar"],
+                        title_ar=vowel_title(item["title_ar"]),
                         title_en=item["title_en"],
                         unit_id=item["unit_id"],
-                        unit_title_ar=item["unit_ar"],
+                        unit_title_ar=vowel_title(item["unit_ar"]),
                         unit_title_en=item["unit_en"],
                         start_page=item.get("start_page", 6),
                         is_first_chapter_demo=(item.get("order") == 1 and t_num == 1),

@@ -1,6 +1,7 @@
 """
 Unit tests for S3 storage adapter, CDN URL routing, and audio pre-warming engine.
 """
+import re
 import os
 import shutil
 import tempfile
@@ -116,7 +117,8 @@ class TestStorageAndPrewarming(unittest.TestCase):
         """Pre-warming script scans curriculum lessons and completes dry run accurately."""
         phrases = collect_curriculum_phrases(grades=[5], terms=[1])
         self.assertGreater(len(phrases), 50)
-        self.assertTrue(any("ألعاب الكرة" in p for p in phrases))
+        # Titles now come vowelled (title_tashkeel): compare without the marks.
+        self.assertTrue(any("ألعاب الكرة" in re.sub(r"[\u064B-\u0652]", "", p) for p in phrases))
 
         stats = run_prewarming(grades=[5], terms=[1], limit=10, dry_run=True)
         self.assertEqual(stats["total_targeted"], 10)

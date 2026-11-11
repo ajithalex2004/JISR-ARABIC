@@ -392,7 +392,8 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
           <div className="sharp-card p-4 bg-emerald-50/50 border border-emerald-300 flex justify-between items-center">
             <div>
               <h2 className="font-bold text-slate-900 text-base">
-                Glossary Vocabulary Cards · قَامُوسِي (Level 5 Book, p. 7)
+                {/* Was hard-coded "(Level 5 Book, p. 7)" on every class; the page is only known for Class 5. */}
+                Glossary Vocabulary Cards · قَامُوسِي (Class {content.grade} book)
               </h2>
               <p className="text-xs text-slate-600">
                 Click any Arabic word to vocalize pronunciation. Listen to full definitions and example sentences.

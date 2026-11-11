@@ -843,7 +843,7 @@ class TestFahimBackend(unittest.TestCase):
         self.assertEqual(unlocked_res.status_code, 200)
         l2_data = unlocked_res.json()
         self.assertEqual(l2_data["lesson"]["id"], "lesson_02_horse_riding")
-        self.assertEqual(l2_data["lesson"]["title_ar"], "ركوب الخيل")
+        self.assertEqual(l2_data["lesson"]["title_ar"], "رُكُوبُ الخَيْلِ")  # served with tashkeel
         self.assertEqual(l2_data["version_tag"], "0.2.0")
 
         l2_content = l2_data["content"]
@@ -861,14 +861,14 @@ class TestFahimBackend(unittest.TestCase):
         l6_res = self.client.get(f"/api/curriculum/lesson/lesson_06_at_school?child_id={child_id}")
         self.assertEqual(l6_res.status_code, 200)
         l6_data = l6_res.json()
-        self.assertEqual(l6_data["lesson"]["title_ar"], "في مدرستي")
+        self.assertEqual(l6_data["lesson"]["title_ar"], "فِي مَدْرَسَتِي")
         self.assertEqual(len(l6_data["content"]["vocabulary_cards"]), 8)
         self.assertIn("grammar_lab", l6_data["content"])
 
         l10_res = self.client.get(f"/api/curriculum/lesson/lesson_10_fun_time?child_id={child_id}")
         self.assertEqual(l10_res.status_code, 200)
         l10_data = l10_res.json()
-        self.assertEqual(l10_data["lesson"]["title_ar"], "وقت المرح")
+        self.assertEqual(l10_data["lesson"]["title_ar"], "وَقْتُ المَرَحِ")
         self.assertEqual(len(l10_data["content"]["vocabulary_cards"]), 8)
         self.assertIn("speaking_mission", l10_data["content"])
 

@@ -1,0 +1,33 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#140B22;--gold:#E0B04B;--violet:#8B5CF6}
+*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;font-family:Inter}
+.frame{width:1080px;height:1920px;position:relative;overflow:hidden}
+/* Phone screen: 778x1382 at (151,452); bezel 16px */
+#bg{background:radial-gradient(900px 800px at 50% 25%,rgba(139,92,246,.32),transparent 70%),radial-gradient(700px 600px at 50% 110%,rgba(16,185,129,.18),transparent 70%),var(--ink)}
+#bg .phone{position:absolute;left:135px;top:436px;width:810px;height:1414px;border-radius:64px;background:#05020a;
+  box-shadow:0 40px 120px rgba(0,0,0,.7),0 0 0 2px rgba(255,255,255,.08)}
+#bg .tag{position:absolute;left:50%;transform:translateX(-50%);top:1868px;display:none}
+#mask{background:#000}
+#mask .hole{position:absolute;left:151px;top:452px;width:778px;height:1382px;border-radius:48px;background:#fff}
+.cap{position:absolute;left:90px;right:150px;top:262px;height:160px;display:flex;align-items:center;justify-content:center;text-align:center;
+  color:#fff;font-weight:800;font-size:60px;line-height:1.1;letter-spacing:-.03em}
+.cap.small{font-size:50px}
+.cap b{color:var(--gold)}
+</style></head><body>
+<section class="frame" id="bg"><div class="phone"></div></section>
+<section class="frame" id="mask"><div class="hole"></div></section>
+<div id="caps"></div>
+<script>
+const caps = {
+  hook: 'Can you read this?', now: 'Now <b>you can.</b>', tap: 'Tap any word. <b>Hear it.</b>',
+  slow: '<b>Slow it down.</b>', build: 'Build the <b>sentence.</b>',
+};
+for (const g of [2,5,8]) caps['book'+g] = `Your Class ${g} child's CBSE Arabic,<br><b>in English.</b>`;
+const root = document.getElementById('caps');
+for (const [id, html] of Object.entries(caps)) {
+  const s = document.createElement('section'); s.className = 'frame'; s.id = 'c_' + id;
+  s.innerHTML = `<div class="cap${id.startsWith('book') ? ' small' : ''}"><span>${html}</span></div>`; root.appendChild(s);
+}
+</script></body></html>

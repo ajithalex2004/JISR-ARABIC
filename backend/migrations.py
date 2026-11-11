@@ -158,6 +158,11 @@ def upgrade():
         conn.commit()
     if renumbered or unfreed:
         print(f"Lessons: renumbered {renumbered} by page; {unfreed} no longer marked as a free chapter")
+    with engine.connect() as conn:
+        vowelled = vowel_stored_titles(conn)
+        conn.commit()
+    if vowelled:
+        print(f"Added tashkeel to {vowelled} lesson and unit title(s)")
     print(f"Cleared {refresh_lesson_caches()} cached lesson list(s) and package(s)")
     with engine.connect() as conn:
         seeded = seed_promo_codes(conn)
@@ -233,6 +238,25 @@ def repair_lesson_order_and_free_chapters(conn) -> tuple[int, int]:
                 conn.execute(text("UPDATE lessons SET is_first_chapter_demo=:f WHERE id=:id"), {"f": False, "id": lesson.id})
                 unfreed += 1
     return renumbered, unfreed
+
+
+def vowel_stored_titles(conn) -> int:
+    """Give stored lesson and unit titles their tashkeel (title_tashkeel); returns rows changed.
+
+    Only titles equal to a known plain title are replaced, so edited titles stay as they are.
+    """
+    from backend.modules.curriculum.title_tashkeel import TITLE_TASHKEEL
+    tables = set(inspect(conn).get_table_names())
+    changed = 0
+    for table in ("lessons", "units"):
+        if table not in tables:
+            continue
+        for row in conn.execute(text(f"SELECT id, title_ar FROM {table}")).fetchall():
+            vowelled = TITLE_TASHKEEL.get((row.title_ar or "").strip())
+            if vowelled and vowelled != row.title_ar:
+                conn.execute(text(f"UPDATE {table} SET title_ar=:t WHERE id=:id"), {"t": vowelled, "id": row.id})
+                changed += 1
+    return changed
 
 
 def refresh_lesson_caches() -> int:

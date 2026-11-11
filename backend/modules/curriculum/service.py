@@ -241,12 +241,18 @@ def get_lesson_content(lesson_id: str, child_id: Optional[str]=None, is_reviewer
             version_id = version.id
             content_hash = version.content_hash
 
+        # Titles are served vowelled (title_tashkeel) so their Arab-English line is right; the
+        # stored content keeps its integrity hash, so only the served copy changes.
+        from backend.modules.curriculum.title_tashkeel import vowel_title
+        if isinstance(content, dict):
+            content = {**content, **{k: vowel_title(content[k]) for k in ("title_ar", "unit_title_ar")
+                                     if isinstance(content.get(k), str)}}
         pkg = {
             "lesson": {
                 "id": lesson.id,
                 "grade": lesson.grade,
                 "term": lesson.term,
-                "title_ar": lesson.title_ar,
+                "title_ar": vowel_title(lesson.title_ar),
                 "title_en": lesson.title_en,
                 "is_first_chapter_demo": lesson.is_first_chapter_demo,
                 "status": "published"

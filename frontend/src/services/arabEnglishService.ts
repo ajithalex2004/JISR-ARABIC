@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { spellArabicWord } from './arabEnglishSpelling';
 
 type Listener = (enabled: boolean) => void;
 
@@ -431,110 +432,8 @@ export class ArabEnglishHelper {
       return isFirstWord ? this.capitalizeFirst(w) : w;
     }
 
-    // Prefix stripping e.g. al- (ال)
-    let wordToProcess = rawWord;
-    let prefixTrans = '';
-
-    if (normWord.startsWith('ال') && normWord.length > 2) {
-      wordToProcess = wordToProcess.replace(/^(الْ|ال|ٱلْ|ٱل)/, '');
-      prefixTrans = 'al-';
-    } else if ((normWord.startsWith('وال') || normWord.startsWith('فال') || normWord.startsWith('بال')) && normWord.length > 3) {
-      const lead = normWord[0] === 'و' ? 'w' : normWord[0] === 'ف' ? 'f' : 'b';
-      wordToProcess = wordToProcess.substring(3);
-      prefixTrans = `${lead}al-`;
-    }
-
-    const chars = Array.from(wordToProcess);
-    let out = '';
-
-    for (let i = 0; i < chars.length; i++) {
-      const ch = chars[i];
-
-      // Tashkeel / Short vowels
-      if (ch === '\u064E') { out += 'a'; continue; } // Fatha
-      if (ch === '\u064F') { out += 'u'; continue; } // Damma
-      if (ch === '\u0650') { out += 'i'; continue; } // Kasra
-      if (ch === '\u0652') { continue; }            // Sukun
-      if (ch === '\u0651') {                         // Shadda
-        if (out.length > 0) {
-          const lastChar = out[out.length - 1];
-          if (/[a-zA-Z]/.test(lastChar) && !'aeiou'.includes(lastChar.toLowerCase())) {
-            out += lastChar;
-          }
-        }
-        continue;
-      }
-      if (ch === '\u064B') { out += 'an'; continue; } // Tanween Fath
-      if (ch === '\u064C') { out += 'un'; continue; } // Tanween Damm
-      if (ch === '\u064D') { out += 'in'; continue; } // Tanween Kasr
-      if (ch === '\u0670') { out += 'aa'; continue; } // Dagger alif
-
-      // Consonants and letters
-      switch (ch) {
-        case 'ء':
-        case 'ئ':
-        case 'ؤ':
-          out += "'";
-          break;
-        case 'أ':
-        case 'إ':
-        case 'ٱ':
-          out += i === 0 ? (ch === 'إ' ? 'i' : 'a') : "'";
-          break;
-        case 'آ':
-        case 'ا':
-          out += 'aa';
-          break;
-        case 'ب': out += 'b'; break;
-        case 'ت': out += 't'; break;
-        case 'ث': out += 'th'; break;
-        case 'ج': out += 'j'; break;
-        case 'ح': out += 'h'; break;
-        case 'خ': out += 'kh'; break;
-        case 'د': out += 'd'; break;
-        case 'ذ': out += 'dh'; break;
-        case 'ر': out += 'r'; break;
-        case 'ز': out += 'z'; break;
-        case 'س': out += 's'; break;
-        case 'ش': out += 'sh'; break;
-        case 'ص': out += 's'; break;
-        case 'ض': out += 'd'; break;
-        case 'ط': out += 't'; break;
-        case 'ظ': out += 'dh'; break;
-        case 'ع': out += "'"; break;
-        case 'غ': out += 'gh'; break;
-        case 'ف': out += 'f'; break;
-        case 'ق': out += 'q'; break;
-        case 'ك': out += 'k'; break;
-        case 'ل': out += 'l'; break;
-        case 'م': out += 'm'; break;
-        case 'ن': out += 'n'; break;
-        case 'ه': out += 'h'; break;
-        case 'و':
-          if (i === 0 || (i > 0 && chars[i - 1] === '\u064E')) {
-            out += 'w';
-          } else {
-            out += 'oo';
-          }
-          break;
-        case 'ي':
-          if (i === 0 || (i > 0 && chars[i - 1] === '\u064E')) {
-            out += 'y';
-          } else {
-            out += 'ee';
-          }
-          break;
-        case 'ى': out += 'aa'; break;
-        case 'ة': out += 'ah'; break;
-        default: break;
-      }
-    }
-
-    out = out.replace(/a{3,}/g, 'aa');
-    out = out.replace(/e{3,}/g, 'ee');
-    out = out.replace(/o{3,}/g, 'oo');
-
-    let finalWord = `${prefixTrans}${out}`;
+    // Letter-by-letter spelling (article, long vowels, ة, shadda, tanween): arabEnglishSpelling.ts
+    let finalWord = spellArabicWord(rawWord);
     if (!finalWord) return rawWord;
 
     if (isFirstWord) {

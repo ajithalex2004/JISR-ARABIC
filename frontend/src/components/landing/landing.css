@@ -358,6 +358,7 @@
 .jl-parents { background: var(--sand); }
 .jl-parents__grid { display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(40px, 6vw, 96px); align-items: center; }
 .jl-dash { background: #fff; border: 1px solid var(--line); box-shadow: 0 50px 90px -50px rgba(20, 11, 34, 0.45); padding: 26px; }
+.jl-dash__example { display: inline-block; margin-bottom: 14px; background: var(--line); color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
 .jl-dash__head { display: flex; align-items: center; gap: 12px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
 .jl-dash__head div { display: grid; }
 .jl-dash__head small { color: var(--muted); }

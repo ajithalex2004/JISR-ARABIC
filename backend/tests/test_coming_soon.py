@@ -88,9 +88,50 @@ class TestComingSoon(unittest.TestCase):
             subscriptions.start_checkout(child_id="kid", grade=7, plan="term", terms=[2], term=2, promo_code="",
                                          auto_renew=False, parent=parent, db=self.db)
         self.assertEqual(ctx.exception.status_code, 409)
+
+    def test_full_year_is_sold_when_one_term_has_lessons(self):
+        parent = self.db.get(User, "parent")
+        quote = subscriptions.get_quote(child_id="kid", plan="annual", terms=None, term=None, promo_code="",
+                                        auto_renew=False, db=self.db)
+        self.assertEqual(quote["coming_soon_terms"], [2, 3])
+        result = subscriptions.start_checkout(child_id="kid", grade=7, plan="annual", terms=None, term=None,
+                                              promo_code="", auto_renew=False, parent=parent, db=self.db)
+        self.assertEqual(result["status"], "succeeded")
+        unlocked = {a.term for a in self.db.query(TermAccess).filter_by(child_id="kid", grade=7, is_unlocked=True)}
+        self.assertEqual(unlocked, {1, 2, 3})
+        # The coming-soon terms are paid for but still don't open until they have lessons.
         with self.assertRaises(ApplicationError):
-            subscriptions.start_checkout(child_id="kid", grade=7, plan="annual", terms=None, term=None, promo_code="",
-                                         auto_renew=False, parent=parent, db=self.db)
+            require_lesson(self.db, PARENT, "g7_t2_a", child_id="kid")
+
+    def test_full_year_is_refused_when_no_term_has_lessons(self):
+        self.db.add(ChildProfile(id="kid8", parent_id="parent", name="Kid", default_grade=8))
+        self.db.commit()
+        with self.assertRaises(ApplicationError) as ctx:
+            subscriptions.start_checkout(child_id="kid8", grade=8, plan="annual", terms=None, term=None, promo_code="",
+                                         auto_renew=False, parent=self.db.get(User, "parent"), db=self.db)
+        self.assertEqual(ctx.exception.status_code, 409)
+
+    def test_auto_renew_skips_coming_soon_terms(self):
+        from backend.models import Subscription
+        # Class 7: Term 1 has lessons, Terms 2 and 3 are coming soon.
+        sub = Subscription(parent_id="parent", child_id="kid", grade=7, plan="term", next_term=1, status="active",
+                           provider="simulated", amount_usd=10)
+        self.db.add(sub)
+        self.db.flush()
+        first = subscriptions.apply_cycle(sub, amount_usd=10, provider_ref="cycle-1", db=self.db)
+        self.assertEqual(first.term, 1)
+        self.assertEqual(sub.next_term, 2)
+        # Renewal: Term 2 is coming soon. Add real lessons to Term 3 so the renewal moves on to it.
+        self.db.add(Lesson(id="g7_t3_a", unit_id="u", grade=7, term=3, lesson_order=1, title_ar="د", title_en="L", start_page=6))
+        _version(self.db, "g7_t3_a", {"vocabulary_cards": [{"word_ar": "البَحْرُ"}]})
+        self.db.commit()
+        cache_clear()
+        second = subscriptions.apply_cycle(sub, amount_usd=10, provider_ref="cycle-2", db=self.db)
+        self.assertEqual(second.term, 3)
+        self.assertEqual(sub.next_term, 1)
+        # Next renewal: Term 1 is owned and Term 2 is still coming soon, so it doesn't renew into Term 2.
+        third = subscriptions.apply_cycle(sub, amount_usd=10, provider_ref="cycle-3", db=self.db)
+        self.assertNotEqual(third.term, 2)
 
 
 if __name__ == "__main__":

@@ -150,8 +150,8 @@ class TestPhase3Trust(unittest.TestCase):
         self.assertEqual(dash["overall_stats"]["total_xp"], 0)
 
         # Missing coverage must be 0% completed
-        self.assertEqual(dash["missing_coverage"]["unit_1_coverage_pct"], 0.0)
         self.assertEqual(dash["missing_coverage"]["completed_lessons_count"], 0)
+        self.assertEqual(dash["missing_coverage"]["grade"], 5)
 
         # Skills must be unassessed
         skills = dash["skills"]
@@ -179,8 +179,8 @@ class TestPhase3Trust(unittest.TestCase):
         dash = get_parent_dashboard(child.id, db=self.db)
         self.assertEqual(dash["overall_stats"]["total_attempts"], 3)
         self.assertEqual(dash["overall_stats"]["accuracy_pct"], 66.7)
-        self.assertEqual(dash["missing_coverage"]["completed_lessons_count"], 1)
-        self.assertEqual(dash["missing_coverage"]["unit_1_coverage_pct"], 20.0)
+        # Three answers are not a finished chapter.
+        self.assertEqual(dash["missing_coverage"]["completed_lessons_count"], 0)
 
         vocab_skill = dash["skills"]["vocabulary"]
         self.assertTrue(vocab_skill["assessed"])

@@ -63,7 +63,7 @@ export const FEATURES = [
 
 export const PLANS = [
   {
-    id: 'free', name: 'Try it', price: 'Free', cadence: 'Chapter 1 of each term',
+    id: 'free', name: 'Try it', price: 'Free', cadence: 'Chapter 1 of Term 1',
     points: ['The full reader with line-by-line English', 'Native audio for every word', 'No card needed'],
     cta: 'Try a free lesson', intent: 'signup' as const,
   },
@@ -82,7 +82,7 @@ export const PLANS = [
 export const FAQS = [
   { q: 'Who is JISR for?', a: 'Children in UAE schools who learn Arabic as an additional language under the CBSE curriculum, Classes 1 to 10, and the parents who help them with homework without speaking Arabic themselves.' },
   { q: 'Does it follow my child’s school textbook?', a: 'Yes. JISR is built on the CBSE Arabic syllabus and the textbook pages your child already uses, term by term, so what they practise at home is what they meet in class.' },
-  { q: 'What is free?', a: 'The first chapter of each term is free, with the full reader, translations and audio. You can explore it without an account.' },
+  { q: 'What is free?', a: 'Chapter 1 of Term 1 is free for your child’s class, with the full reader, translations and audio. Terms 2 and 3 open with a term or full-year plan.' },
   { q: 'How do payments work?', a: 'Payments are processed securely by Stripe. A term is $10 and the full year is $25.50 (15% off). Every payment comes with a receipt number and a UAE tax invoice. If you choose auto-renew, you can turn it off at any time and keep access until the end of the period you paid for.' },
   { q: 'Can my child use it without my email and password?', a: 'Yes. Each child signs in with your email and their own 4-digit PIN, so they can learn on their own while you keep control of the account and payments.' },
   { q: 'Which devices does it work on?', a: 'Any modern browser on a phone, tablet or computer. Nothing to install: open the site and start learning.' },

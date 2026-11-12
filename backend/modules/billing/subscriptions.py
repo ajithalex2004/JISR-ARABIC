@@ -83,7 +83,26 @@ def get_quote(*, child_id: str, plan: str, terms, term, promo_code: str, auto_re
         "renewal_months": (pricing.ANNUAL_RENEWAL_MONTHS if plan_name == "annual" else pricing.TERM_RENEWAL_MONTHS) if auto_renew else None,
         "provider": provider(),
         "prices": pricing.price_list(),
+        # Terms of the plan with no lessons yet: included, and they open as soon as they are ready.
+        "coming_soon_terms": sorted(_coming_soon(db, child.default_grade, chosen)) if child.default_grade else [],
     }
+
+
+def _coming_soon(db, grade: int, terms: List[int]) -> set:
+    from backend.modules.curriculum.coming_soon import coming_soon_terms
+    return coming_soon_terms(db, grade, terms)
+
+
+def _check_sellable(db, grade: int, terms: List[int]) -> None:
+    """A single term (or two) must have lessons. The full year needs at least one term with lessons:
+    its coming-soon terms are included and open as soon as they are ready."""
+    soon = sorted(_coming_soon(db, grade, terms))
+    if not soon:
+        return
+    if len(terms) == 3 and len(soon) < 3:
+        return
+    raise ApplicationError(409, f"Class {grade} Term{'s' if len(soon) > 1 else ''} {', '.join(map(str, soon))} "
+                                f"{'are' if len(soon) > 1 else 'is'} coming soon and can't be bought yet.")
 
 
 def _check_auto_renew(terms: List[int], auto_renew: bool) -> None:
@@ -97,12 +116,8 @@ def start_checkout(*, child_id: str, grade: int, plan: str, terms, term, promo_c
     child = _child(child_id, db)
     chosen = _plan_terms(plan, terms, term)
     _check_auto_renew(chosen, auto_renew)
-    # Terms with no real lessons yet are "Coming soon": nothing to sell.
-    from backend.modules.curriculum.coming_soon import coming_soon_terms
-    soon = sorted(coming_soon_terms(db, grade, chosen))
-    if soon:
-        raise ApplicationError(409, f"Class {grade} Term{'s' if len(soon) > 1 else ''} {', '.join(map(str, soon))} "
-                                    f"{'are' if len(soon) > 1 else 'is'} coming soon and can't be bought yet.")
+    # Terms with no real lessons yet are "Coming soon": not sold on their own.
+    _check_sellable(db, grade, chosen)
     promo = (promo_code or "").strip().upper()
     promo_pct = _promo_pct(promo, child.parent_id, db) if promo else 0.0
     price = pricing.quote(chosen, promo_pct=promo_pct)
@@ -221,7 +236,7 @@ def apply_cycle(sub: Subscription, *, amount_usd: float, provider_ref: str, db: 
     if sub.plan == "annual":
         terms = [1, 2, 3]
     else:
-        terms = [sub.next_term or 1]
+        terms = [sub.next_term or 1] if first else [_renewal_term(sub, child, grade, db)]
         sub.next_term = terms[0] % 3 + 1
     sub.grade = grade
     months = pricing.ANNUAL_RENEWAL_MONTHS if sub.plan == "annual" else pricing.TERM_RENEWAL_MONTHS
@@ -231,6 +246,27 @@ def apply_cycle(sub: Subscription, *, amount_usd: float, provider_ref: str, db: 
     method = CARD_SUBSCRIPTION if sub.provider == "stripe" else "simulated_subscription"
     return record_purchase(child=child, grade=grade, terms=terms, amount_usd=amount_usd, provider_ref=provider_ref,
                            payment_method=method, promo=promo if first else "", subscription=sub, db=db)
+
+
+def _renewal_term(sub: Subscription, child: ChildProfile, grade: int, db) -> int:
+    """The term a term-plan payment unlocks: the planned next term, moving past terms that are
+    coming soon or already unlocked for this child, so a renewal never buys an empty term."""
+    planned = sub.next_term or 1
+    order = [(planned - 1 + i) % 3 + 1 for i in range(3)]
+    soon = _coming_soon(db, grade, order)
+    owned = {a.term for a in db.query(TermAccess).filter(TermAccess.child_id == child.id, TermAccess.grade == grade,
+                                                         TermAccess.is_unlocked == True).all()}  # noqa: E712
+    for t in order:
+        if t not in soon and t not in owned:
+            return t
+    for t in order:
+        if t not in soon:
+            return t
+    import logging
+    logging.getLogger("fahim.billing").warning(
+        "Subscription %s renewed but Class %s has no term with lessons; unlocking Term %s for when it opens",
+        sub.id, grade, planned)
+    return planned
 
 
 def _email(txn: PaymentTransaction, db) -> None:

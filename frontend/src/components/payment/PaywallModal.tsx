@@ -323,6 +323,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                       <div className="flex justify-between font-black text-slate-900 border-t border-slate-300 pt-1"><span>Total today</span><span className="font-mono">{usd(quote.total_usd)}</span></div>
                       <div className="flex justify-between text-slate-500"><span>Includes 5% UAE VAT</span><span className="font-mono">{usd(quote.vat_usd)}</span></div>
                       {quote.auto_renew && quote.renewal_price_usd && <div className="text-slate-600 pt-1">Then {usd(quote.renewal_price_usd)} every {quote.renewal_months} months until you cancel.</div>}
+                      {(quote.coming_soon_terms?.length ?? 0) > 0 && <div className="text-amber-800 bg-amber-50 border border-amber-200 p-2 mt-1">Term{quote.coming_soon_terms!.length > 1 ? 's' : ''} {quote.coming_soon_terms!.join(' & ')} {quote.coming_soon_terms!.length > 1 ? 'are' : 'is'} coming soon. {quote.coming_soon_terms!.length > 1 ? 'They are' : 'It is'} included in this pass and will open automatically as soon as the lessons are ready.</div>}
                     </div>
                   )}
                 </>

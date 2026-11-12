@@ -542,6 +542,7 @@ export interface PriceQuote {
   auto_renew: boolean;
   renewal_price_usd: number | null;
   renewal_months: number | null;
+  coming_soon_terms?: number[];
   provider: 'stripe' | 'simulated' | 'unavailable';
 }
 

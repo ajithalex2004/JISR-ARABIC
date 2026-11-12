@@ -4,7 +4,7 @@ import {
   Search, Eye, FileText, Volume2, Maximize2, RefreshCw, ZoomIn
 } from 'lucide-react';
 import { audioManager } from '../../services/audio';
-import { API_BASE, authenticatedFetch, parseErrorDetail } from '../../services/api';
+import { API_BASE, api, authenticatedFetch, parseErrorDetail } from '../../services/api';
 
 interface TextbookBook {
   id: string;
@@ -27,6 +27,10 @@ interface PageData {
   confidence: number;
   review_status: string;
   image_url: string;
+  /** A teacher's check of the text against the scan (separate from the OCR software's own label). */
+  teacher_reviewed?: boolean;
+  reviewed_at?: string | null;
+  review_note?: string | null;
 }
 
 export const TextbookPdfLibrary: React.FC = () => {
@@ -450,6 +454,14 @@ export const TextbookPdfLibrary: React.FC = () => {
               </div>
             </div>
 
+            {/* Teacher check of this page's text */}
+            <PageTeacherCheck
+              key={`${currentEditionId}-${currentPage.pdf_page}`}
+              editionId={currentEditionId}
+              page={currentPage}
+              onSaved={(update) => setPages((prev) => prev.map((p) => (p.pdf_page === currentPage.pdf_page ? { ...p, ...update } : p)))}
+            />
+
             {/* English Translation Box */}
             <div className="bg-emerald-50/60 border border-emerald-200 rounded-lg p-3.5 overflow-y-auto max-h-[240px] space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900 border-b border-emerald-200 pb-1">
@@ -498,3 +510,56 @@ export const TextbookPdfLibrary: React.FC = () => {
     </div>
   );
 };
+
+
+/** Records that a teacher checked the page text against the scan, optionally with corrected text. */
+function PageTeacherCheck({ editionId, page, onSaved }: { editionId: string; page: PageData; onSaved: (u: Partial<PageData>) => void }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState(page.ocr_text_ar || '');
+  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  // Hand-transcribed pages ("verified", Classes 5-8 Term 1) are shown from the code, so their text isn't edited here.
+  const editable = page.review_status !== 'verified';
+  const save = async () => {
+    setSaving(true); setError('');
+    try {
+      const changed = editable && text.trim() !== (page.ocr_text_ar || '').trim();
+      const res = await api.teacherReviewPage(editionId, page.pdf_page, note, changed ? text : undefined);
+      onSaved({ teacher_reviewed: true, review_status: 'reviewed', reviewed_at: res.reviewed_at, review_note: note || null, ...(changed ? { ocr_text_ar: text } : {}) });
+      setOpen(false);
+    } catch (e: any) { setError(e.message); } finally { setSaving(false); }
+  };
+  return (
+    <div className={`border rounded-lg p-3 text-xs space-y-2 ${page.teacher_reviewed ? 'border-emerald-300 bg-emerald-50' : 'border-amber-300 bg-amber-50'}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-bold">
+          {page.teacher_reviewed
+            ? `Checked by a teacher${page.reviewed_at ? ` · ${new Date(page.reviewed_at).toLocaleDateString()}` : ''}`
+            : 'Not checked by a teacher: the text was read by machine'}
+        </span>
+        {!open && <button type="button" onClick={() => setOpen(true)} className="px-2 py-1 border border-slate-400 bg-white">{page.teacher_reviewed ? 'Check again' : 'Check this page'}</button>}
+      </div>
+      {page.review_note && <p className="text-slate-600">Note: {page.review_note}</p>}
+      {open && (
+        <div className="space-y-2">
+          {editable ? <>
+            <p className="text-slate-700">Compare the text with the scan. Fix any wrong letters, vowel marks or missing lines, then record the check.</p>
+            <label className="block font-semibold" htmlFor={`pt-${page.pdf_page}`}>Page text</label>
+            <textarea id={`pt-${page.pdf_page}`} dir="rtl" value={text} onChange={(e) => setText(e.target.value)} rows={8}
+              className="w-full border border-slate-300 p-2 font-arabic text-sm leading-loose" />
+          </> : <p className="text-slate-700">This page's text was transcribed by hand; record your check, and note any error so it can be fixed in the transcription.</p>}
+          <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={2000} placeholder="Note (optional): what was corrected"
+            className="w-full border border-slate-300 px-2 py-1" aria-label="Note" />
+          {error && <p role="alert" className="text-red-700">{error}</p>}
+          <div className="flex gap-2">
+            <button type="button" disabled={saving} onClick={save} className="px-3 py-1 bg-emerald-700 text-white disabled:opacity-50">
+              {editable && text.trim() !== (page.ocr_text_ar || '').trim() ? 'Save corrected text and record the check' : 'Record the check'}
+            </button>
+            <button type="button" onClick={() => setOpen(false)} className="px-3 py-1 border border-slate-300 bg-white">Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

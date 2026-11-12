@@ -51,19 +51,20 @@ class TestArchitecture(unittest.TestCase):
 
     def test_file_not_found_preserves_http_error(self):
         client = TestClient(app)
-        response = client.get("/api/admin/page-image/999999")
+        response = client.get("/api/admin/page-image/999999?edition_id=moe_gr5_vol1_2023")
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Page image for page 999999 not found"})
+        self.assertEqual(response.json(), {"detail": "Page image for page 999999 not found in moe_gr5_vol1_2023"})
 
     def test_scanned_page_still_resolves_from_project_root(self):
         from backend.modules.curriculum.authoring import get_page_image
+        # A book's pages live in pdf_pages_sample/<edition>/ (unnamed copies are no longer served).
         folder = Path(__file__).resolve().parents[2] / "pdf_pages_sample"
-        sample = next(folder.glob("page_*.png"), None)
+        sample = next(folder.glob("*/page_*.png"), None)
         if sample is None:
             self.skipTest("No scanned page fixture available")
-        page = int(sample.stem.removeprefix("page_"))
-        self.assertEqual(Path(get_page_image(page)).resolve(), sample.resolve())
-        response = TestClient(app).get(f"/api/admin/page-image/{page}")
+        page, edition = int(sample.stem.removeprefix("page_")), sample.parent.name
+        self.assertEqual(Path(get_page_image(page, edition)).resolve(), sample.resolve())
+        response = TestClient(app).get(f"/api/admin/page-image/{page}?edition_id={edition}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers["content-type"], "image/png")
         self.assertEqual(response.content, sample.read_bytes())

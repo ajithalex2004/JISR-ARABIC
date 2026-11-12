@@ -3694,6 +3694,41 @@ function hasArabicLetters(str: string): boolean {
 /**
  * Translates an individual Arabic word by looking up exact, normalized, and morphologically stemmed variants
  */
+// Teacher-reviewed meanings (Admin > Word meanings), applied over the built-in entries below.
+// A null translation means a teacher rejected the word's meaning: show none.
+type Correction = { translation: string | null; part_of_speech?: string | null };
+let teacherCorrections: Record<string, Correction> = {};
+let correctionsLoaded: Promise<void> | null = null;
+
+export function loadWordCorrections(force = false): Promise<void> {
+  if (correctionsLoaded && !force) return correctionsLoaded;
+  correctionsLoaded = fetch(createApiUrl('/api/curriculum/word-corrections').toString())
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => { if (data?.corrections && typeof data.corrections === 'object') teacherCorrections = data.corrections; })
+    .catch(() => { /* offline: the built-in meanings still work */ });
+  return correctionsLoaded;
+}
+if (typeof window !== 'undefined') loadWordCorrections();
+
+const POS = new Set(['noun', 'verb', 'adjective', 'particle', 'pronoun', 'adverb']);
+function teacherMeaning(word: string): WordDefinition | undefined {
+  const c = teacherCorrections[canonicalArabic(word)];
+  if (!c) return undefined;
+  if (!c.translation) return { translation: '' };
+  const pos = c.part_of_speech && POS.has(c.part_of_speech) ? (c.part_of_speech as WordDefinition['partOfSpeech']) : undefined;
+  return { translation: c.translation, ...(pos ? { partOfSpeech: pos } : {}) };
+}
+
+/** Every built-in entry (one per spelling), for the admin review queue. */
+export function listBuiltInEntries(): { word: string; translation: string; partOfSpeech?: string }[] {
+  return Object.entries(ARABIC_DICTIONARY).map(([word, def]) => ({ word, translation: def.translation, partOfSpeech: def.partOfSpeech }));
+}
+
+/** The teacher's decision on a word, if any (for the admin review queue). */
+export function getTeacherCorrection(word: string): Correction | undefined {
+  return teacherCorrections[canonicalArabic(word)];
+}
+
 export function getWordTranslation(rawWord: string, depth = 0): WordDefinition {
   if (!rawWord) {
     return { translation: '' };
@@ -3702,6 +3737,10 @@ export function getWordTranslation(rawWord: string, depth = 0): WordDefinition {
   // Clean word of punctuation
   const cleanWord = rawWord.replace(/[؟!\.,،؛:\'\"()[\]\-—/\\«»<>]/g, '').trim();
   if (!cleanWord) return { translation: '' };
+
+  // 0. A teacher's reviewed meaning (or rejection) wins over the built-in entry.
+  const reviewed = teacherMeaning(cleanWord);
+  if (reviewed) return reviewed;
 
   // 1. Check numeric tokens (e.g. 7, 9, 11, 15, 90, 105 or Arabic numerals)
   if (/^\d+$/.test(cleanWord)) {

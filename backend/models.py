@@ -382,6 +382,33 @@ class ScannedPage(Base):
     ocr_text_ar = Column(Text, nullable=False)
     confidence = Column(Float, default=0.9)
     review_status = Column(String(50), default="automatic_unverified")
+    # A teacher's check of the page text against the scan ("Mark page as teacher-checked").
+    reviewed_by = Column(String(36), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    review_note = Column(Text, nullable=True)
+
+
+class WordGloss(Base):
+    """An English meaning of one Arabic word and its teacher review.
+
+    Filled with the meanings the AI gives for words the built-in dictionary lacks (status
+    "pending"), and by teachers reviewing any word, built-in ones included. Once reviewed, the
+    teacher's decision is what learners get: approved and corrected meanings are served before
+    the AI and the built-in dictionary; a rejected meaning is not shown.
+    """
+    __tablename__ = "word_glosses"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    word = Column(String(80), nullable=False, unique=True, index=True)  # canonical form (canonical_word)
+    word_display = Column(String(80), nullable=False)
+    translation = Column(String(160), nullable=True)
+    part_of_speech = Column(String(20), nullable=True)
+    source = Column(String(40), nullable=True)  # gemini, machine_translation, dictionary, teacher
+    status = Column(String(20), nullable=False, default="pending", index=True)  # pending, approved, corrected, rejected
+    reviewed_by = Column(String(36), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    review_note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
 class CapsuleProgress(Base):

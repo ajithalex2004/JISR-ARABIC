@@ -736,6 +736,31 @@ export const api = {
     return jsonOrThrow(res);
   },
 
+  /** Word meanings waiting for (or done with) a teacher's review. */
+  async getWordGlossQueue(status: 'pending' | 'reviewed' | 'all', q = '', offset = 0, limit = 50) {
+    const params = new URLSearchParams({ status, q, offset: String(offset), limit: String(limit) });
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/word-glosses?${params.toString()}`);
+    return jsonOrThrow(res);
+  },
+
+  /** A teacher approves, corrects or rejects a word's English meaning. */
+  async reviewWordGloss(body: { word: string; action: 'approve' | 'correct' | 'reject'; translation?: string;
+    part_of_speech?: string; note?: string; current?: string; source?: string }) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/word-glosses/review`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    return jsonOrThrow(res);
+  },
+
+  /** A teacher's check of a textbook page's text against its scan, with an optional corrected text. */
+  async teacherReviewPage(editionId: string, pdfPage: number, note: string, correctedText?: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/pages/${encodeURIComponent(editionId)}/${pdfPage}/teacher-review`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note, corrected_text: correctedText ?? null }),
+    });
+    return jsonOrThrow(res);
+  },
+
   /** A teacher's sign-off that a version's Arabic, meanings and examples were checked. */
   async teacherReviewLessonVersion(lessonId: string, versionId: string, note: string) {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/lessons/${encodeURIComponent(lessonId)}/versions/${encodeURIComponent(versionId)}/teacher-review`, {

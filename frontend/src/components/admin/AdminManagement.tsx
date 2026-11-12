@@ -6,6 +6,7 @@ import { PromoCodesAdmin, SubscriptionsAdmin } from './PromoCodesAdmin';
 import { SystemHealth } from './SystemHealth';
 import { ContentProgress } from './ContentProgress';
 import { TutorAssignments } from './TutorAssignments';
+import WordReviewQueue from './WordReviewQueue';
 
 type TabProps = { openParent: (email: string) => void; parentQuery: string };
 
@@ -16,6 +17,7 @@ const TABS = [
   { key: 'subscriptions', label: 'Subscriptions', render: () => <SubscriptionsAdmin /> },
   { key: 'promos', label: 'Promo codes', render: () => <PromoCodesAdmin /> },
   { key: 'content', label: 'Content', render: () => <ContentProgress /> },
+  { key: 'words', label: 'Word meanings', render: () => <WordReviewQueue /> },
   { key: 'health', label: 'System health', render: () => <SystemHealth /> },
   { key: 'tutors', label: 'Tutors', render: () => <TutorAssignments /> },
 ] as const;

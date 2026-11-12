@@ -310,8 +310,8 @@ class _PaywallDialogState extends State<PaywallDialog> {
                     Expanded(
                       child: Text(
                         isAr
-                            ? 'الفصل الأول: الدرس الأول (ألعاب الكرة) مجاني بالكامل كعينة تجريبية. اشترك لفتح باقي دروس الفصول ومساعد المعلم الذكي (فاهم).'
-                            : 'Chapter 1 (Ball Games / ألعاب الكرة) of Term 1 is 100% Free Demo. Subscribe to unlock subsequent chapters across Terms 1, 2, 3 and Ask Fahim AI.',
+                            ? 'الدرس الأول من الفصل الدراسي الأول للصف ${widget.grade} مجاني. اشترك لفتح باقي الدروس في الفصول 1 و2 و3 ومساعد المعلم الذكي (فاهم).'
+                            : 'Chapter 1 of Term 1 is free for Class ${widget.grade}. Subscribe to unlock the other chapters in Terms 1, 2 and 3, and Ask Fahim AI.',
                         style: const TextStyle(fontSize: 11, color: Color(0xFF065F46), height: 1.3),
                       ),
                     ),

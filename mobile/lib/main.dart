@@ -1614,8 +1614,8 @@ class _MainScreenState extends State<MainScreen> {
                 _drawerItem(
                   icon: Icons.auto_stories_rounded,
                   title: _isArabic
-                      ? 'الدرس النشط: ${_activeLessonPackage?.titleAr ?? 'ألعاب الكرة'}'
-                      : 'Active Lesson: ${_activeLessonPackage?.titleEn ?? 'Ball Games'}',
+                      ? (_activeLessonPackage == null ? 'الدرس النشط' : 'الدرس النشط: ${_activeLessonPackage!.titleAr}')
+                      : (_activeLessonPackage == null ? 'Active Lesson' : 'Active Lesson: ${_activeLessonPackage!.titleEn}'),
                   viewKey: 'lesson',
                   badge: 'Full Book',
                 ),

@@ -29,6 +29,30 @@ def curated_pages() -> Dict[str, int]:
     return {edition_id(grade, 1): len({str(page) for page in data}) for grade, data in sets.items()}
 
 
+def pages_on_disk() -> Dict[str, Dict[str, int]]:
+    """Page images and page text that each book has on the content volume.
+
+    Books loaded with the bulk content upload (scripts/upload_content.py) have their pages only
+    here: page_N.png in pdf_pages_sample/<book>/ and page_N.json (the text the Reading tab
+    shows) in vision-output-new/ or vision-output/. They have no PDF and no scanned-page rows,
+    so counting only those made a book that learners can read look missing.
+    """
+    root = content_root()
+    found: Dict[str, Dict[str, set]] = {}
+    for folder, kind, suffix in (("pdf_pages_sample", "images", ".png"), ("vision-output-new", "text", ".json"),
+                                 ("vision-output", "text", ".json")):
+        base = root / folder
+        if not base.is_dir():
+            continue
+        for book in base.iterdir():
+            if not book.is_dir():
+                continue
+            pages = {f.stem for f in book.glob(f"page_*{suffix}")}
+            if pages:
+                found.setdefault(book.name, {"images": set(), "text": set()})[kind] |= pages
+    return {book: {kind: len(pages) for kind, pages in kinds.items()} for book, kinds in found.items()}
+
+
 def _stage(cell: Dict[str, Any]) -> str:
     lessons = cell["lessons"]
     if lessons["total"] and lessons["published"] == lessons["total"]:
@@ -36,7 +60,7 @@ def _stage(cell: Dict[str, Any]) -> str:
         return "published" if lessons["from_book"] == lessons["total"] else "published_unsourced"
     if lessons["published"] or lessons["in_review"]:
         return "in_review"
-    read = cell["pages_read"] + cell["pages_curated"]
+    read = max(cell["pages_read"] + cell["pages_curated"], cell.get("pages_text_on_disk", 0))
     if read:
         return "ready_to_draft" if read >= (cell["total_pages"] or 0) > 0 else "reading"
     return "uploaded" if cell["uploaded"] else "no_book"
@@ -95,6 +119,7 @@ def content_progress(db: Session) -> Dict[str, Any]:
 
     from backend.modules.curriculum.page_reading import books_being_read, terms_being_drafted
     curated = curated_pages()
+    on_disk = pages_on_disk()
     reading = books_being_read()
     drafting = terms_being_drafted()
     uploads = content_root() / "uploads"
@@ -108,11 +133,12 @@ def content_progress(db: Session) -> Dict[str, Any]:
             lesson_counts = lessons.get((grade, term), {"total": 0, "published": 0, "in_review": 0, "from_book": 0,
                                                         "ai_drafts": 0, "teacher_reviewed": 0})
             pdf_stored = (uploads / f"{book_id}.pdf").is_file()
+            disk = on_disk.get(book_id, {"images": 0, "text": 0})
             cell = {
                 "grade": grade,
                 "term": term,
                 "edition_id": book_id,
-                "uploaded": pdf_stored or bool(read["read"] or read["failed"]),
+                "uploaded": pdf_stored or bool(read["read"] or read["failed"] or disk["images"]),
                 # The PDF is on disk, so its pages can be read again without re-uploading.
                 "pdf_stored": pdf_stored,
                 "reading_queued": book_id in reading,
@@ -120,7 +146,10 @@ def content_progress(db: Session) -> Dict[str, Any]:
                 "pages_read": read["read"],
                 "pages_failed": read["failed"],
                 "pages_curated": curated.get(book_id, 0),
-                "book_read": bool(read["read"] or curated.get(book_id, 0)),
+                # Pages on the content volume (bulk content upload): images, and the text learners read.
+                "page_images_on_disk": disk["images"],
+                "pages_text_on_disk": disk["text"],
+                "book_read": bool(read["read"] or curated.get(book_id, 0) or disk["text"]),
                 # Lessons not yet drafted from the book; drafting needs page images, so scanned pages.
                 "draft_lesson_ids": to_draft.get((grade, term), []) if read["read"] else [],
                 "drafting_queued": (grade, term) in drafting,

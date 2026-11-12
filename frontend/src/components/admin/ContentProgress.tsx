@@ -11,6 +11,9 @@ type Cell = {
   pages_read: number;
   pages_failed: number;
   pages_curated: number;
+  /** Pages on the content volume (bulk content upload): page images, and page text learners read. */
+  page_images_on_disk?: number;
+  pages_text_on_disk?: number;
   book_read: boolean;
   pdf_stored: boolean;
   reading_queued: boolean;
@@ -53,8 +56,9 @@ function CellCard({ cell, busy, onRead, onDraft }: { cell: Cell } & Actions) {
     <div className="font-bold">{stage.label}</div>
     {!cell.uploaded && !cell.book_read && cell.stage !== 'no_book' && <div className="font-semibold">Book not uploaded</div>}
     {cell.stage !== 'no_book' && (cell.uploaded || cell.book_read) && <div>
-      Pages read: {cell.pages_read + cell.pages_curated}{cell.total_pages ? ` / ${cell.total_pages}` : ''}
+      Pages read: {Math.max(cell.pages_read + cell.pages_curated, cell.pages_text_on_disk ?? 0)}{cell.total_pages ? ` / ${cell.total_pages}` : ''}
       {cell.pages_curated > 0 && <span className="opacity-75"> ({cell.pages_curated} hand-checked)</span>}
+      {(cell.page_images_on_disk ?? 0) > 0 && cell.pages_read === 0 && <span className="opacity-75"> · {cell.page_images_on_disk} page images from the content upload</span>}
       {cell.pages_failed > 0 && <span className="text-red-700"> · {cell.pages_failed} failed</span>}
     </div>}
     {lessons.total > 0 && <div>

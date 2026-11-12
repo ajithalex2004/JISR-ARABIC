@@ -489,22 +489,18 @@ def _get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | No
 def get_page_image(pdf_page: int, edition_id: str | None = None):
     """Resolve a scanned page file of one book.
 
-    With an edition, only that book's own page is served: a missing page is a 404, never the
-    same page number from another book (which showed, say, a Class 5 page as Class 11's).
-    Without an edition, only the legacy root files (pdf_pages_sample/page_N.png) are used.
+    A book serves only its own pages: a missing page is a 404, never the same page number from
+    another book. Requests that name no book are refused: the old unnamed copies at the top of
+    pdf_pages_sample/ were watermarked Class 5 scans (almanahj.com) and no app uses them.
     """
-    base_dir = content_root() / "pdf_pages_sample"
-    if edition_id:
-        if not re.fullmatch(r"[A-Za-z0-9_-]+", edition_id):
-            raise ApplicationError(status_code=400, detail="Invalid edition id")
-        edition_path = base_dir / edition_id / f"page_{pdf_page}.png"
-        if edition_path.is_file():
-            return str(edition_path)
-        raise ApplicationError(status_code=404, detail=f"Page image for page {pdf_page} not found in {edition_id}")
-    legacy_path = base_dir / f"page_{pdf_page}.png"
-    if legacy_path.is_file():
-        return str(legacy_path)
-    raise ApplicationError(status_code=404, detail=f"Page image for page {pdf_page} not found")
+    if not edition_id:
+        raise ApplicationError(status_code=404, detail="Name the book (edition_id) to get a page image")
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", edition_id):
+        raise ApplicationError(status_code=400, detail="Invalid edition id")
+    edition_path = content_root() / "pdf_pages_sample" / edition_id / f"page_{pdf_page}.png"
+    if edition_path.is_file():
+        return str(edition_path)
+    raise ApplicationError(status_code=404, detail=f"Page image for page {pdf_page} not found in {edition_id}")
 
 
 def get_textbook_library(db: Session):
@@ -608,6 +604,10 @@ def get_textbook_pages(edition_id: str, db: Session):
                 "review_status": p.review_status,
                 "image_url": f"/api/admin/page-image/{p.pdf_page}?edition_id={edition_id}"
             })
+        # A teacher's check of the page (page_review), whatever the text's origin.
+        result[-1].update({"teacher_reviewed": bool(p.reviewed_at), "reviewed_by": p.reviewed_by,
+                           "reviewed_at": p.reviewed_at.isoformat() if p.reviewed_at else None,
+                           "review_note": p.review_note})
 
     return result
 

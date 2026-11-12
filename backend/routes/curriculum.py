@@ -99,16 +99,23 @@ def textbook_info(edition_id: str, db: Session=Depends(get_db)):
     return get_textbook_info(edition_id, db=db)
 
 @router.get('/word-gloss')
-def word_gloss(word: str=Query(..., max_length=40), context: str=Query('', max_length=300)):
+def word_gloss(word: str=Query(..., max_length=40), context: str=Query('', max_length=300), db: Session=Depends(get_db)):
     """English meaning of one Arabic word, for tooltips when the client dictionary has no entry."""
     from backend.modules.curriculum.glossary import gloss_word
-    return gloss_word(word, context) or {"translation": None, "part_of_speech": None, "source": None}
+    return gloss_word(word, context, db=db) or {"translation": None, "part_of_speech": None, "source": None}
+
+@router.get('/word-corrections')
+def word_corrections(db: Session=Depends(get_db)):
+    """Teacher-reviewed word meanings, applied over the website's built-in dictionary
+    ({word: {translation, part_of_speech}}; translation null means show no meaning)."""
+    from backend.modules.curriculum.word_review import word_corrections as corrections
+    return {"corrections": corrections(db)}
 
 @router.post('/word-glosses')
-def word_glosses(payload: WordGlossesRequest):
+def word_glosses(payload: WordGlossesRequest, db: Session=Depends(get_db)):
     """English meanings for the unknown words of one sentence, fetched ahead so word tooltips open instantly."""
     from backend.modules.curriculum.glossary import gloss_words
-    glosses = gloss_words([w[:40] for w in payload.words], payload.context)
+    glosses = gloss_words([w[:40] for w in payload.words], payload.context, db=db)
     return {"glosses": {word: ({"translation": g["translation"], "part_of_speech": g["part_of_speech"]} if g else None)
                         for word, g in glosses.items()}}
 

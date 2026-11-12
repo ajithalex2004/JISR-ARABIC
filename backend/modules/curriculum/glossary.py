@@ -152,21 +152,31 @@ def _machine_translation(word: str) -> Optional[dict]:
     return {"translation": translation, "part_of_speech": None, "source": "machine_translation"}
 
 
-def gloss_word(word: str, context: str = "") -> Optional[dict]:
-    """Return {"translation", "part_of_speech", "source"} for an Arabic word, or None."""
+def gloss_word(word: str, context: str = "", db=None) -> Optional[dict]:
+    """Return {"translation", "part_of_speech", "source"} for an Arabic word, or None.
+
+    With a database session, a teacher's decision on the word (word_review) comes first, and
+    an AI meaning served for the first time is queued for teacher review."""
+    from backend.modules.curriculum.word_review import record_ai_meanings, teacher_decisions
     word = _clean(word, 40)
     context = _clean(context, 300)
     if not word or not _ARABIC.search(word):
         return None
 
+    decided = teacher_decisions(db, [word])
+    if word in decided:
+        return decided[word]
+
     key = (word, context)
     cached = _cached(key)
     if cached is not None:
+        record_ai_meanings(db, {word: cached})
         return cached
 
     result = _gemini_gloss(word, context) or _machine_translation(word)
     if result is not None:
         _remember(key, result)
+        record_ai_meanings(db, {word: result})
     return result
 
 
@@ -205,7 +215,7 @@ def _gemini_gloss_many(words: List[str], context: str) -> Dict[str, dict]:
         return {}
 
 
-def gloss_words(words: List[str], context: str = "") -> Dict[str, Optional[dict]]:
+def gloss_words(words: List[str], context: str = "", db=None) -> Dict[str, Optional[dict]]:
     """Meanings for several words of one sentence: cached ones first, the rest with one AI call
     (machine translation, in parallel, for any the AI leaves out). Keys are the words as sent."""
     context = _clean(context, 300)
@@ -215,9 +225,14 @@ def gloss_words(words: List[str], context: str = "") -> Dict[str, Optional[dict]
         if word and _ARABIC.search(word):
             cleaned.setdefault(raw, word)
 
+    from backend.modules.curriculum.word_review import record_ai_meanings, teacher_decisions
+    decided = teacher_decisions(db, list(cleaned.values()))
     results: Dict[str, Optional[dict]] = {}
     missing: List[str] = []
     for raw, word in cleaned.items():
+        if word in decided:  # a teacher's meaning (or rejection) wins
+            results[raw] = decided[word]
+            continue
         results[raw] = _cached((word, context))
         if results[raw] is None and word not in missing:
             missing.append(word)
@@ -232,6 +247,7 @@ def gloss_words(words: List[str], context: str = "") -> Dict[str, Optional[dict]
     for word, result in found.items():
         _remember((word, context), result)
     for raw, word in cleaned.items():
-        if results[raw] is None:
+        if results[raw] is None and word not in decided:
             results[raw] = found.get(word)
+    record_ai_meanings(db, {cleaned[raw]: m for raw, m in results.items() if cleaned[raw] not in decided})
     return results

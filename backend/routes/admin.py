@@ -569,6 +569,50 @@ def get_page_image(pdf_page: int, edition_id: str | None = None):
     """Serve authentic scanned book page image from sample cache or edition subfolder."""
     return FileResponse(service.get_page_image(pdf_page=pdf_page, edition_id=edition_id), media_type='image/png')
 
+class PageReviewRequest(BaseModel):
+    note: Optional[str] = None
+    corrected_text: Optional[str] = None
+
+
+@router.post('/pages/{edition_id}/{pdf_page}/teacher-review')
+def teacher_review_page(edition_id: str, pdf_page: int, req: PageReviewRequest, db: Session = Depends(get_db),
+                        actor: Principal = Depends(get_current_user)):
+    """Record that a teacher checked a textbook page's text against the scan, with any correction."""
+    require_roles(actor, ('admin', 'tutor'))
+    from backend.modules.curriculum.page_review import mark_page_reviewed
+    return mark_page_reviewed(db, edition_id, pdf_page, actor_id=actor.id, note=req.note or "",
+                              corrected_text=req.corrected_text)
+
+
+@router.get('/word-glosses')
+def word_gloss_queue(status: str = 'pending', q: str = '', limit: int = 50, offset: int = 0,
+                     db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """Word meanings waiting for (or done with) a teacher's review."""
+    require_roles(actor, ('admin', 'tutor'))
+    from backend.modules.curriculum.word_review import list_queue
+    return list_queue(db, status=status, q=q, limit=limit, offset=offset)
+
+
+class WordReviewRequest(BaseModel):
+    word: str
+    action: str
+    translation: Optional[str] = None
+    part_of_speech: Optional[str] = None
+    note: Optional[str] = None
+    current: Optional[str] = None
+    source: Optional[str] = None
+
+
+@router.post('/word-glosses/review')
+def review_word_gloss(req: WordReviewRequest, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """A teacher approves, corrects or rejects a word's English meaning (built-in or AI)."""
+    require_roles(actor, ('admin', 'tutor'))
+    from backend.modules.curriculum.word_review import review_word
+    return review_word(db, word=req.word, action=req.action, actor_id=actor.id, translation=req.translation or "",
+                       part_of_speech=req.part_of_speech or "", note=req.note or "", current=req.current or "",
+                       source=req.source or "")
+
+
 @router.get('/textbook-library')
 def get_textbook_library(db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
     """List all 30 CBSE Curriculum textbook volumes with indexing, page counts, and rendering telemetry."""

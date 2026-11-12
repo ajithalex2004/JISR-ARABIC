@@ -50,7 +50,9 @@ class TestTextbookPagesOnDisk(unittest.TestCase):
         with self.assertRaises(ApplicationError) as ctx:
             get_page_image(10, "../secret")
         self.assertEqual(ctx.exception.status_code, 400)
-        self.assertTrue(get_page_image(10).endswith("pdf_pages_sample/page_10.png"))  # legacy, no book named
+        with self.assertRaises(ApplicationError) as ctx:
+            get_page_image(10)  # the old unnamed (watermarked) copies are no longer served
+        self.assertEqual(ctx.exception.status_code, 404)
 
     def test_report_counts_pages_from_the_content_upload(self):
         self.assertEqual(pages_on_disk()["moe_gr3_vol2_2023"], {"images": 3, "text": 3})

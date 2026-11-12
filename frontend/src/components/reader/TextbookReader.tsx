@@ -55,6 +55,8 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
   const defaultPageForGrade = grade === 6 ? 8 : 7;
   const [currentPage, setCurrentPage] = useState<number>(initialPage || defaultPageForGrade);
   const [totalPages, setTotalPages] = useState<number>(112);
+  // The page whose scan failed to load ("edition-page"), so the reader says so instead of showing another book's page.
+  const [missingImage, setMissingImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialGrade && initialGrade !== grade) {
@@ -515,19 +517,20 @@ export const TextbookReader: React.FC<TextbookReaderProps> = ({
                     <span className="font-mono text-[11px] text-slate-500">Printed Page {pageData?.printed_page}</span>
                   </div>
                   <div className="border-2 border-slate-300 bg-slate-100 p-2 rounded-sm min-h-[500px] max-h-[750px] overflow-auto flex items-center justify-center">
-                    <img
-                      key={`${currentEditionId}-${currentPage}`}
-                      src={`${API_BASE}/api/admin/page-image/${currentPage}?edition_id=${currentEditionId}`}
-                      alt={`Textbook Page ${currentPage}`}
-                      className="max-w-full h-auto object-contain shadow-md rounded-xs"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        if (!target.dataset.triedFallback) {
-                          target.dataset.triedFallback = 'true';
-                          target.src = `${API_BASE}/api/admin/page-image/${currentPage}`;
-                        }
-                      }}
-                    />
+                    {missingImage === `${currentEditionId}-${currentPage}` ? (
+                      // No retry without the book id: that used to show the same page number from another book.
+                      <p className="text-sm text-slate-600 text-center px-6">
+                        This page's scan isn't available yet. صُورَةُ هَذِهِ الصَّفْحَةِ غَيْرُ مُتَاحَةٍ بَعْدُ.
+                      </p>
+                    ) : (
+                      <img
+                        key={`${currentEditionId}-${currentPage}`}
+                        src={`${API_BASE}/api/admin/page-image/${currentPage}?edition_id=${currentEditionId}`}
+                        alt={`Textbook Page ${currentPage}`}
+                        className="max-w-full h-auto object-contain shadow-md rounded-xs"
+                        onError={() => setMissingImage(`${currentEditionId}-${currentPage}`)}
+                      />
+                    )}
                   </div>
                 </div>
               )}

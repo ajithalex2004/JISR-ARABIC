@@ -487,26 +487,23 @@ def _get_ocr_page(pdf_page: int, edition_id: str | None = None, db: Session | No
 
 
 def get_page_image(pdf_page: int, edition_id: str | None = None):
-    """Resolve a scanned page file from edition subfolder or search across editions."""
-    from pathlib import Path
+    """Resolve a scanned page file of one book.
+
+    With an edition, only that book's own page is served: a missing page is a 404, never the
+    same page number from another book (which showed, say, a Class 5 page as Class 11's).
+    Without an edition, only the legacy root files (pdf_pages_sample/page_N.png) are used.
+    """
     base_dir = content_root() / "pdf_pages_sample"
-    
-    # 1. Direct edition path
     if edition_id:
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", edition_id):
+            raise ApplicationError(status_code=400, detail="Invalid edition id")
         edition_path = base_dir / edition_id / f"page_{pdf_page}.png"
         if edition_path.is_file():
             return str(edition_path)
-            
-    # 2. Check root legacy files
+        raise ApplicationError(status_code=404, detail=f"Page image for page {pdf_page} not found in {edition_id}")
     legacy_path = base_dir / f"page_{pdf_page}.png"
     if legacy_path.is_file():
         return str(legacy_path)
-        
-    # 3. Search across all edition subfolders as fallback
-    matches = list(base_dir.glob(f"*/page_{pdf_page}.png"))
-    if matches:
-        return str(matches[0])
-
     raise ApplicationError(status_code=404, detail=f"Page image for page {pdf_page} not found")
 
 

@@ -67,15 +67,23 @@ def content_progress(db: Session) -> Dict[str, Any]:
     ai_drafts = {lesson_id for (lesson_id,) in db.query(LessonVersion.lesson_id).filter(
         LessonVersion.created_by == AI_DRAFTER, LessonVersion.status.in_(("content_pending", "approved")))}
 
+    # Live versions a teacher has signed off (the explicit review, not the approve/publish clicks).
+    teacher_reviewed = {lesson_id for (lesson_id,) in db.query(LessonVersion.lesson_id).filter(
+        LessonVersion.status == "published", LessonVersion.is_active == True,  # noqa: E712
+        LessonVersion.reviewed_at.isnot(None))}
+
     lessons: Dict[tuple, Dict[str, int]] = {}
     to_draft: Dict[tuple, List[str]] = {}
     for lesson in db.query(Lesson.id, Lesson.grade, Lesson.term).order_by(Lesson.lesson_order):
         key = (lesson.grade, lesson.term)
-        entry = lessons.setdefault(key, {"total": 0, "published": 0, "in_review": 0, "from_book": 0, "ai_drafts": 0})
+        entry = lessons.setdefault(key, {"total": 0, "published": 0, "in_review": 0, "from_book": 0, "ai_drafts": 0,
+                                         "teacher_reviewed": 0})
         entry["total"] += 1
         states = version_states.get(lesson.id, set())
         if "published" in states:
             entry["published"] += 1
+            if lesson.id in teacher_reviewed:
+                entry["teacher_reviewed"] += 1
         elif states & {"content_pending", "approved"}:
             entry["in_review"] += 1
         if lesson.id in book_versions or edition_id(*key) in AUTHORED_FROM_BOOK:
@@ -98,7 +106,7 @@ def content_progress(db: Session) -> Dict[str, Any]:
             edition = editions.get(book_id)
             read = pages.get(book_id, {"read": 0, "failed": 0})
             lesson_counts = lessons.get((grade, term), {"total": 0, "published": 0, "in_review": 0, "from_book": 0,
-                                                        "ai_drafts": 0})
+                                                        "ai_drafts": 0, "teacher_reviewed": 0})
             pdf_stored = (uploads / f"{book_id}.pdf").is_file()
             cell = {
                 "grade": grade,
@@ -118,6 +126,8 @@ def content_progress(db: Session) -> Dict[str, Any]:
                 "drafting_queued": (grade, term) in drafting,
                 "lessons": {**lesson_counts,
                             "not_started": lesson_counts["total"] - lesson_counts["published"] - lesson_counts["in_review"],
+                            # Live for students but not yet checked by a teacher.
+                            "published_unreviewed": lesson_counts["published"] - lesson_counts["teacher_reviewed"],
                             # What students see for lessons without a published version: auto-generated content.
                             "auto_generated": lesson_counts["total"] - lesson_counts["published"]},
             }
@@ -142,5 +152,7 @@ def content_progress(db: Session) -> Dict[str, Any]:
     summary["lessons_auto_generated"] = summary["lessons_total"] - summary["lessons_published"]
     summary["lessons_from_book"] = sum(cell["lessons"]["from_book"] for cell in all_cells)
     summary["lessons_ai_drafts"] = sum(cell["lessons"]["ai_drafts"] for cell in all_cells)
+    summary["lessons_teacher_reviewed"] = sum(cell["lessons"]["teacher_reviewed"] for cell in all_cells)
+    summary["lessons_published_unreviewed"] = summary["lessons_published"] - summary["lessons_teacher_reviewed"]
     summary["terms_to_draft"] = sum(1 for cell in all_cells if cell["draft_lesson_ids"] and not cell["drafting_queued"])
     return {"summary": summary, "grades": rows}

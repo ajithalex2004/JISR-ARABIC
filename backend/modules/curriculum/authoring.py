@@ -856,7 +856,8 @@ def publish_lesson_version(lesson_id: str, version_id: str, *, db: Session, acto
     db.query(LessonVersion).filter(LessonVersion.lesson_id == lesson_id).update({"is_active": False})
     target.is_active = True
     target.status = "published"
-    target.reviewed_by = getattr(actor, "id", None)
+    # Publishing isn't a review: record who published, and leave reviewed_by for a teacher's sign-off.
+    target.published_by = getattr(actor, "id", None)
     target.published_at = target.published_at or datetime.datetime.now(datetime.UTC)
     lesson.status = "published"
 
@@ -933,7 +934,7 @@ def approve_lesson_version(lesson_id: str, version_id: str, *, db: Session, acto
         raise ApplicationError(422, f"Quality gate failed: {defect} must be resolved before approval")
 
     target.status = "approved"
-    target.reviewed_by = getattr(actor, "id", None)
+    target.approved_by = getattr(actor, "id", None)
 
     # Persist approve audit event
     audit = CurriculumAuditEvent(
@@ -947,6 +948,33 @@ def approve_lesson_version(lesson_id: str, version_id: str, *, db: Session, acto
     db.add(audit)
     db.commit()
     return {"success": True, "lesson_id": lesson_id, "version_id": version_id, "status": target.status}
+
+
+def mark_teacher_reviewed(lesson_id: str, version_id: str, note: str = "", *, db: Session, actor=None):
+    """A teacher's sign-off that a lesson version's Arabic, meanings and examples were checked.
+
+    Separate from approving and publishing, which only move a version through the workflow.
+    """
+    target = db.query(LessonVersion).filter(LessonVersion.id == version_id, LessonVersion.lesson_id == lesson_id).first()
+    if not target:
+        raise ApplicationError(404, "Lesson version not found")
+    actor_id = getattr(actor, "id", None)
+    if not actor_id:
+        raise ApplicationError(401, "Sign in to record a review")
+    target.reviewed_by = actor_id
+    target.reviewed_at = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+    target.review_note = (note or "").strip()[:2000] or None
+    db.add(CurriculumAuditEvent(
+        actor_id=actor_id,
+        action="teacher_review",
+        lesson_id=lesson_id,
+        version_id=version_id,
+        version_tag=target.version_tag,
+        details_json=json.dumps({"action": "teacher_review", "note": target.review_note}, ensure_ascii=False),
+    ))
+    db.commit()
+    return {"success": True, "lesson_id": lesson_id, "version_id": version_id, "reviewed_by": actor_id,
+            "reviewed_at": target.reviewed_at.isoformat(), "review_note": target.review_note}
 
 
 def update_edition(req: AdminUpdateEditionRequest, *, db: Session):

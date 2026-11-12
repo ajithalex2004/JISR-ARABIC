@@ -163,6 +163,17 @@ def upgrade():
         conn.commit()
     if vowelled:
         print(f"Added tashkeel to {vowelled} lesson and unit title(s)")
+    with engine.connect() as conn:
+        moved = split_review_from_publish(conn)
+        conn.commit()
+    if moved:
+        print(f"{moved} lesson version(s): approve/publish clicks no longer count as a teacher review")
+    from backend.modules.curriculum.content_fixes import apply_content_fixes
+    with engine.connect() as conn:
+        fixed = apply_content_fixes(conn)
+        conn.commit()
+    for lesson_id in fixed:
+        print(f"Published a corrected version of {lesson_id} (backend/modules/curriculum/content_fixes.py)")
     print(f"Cleared {refresh_lesson_caches()} cached lesson list(s) and package(s)")
     with engine.connect() as conn:
         seeded = seed_promo_codes(conn)
@@ -257,6 +268,30 @@ def vowel_stored_titles(conn) -> int:
                 conn.execute(text(f"UPDATE {table} SET title_ar=:t WHERE id=:id"), {"t": vowelled, "id": row.id})
                 changed += 1
     return changed
+
+
+def split_review_from_publish(conn) -> int:
+    """Move workflow clicks out of lesson_versions.reviewed_by; returns rows changed.
+
+    Until now approving and publishing both wrote the clicking admin into reviewed_by, so it
+    showed a "reviewer" for every published lesson, AI drafts included, without anyone having
+    checked the content. Those values become published_by (or approved_by for versions not yet
+    published) and reviewed_by is left for real teacher sign-offs, which always carry
+    reviewed_at. Rows with reviewed_at are never touched, so this runs once per row.
+    """
+    tables = set(inspect(conn).get_table_names())
+    if "lesson_versions" not in tables:
+        return 0
+    columns = {c["name"] for c in inspect(conn).get_columns("lesson_versions")}
+    if not {"reviewed_at", "approved_by", "published_by"} <= columns:
+        return 0
+    published = conn.execute(text(
+        "UPDATE lesson_versions SET published_by=COALESCE(published_by, reviewed_by), reviewed_by=NULL "
+        "WHERE reviewed_by IS NOT NULL AND reviewed_at IS NULL AND status='published'")).rowcount
+    approved = conn.execute(text(
+        "UPDATE lesson_versions SET approved_by=COALESCE(approved_by, reviewed_by), reviewed_by=NULL "
+        "WHERE reviewed_by IS NOT NULL AND reviewed_at IS NULL")).rowcount
+    return (published or 0) + (approved or 0)
 
 
 def refresh_lesson_caches() -> int:

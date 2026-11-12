@@ -24,6 +24,7 @@ type Progress = {
     lessons_published: number; lessons_total: number; lessons_auto_generated: number;
     books_missing: number; books_missing_list: string[]; books_unread: number; pages_failed: number; books_to_read: number;
     lessons_from_book: number; lessons_ai_drafts: number; terms_to_draft: number;
+    lessons_teacher_reviewed?: number; lessons_published_unreviewed?: number;
   };
   grades: { grade: number; terms: Cell[] }[];
 };
@@ -146,6 +147,10 @@ export function ContentProgress() {
       <div className="border border-amber-400 bg-amber-50 p-3"><div className="text-xs text-slate-500">Published, not from the book</div><div className="text-lg font-bold">{s.published_unsourced}</div></div>
       <div className="border border-slate-200 bg-slate-50 p-3"><div className="text-xs text-slate-500">Lessons from the book</div><div className="text-lg font-bold">{s.lessons_from_book} / {s.lessons_total}</div>
         {s.lessons_ai_drafts > 0 && <div className="text-xs text-sky-900">{s.lessons_ai_drafts} drafts waiting for review</div>}</div>
+      <div className={`border p-3 ${(s.lessons_published_unreviewed ?? 0) > 0 ? 'border-amber-400 bg-amber-50' : 'border-emerald-300 bg-emerald-50'}`}>
+        <div className="text-xs text-slate-500">Live lessons checked by a teacher</div>
+        <div className="text-lg font-bold">{s.lessons_teacher_reviewed ?? 0} / {s.lessons_published}</div>
+        {(s.lessons_published_unreviewed ?? 0) > 0 && <div className="text-xs text-amber-900">{s.lessons_published_unreviewed} live without a teacher review</div>}</div>
       <div className="border border-slate-200 bg-slate-50 p-3"><div className="text-xs text-slate-500">Books not uploaded</div><div className="text-lg font-bold">{s.books_missing}</div></div>
       <div className="border border-slate-200 bg-slate-50 p-3"><div className="text-xs text-slate-500">Books uploaded, pages not read</div><div className="text-lg font-bold">{s.books_unread}</div></div>
       <div className={`border p-3 ${s.pages_failed ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'}`}><div className="text-xs text-slate-500">Pages that failed to read</div><div className="text-lg font-bold">{s.pages_failed}</div></div>

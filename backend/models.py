@@ -299,7 +299,14 @@ class LessonVersion(Base):
     status = Column(String(20), default="published", nullable=False)
     published_at = Column(DateTime, nullable=True)
     created_by = Column(String(36), nullable=True)
+    # A teacher's sign-off that the Arabic, meanings and examples were checked (set only by the
+    # explicit "Mark as teacher-reviewed" action, never by approving or publishing).
     reviewed_by = Column(String(36), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    review_note = Column(Text, nullable=True)
+    # Who moved the version through the workflow; neither means the content was checked.
+    approved_by = Column(String(36), nullable=True)
+    published_by = Column(String(36), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 

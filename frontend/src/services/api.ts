@@ -736,6 +736,14 @@ export const api = {
     return jsonOrThrow(res);
   },
 
+  /** A teacher's sign-off that a version's Arabic, meanings and examples were checked. */
+  async teacherReviewLessonVersion(lessonId: string, versionId: string, note: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/lessons/${encodeURIComponent(lessonId)}/versions/${encodeURIComponent(versionId)}/teacher-review`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note }),
+    });
+    return jsonOrThrow(res);
+  },
+
   async getTask(taskId: string) {
     const res = await authenticatedFetch(`${API_BASE}/api/tasks/${taskId}`);
     if (res.status === 404) return { status: 'missing' };

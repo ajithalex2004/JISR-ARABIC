@@ -693,10 +693,27 @@ def list_lesson_versions(lesson_id: str, db: Session = Depends(get_db), actor: P
         except (TypeError, ValueError):
             provenance = None
         out.append({"id": v.id, "version_tag": v.version_tag, "status": v.status, "is_active": v.is_active,
-                    "created_by": v.created_by, "reviewed_by": v.reviewed_by,
+                    "created_by": v.created_by,
+                    # Teacher sign-off, separate from the approve and publish clicks below.
+                    "teacher_reviewed": bool(v.reviewed_by and v.reviewed_at),
+                    "reviewed_by": v.reviewed_by, "reviewed_at": v.reviewed_at.isoformat() if v.reviewed_at else None,
+                    "review_note": v.review_note, "approved_by": v.approved_by, "published_by": v.published_by,
                     "created_at": v.created_at.isoformat() if v.created_at else None,
                     "ai_draft": v.created_by == "ai-drafter", "provenance": provenance})
     return out
+
+
+class TeacherReviewRequest(BaseModel):
+    note: Optional[str] = None
+
+
+@router.post('/lessons/{lesson_id}/versions/{version_id}/teacher-review')
+def teacher_review_lesson_version(lesson_id: str, version_id: str, req: TeacherReviewRequest, db: Session = Depends(get_db),
+                                  actor: Principal = Depends(get_current_user)):
+    """Record that a teacher checked this version's Arabic, meanings and examples (admins and tutors)."""
+    require_roles(actor, ('admin', 'tutor'))
+    from backend.modules.curriculum.authoring import mark_teacher_reviewed
+    return mark_teacher_reviewed(lesson_id, version_id, req.note or "", db=db, actor=actor)
 
 
 @router.get('/lessons/{lesson_id}/versions/{version_id}')

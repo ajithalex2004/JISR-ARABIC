@@ -89,34 +89,7 @@ def get_parent_dashboard(child_id: str, *, db: Session):
         }
     }
 
-    # Missing coverage report (Section 9 & 13)
-    completed_lessons = 1 if total_attempts >= 3 else 0
-    unit_1_pct = 20.0 if completed_lessons > 0 else 0.0
-    missing_coverage = {
-        "unit_1_coverage_pct": unit_1_pct,
-        "unit_2_coverage_pct": 0.0,
-        "term_1_total_lessons": 10,
-        "completed_lessons_count": completed_lessons,
-        "pending_lessons": [
-            {"order": 2, "title_ar": "ركوب الخيل", "title_en": "Horse Riding", "reason": "Content preparation pending"},
-            {"order": 3, "title_ar": "الجري", "title_en": "Running", "reason": "Content preparation pending"},
-            {"order": 4, "title_ar": "الفنون", "title_en": "Arts", "reason": "Content preparation pending"},
-            {"order": 5, "title_ar": "القراءة", "title_en": "Reading", "reason": "Content preparation pending"},
-            {"order": 6, "title_ar": "في مدرستي", "title_en": "At My School", "reason": "Content preparation pending"},
-            {"order": 7, "title_ar": "في بيتي", "title_en": "At My Home", "reason": "Content preparation pending"},
-            {"order": 8, "title_ar": "طعامي", "title_en": "My Food", "reason": "Content preparation pending"},
-            {"order": 9, "title_ar": "ملابسي", "title_en": "My Clothes", "reason": "Content preparation pending"},
-            {"order": 10, "title_ar": "وقت المرح", "title_en": "Fun Time", "reason": "Content preparation pending"}
-        ],
-        "honest_progress_note": "Fahim displays authentic evidence-based progress. Annual mastery percentage is not inflated based on one completed chapter."
-    }
-
-    # Fetch Parent Companion Card for Lesson 1
-    version = db.query(LessonVersion).filter(LessonVersion.lesson_id == "lesson_01_ball_games", LessonVersion.is_active == True).first()
-    companion_card = None
-    if version:
-        content = json.loads(version.content_json)
-        companion_card = content.get("parent_companion")
+    missing_coverage, companion_card = chapter_progress(child, attempts, db=db)
 
     gp = db.query(GamificationProfile).filter(GamificationProfile.child_id == child.id).first()
     streak_days = gp.current_streak_days if gp else 0
@@ -150,6 +123,112 @@ def get_parent_dashboard(child_id: str, *, db: Session):
     }
     cache_set(f"parent_dash:{child_id}", res, ttl_seconds=15)
     return res
+
+
+# A chapter counts as completed once the learner has answered this share of its exercises.
+COMPLETION_SHARE = 0.8
+
+
+def lesson_exercise_ids(content: dict) -> set:
+    """IDs of a lesson's answerable exercises (the ones submit_attempt accepts)."""
+    ids = set()
+    for q in (content.get("prep_check") or {}).get("questions") or []:
+        ids.add(q.get("id"))
+    for a in content.get("practice_activities") or []:
+        ids.add(a.get("id"))
+    for c in (content.get("sentence_builder") or {}).get("challenges") or []:
+        ids.add(c.get("id"))
+    for q in (content.get("exam_practice") or {}).get("objective_questions") or []:
+        ids.add(q.get("id"))
+    ids.discard(None)
+    return ids
+
+
+def chapter_progress(child: ChildProfile, attempts, *, db: Session):
+    """The child's own class: every chapter of Terms 1-3 with its real state, and a parent card.
+
+    State per chapter: completed (>= COMPLETION_SHARE of its exercises answered), started,
+    not_started, or coming_soon (no content yet). Nothing is assumed about chapter counts."""
+    from backend.modules.curriculum.service import list_lessons
+    grade = child.default_grade if isinstance(child.default_grade, int) else 5
+    answered = {}
+    last_seen = {}
+    for a in attempts:
+        answered.setdefault(a.lesson_id, set()).add(a.activity_id)
+        if a.created_at and (a.lesson_id not in last_seen or a.created_at > last_seen[a.lesson_id]):
+            last_seen[a.lesson_id] = a.created_at
+    terms, pending, all_lessons = [], [], []
+    for term in (1, 2, 3):
+        items = list_lessons(grade, term, child.id, db=db)
+        ids = [i["id"] for i in items if not i.get("coming_soon")]
+        contents = {}
+        if ids:
+            for lesson_id, content_json in db.query(LessonVersion.lesson_id, LessonVersion.content_json).filter(
+                    LessonVersion.lesson_id.in_(ids), LessonVersion.is_active == True).all():  # noqa: E712
+                try:
+                    contents[lesson_id] = json.loads(content_json or "{}")
+                except ValueError:
+                    contents[lesson_id] = {}
+        rows = []
+        for i in items:
+            done = answered.get(i["id"], set())
+            if i.get("coming_soon"):
+                state, total, count = "coming_soon", 0, 0
+            else:
+                exercises = lesson_exercise_ids(contents.get(i["id"], {}))
+                total, count = len(exercises), len(done & exercises) if exercises else len(done)
+                if exercises and count >= max(1, round(COMPLETION_SHARE * total)):
+                    state = "completed"
+                elif done:
+                    state = "started"
+                else:
+                    state = "not_started"
+            row = {"lesson_id": i["id"], "order": i.get("lesson_order"), "term": term,
+                   "title_ar": i.get("title_ar"), "title_en": i.get("title_en"), "state": state,
+                   "exercises_answered": count, "exercises_total": total,
+                   "is_accessible": bool(i.get("is_accessible"))}
+            rows.append(row)
+            all_lessons.append(row)
+            if state != "completed":
+                pending.append({"order": row["order"], "term": term, "title_ar": row["title_ar"],
+                                "title_en": row["title_en"], "reason": {
+                                    "coming_soon": "Coming soon", "started": f"Started: {count} of {total} exercises answered",
+                                    "not_started": "Not started yet" if row["is_accessible"] else "Not started yet (term locked)",
+                                }[state]})
+        available = [r for r in rows if r["state"] != "coming_soon"]
+        completed = sum(1 for r in rows if r["state"] == "completed")
+        terms.append({"term": term, "total_lessons": len(rows), "available_lessons": len(available),
+                      "completed_lessons": completed,
+                      "coverage_pct": round(100.0 * completed / len(available), 1) if available else 0.0,
+                      "lessons": rows})
+    completed_rows = [r for r in all_lessons if r["state"] == "completed"]
+    coverage = {
+        "grade": grade,
+        "terms": terms,
+        "total_lessons": len(all_lessons),
+        "completed_lessons_count": len(completed_rows),
+        "completed_lessons": [{"order": r["order"], "term": r["term"], "title_ar": r["title_ar"],
+                               "title_en": r["title_en"]} for r in completed_rows],
+        "pending_lessons": pending,
+        "completion_rule": f"A chapter counts as completed once {int(COMPLETION_SHARE * 100)}% of its exercises are answered.",
+        "honest_progress_note": f"Progress for Class {grade} comes only from {child.name}'s own answers. "
+                                f"A chapter counts as completed once {int(COMPLETION_SHARE * 100)}% of its exercises are answered.",
+    }
+    # Parent card: the chapter the child worked on most recently, else the first chapter they can open.
+    target = max(last_seen, key=last_seen.get) if last_seen else None
+    if target is None:
+        first = next((r for r in all_lessons if r["state"] != "coming_soon" and r["is_accessible"]), None)
+        target = first["lesson_id"] if first else None
+    companion_card = None
+    if target:
+        version = db.query(LessonVersion).filter(LessonVersion.lesson_id == target,
+                                                 LessonVersion.is_active == True).first()  # noqa: E712
+        if version:
+            try:
+                companion_card = json.loads(version.content_json or "{}").get("parent_companion")
+            except ValueError:
+                companion_card = None
+    return coverage, companion_card
 
 
 def _utcnow():

@@ -119,6 +119,7 @@ export function Parents() {
       <div className="jl-wrap jl-parents__grid">
         <div className="jl-parents__panel" data-reveal aria-hidden="true">
           <div className="jl-dash">
+            <span className="jl-dash__example">Example · illustration only</span>
             <div className="jl-dash__head"><span className="jl-avatar">🦅</span><div><strong>Sara</strong><small>Class 5 · Term 1</small></div><span className="jl-pill">On track</span></div>
             <div className="jl-dash__bars">
               {[['Vocabulary', 0.86], ['Reading', 0.72], ['Grammar', 0.58], ['Listening', 0.91]].map(([k, v]) => (
@@ -171,7 +172,7 @@ export function FinalCta({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
       <div className="jl-wrap" data-reveal>
         <p className="jl-final__ar" lang="ar" dir="rtl" aria-hidden="true">هَيَّا نَبْدَأْ</p>
         <h2 id="jl-final-title" className="jl-display jl-display--sm">Let’s begin.</h2>
-        <p className="jl-lede">Create a free account in a minute. Chapter 1 of every term is on us.</p>
+        <p className="jl-lede">Create a free account in a minute. Chapter 1 of Term 1 is on us.</p>
         <div className="jl-actions jl-actions--center">
           <button type="button" className="jl-btn jl-btn--primary" onClick={() => onEnter('signup')}>Start free <span aria-hidden="true" className="jl-btn__arrow">→</span></button>
           <button type="button" className="jl-btn jl-btn--ghost" onClick={() => onEnter('login')}>I have an account</button>

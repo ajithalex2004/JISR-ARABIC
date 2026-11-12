@@ -306,25 +306,36 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
           {missing_coverage.honest_progress_note}
         </p>
 
-        <div className="border border-slate-200 divide-y divide-slate-200 text-xs">
-          <div className="p-3 bg-emerald-50/60 flex justify-between items-center font-bold">
-            <span className="text-emerald-950">Lesson 1: Ball Games (ألعاب الكرة)</span>
-            <span className="bg-emerald-700 text-white px-2 py-0.5 text-[10px] uppercase">
-              Completed & Assessed ✓
-            </span>
-          </div>
-
-          {missing_coverage.pending_lessons.map((pl: any) => (
-            <div key={pl.order} className="p-2.5 bg-white flex justify-between items-center">
-              <span className="text-slate-700">
-                Lesson {pl.order}: {pl.title_en} · <span className="font-arabic">{pl.title_ar}</span>
-              </span>
-              <span className="text-slate-400 italic text-[11px]">
-                {pl.reason}
+        {(missing_coverage.terms || []).map((t: any) => (
+          <div key={t.term} className="border border-slate-200 text-xs">
+            <div className="p-2.5 bg-slate-50 flex justify-between items-center font-bold text-slate-900">
+              <span>Class {missing_coverage.grade} · Term {t.term}</span>
+              <span className="text-slate-600 font-semibold">
+                {t.available_lessons
+                  ? `${t.completed_lessons} of ${t.available_lessons} chapters completed`
+                  : 'Coming soon'}
               </span>
             </div>
-          ))}
-        </div>
+            <div className="divide-y divide-slate-200">
+              {t.lessons.map((l: any) => (
+                <div key={l.lesson_id} className={`p-2.5 flex justify-between items-center gap-3 ${l.state === 'completed' ? 'bg-emerald-50/60' : 'bg-white'}`}>
+                  <span className={l.state === 'completed' ? 'text-emerald-950 font-bold' : 'text-slate-700'}>
+                    Chapter {l.order}: {l.title_en} · <span className="font-arabic">{l.title_ar}</span>
+                  </span>
+                  {l.state === 'completed' ? (
+                    <span className="bg-emerald-700 text-white px-2 py-0.5 text-[10px] uppercase shrink-0">Completed ✓</span>
+                  ) : (
+                    <span className="text-slate-500 italic text-[11px] shrink-0">
+                      {l.state === 'coming_soon' ? 'Coming soon'
+                        : l.state === 'started' ? `Started · ${l.exercises_answered} of ${l.exercises_total} exercises`
+                        : l.is_accessible ? 'Not started' : 'Not started · term locked'}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* 4.2 Weekly Digest & Notification Dispatch (الملخص الأسبوعي) */}

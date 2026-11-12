@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
-import { CheckCircle2, Eye, Loader2, Sparkles, Upload } from 'lucide-react';
+import { CheckCircle2, Eye, Loader2, ShieldCheck, Sparkles, Upload } from 'lucide-react';
 
 interface Props {
   grade: number;
@@ -92,6 +92,23 @@ export const AiDraftPanel: React.FC<Props> = ({ grade, term, lesson, onChanged }
     }
   };
 
+  // Teacher sign-off, separate from Approve and Publish.
+  const [reviewing, setReviewing] = useState<string | null>(null);
+  const [reviewNote, setReviewNote] = useState('');
+  const saveTeacherReview = async (versionId: string) => {
+    setError('');
+    try {
+      await api.teacherReviewLessonVersion(lesson.id, versionId, reviewNote);
+      setMessage('Recorded: a teacher checked this version.');
+      setReviewing(null);
+      setReviewNote('');
+      await loadVersions();
+      onChanged();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   const openPreview = async (versionId: string) => {
     try {
       setPreview(await api.getLessonVersion(lesson.id, versionId));
@@ -147,6 +164,11 @@ export const AiDraftPanel: React.FC<Props> = ({ grade, term, lesson, onChanged }
                 <span className="font-mono text-slate-700">{v.version_tag}</span>
                 {v.ai_draft && <span className="text-[9px] font-bold text-purple-800">AI draft · pages {v.provenance?.source_pdf_pages?.[0]}–{v.provenance?.source_pdf_pages?.slice(-1)[0]}</span>}
                 {v.is_active && <span className="text-[9px] font-bold text-emerald-700">LIVE</span>}
+                {v.teacher_reviewed
+                  ? <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5" title={v.review_note || ''}>
+                      Teacher reviewed{v.reviewed_at ? ` · ${new Date(v.reviewed_at).toLocaleDateString()}` : ''}
+                    </span>
+                  : <span className="text-[9px] font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5">Not checked by a teacher</span>}
               </div>
               <div className="flex gap-1.5">
                 <button onClick={() => openPreview(v.id)} className="px-2 py-1 border border-slate-300 hover:bg-slate-50 flex items-center gap-1">
@@ -162,7 +184,27 @@ export const AiDraftPanel: React.FC<Props> = ({ grade, term, lesson, onChanged }
                     <Upload className="w-3 h-3" /> Publish
                   </button>
                 )}
+                {!v.teacher_reviewed && (
+                  <button onClick={() => { setReviewing(v.id); setReviewNote(''); }} className="px-2 py-1 border border-emerald-600 text-emerald-800 hover:bg-emerald-50 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> Mark as teacher-reviewed
+                  </button>
+                )}
               </div>
+              {reviewing === v.id && (
+                <div className="w-full border-t border-slate-200 pt-2 mt-1 space-y-2">
+                  <p className="text-[11px] text-slate-700">
+                    Confirm that a teacher read this version against the textbook: the Arabic and its vowel marks, every word's
+                    meaning, the example sentences and the quiz answers.
+                  </p>
+                  <label className="block text-[11px] text-slate-600" htmlFor={`review-note-${v.id}`}>Note (optional): what was checked or corrected</label>
+                  <input id={`review-note-${v.id}`} value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} maxLength={2000}
+                    className="w-full border border-slate-300 px-2 py-1 text-xs" placeholder="e.g. Checked against pages 10-17; fixed 2 meanings" />
+                  <div className="flex gap-1.5">
+                    <button onClick={() => saveTeacherReview(v.id)} className="px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white">Record review</button>
+                    <button onClick={() => setReviewing(null)} className="px-2 py-1 border border-slate-300 hover:bg-slate-50">Cancel</button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

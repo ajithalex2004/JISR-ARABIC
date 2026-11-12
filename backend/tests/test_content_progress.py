@@ -45,7 +45,7 @@ class TestContentProgress(unittest.TestCase):
         g1 = cells[(1, 1)]
         self.assertEqual((g1["stage"], g1["pages_read"]), ("in_review", 3))
         self.assertEqual(g1["lessons"], {"total": 3, "published": 1, "in_review": 1, "not_started": 1, "auto_generated": 2,
-                                         "from_book": 0, "ai_drafts": 0})
+                                         "from_book": 0, "ai_drafts": 0, "teacher_reviewed": 0, "published_unreviewed": 1})
         # Pages were read, so every lesson not yet drafted from them can be.
         self.assertEqual(g1["draft_lesson_ids"], ["l1", "l2", "l3"])
         g2 = cells[(2, 1)]

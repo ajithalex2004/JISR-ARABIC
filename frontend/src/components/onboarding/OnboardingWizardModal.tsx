@@ -516,7 +516,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                     </div>
                     <div className="font-bold text-sm text-slate-900 font-arabic">الفصل الأول (Term 1)</div>
                     <div className="text-[11px] text-slate-600 mt-1">
-                      ألعاب الكرة (Ball Games) - First Chapter 100% Free
+                      Chapter 1 of Class {grade} is free · <span className="font-arabic">الدرس الأول مجاني</span>
                     </div>
                   </button>
 

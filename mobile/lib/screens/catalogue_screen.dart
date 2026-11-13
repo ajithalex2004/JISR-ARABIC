@@ -542,9 +542,7 @@ class CatalogueScreen extends StatelessWidget {
                             icon: Icons.menu_book_rounded,
                             color: const Color(0xFF3B82F6),
                             bg: const Color(0xFFEFF6FF),
-                            onTap: firstLesson != null
-                                ? () => onSelectLessonMode(firstLesson, LessonViewMode.textbookReader)
-                                : null,
+                            onTap: () => onSelectLessonMode(firstLesson, LessonViewMode.textbookReader),
                           ),
                           _buildPillarCard(
                             number: '2',
@@ -585,9 +583,7 @@ class CatalogueScreen extends StatelessWidget {
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: firstLesson != null
-                                  ? () => onSelectLessonMode(firstLesson, LessonViewMode.lparSequence)
-                                  : null,
+                              onPressed: () => onSelectLessonMode(firstLesson, LessonViewMode.lparSequence),
                               icon: const Icon(Icons.play_arrow, size: 16),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF58337E),

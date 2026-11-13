@@ -27,7 +27,7 @@ Widget _screen(List<CurriculumLessonItem> lessons, {int grade = 3, int term = 1}
           learningDataLoading: false,
           isArabic: false,
           onSelectGrade: (_) {},
-          onSelectLessonMode: (_, __) {},
+          onSelectLessonMode: (lesson, mode) {},
           onModeSelected: (_) {},
           onOpenAskFahim: () {},
           onOpenPaywall: () {},

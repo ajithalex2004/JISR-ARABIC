@@ -968,7 +968,7 @@ class _MainScreenState extends State<MainScreen> {
 
     return rawList.map((item) {
       final isFirstChapterDemo =
-          !item.comingSoon && _currentTerm == 1 && (item.order == 1 || item.isFirstChapterDemo);
+          !item.comingSoon && _currentTerm == 1 && item.isFirstChapterDemo;
       final accessible = !item.comingSoon && (hasPaid || isFirstChapterDemo);
       return CurriculumLessonItem(
         id: item.id,

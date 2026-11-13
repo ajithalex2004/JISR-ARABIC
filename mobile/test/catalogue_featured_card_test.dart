@@ -35,6 +35,13 @@ Widget _screen(List<CurriculumLessonItem> lessons, {int grade = 3, int term = 1}
       ),
     );
 
+/// A tall screen, so the scrolling catalogue builds the featured card (it sits below the fold).
+void _tallScreen(WidgetTester tester) {
+  tester.view.physicalSize = const Size(800, 6000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+}
+
 void main() {
   test('only the server flag makes a chapter free, not lesson order 1', () {
     expect(CurriculumLessonItem.fromMap(_lesson(1, 'My Family', free: true)).isFirstChapterDemo, isTrue);
@@ -48,6 +55,7 @@ void main() {
     final lessons = [_lesson(1, 'My Family', free: true), _lesson(2, 'My School')]
         .map(CurriculumLessonItem.fromMap)
         .toList();
+    _tallScreen(tester);
     await tester.pumpWidget(_screen(lessons));
     expect(find.text('عائلتي (My Family)'), findsOneWidget);
     expect(find.text('Class 3 · Term 1 · Chapter 1'), findsOneWidget);
@@ -57,6 +65,7 @@ void main() {
 
   testWidgets('a Term 2 first chapter is not labelled free', (tester) async {
     final lessons = [CurriculumLessonItem.fromMap(_lesson(1, 'Our Planet'))];
+    _tallScreen(tester);
     await tester.pumpWidget(_screen(lessons, term: 2));
     expect(find.text('Class 3 · Term 2 · Chapter 1'), findsOneWidget);
     expect(find.text('Free (مجاني)'), findsNothing);

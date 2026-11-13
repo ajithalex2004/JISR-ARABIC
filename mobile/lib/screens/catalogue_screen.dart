@@ -6,7 +6,7 @@ import '../models/curriculum_models.dart';
 /// CatalogueScreen for Mobile incorporating the Web App Home Page Layout:
 /// 1. Top Hero Gradient Banner with CBSE Curriculum Badges & Curriculum Mastery Gauge
 /// 2. Official Scanned Textbook Reader Showcase (108 CBSE Curriculum Textbook Pages with Audio)
-/// 3. Featured Showcase: Complete Chapter 1 - Ball Games with 4 Curriculum Pillars
+/// 3. Featured Chapter: the selected class and term's first chapter, with 4 Curriculum Pillars
 /// 4. 10 Core Capabilities Quick Hub (Ask Fahim, Mastery Matrix, Ranks, Exam Sim)
 /// 5. Grade Switcher (Class 1 to Class 12)
 /// 6. Full Syllabus: All 10 Term 1 Lessons grouped by Unit 1 & Unit 2 with LPAR & Book access
@@ -98,6 +98,14 @@ class CatalogueScreen extends StatelessWidget {
     );
   }
 
+  /// Access badge for the featured chapter, matching what opening it will do.
+  String _featuredAccessLabel(CurriculumLessonItem lesson) {
+    if (lesson.comingSoon) return isArabic ? 'قريباً' : 'Coming soon (قريباً)';
+    if (lesson.isFirstChapterDemo) return isArabic ? 'مجاني' : 'Free (مجاني)';
+    if (lesson.isAccessible) return isArabic ? 'متاح' : 'Unlocked (متاح)';
+    return isArabic ? 'يحتاج اشتراك' : 'Subscription (يحتاج اشتراك)';
+  }
+
   @override
   Widget build(BuildContext context) {
     final effectiveLessons = lessons.isNotEmpty
@@ -107,6 +115,10 @@ class CatalogueScreen extends StatelessWidget {
     final unit1Lessons = effectiveLessons.where((l) => l.order <= halfLen).toList();
     final unit2Lessons = effectiveLessons.where((l) => l.order > halfLen).toList();
     final firstLesson = effectiveLessons.isNotEmpty ? effectiveLessons.first : null;
+    // A sample reading passage exists only for a few classes' first Term 1 chapter.
+    final passage = (firstLesson != null && currentTerm == 1 && firstLesson.order == 1)
+        ? _kFeaturedPassages[currentGrade]
+        : null;
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -314,10 +326,9 @@ class CatalogueScreen extends StatelessWidget {
         const SizedBox(height: 14),
 
         // =====================================================================
-        // 3. FEATURED SHOWCASE: COMPLETE CHAPTER 1 - BALL GAMES (أَلْعَابُ الكُرَةِ)
-        // (1:1 from Web CatalogueView lines 152-329)
+        // 3. FEATURED CHAPTER: the selected class and term's first chapter
         // =====================================================================
-        Container(
+        if (firstLesson != null)         Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
@@ -362,12 +373,14 @@ class CatalogueScreen extends StatelessWidget {
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.stars, size: 12, color: Color(0xFF047857)),
-                                SizedBox(width: 4),
+                              children: [
+                                const Icon(Icons.stars, size: 12, color: Color(0xFF047857)),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'الفصل الأول · نشط الآن (Active)',
-                                  style: TextStyle(color: Color(0xFF047857), fontSize: 10, fontWeight: FontWeight.bold),
+                                  isArabic
+                                      ? 'الصف $currentGrade · الفصل $currentTerm · الدرس ${firstLesson.order}'
+                                      : 'Class $currentGrade · Term $currentTerm · Chapter ${firstLesson.order}',
+                                  style: const TextStyle(color: Color(0xFF047857), fontSize: 10, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -378,9 +391,9 @@ class CatalogueScreen extends StatelessWidget {
                               color: const Color(0xFFF3F0FF),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
-                              'الوحدة الأولى · ص 6 - 15',
-                              style: TextStyle(color: Color(0xFF6C5CE7), fontSize: 10, fontWeight: FontWeight.bold),
+                            child: Text(
+                              isArabic ? 'يبدأ من ص ${firstLesson.startPage}' : 'From page ${firstLesson.startPage}',
+                              style: const TextStyle(color: Color(0xFF6C5CE7), fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                           ),
                           Container(
@@ -389,9 +402,9 @@ class CatalogueScreen extends StatelessWidget {
                               color: const Color(0xFFFEF3C7),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
-                              'مجاني بالكامل (Free Access)',
-                              style: TextStyle(color: Color(0xFFB45309), fontSize: 10, fontWeight: FontWeight.bold),
+                            child: Text(
+                              _featuredAccessLabel(firstLesson),
+                              style: const TextStyle(color: Color(0xFFB45309), fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -408,27 +421,22 @@ class CatalogueScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  currentGrade == 6
-                                      ? 'أَنَا إِمَارَاتِيٌّ وَأَعْتَزُّ بِهُوِيَّتِي (I am Emirati & Proud of My Identity)'
-                                      : (currentGrade == 8
-                                          ? 'أَبُو الطَّيِّبِ المُتَنَبِّي شَاعِرُ الحِكْمَةِ (Al-Mutanabbi: Poet of Wisdom)'
-                                          : 'أَلْعَابُ الكُرَةِ (Ball Games)'),
+                                  passage?.title ?? '${firstLesson.titleAr} (${firstLesson.titleEn})',
                                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF58337E)),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  currentGrade == 6
-                                      ? 'النص القرائي: رُوحُ الاتِّحَادِ وَالاعْتِزَازُ بِالهُوِيَّةِ الوَطَنِيَّةِ (Spirit of the Union & Identity)'
-                                      : (currentGrade == 8
-                                          ? 'النص القرائي: فَرَائِدُ الحِكْمَةِ وَرَوَائِعُ الشِّعْرِ (Pearls of Wisdom & Eloquence)'
-                                          : 'النص القرائي: السَّاحِرَةُ المُسْتَدِيرَةُ (The Round Sorceress / Football)'),
+                                  passage?.subtitle ??
+                                      (firstLesson.unitTitleAr.isNotEmpty
+                                          ? '${firstLesson.unitTitleAr}${firstLesson.unitTitleEn.isNotEmpty ? ' (${firstLesson.unitTitleEn})' : ''}'
+                                          : firstLesson.unitTitleEn),
                                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                                 ),
                               ],
                             ),
                           ),
-                          // Quick Stats
-                          Container(
+                          // Quick Stats (known for the sample chapters only)
+                          if (passage != null) Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
@@ -453,8 +461,8 @@ class CatalogueScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
 
-                      // Interactive Passage Preview Box
-                      Container(
+                      // Interactive Passage Preview Box (sample chapters only)
+                      if (passage != null) Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFCFAFF),
@@ -480,13 +488,7 @@ class CatalogueScreen extends StatelessWidget {
                                 InkWell(
                                   onTap: () {
                                     if (onVocalize != null) {
-                                      onVocalize!(
-                                        currentGrade == 6
-                                            ? 'الإِمَارَاتُ وَطَنُ الأَمْجَادِ وَالعَطَاءِ. نَعْتَزُّ بِهُوِيَّتِنَا وَقِيَمِ أَبِينَا زَايِدٍ رَحِمَهُ اللَّهُ فِي بِنَاءِ الإِنْسَانِ وَالوَطَنِ.'
-                                            : (currentGrade == 8
-                                                ? 'أَنَا الَّذِي نَظَرَ الأَعْمَى إِلَى أَدَبِي، وَأَسْمَعَتْ كَلِمَاتِي مَنْ بِهِ صَمَمُ.'
-                                                : 'كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ الأَكْثَرُ شَعْبِيَّةً فِي العَالَمِ. يُحِبُّهَا الكِبَارُ وَالصِّغَارُ، حَيْثُ يَتَنَافَسُ فِي المَلْعَبِ فَرِيقَانِ كَبِيرَانِ لِتَسْجِيلِ الهَدَفِ فِي شِبَاكِ حَارِسِ المَرْمَى.')
-                                      );
+                                      onVocalize!(passage.audioText);
                                     }
                                   },
                                   child: Row(
@@ -504,11 +506,7 @@ class CatalogueScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              currentGrade == 6
-                                  ? '«الإِمَارَاتُ وَطَنُ الأَمْجَادِ وَالعَطَاءِ. نَعْتَزُّ بِهُوِيَّتِنَا وَقِيَمِ أَبِينَا زَايِدٍ رَحِمَهُ اللَّهُ فِي بِنَاءِ الإِنْسَانِ وَالوَطَنِ، وَنَرْفَعُ عَلَمَنَا خَفَّاقًا فِي كُلِّ المَيَادِينِ.»'
-                                  : (currentGrade == 8
-                                      ? '«أَنَا الَّذِي نَظَرَ الأَعْمَى إِلَى أَدَبِي ... وَأَسْمَعَتْ كَلِمَاتِي مَنْ بِهِ صَمَمُ. الخَيْلُ وَاللَّيْلُ وَالبَيْدَاءُ تَعْرِفُنِي ... وَالسَّيْفُ وَالرُّمْحُ وَالقِرْطَاسُ وَالقَلَمُ.»'
-                                      : '«كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ الأَكْثَرُ شَعْبِيَّةً فِي العَالَمِ. يُحِبُّهَا الكِبَارُ وَالصِّغَارُ، حَيْثُ يَتَنَافَسُ فِي المَلْعَبِ فَرِيقَانِ كَبِيرَانِ لِتَسْجِيلِ الهَدَفِ فِي شِبَاكِ حَارِسِ المَرْمَى.»'),
+                              '«${passage.textAr}»',
                               textAlign: TextAlign.right,
                               style: const TextStyle(
                                 fontSize: 14.5,
@@ -519,17 +517,13 @@ class CatalogueScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              currentGrade == 6
-                                  ? '"The UAE is the homeland of glories and benevolence. We take immense pride in our authentic identity, the values of our father Zayed in human development, and fluttering our flag high across all arenas."'
-                                  : (currentGrade == 8
-                                      ? '"I am the one whose literature was perceived even by the blind, and whose words were heard by the deaf. The steed, the night, and the desert know me, as do the sword, the spear, the parchment, and the pen."'
-                                      : '"Football is the most popular game in the world. Both young and old love it, where two large teams compete on the pitch to score goals into the goalkeeper\'s net."'),
+                              '"${passage.textEn}"',
                               style: const TextStyle(fontSize: 10.5, fontStyle: FontStyle.italic, color: Color(0xFF64748B)),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      if (passage != null) const SizedBox(height: 14),
 
                       // 4 INTERACTIVE CURRICULUM PILLARS (Clean 2x2 Grid)
                       GridView.count(
@@ -2058,3 +2052,37 @@ class CatalogueScreen extends StatelessWidget {
     );
   }
 }
+
+/// Sample reading passages for the featured card: the first Term 1 chapter of these classes only.
+class _FeaturedPassage {
+  final String title;
+  final String subtitle;
+  final String audioText;
+  final String textAr;
+  final String textEn;
+  const _FeaturedPassage(this.title, this.subtitle, this.audioText, this.textAr, this.textEn);
+}
+
+const Map<int, _FeaturedPassage> _kFeaturedPassages = {
+  5: _FeaturedPassage(
+    'أَلْعَابُ الكُرَةِ (Ball Games)',
+    'النص القرائي: السَّاحِرَةُ المُسْتَدِيرَةُ (The Round Sorceress / Football)',
+    'كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ الأَكْثَرُ شَعْبِيَّةً فِي العَالَمِ. يُحِبُّهَا الكِبَارُ وَالصِّغَارُ، حَيْثُ يَتَنَافَسُ فِي المَلْعَبِ فَرِيقَانِ كَبِيرَانِ لِتَسْجِيلِ الهَدَفِ فِي شِبَاكِ حَارِسِ المَرْمَى.',
+    'كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ الأَكْثَرُ شَعْبِيَّةً فِي العَالَمِ. يُحِبُّهَا الكِبَارُ وَالصِّغَارُ، حَيْثُ يَتَنَافَسُ فِي المَلْعَبِ فَرِيقَانِ كَبِيرَانِ لِتَسْجِيلِ الهَدَفِ فِي شِبَاكِ حَارِسِ المَرْمَى.',
+    'Football is the most popular game in the world. Both young and old love it, where two large teams compete on the pitch to score goals into the goalkeeper\'s net.',
+  ),
+  6: _FeaturedPassage(
+    'أَنَا إِمَارَاتِيٌّ وَأَعْتَزُّ بِهُوِيَّتِي (I am Emirati & Proud of My Identity)',
+    'النص القرائي: رُوحُ الاتِّحَادِ وَالاعْتِزَازُ بِالهُوِيَّةِ الوَطَنِيَّةِ (Spirit of the Union & Identity)',
+    'الإِمَارَاتُ وَطَنُ الأَمْجَادِ وَالعَطَاءِ. نَعْتَزُّ بِهُوِيَّتِنَا وَقِيَمِ أَبِينَا زَايِدٍ رَحِمَهُ اللَّهُ فِي بِنَاءِ الإِنْسَانِ وَالوَطَنِ.',
+    'الإِمَارَاتُ وَطَنُ الأَمْجَادِ وَالعَطَاءِ. نَعْتَزُّ بِهُوِيَّتِنَا وَقِيَمِ أَبِينَا زَايِدٍ رَحِمَهُ اللَّهُ فِي بِنَاءِ الإِنْسَانِ وَالوَطَنِ، وَنَرْفَعُ عَلَمَنَا خَفَّاقًا فِي كُلِّ المَيَادِينِ.',
+    'The UAE is the homeland of glories and benevolence. We take immense pride in our authentic identity, the values of our father Zayed in human development, and fluttering our flag high across all arenas.',
+  ),
+  8: _FeaturedPassage(
+    'أَبُو الطَّيِّبِ المُتَنَبِّي شَاعِرُ الحِكْمَةِ (Al-Mutanabbi: Poet of Wisdom)',
+    'النص القرائي: فَرَائِدُ الحِكْمَةِ وَرَوَائِعُ الشِّعْرِ (Pearls of Wisdom & Eloquence)',
+    'أَنَا الَّذِي نَظَرَ الأَعْمَى إِلَى أَدَبِي، وَأَسْمَعَتْ كَلِمَاتِي مَنْ بِهِ صَمَمُ.',
+    'أَنَا الَّذِي نَظَرَ الأَعْمَى إِلَى أَدَبِي ... وَأَسْمَعَتْ كَلِمَاتِي مَنْ بِهِ صَمَمُ. الخَيْلُ وَاللَّيْلُ وَالبَيْدَاءُ تَعْرِفُنِي ... وَالسَّيْفُ وَالرُّمْحُ وَالقِرْطَاسُ وَالقَلَمُ.',
+    'I am the one whose literature was perceived even by the blind, and whose words were heard by the deaf. The steed, the night, and the desert know me, as do the sword, the spear, the parchment, and the pen.',
+  ),
+};

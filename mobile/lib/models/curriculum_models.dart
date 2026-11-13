@@ -31,10 +31,8 @@ class CurriculumLessonItem {
 
   factory CurriculumLessonItem.fromMap(Map<String, dynamic> map) {
     final bool comingSoon = map['status'] == 'coming_soon';
-    final bool isDemo = !comingSoon &&
-        (map['is_first_chapter_demo'] == true ||
-            map['id'] == 'lesson_01_ball_games' ||
-            map['lesson_order'] == 1);
+    // The server decides which chapter is free: chapter 1 of Term 1 only.
+    final bool isDemo = !comingSoon && map['is_first_chapter_demo'] == true;
 
     return CurriculumLessonItem(
       id: map['id']?.toString() ?? '',

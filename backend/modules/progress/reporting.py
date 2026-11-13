@@ -569,45 +569,109 @@ def get_actionable_guidance(child_id: str, *, db: Session):
     if not child:
         raise ApplicationError(status_code=404, detail="Child profile not found")
 
-    guidance_items = [
-        ActionableGuidanceItem(
-            topic_ar="الجملة الاسمية (المبتدأ والخبر)",
-            topic_en="Nominal Sentences (Starting with a Noun)",
-            status="mastering",
-            parent_prompt_en=f"Ask {child.name}: 'Can you tell me an Arabic sentence about our table or your book, like \"The book is new\" (الكتابُ جديدٌ)?'",
-            praise_suggestion_en="Praise their understanding that Arabic sentences can start directly with a noun without needing 'is' (Al-kitaabu jadeed).",
-            household_activity_en="Point to 2 objects in the room and ask them to name the item in Arabic and add a descriptive word.",
-            phonetic_help_en="Al-Babu maftooh (The door is open) / Al-Kurat-u kabeerah (The ball is big)."
-        ),
-        ActionableGuidanceItem(
-            topic_ar="التاء المربوطة والهاء (ـة / ـه)",
-            topic_en="Taa Marbutah vs. Plain Haa at Word Endings",
-            status="needs_reinforcement",
-            parent_prompt_en=f"Ask {child.name}: 'What is the secret two-dot test your AI tutor Fahim taught you for the letter ة?'",
-            praise_suggestion_en="Praise their focus and remind them: 'Even native speakers sometimes forget the dots—you did great using the vowel trick!'",
-            household_activity_en="Have them draw two dots above a circular letter on paper like a small royal crown when they pronounce the 'T' sound.",
-            phonetic_help_en="Say the word with 'un' at the end: 'Mubaratun' -> clearly a 'T', so it needs 2 dots (مباراة)!"
-        ),
-        ActionableGuidanceItem(
-            topic_ar="مفردات ألعاب الكرة والرياضات",
-            topic_en="Sports & Hobbies Vocabulary",
-            status="upcoming",
-            parent_prompt_en=f"Ask: 'Which sport in your Arabic class sounds most interesting: Kurat Al-Qadam (football) or Kurat As-Sallah (basketball)?'",
-            praise_suggestion_en="Compliment their pronunciation and cheer when they recognize sports terms during real games.",
-            household_activity_en="Next time you watch sports together, challenge them to say 'Hadaf' (Goal!) or 'Kura' (Ball) in Arabic.",
-            phonetic_help_en="Kurat Al-Qadam = Football / Soccer · Kurat As-Sallah = Basketball · Sibahah = Swimming."
-        )
-    ]
-
+    attempts = db.query(LearnerAttempt).filter(LearnerAttempt.child_id == child.id).all()
+    coverage, _ = chapter_progress(child, attempts, db=db)
+    chapters = pick_guidance_chapters(coverage, attempts)
+    contents = {}
+    if chapters:
+        for lesson_id, content_json in db.query(LessonVersion.lesson_id, LessonVersion.content_json).filter(
+                LessonVersion.lesson_id.in_([c["lesson_id"] for c in chapters]),
+                LessonVersion.is_active == True).all():  # noqa: E712
+            try:
+                contents[lesson_id] = json.loads(content_json or "{}")
+            except ValueError:
+                contents[lesson_id] = {}
+    guidance_items = [guidance_for_chapter(child.name, c, contents.get(c["lesson_id"], {})) for c in chapters]
+    grade = coverage["grade"]
+    welcome = (f"You don't need to speak Arabic to help {child.name} succeed! These tips come from "
+               f"{child.name}'s own Class {grade} chapters: what they are working on now and what comes next."
+               if guidance_items else
+               f"Tips will appear here as soon as {child.name}'s Class {grade} chapters are available.")
     res = ActionableGuidanceResponse(
         child_name=child.name,
-        school_name=child.school_name,
-        grade=child.default_grade,
-        welcome_message_en=f"You don't need to speak Arabic to help {child.name} succeed! Here are 3 simple, non-Arabic speaking parent prompts to spark confidence and reinforce this week's lessons at home.",
+        school_name=child.school_name or "",
+        grade=grade,
+        welcome_message_en=welcome,
         guidance_items=guidance_items
     )
     cache_set(f"actionable_guidance:{child_id}", res.model_dump(), ttl_seconds=60)
     return res
+
+
+GUIDANCE_STATUS = {"completed": "mastering", "started": "needs_reinforcement", "not_started": "upcoming"}
+
+
+def pick_guidance_chapters(coverage: dict, attempts, limit: int = 3) -> list:
+    """Up to `limit` chapters to give parents tips for: what the child practised most recently
+    (newest first), then the next chapters they haven't started. Coming-soon chapters are skipped."""
+    rows = [r for t in coverage["terms"] for r in t["lessons"] if r["state"] != "coming_soon"]
+    by_id = {r["lesson_id"]: r for r in rows}
+    last_seen = {}
+    for a in attempts:
+        if a.lesson_id in by_id and a.created_at and (a.lesson_id not in last_seen or a.created_at > last_seen[a.lesson_id]):
+            last_seen[a.lesson_id] = a.created_at
+    practised = sorted(last_seen, key=last_seen.get, reverse=True)
+    chosen = [by_id[i] for i in practised[:2]]
+    upcoming = [r for r in rows if r["state"] == "not_started"]
+    upcoming.sort(key=lambda r: (not r["is_accessible"], r["term"], r["order"] or 0))
+    for r in upcoming:
+        if len(chosen) >= limit:
+            break
+        chosen.append(r)
+    return chosen[:limit]
+
+
+def guidance_for_chapter(name: str, chapter: dict, content: dict) -> ActionableGuidanceItem:
+    """Plain-English tips for one chapter, taken from its parent guide and vocabulary."""
+    title_en = chapter.get("title_en") or "this chapter"
+    companion = content.get("parent_companion") or {}
+    prompts = [p for p in companion.get("dinner_table_prompts") or [] if isinstance(p, dict) and p.get("english")]
+    checklist = [c for c in companion.get("home_practice_checklist") or [] if isinstance(c, str) and c.strip()]
+    vocab = [v for v in content.get("vocabulary_cards") or [] if isinstance(v, dict) and v.get("word_ar") and v.get("meaning_en")][:3]
+    status = GUIDANCE_STATUS.get(chapter["state"], "upcoming")
+
+    if prompts:
+        p = prompts[0]
+        ask = f"Ask {name}: \"{p['english']}\"" + (f" ({p['arabic']})" if p.get("arabic") else "")
+    elif vocab:
+        v = vocab[0]
+        ask = f"Ask {name} what {v['word_ar']} means (it means \"{v['meaning_en']}\") and to use it in a short sentence."
+    else:
+        ask = f"Ask {name} to tell you, in English, what the chapter \"{title_en}\" is about."
+
+    praise_item = next((c for c in checklist if c.lower().startswith("praise")), None)
+    if status == "mastering":
+        praise = f"{name} has finished \"{title_en}\". " + (praise_item or "Celebrate it and ask them to teach you one new word from it.")
+    elif status == "needs_reinforcement":
+        praise = (f"{name} has answered {chapter['exercises_answered']} of {chapter['exercises_total']} exercises in "
+                  f"\"{title_en}\". Praise the effort and encourage them to finish the rest.")
+    else:
+        praise = f"\"{title_en}\" is coming up next. Show interest and cheer them on when they start it."
+    if praise_item and status != "mastering":
+        praise += f" {praise_item}"
+
+    activity = next((c for c in checklist if c is not praise_item), None)
+    if activity is None:
+        words = ", ".join(f"{v['word_ar']} ({v['meaning_en']})" for v in vocab)
+        activity = (f"Find things at home linked to these words and ask {name} to name them in Arabic: {words}."
+                    if words else f"Ask {name} to show you a page of this chapter and read one line aloud.")
+
+    if prompts and prompts[0].get("phonetic"):
+        help_text = f"{prompts[0]['arabic']} = {prompts[0]['phonetic']}" if prompts[0].get("arabic") else prompts[0]["phonetic"]
+    elif vocab:
+        help_text = " · ".join(f"{v['word_ar']} = {v['meaning_en']}" for v in vocab)
+    else:
+        help_text = None
+
+    return ActionableGuidanceItem(
+        topic_ar=chapter.get("title_ar") or "",
+        topic_en=f"Term {chapter['term']} · Chapter {chapter['order']}: {title_en}",
+        status=status,
+        parent_prompt_en=ask,
+        praise_suggestion_en=praise,
+        household_activity_en=activity,
+        phonetic_help_en=help_text,
+    )
 
 
 def get_report_preferences(*, actor, db: Session) -> dict:

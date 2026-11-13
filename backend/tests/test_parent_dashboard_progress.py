@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.database import Base
 from backend.models import ChildProfile, LearnerAttempt, Lesson, LessonVersion, Unit, User
-from backend.modules.progress.reporting import get_parent_dashboard
+from backend.modules.progress.reporting import get_actionable_guidance, get_parent_dashboard
 from backend.redis_client import cache_clear
 
 
@@ -35,7 +35,12 @@ class TestParentDashboardProgress(unittest.TestCase):
         self.db.add(Unit(id="u", book_edition_id="b", unit_number=1, title_ar="و", title_en="U"))
         self.db.commit()
         self.db.add(ChildProfile(id="kid", parent_id="p", name="Maya", default_grade=3))
-        _lesson(self.db, "g3_t1_1", 3, 1, 1, "My Family", ["a1", "a2", "a3", "a4", "a5"], {"tip_en": "family card"})
+        _lesson(self.db, "g3_t1_1", 3, 1, 1, "My Family", ["a1", "a2", "a3", "a4", "a5"], {
+            "tip_en": "family card",
+            "dinner_table_prompts": [{"arabic": "مَنْ فِي عَائِلَتِكَ؟", "english": "Who is in your family?",
+                                      "phonetic": "Man fi 'a'ilatik?"}],
+            "home_practice_checklist": ["Look at a family photo and name each person in Arabic.",
+                                        "Praise them for saying 'ummi' (my mother) clearly."]})
         _lesson(self.db, "g3_t1_2", 3, 1, 2, "My School", ["b1", "b2", "b3", "b4", "b5"], {"tip_en": "school card"})
         _lesson(self.db, "g5_t1_1", 5, 1, 1, "Ball Games", ["c1"])
         self.db.commit()
@@ -72,9 +77,43 @@ class TestParentDashboardProgress(unittest.TestCase):
         self.assertEqual(cov["terms"][0]["coverage_pct"], 50.0)
 
     def test_companion_card_follows_the_childs_latest_chapter(self):
-        self.assertEqual(get_parent_dashboard("kid", db=self.db)["companion_card"], {"tip_en": "family card"})
+        self.assertEqual(get_parent_dashboard("kid", db=self.db)["companion_card"]["tip_en"], "family card")
         self._answer("g3_t1_2", ["b1"])
         self.assertEqual(get_parent_dashboard("kid", db=self.db)["companion_card"], {"tip_en": "school card"})
+
+
+    def test_parent_tips_come_from_the_childs_own_chapters(self):
+        guide = get_actionable_guidance("kid", db=self.db)
+        self.assertEqual(guide.grade, 3)
+        text = json.dumps(guide.model_dump(), ensure_ascii=False)
+        self.assertNotIn("Ball Games", text)
+        self.assertNotIn("Kurat", text)
+        first = guide.guidance_items[0]
+        self.assertEqual(first.topic_en, "Term 1 · Chapter 1: My Family")
+        self.assertEqual(first.status, "upcoming")
+        self.assertIn("Who is in your family?", first.parent_prompt_en)
+        self.assertEqual(first.household_activity_en, "Look at a family photo and name each person in Arabic.")
+        self.assertIn("Praise them for saying 'ummi'", first.praise_suggestion_en)
+        self.assertIn("Man fi", first.phonetic_help_en)
+        # The chapter with no parent guide still gets tips, from its vocabulary or title.
+        self.assertEqual(guide.guidance_items[1].topic_en, "Term 1 · Chapter 2: My School")
+
+    def test_parent_tips_follow_progress(self):
+        self._answer("g3_t1_1", ["a1", "a2", "a3", "a4"])  # completed
+        self._answer("g3_t1_2", ["b1"])  # started, most recent
+        cache_clear()
+        items = get_actionable_guidance("kid", db=self.db).guidance_items
+        by_topic = {i.topic_en: i for i in items}
+        self.assertEqual(by_topic["Term 1 · Chapter 2: My School"].status, "needs_reinforcement")
+        self.assertIn("1 of 5 exercises", by_topic["Term 1 · Chapter 2: My School"].praise_suggestion_en)
+        self.assertEqual(by_topic["Term 1 · Chapter 1: My Family"].status, "mastering")
+
+    def test_no_tips_when_the_class_has_no_lessons(self):
+        self.db.add(ChildProfile(id="kid11", parent_id="p", name="Omar", default_grade=11))
+        self.db.commit()
+        guide = get_actionable_guidance("kid11", db=self.db)
+        self.assertEqual(guide.guidance_items, [])
+        self.assertIn("Tips will appear here", guide.welcome_message_en)
 
 
 if __name__ == "__main__":

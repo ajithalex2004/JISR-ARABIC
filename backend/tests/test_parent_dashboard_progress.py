@@ -116,5 +116,32 @@ class TestParentDashboardProgress(unittest.TestCase):
         self.assertIn("Tips will appear here", guide.welcome_message_en)
 
 
+    def test_each_skill_is_scored_from_its_own_exercises(self):
+        raw = json.dumps({
+            "vocabulary_cards": [{"word_ar": "الكُرَةُ"}],
+            "prep_check": {"questions": [{"id": "p1"}, {"id": "p2"}]},
+            "practice_activities": [{"id": "v1", "type": "multiple_choice", "title_en": "Word meaning check"},
+                                    {"id": "r1", "type": "multiple_choice", "title_en": "Story check"}],
+            "sentence_builder": {"challenges": [{"id": "s1"}]},
+        }, ensure_ascii=False)
+        self.db.add(Lesson(id="g3_t1_9", unit_id="u", grade=3, term=1, lesson_order=9, title_ar="د", title_en="Mixed",
+                           start_page=60))
+        self.db.add(LessonVersion(id="v_g3_t1_9", lesson_id="g3_t1_9", content_json=raw, is_active=True,
+                                  status="published", content_hash=hashlib.sha256(raw.encode("utf-8")).hexdigest()))
+        self.db.commit()
+        for activity, ok in (("p1", True), ("p2", False), ("v1", True), ("r1", False), ("s1", True)):
+            self.db.add(LearnerAttempt(child_id="kid", lesson_id="g3_t1_9", activity_id=activity, is_correct=ok, score=1.0))
+        self.db.commit()
+        cache_clear()
+        skills = get_parent_dashboard("kid", db=self.db)["skills"]
+        self.assertEqual((skills["instruction_understanding"]["score_pct"], skills["instruction_understanding"]["evidence_count"]), (50.0, 2))
+        self.assertEqual((skills["vocabulary"]["score_pct"], skills["vocabulary"]["evidence_count"]), (100.0, 1))
+        self.assertEqual((skills["reading"]["score_pct"], skills["reading"]["evidence_count"]), (0.0, 1))
+        self.assertEqual((skills["sentence_building"]["score_pct"], skills["sentence_building"]["evidence_count"]), (100.0, 1))
+        self.assertEqual(skills["vocabulary"]["evidence_source_en"], "1 answer to word-meaning exercises")
+        # The overall accuracy (60%) is no longer copied into every skill.
+        self.assertEqual(len({skills[k]["score_pct"] for k in ("instruction_understanding", "vocabulary", "reading")}), 3)
+
+
 if __name__ == "__main__":
     unittest.main()

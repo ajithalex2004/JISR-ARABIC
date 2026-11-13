@@ -274,7 +274,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
                 <div>
                   <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
                     <span>Performance: {skill.score_pct}%</span>
-                    <span>{skill.evidence_count} evidence records</span>
+                    <span>{skill.evidence_source_en || `${skill.evidence_count} answers`}</span>
                   </div>
                   <div className="w-full bg-slate-200 h-2">
                     <div

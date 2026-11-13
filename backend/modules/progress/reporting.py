@@ -35,59 +35,8 @@ def get_parent_dashboard(child_id: str, *, db: Session):
     correct_attempts = sum(1 for a in attempts if a.is_correct)
     accuracy = round((correct_attempts / total_attempts * 100), 1) if total_attempts > 0 else 0.0
 
-    # Skill breakdown based on authentic activity evidence
-    # Categories: Instruction Understanding, Vocabulary, Reading, Sentence Building, Speaking/Writing
-    # If no evidence exists, mark honestly as not assessed yet (None / 0 evidence).
-    skills = {
-        "instruction_understanding": {
-            "name_ar": "فهم التعليمات والتوجيهات",
-            "name_en": "Instruction Understanding",
-            "assessed": total_attempts > 0,
-            "score_pct": round(accuracy, 1) if total_attempts > 0 else None,
-            "evidence_count": max(1, total_attempts // 3) if total_attempts > 0 else 0,
-            "status_note": None if total_attempts > 0 else "لم يُقيّم بعد (Not assessed yet)"
-        },
-        "vocabulary": {
-            "name_ar": "المفردات والدلالة",
-            "name_en": "Vocabulary & Glossary",
-            "assessed": total_attempts > 0,
-            "score_pct": round(accuracy, 1) if total_attempts > 0 else None,
-            "evidence_count": total_attempts,
-            "status_note": None if total_attempts > 0 else "لم يُقيّم بعد (Not assessed yet)"
-        },
-        "reading": {
-            "name_ar": "القراءة والفهم",
-            "name_en": "Reading Comprehension",
-            "assessed": total_attempts > 0,
-            "score_pct": round(accuracy, 1) if total_attempts > 0 else None,
-            "evidence_count": total_attempts,
-            "status_note": None if total_attempts > 0 else "لم يُقيّم بعد (Not assessed yet)"
-        },
-        "sentence_building": {
-            "name_ar": "بناء الجمل والتراكيب",
-            "name_en": "Sentence Construction",
-            "assessed": total_attempts > 0,
-            "score_pct": round(accuracy, 1) if total_attempts > 0 else None,
-            "evidence_count": max(1, total_attempts // 2) if total_attempts > 0 else 0,
-            "status_note": None if total_attempts > 0 else "لم يُقيّم بعد (Not assessed yet)"
-        },
-        "speaking_fluency": {
-            "name_ar": "الطلاقة الشفهية والنطق",
-            "name_en": "Oral Pronunciation & Speaking",
-            "assessed": False,
-            "status_note": "Awaiting tutor evaluation of recorded speech mission / لم يُقيّم بعد",
-            "score_pct": None,
-            "evidence_count": 0
-        },
-        "writing_composition": {
-            "name_ar": "الكتابة والتعبير",
-            "name_en": "Written Composition",
-            "assessed": False,
-            "status_note": "Paragraph writing submitted; pending teacher rubric grading / لم يُقيّم بعد",
-            "score_pct": None,
-            "evidence_count": 0
-        }
-    }
+    # Skill breakdown: each skill is scored only from answers to that skill's own exercises.
+    skills = skill_breakdown(attempts, db=db)
 
     missing_coverage, companion_card = chapter_progress(child, attempts, db=db)
 
@@ -123,6 +72,88 @@ def get_parent_dashboard(child_id: str, *, db: Session):
     }
     cache_set(f"parent_dash:{child_id}", res, ttl_seconds=15)
     return res
+
+
+SKILL_LABELS = {
+    "instruction_understanding": ("فهم التعليمات والتوجيهات", "Instruction Understanding",
+                                  "readiness questions at the start of each chapter"),
+    "vocabulary": ("المفردات والدلالة", "Vocabulary & Glossary", "word-meaning exercises"),
+    "reading": ("القراءة والفهم", "Reading Comprehension", "reading and comprehension questions"),
+    "sentence_building": ("بناء الجمل والتراكيب", "Sentence Construction", "sentence-builder challenges"),
+}
+_VOCAB_WORDS = ("vocab", "word", "meaning", "مفرد", "معنى", "كلمة", "كلمات")
+
+
+def _activity_skills(content: dict) -> dict:
+    """activity id -> skill, from where the exercise sits in the lesson (and, for questions, its wording)."""
+    out = {}
+    for q in (content.get("prep_check") or {}).get("questions") or []:
+        out[q.get("id")] = "instruction_understanding"
+    for c in (content.get("sentence_builder") or {}).get("challenges") or []:
+        out[c.get("id")] = "sentence_building"
+    questions = list(content.get("practice_activities") or []) + list(
+        (content.get("exam_practice") or {}).get("objective_questions") or [])
+    for a in questions:
+        if a.get("type") == "sentence_builder":
+            out[a.get("id")] = "sentence_building"
+            continue
+        text = " ".join(str(a.get(k) or "") for k in ("id", "title_en", "title_ar", "prompt_en", "prompt_ar")).lower()
+        out[a.get("id")] = "vocabulary" if any(w in text for w in _VOCAB_WORDS) else "reading"
+    out.pop(None, None)
+    return out
+
+
+def _skill_from_id(activity_id: str) -> str:
+    """Fallback when the lesson content is unavailable: the exercise id's own prefix."""
+    key = (activity_id or "").lower()
+    if key.startswith("prep"):
+        return "instruction_understanding"
+    if "sentence" in key or key.startswith(("sb_", "sb-", "build")):
+        return "sentence_building"
+    if any(w in key for w in ("vocab", "word")):
+        return "vocabulary"
+    return "reading"
+
+
+def skill_breakdown(attempts, *, db: Session) -> dict:
+    """Per-skill accuracy from the child's own answers; a skill with no answers is 'not assessed yet'."""
+    lesson_ids = {a.lesson_id for a in attempts}
+    mapping = {}
+    if lesson_ids:
+        for lesson_id, content_json in db.query(LessonVersion.lesson_id, LessonVersion.content_json).filter(
+                LessonVersion.lesson_id.in_(lesson_ids), LessonVersion.is_active == True).all():  # noqa: E712
+            try:
+                mapping[lesson_id] = _activity_skills(json.loads(content_json or "{}"))
+            except ValueError:
+                mapping[lesson_id] = {}
+    tally = {k: [0, 0] for k in SKILL_LABELS}
+    for a in attempts:
+        skill = mapping.get(a.lesson_id, {}).get(a.activity_id) or _skill_from_id(a.activity_id)
+        tally[skill][0] += 1
+        tally[skill][1] += 1 if a.is_correct else 0
+    skills = {}
+    for key, (name_ar, name_en, source) in SKILL_LABELS.items():
+        total, correct = tally[key]
+        skills[key] = {
+            "name_ar": name_ar,
+            "name_en": name_en,
+            "assessed": total > 0,
+            "score_pct": round(100.0 * correct / total, 1) if total else None,
+            "evidence_count": total,
+            "evidence_source_en": f"{total} answer{'s' if total != 1 else ''} to {source}" if total else None,
+            "status_note": None if total else f"لم يُقيّم بعد (Not assessed yet: no answers to {source} so far)",
+        }
+    skills["speaking_fluency"] = {
+        "name_ar": "الطلاقة الشفهية والنطق", "name_en": "Oral Pronunciation & Speaking", "assessed": False,
+        "status_note": "Awaiting tutor evaluation of recorded speech mission / لم يُقيّم بعد",
+        "score_pct": None, "evidence_count": 0, "evidence_source_en": None,
+    }
+    skills["writing_composition"] = {
+        "name_ar": "الكتابة والتعبير", "name_en": "Written Composition", "assessed": False,
+        "status_note": "Paragraph writing submitted; pending teacher rubric grading / لم يُقيّم بعد",
+        "score_pct": None, "evidence_count": 0, "evidence_source_en": None,
+    }
+    return skills
 
 
 # A chapter counts as completed once the learner has answered this share of its exercises.

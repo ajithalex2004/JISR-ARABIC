@@ -182,10 +182,13 @@ class TestPhase3Trust(unittest.TestCase):
         # Three answers are not a finished chapter.
         self.assertEqual(dash["missing_coverage"]["completed_lessons_count"], 0)
 
-        vocab_skill = dash["skills"]["vocabulary"]
-        self.assertTrue(vocab_skill["assessed"])
-        self.assertEqual(vocab_skill["score_pct"], 66.7)
-        self.assertEqual(vocab_skill["evidence_count"], 3)
+        # Generic exercise ids count as reading questions; other skills stay unassessed.
+        reading = dash["skills"]["reading"]
+        self.assertTrue(reading["assessed"])
+        self.assertEqual(reading["score_pct"], 66.7)
+        self.assertEqual(reading["evidence_count"], 3)
+        self.assertFalse(dash["skills"]["vocabulary"]["assessed"])
+        self.assertIsNone(dash["skills"]["vocabulary"]["score_pct"])
 
     def test_honest_weekly_digest_without_fabricated_metrics(self):
         """Weekly digest for inactive learner must not show fake 135 mins, 86.5 score, or fake strengths/gaps."""

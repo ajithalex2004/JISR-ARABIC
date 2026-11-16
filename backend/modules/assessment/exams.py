@@ -12,63 +12,104 @@ from backend.errors import ApplicationError
 from backend.modules.curriculum.access import require_lesson, learner_content
 
 
-def _questions_for_scope(grade: int, term: int, *, db: Session):
-    """Build an exam bank from the active published curriculum versions."""
-    questions = []
+def _exam_item(lesson_id: str, question: dict, *, source: str):
+    """One question in the exam's format, or None when it has no usable answer key."""
+    if not isinstance(question, dict):
+        return None
+    item = dict(question)
+    if "correct_index" not in item:
+        options = item.get("options", [])
+        correct_ans = item.get("correct_answer")
+        idx = next((i for i, opt in enumerate(options) if isinstance(opt, dict) and opt.get("id") == correct_ans), None)
+        if idx is None:
+            return None
+        item["correct_index"] = idx
+    if len(item.get("options") or []) < 2:
+        return None
+    item["id"] = f"{lesson_id}:{question.get('id')}"
+    if source == "practice":
+        # Practice questions top up a short exam; weight them like one exam mark.
+        item["points"] = 1
+    item.setdefault("points", question.get("marks", 1))
+    item.setdefault("bloom_level", "understanding")
+    item.setdefault("bloom_name_ar", "الفهم والاستيعاب")
+    item.setdefault("bloom_name_en", "Understanding & Comprehension")
+    item.setdefault("difficulty", question.get("difficulty", "medium"))
+    item.setdefault("question_ar", question.get("prompt_ar", question.get("question", "")))
+    item.setdefault("question_en", question.get("prompt_en", question.get("question_en", "")))
+    item.setdefault("solution_walkthrough_ar", "")
+    item.setdefault("solution_walkthrough_en", "")
+    raw_options = item.get("options", [])
+    if raw_options and isinstance(raw_options[0], dict):
+        item["options_en"] = [opt.get("label_en", opt.get("text_en", "")) for opt in raw_options]
+        item["options"] = [opt.get("label_ar", opt.get("text_ar", str(opt))) for opt in raw_options]
+    return item
+
+
+def _scope_contents(grade: int, term: int, *, db: Session):
+    """(lesson id, content) for the term's published lessons with real content, in chapter order.
+    Placeholder ("Coming soon") lessons are left out: their questions are a generic template."""
+    from backend.modules.curriculum.coming_soon import coming_soon_ids
     lessons = db.query(Lesson).filter(Lesson.grade == grade, Lesson.term == term).order_by(Lesson.lesson_order).all()
+    placeholders = coming_soon_ids(db, [l.id for l in lessons]) if lessons else set()
+    out = []
     for lesson in lessons:
+        if lesson.id in placeholders:
+            continue
         version = db.query(LessonVersion).filter(
             LessonVersion.lesson_id == lesson.id,
-            LessonVersion.is_active == True,
+            LessonVersion.is_active == True,  # noqa: E712
             LessonVersion.status == "published",
         ).first()
         if not version:
             continue
         try:
-            content = json.loads(version.content_json)
+            out.append((lesson.id, json.loads(version.content_json)))
         except (TypeError, ValueError):
             continue
-        for question in content.get("exam_practice", {}).get("objective_questions", []):
-            if not isinstance(question, dict):
-                continue
-            item = dict(question)
-            if "correct_index" not in item:
-                options = item.get("options", [])
-                correct_ans = item.get("correct_answer")
-                idx = next((i for i, opt in enumerate(options) if isinstance(opt, dict) and opt.get("id") == correct_ans), None)
-                if idx is not None:
-                    item["correct_index"] = idx
-                else:
-                    continue
-            item["id"] = f"{lesson.id}:{question.get('id', len(questions))}"
-            item.setdefault("points", question.get("marks", 1))
-            item.setdefault("bloom_level", "understanding")
-            item.setdefault("bloom_name_ar", "الفهم والاستيعاب")
-            item.setdefault("bloom_name_en", "Understanding & Comprehension")
-            item.setdefault("difficulty", question.get("difficulty", "medium"))
-            item.setdefault("question_ar", question.get("prompt_ar", question.get("question", "")))
-            item.setdefault("question_en", question.get("prompt_en", question.get("question_en", "")))
-            item.setdefault("solution_walkthrough_ar", "")
-            item.setdefault("solution_walkthrough_en", "")
-            raw_options = item.get("options", [])
-            if raw_options and isinstance(raw_options[0], dict):
-                item["options_en"] = [opt.get("label_en", opt.get("text_en", "")) for opt in raw_options]
-                item["options"] = [opt.get("label_ar", opt.get("text_ar", str(opt))) for opt in raw_options]
-            questions.append(item)
+    return out
+
+
+def _questions_for_scope(grade: int, term: int, *, db: Session, contents=None):
+    """The term's exam questions (exam_practice) from published lessons with real content."""
+    questions = []
+    for lesson_id, content in (contents if contents is not None else _scope_contents(grade, term, db=db)):
+        for question in (content.get("exam_practice") or {}).get("objective_questions", []):
+            item = _exam_item(lesson_id, question, source="exam")
+            if item:
+                questions.append(item)
     return questions
 
+
+def _practice_questions_for_scope(contents):
+    """Multiple-choice practice questions, taken one chapter at a time so a top-up spreads over the term."""
+    per_lesson = []
+    for lesson_id, content in contents:
+        items = [_exam_item(lesson_id, a, source="practice") for a in content.get("practice_activities") or []
+                 if isinstance(a, dict) and a.get("type", "multiple_choice") == "multiple_choice"]
+        per_lesson.append([i for i in items if i])
+    out = []
+    while any(per_lesson):
+        for items in per_lesson:
+            if items:
+                out.append(items.pop(0))
+    return out
 
 EXAM_QUESTION_COUNT = 10
 
 
 def _exam_questions(grade: int, term: int, *, db: Session):
-    # Consult published curriculum content dynamically from database first, but only
-    # when it can fill a full-length exam; a partial bank would break the CBSE Curriculum blueprint.
-    published = _questions_for_scope(grade, term, db=db)
-    if len(published) >= EXAM_QUESTION_COUNT:
-        return published[:EXAM_QUESTION_COUNT]
+    """Ten questions for the term, from lessons with real content: its exam questions first.
 
-    # Fallback to curated static assessment banks if curriculum content is pending publication
+    Class 5 keeps its curated banks when its published exam questions can't fill an exam. Other
+    classes are topped up with the term's own practice questions; a term with fewer than ten in
+    all gets a shorter exam, and one with none gets a clear "not available yet" message."""
+    contents = _scope_contents(grade, term, db=db)
+    questions = _questions_for_scope(grade, term, db=db, contents=contents)
+    if len(questions) >= EXAM_QUESTION_COUNT:
+        return questions[:EXAM_QUESTION_COUNT]
+
+    # Curated Class 5 banks, used while its published lessons can't fill a full exam.
     if grade == 5 and term == 1:
         from backend.assessment_bank import ASSESSMENT_QUESTIONS
         return ASSESSMENT_QUESTIONS
@@ -79,9 +120,20 @@ def _exam_questions(grade: int, term: int, *, db: Session):
         from backend.assessment_bank import ASSESSMENT_QUESTIONS_TERM3
         return ASSESSMENT_QUESTIONS_TERM3
 
-    if published:
-        return published
-    raise ApplicationError(404, "No published assessment content is available for this grade and term")
+    # Other classes: top up with the term's own practice questions.
+    seen = {q["id"] for q in questions}
+    for item in _practice_questions_for_scope(contents):
+        if len(questions) >= EXAM_QUESTION_COUNT:
+            break
+        if item["id"] not in seen:
+            questions.append(item)
+            seen.add(item["id"])
+    if questions:
+        return questions
+    from backend.modules.curriculum.coming_soon import coming_soon_message
+    if not contents:
+        raise ApplicationError(404, coming_soon_message(grade, term))
+    raise ApplicationError(404, f"Class {grade} Term {term} has no exam questions yet.")
 
 def get_adaptive_assessment(lesson_id: str, child_id=None, is_reviewer=False, *, db: Session, actor=None):
     """

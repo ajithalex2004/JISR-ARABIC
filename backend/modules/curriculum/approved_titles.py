@@ -89,7 +89,8 @@ def apply_approved_titles(conn, titles: Optional[Dict[str, dict]] = None) -> Tup
     for key, entry in titles.items():
         grade, term, order = map(int, key.split("-"))
         rows = conn.execute(text(
-            "SELECT id, unit_id, title_ar, title_en FROM lessons WHERE grade=:g AND term=:t AND lesson_order=:o"),
+            "SELECT id, unit_id, title_ar, title_en FROM lessons WHERE grade=:g AND term=:t AND lesson_order=:o "
+            "AND (status IS NULL OR status <> 'retired')"),
             {"g": grade, "t": term, "o": order}).fetchall()
         for row in rows:
             before = {"title_ar": row.title_ar, "title_en": row.title_en}

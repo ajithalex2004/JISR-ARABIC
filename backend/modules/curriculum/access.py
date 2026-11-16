@@ -34,6 +34,11 @@ def require_lesson(db, actor, lesson_id, child_id=None, is_reviewer=False):
         child = db.get(ChildProfile, learner_id)
         if child is not None and lesson.grade not in entitled_grades(child, db):
             raise ApplicationError(402, f"Grade {lesson.grade} is not unlocked for this learner. Unlock it to continue.")
+    # Chapters of a term being re-cut to match the book open only to staff until the switch;
+    # the old chapters they replace stay closed after it.
+    from backend.modules.curriculum.book_restructure import is_hidden
+    if not is_reviewer and is_hidden(lesson):
+        raise ApplicationError(404, "Lesson not found")
     # Placeholder lessons (no real content yet) are listed as "Coming soon" and don't open.
     from backend.modules.curriculum.coming_soon import coming_soon_message, lesson_is_coming_soon
     if not is_reviewer and lesson_is_coming_soon(db, lesson_id):

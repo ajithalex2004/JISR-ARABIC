@@ -156,9 +156,12 @@ def list_lessons(grade: int=5, term: int=1, child_id: Optional[str]=None, *, db:
     cached_base = cache_get(base_cache_key)
 
     if cached_base is None:
+        from backend.modules.curriculum.book_restructure import HIDDEN_STATUSES
+        # Staged (not yet switched in) and retired chapters are not listed to anyone here.
         lessons = db.query(Lesson).filter(
             Lesson.grade == grade,
-            Lesson.term == term
+            Lesson.term == term,
+            (Lesson.status.is_(None) | Lesson.status.notin_(HIDDEN_STATUSES)),
         ).order_by(Lesson.lesson_order).all()
 
         if lessons:
@@ -316,7 +319,9 @@ def lesson_journey(child_id: str, grade: int, term: int, *, db: Session):
     right, and when they last practised. Only what the learner actually did; no estimates."""
     from sqlalchemy import case, func
     from backend.models import LearnerAttempt
-    lesson_ids = [row[0] for row in db.query(Lesson.id).filter(Lesson.grade == grade, Lesson.term == term).all()]
+    from backend.modules.curriculum.book_restructure import HIDDEN_STATUSES
+    lesson_ids = [row[0] for row in db.query(Lesson.id).filter(Lesson.grade == grade, Lesson.term == term,
+                                                               (Lesson.status.is_(None) | Lesson.status.notin_(HIDDEN_STATUSES))).all()]
     rows = []
     if lesson_ids:
         rows = db.query(

@@ -262,6 +262,10 @@ def update_curriculum_status(lesson_id: str, status: str, db: Session = Depends(
     lesson = db.get(Lesson, lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail='lesson not found')
+    from backend.modules.curriculum.book_restructure import is_hidden
+    if is_hidden(lesson):
+        raise HTTPException(status_code=409, detail='This chapter is part of a term being re-cut to match the book; '
+                                                    'it goes live when every new chapter of the term is published')
     if status == 'published':
         active = db.query(LessonVersion).filter(LessonVersion.lesson_id == lesson_id, LessonVersion.is_active == True, LessonVersion.status == 'published').first()
         if active is None:
@@ -281,7 +285,8 @@ def publish_lesson_version(lesson_id: str, version_id: str, db: Session = Depend
     require_roles(actor, ('admin',))
     result = service.publish_lesson_version(lesson_id, version_id, db=db, actor=actor)
     lesson = db.get(Lesson, lesson_id)
-    if lesson:
+    from backend.modules.curriculum.book_restructure import is_hidden
+    if lesson and not is_hidden(lesson):
         lesson.status = 'published'
         db.commit()
         invalidate_lesson_cache(lesson_id, grade=lesson.grade, term=lesson.term)

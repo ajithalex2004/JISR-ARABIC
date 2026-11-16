@@ -158,6 +158,15 @@ def upgrade():
         conn.commit()
     if renumbered or unfreed:
         print(f"Lessons: renumbered {renumbered} by page; {unfreed} no longer marked as a free chapter")
+    from backend.modules.curriculum.book_restructure import promote_ready_terms, stage_book_lessons
+    with engine.connect() as conn:
+        staged = stage_book_lessons(conn)
+        switched = promote_ready_terms(conn)
+        conn.commit()
+    if staged:
+        print(f"Staged {staged} book-aligned lesson(s) for drafting (backend/modules/curriculum/book_restructure.py)")
+    for grade, term in switched:
+        print(f"Class {grade} Term {term}: switched to the book-aligned chapters")
     from backend.modules.curriculum.approved_titles import apply_approved_titles
     with engine.connect() as conn:
         titled, units_titled = apply_approved_titles(conn)
@@ -229,7 +238,8 @@ def repair_lesson_order_and_free_chapters(conn) -> tuple[int, int]:
     if "lessons" not in inspect(conn).get_table_names():
         return 0, 0
     rows = conn.execute(text(
-        "SELECT id, grade, term, lesson_order, start_page, is_first_chapter_demo FROM lessons")).fetchall()
+        "SELECT id, grade, term, lesson_order, start_page, is_first_chapter_demo FROM lessons "
+        "WHERE status IS NULL OR status NOT IN ('staged', 'retired')")).fetchall()
     groups = {}
     for row in rows:
         groups.setdefault((row.grade, row.term), []).append(row)

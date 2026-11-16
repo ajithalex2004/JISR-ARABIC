@@ -67,9 +67,16 @@ def _pdf_start(lesson: Lesson, db: Session) -> int:
 
 def chapter_pages(lesson: Lesson, db: Session) -> List[int]:
     """PDF pages of a lesson: from its start up to the next lesson's start (bounded)."""
+    from backend.modules.curriculum.book_restructure import HIDDEN_STATUSES, STAGED, book_pages
+    exact = book_pages(lesson.id)
+    if exact:
+        return exact  # a book-aligned lesson: its pages were read from the textbook
     start = _pdf_start(lesson, db)
+    # The next chapter of the same set: staged lessons follow staged ones, live lessons live ones.
+    same_set = (Lesson.status == STAGED) if lesson.status == STAGED else (
+        Lesson.status.is_(None) | Lesson.status.notin_(HIDDEN_STATUSES))
     following = db.query(Lesson).filter(
-        Lesson.grade == lesson.grade, Lesson.term == lesson.term, Lesson.lesson_order > lesson.lesson_order
+        Lesson.grade == lesson.grade, Lesson.term == lesson.term, Lesson.lesson_order > lesson.lesson_order, same_set
     ).order_by(Lesson.lesson_order).first()
     end = _pdf_start(following, db) - 1 if following else start + DEFAULT_CHAPTER_PAGES - 1
     end = max(start, min(end, start + MAX_CHAPTER_PAGES - 1))

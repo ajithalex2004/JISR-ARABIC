@@ -61,6 +61,8 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: "stable"
+          # Same version as CI (ci.yml): newer releases fail `flutter analyze` on deprecations.
+          flutter-version: "3.47.9"
           cache: true
 
       - name: Configure Keystore from Secrets (If Available)
@@ -209,6 +211,8 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: "stable"
+          # Same version as CI (ci.yml): newer releases fail `flutter analyze` on deprecations.
+          flutter-version: "3.47.9"
           cache: true
 
       - name: Install Dependencies

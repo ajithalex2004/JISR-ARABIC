@@ -210,10 +210,10 @@ BALL_GAMES_CONTENT_V02 = {
         },
         {
             "id": "vocab_07",
-            "word_ar": "البَيْضَوِيُّ",
-            "vowelled_ar": "البَيْضَوِيُّ",
+            "word_ar": "البَيْضَاوِيُّ",
+            "vowelled_ar": "البَيْضَاوِيُّ",
             "meaning_en": "Oval / egg-shaped",
-            "definition_ar": "أَحَدُ الأَشْكَالِ الَّذِي يُشْبِهُ البَيْضَةَ.",
+            "definition_ar": "شَكْلٌ يُشْبِهُ البَيْضَةَ.",
             "example_ar": "كُرَةُ الرَّجْبِي بَيْضَاوِيَّةٌ.",
             "example_en": "A rugby ball is oval.",
             "root": "ب-ي-ض",
@@ -440,7 +440,7 @@ BALL_GAMES_CONTENT_V02 = {
             {"arabic": "هَلْ كُرَةُ السَّلَّةِ لُعْبَةٌ جَمَاعِيَّةٌ أَمْ فَرْدِيَّةٌ؟", "english": "Is basketball a team game or individual?", "phonetic": "Hal kurat as-sallati lu'batun jama'iyyatun am fardiyyah?"}
         ],
         "home_practice_checklist": [
-            "Ask your child to show you the difference between 'مُسْتَدِير' (round) and 'بَيْضَوِي' (oval).",
+            "Ask your child to show you the difference between 'مُسْتَدِير' (round) and 'بَيْضَاوِي' (oval).",
             "Listen to them read the short 'Round Magician' passage aloud with proper vowels.",
             "Verify they have completed their practice quiz."
         ]
@@ -492,7 +492,7 @@ BALL_GAMES_CONTENT_V02 = {
             },
             {
                 "id": "exam_q3",
-                "prompt_ar": "أَيُّ هَذِهِ الكُرَاتِ شَكْلُهَا بَيْضَوِيٌّ؟",
+                "prompt_ar": "أَيُّ هَذِهِ الكُرَاتِ شَكْلُهَا بَيْضَاوِيٌّ؟",
                 "prompt_en": "Which of these balls has an oval shape?",
                 "options": [
                     {"id": "a", "label_ar": "كُرَةُ القَدَمِ", "label_en": "Football"},

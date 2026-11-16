@@ -29,6 +29,43 @@ CONTENT_FIXES = [
         "البَضَائِعُ",
         "Card مَتْجَرٌ (shop): \"a place where spoils of war (المغنومات) and clothes are sold\"; now \"goods (البضائع)\".",
     ),
+] + [
+    # Free-chapter pre-check (Classes 1-10, Term 1 chapter 1), confirmed by the content team.
+    # Each wrong text is matched exactly as it stands in the live lesson.
+    ("lesson_g1_t1_ch01", "تَصْبَحُ عَلَى خَيْرٍ", "تُصْبِحُ عَلَى خَيْرٍ", "Good night: tusbihu, not tasbahu."),
+    ("lesson_g1_t1_ch01", "العَشْبِ", "العُشْبِ", "Grass is al-'ushb."),
+    ("lesson_g1_t1_ch01", "^أ-ن-ا$", "", "The pronoun أَنَا has no root."),
+    ("lesson_g1_t1_ch01", 'اللَّو(?:ۡ|َّ)نَ', 'اللَّوْنَ', "Wrong sukun character / stray shadda in the colour word."),
+    ("lesson_g2_t1_ch01", r" \((?:ends with Baa|contains Baa in middle|starts with Baa)\)", "", "Exam Q2 English options gave the answer away."),
+    ("lesson_g2_t1_ch01", r"\bBatten\b", "Batn", "Typo in the transliteration of بَطْنٌ."),
+    ("lesson_g3_t1_ch01", "ร", "ر", "A Thai letter inside فَتْرَةُ رَاحَةٍ."),
+    ("lesson_g3_t1_ch01", "شَعُورٌ", "شُعُورٌ", "Shu'ur, not sha'ur."),
+    ("lesson_g3_t1_ch01", 'صَفُّكَا', "صَفُّكَ", "Not a valid form; your class is صَفُّكَ."),
+    ("lesson_g4_t1_ch01", 'مَجَلاَّتٌ\\ تِجَارِيَّةٌ', "مَحَلَّاتٌ تِجَارِيَّةٌ", "Magazines written where shops are meant."),
+    ("lesson_g4_t1_ch01", "مِنْ المَتْجَرِ", "مِنَ المَتْجَرِ", "Min takes fatha before al-."),
+    ("lesson_g4_t1_ch01", "دُبَي[َُّ]*", "دُبَيّ", "One spelling of Dubai."),
+    ("lesson_01_ball_games", 'تَتَكُونُ|تَتَكُوَّنُ', "تَتَكَوَّنُ", "Tatakawwanu, not tatakuwwanu."),
+    ("lesson_01_ball_games", "فَرَدَيْنِ", "فَرْدَيْنِ", "Fardayn, not faradayn."),
+    ("lesson_01_ball_games", 'أَحَدُ\\ الأَشْكَالِ\\ الَّذِي\\ يُشْبِهُ\\ البَيْضَةَ', "شَكْلٌ يُشْبِهُ البَيْضَةَ", "Definition of oval: agreement error."),
+    ("lesson_01_ball_games", "بَيْضَوِي", "بَيْضَاوِي", "One spelling of oval (بَيْضَاوِيّ), as in the example sentences."),
+    ("lesson_g6_t1_ch01", "الكَاكِئِنُ", "الكَائِنُ", "Typo in the living creature."),
+    ("lesson_g6_t1_ch01", 'الطَّعَامُ\\ المَفْضُولُ', "الطَّعَامُ المُفَضَّلُ", "Favourite food is al-mufaddal."),
+    ("lesson_g6_t1_ch01", "بَهِيظُ", "بَاهِظُ", "Expensive is bahiz."),
+    ("lesson_g6_t1_ch01", "أَوْلَوِيَاتِ", "أَوْلَوِيَّاتِ", "Priorities carries a shadda."),
+    ("lesson_g6_t1_ch01", "إِفْتِقَارٌ", "افْتِقَارٌ", "Iftiqar starts with hamzat wasl."),
+    ("lesson_g6_t1_ch01", 'يُقْنِعُ\\ وَيُمِيلُ\\ الرَّأْيَ\\ أَوْ\\ السُّلُوكَ', "يُحْدِثُ تَغْيِيرًا فِي الرَّأْيِ أَوِ السُّلُوكِ", "Definition of to affect, not to persuade."),
+    ("lesson_g6_t1_ch01", "المِتَابَعَةِ", "المُتَابَعَةِ", "Al-mutaba'a."),
+    ("lesson_g7_t1_ch01", 'يُعَدُّ\\ زِيَارَةُ', "تُعَدُّ زِيَارَةُ", "Feminine subject."),
+    ("lesson_g7_t1_ch01", "مَغَامَرَ", "مُغَامَرَ", "Adventure is mughamara."),
+    ("lesson_g7_t1_ch01", 'النَّظَامُ', "النِّظَامُ", "System is an-nizam."),
+    ("lesson_g7_t1_ch01", "^ر-و-ت$", "", "Routine is a borrowed word with no Arabic root."),
+    ("lesson_g7_t1_ch01", 'مِنْ\\ الرِّحْلَةِ', "مِنَ الرِّحْلَةِ", "Min takes fatha before al-."),
+    ("lesson_g8_t1_ch01", r" / التآزر\)", ")", "Exam Q3 English prompt gave the answer away."),
+    ("lesson_g8_t1_ch01", "المَشْتَرَك", "المُشْتَرَك", "Shared is al-mushtarak."),
+    ("lesson_g9_t1_ch01", 'يَؤُدِّي', "يُؤَدِّي", "Yu'addi."),
+    ("lesson_g9_t1_ch01", r"\bAs size of a needle hole\b", "The Size of a Needle's Eye", "English title of the reading text."),
+    ("lesson_g10_t1_ch01", "المَصَابِينَ", "المُصَابِينَ", "The injured are al-musabin."),
+    ("lesson_g10_t1_ch01", "المَسْتَشْفَى", "المُسْتَشْفَى", "Hospital is al-mustashfa."),
 ]
 
 FIX_ACTOR = "content-fix"
@@ -59,8 +96,11 @@ def apply_content_fixes(conn, fixes=CONTENT_FIXES) -> list:
     if "lesson_versions" not in inspect(conn).get_table_names():
         return []
     has_audit = "curriculum_audit_events" in inspect(conn).get_table_names()
-    fixed = []
+    grouped = {}
     for lesson_id, pattern, replacement, reason in fixes:
+        grouped.setdefault(lesson_id, []).append((pattern, replacement, reason))
+    fixed = []
+    for lesson_id, items in grouped.items():
         row = conn.execute(text(
             "SELECT id, version_tag, content_json FROM lesson_versions "
             "WHERE lesson_id=:l AND is_active=:a AND status='published'"), {"l": lesson_id, "a": True}).first()
@@ -71,9 +111,16 @@ def apply_content_fixes(conn, fixes=CONTENT_FIXES) -> list:
         except ValueError:
             continue
         # Work on the parsed strings: stored JSON may hold Arabic as \\uXXXX escapes.
-        data, hits = _replace_in(data, re.compile(pattern), replacement)
-        if not hits:
+        reasons = []
+        for pattern, replacement, reason in items:
+            # Count a fix only when it changes the text, so a deploy after it has run does nothing.
+            fixed_data, _ = _replace_in(data, re.compile(pattern), replacement)
+            if fixed_data != data:
+                data = fixed_data
+                reasons.append(reason)
+        if not reasons:
             continue
+        reason = " | ".join(reasons)
         content = json.dumps(data, ensure_ascii="\\u06" in (row.content_json or ""))
         digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
         new_id = f"{row.id}_fix_{digest[:8]}"[:100]

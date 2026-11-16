@@ -599,7 +599,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
                   ? 'Active Plan: Full Academic Year Pass (Terms 1, 2, & 3)'
                   : receipts.length > 0
                   ? 'Active Plan: Single Term License'
-                  : 'Active Plan: Freemium Free Demo (Chapter 1 Ball Games)'}
+                  : `Active Plan: Free (Chapter 1 of Term 1, Class ${child.default_grade})`}
               </div>
               <div className="text-[11px] text-slate-500">
                 Enrolled: {child.name} · {child.school_name} · Class {child.default_grade}
@@ -615,7 +615,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
 
         {receipts.length === 0 ? (
           <div className="text-xs text-slate-500 py-3 text-center border border-dashed border-slate-300">
-            Chapter 1 (Ball Games) is active on the Free Demo tier. To unlock Chapters 2–10, exam preparation, and study booklets, select a Term or Annual pass.
+            Chapter 1 of Term 1 is free for Class {child.default_grade}. To unlock the other chapters, exam practice and study booklets, choose a term or the full year.
           </div>
         ) : (
           <div className="space-y-2">

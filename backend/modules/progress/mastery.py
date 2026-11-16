@@ -316,17 +316,17 @@ GAP_QUESTIONS_BANK = {
             concept_key="reading_fluency",
             concept_name_ar="الطلاقة وفهم المقروء",
             concept_name_en="Reading Fluency & Comprehension",
-            prompt_ar="أَيٌّ مِنَ الآتِي يُمَثِّلُ الفِكْرَةَ الرَّئِيسِيَّةَ لِدَرْسِ (أَلْعَابُ الكُرَةِ)؟",
-            prompt_en="Which of the following represents the central theme of the 'Ball Games' lesson?",
+            prompt_ar="مَا الَّذِي يُسَاعِدُكَ عَلَى مَعْرِفَةِ الفِكْرَةِ الرَّئِيسَةِ لِنَصٍّ تَقْرَؤُهُ؟",
+            prompt_en="What helps you find the main idea of a text you are reading?",
             options=[
-                "أَهَمِّيَّةُ الرِّيَاضَةِ لِلصِّحَّةِ وَتَعْزِيزِ التَّعَاوُنِ بَيْنَ النَّاسِ",
-                "طَرِيقَةُ صِنَاعَةِ الكُرَاتِ الجِلْدِيَّةِ فَقَطْ",
-                "تَارِيخُ قَوَانِينِ الكُرَةِ الطَّائِرَةِ دُونَ غَيْرِهَا",
-                "تَفْضِيلُ مُشَاهَدَةِ التِّلْفَازِ عَلَى مُلَاعَبَةِ الزُّمَلَاءِ"
+                "قِرَاءَةُ العُنْوَانِ وَالجُمْلَةِ الأُولَى وَالأَخِيرَةِ بِانْتِبَاهٍ",
+                "عَدُّ كَلِمَاتِ النَّصِّ",
+                "قِرَاءَةُ الكَلِمَةِ الأَخِيرَةِ فَقَطْ",
+                "النَّظَرُ إِلَى الصُّوَرِ دُونَ قِرَاءَةِ النَّصِّ"
             ],
             correct_index=0,
-            explanation_ar="الدرس يعلم أن ممارسة ألعاب الكرة تبني صحة الجسد وتنمي روح الفريق والتعاون والمحبة.",
-            explanation_en="The lesson teaches that ball sports cultivate physical health, collaboration, and sportsmanship."
+            explanation_ar="العنوان والجملة الأولى والأخيرة تلخص غالبًا الفكرة الرئيسة للنص.",
+            explanation_en="The title and the first and last sentences usually sum up a text's main idea."
         )
     ],
     "plurals_sound": [

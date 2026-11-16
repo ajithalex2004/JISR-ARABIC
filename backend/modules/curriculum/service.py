@@ -71,6 +71,19 @@ def list_grades(actor: Optional[object] = None, db: Optional[Session] = None):
     return all_grades
 
 
+def _free_chapter_name(grade: int, db: Session) -> str:
+    """Title of the class's free chapter (chapter 1 of Term 1), as listed to learners."""
+    lessons = db.query(Lesson).filter(Lesson.grade == grade, Lesson.term == 1).order_by(Lesson.lesson_order)
+    lesson = lessons.filter(Lesson.is_first_chapter_demo == True).first() or lessons.first()  # noqa: E712
+    if lesson is not None and lesson.title_ar:
+        return f"{lesson.title_ar} ({lesson.title_en})" if lesson.title_en else lesson.title_ar
+    items = get_syllabus_for_grade_and_term(grade, 1)
+    if items:
+        first = items[0]
+        return f"{first['title_ar']} ({first['title_en']})" if first.get("title_en") else first["title_ar"]
+    return f"الدرس الأول - الصف {grade}"
+
+
 def list_terms(grade: int=5, child_id: Optional[str]=None, *, db: Session, actor=None):
     """List terms for a given grade with payment unlock status."""
     is_admin = bool(
@@ -96,7 +109,7 @@ def list_terms(grade: int=5, child_id: Optional[str]=None, *, db: Session, actor
             "currency": "USD",
             "is_unlocked": is_admin or (1 in unlocked_terms),
             "has_demo": True,
-            "demo_chapter_name": "ألعاب الكرة (Ball Games)" if grade == 5 else f"الدرس الأول - الصف {grade}",
+            "demo_chapter_name": _free_chapter_name(grade, db),
             "status": "published"
         },
         {

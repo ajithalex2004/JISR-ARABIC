@@ -143,5 +143,12 @@ class TestParentDashboardProgress(unittest.TestCase):
         self.assertEqual(len({skills[k]["score_pct"] for k in ("instruction_understanding", "vocabulary", "reading")}), 3)
 
 
+    def test_free_chapter_name_is_the_classs_own_first_chapter(self):
+        from backend.modules.curriculum.service import list_terms
+        term1 = list_terms(grade=3, db=self.db)[0]
+        self.assertEqual(term1["demo_chapter_name"], "د (My Family)")
+        self.assertNotIn("Ball Games", list_terms(grade=7, db=self.db)[0]["demo_chapter_name"])
+
+
 if __name__ == "__main__":
     unittest.main()

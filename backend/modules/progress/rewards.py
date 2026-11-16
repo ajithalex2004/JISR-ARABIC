@@ -74,7 +74,7 @@ def get_gamification_profile(child_id: str, *, db: Session):
             ("capsule_master", "خبير الكبسولات", "Capsule Master", "أتم بنجاح 3 كبسولات لغوية سريعة", "Successfully completed 3 microlearning grammar capsules", "💊", "capsule", False),
             ("mistake_conqueror", "قاهر الأخطاء", "Mistake Conqueror", "صحح 3 أخطاء في دفتر المراجعة الذاتي", "Resolved 3 linguistic items in the Mistake Notebook", "🔍", "recovery", False),
             ("grammar_guru", "فارس النحو", "Grammar Guru", "أتقن مهارة إعراب المبتدأ والخبر بنسبة تفوق 85%", "Mastered nominal sentence syntax with 85%+ accuracy", "🏆", "grammar", False),
-            ("reading_pro", "القارئ الماهر", "Fluent Reader", "أكمل قراءة نص ألعاب الكرة وفهم مفرداته", "Completed reading fluency for Ball Games text", "📖", "reading", False)
+            ("reading_pro", "القارئ الماهر", "Fluent Reader", "أكمل قراءة نص الدرس وفهم مفرداته", "Read a chapter's text and understood its words", "📖", "reading", False)
         ]
         for b_key, t_ar, t_en, d_ar, d_en, icon, cat, unlocked in initial_badges:
             b = LearnerBadge(

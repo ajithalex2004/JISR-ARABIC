@@ -68,7 +68,9 @@ def lesson_is_coming_soon(db: Session, lesson_id: str) -> bool:
 
 def term_is_coming_soon(db: Session, grade: int, term: int) -> bool:
     """True when no lesson of a class's term has real content yet (nothing to sell)."""
-    ids = [row[0] for row in db.query(Lesson.id).filter(Lesson.grade == grade, Lesson.term == term).all()]
+    from backend.modules.curriculum.book_restructure import HIDDEN_STATUSES
+    ids = [row[0] for row in db.query(Lesson.id).filter(Lesson.grade == grade, Lesson.term == term,
+                                                        (Lesson.status.is_(None) | Lesson.status.notin_(HIDDEN_STATUSES))).all()]
     # Classes with no lessons in the database are served from the syllabus outline: all placeholders.
     return not ids or coming_soon_ids(db, ids) == set(ids)
 

@@ -50,7 +50,9 @@ def _scope_contents(grade: int, term: int, *, db: Session):
     """(lesson id, content) for the term's published lessons with real content, in chapter order.
     Placeholder ("Coming soon") lessons are left out: their questions are a generic template."""
     from backend.modules.curriculum.coming_soon import coming_soon_ids
-    lessons = db.query(Lesson).filter(Lesson.grade == grade, Lesson.term == term).order_by(Lesson.lesson_order).all()
+    from backend.modules.curriculum.book_restructure import HIDDEN_STATUSES
+    lessons = db.query(Lesson).filter(Lesson.grade == grade, Lesson.term == term,
+                                      (Lesson.status.is_(None) | Lesson.status.notin_(HIDDEN_STATUSES))).order_by(Lesson.lesson_order).all()
     placeholders = coming_soon_ids(db, [l.id for l in lessons]) if lessons else set()
     out = []
     for lesson in lessons:

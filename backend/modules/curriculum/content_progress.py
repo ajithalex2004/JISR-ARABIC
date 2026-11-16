@@ -98,7 +98,10 @@ def content_progress(db: Session) -> Dict[str, Any]:
 
     lessons: Dict[tuple, Dict[str, int]] = {}
     to_draft: Dict[tuple, List[str]] = {}
-    for lesson in db.query(Lesson.id, Lesson.grade, Lesson.term).order_by(Lesson.lesson_order):
+    from backend.modules.curriculum.book_restructure import RETIRED
+    # Staged lessons count (so "Draft from book" drafts them); retired ones are history.
+    for lesson in db.query(Lesson.id, Lesson.grade, Lesson.term).filter(
+            Lesson.status.is_(None) | (Lesson.status != RETIRED)).order_by(Lesson.lesson_order):
         key = (lesson.grade, lesson.term)
         entry = lessons.setdefault(key, {"total": 0, "published": 0, "in_review": 0, "from_book": 0, "ai_drafts": 0,
                                          "teacher_reviewed": 0})

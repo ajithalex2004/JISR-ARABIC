@@ -856,7 +856,9 @@ def publish_lesson_version(lesson_id: str, version_id: str, *, db: Session, acto
     # Publishing isn't a review: record who published, and leave reviewed_by for a teacher's sign-off.
     target.published_by = getattr(actor, "id", None)
     target.published_at = target.published_at or datetime.datetime.now(datetime.UTC)
-    lesson.status = "published"
+    from backend.modules.curriculum.book_restructure import is_hidden
+    if not is_hidden(lesson):  # a staged chapter goes live only when its whole term switches
+        lesson.status = "published"
 
     # Persist publish audit event
     audit = CurriculumAuditEvent(
@@ -869,6 +871,11 @@ def publish_lesson_version(lesson_id: str, version_id: str, *, db: Session, acto
     )
     db.add(audit)
     db.commit()
+    # Publishing the last staged chapter of a re-cut term switches the term over to the new chapters.
+    if lesson is not None:
+        from backend.modules.curriculum.book_restructure import promote_ready_terms
+        if promote_ready_terms(db.connection(), grade=lesson.grade, term=lesson.term):
+            db.commit()
     invalidate_lesson_cache(lesson_id, grade=lesson.grade if lesson else None, term=lesson.term if lesson else None)
     return {"success": True, "lesson_id": lesson_id, "version_id": version_id,
             "version_tag": target.version_tag, "content_hash": target.content_hash}
@@ -884,7 +891,8 @@ def rollback_lesson(lesson_id: str, version_id: str, *, db: Session, actor=None)
     target.is_active = True
     target.status = "published"
     lesson = db.get(Lesson, lesson_id)
-    if lesson:
+    from backend.modules.curriculum.book_restructure import is_hidden
+    if lesson and not is_hidden(lesson):
         lesson.status = "published"
 
     # Persist rollback audit event

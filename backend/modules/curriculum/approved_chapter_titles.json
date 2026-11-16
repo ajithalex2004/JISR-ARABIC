@@ -1,0 +1,4 @@
+{
+  "about": "Chapter titles approved by a teacher against the Ministry textbooks. Key: <class>-<term>-<chapter>. Added with scripts/approved_titles_from_table.py; applied on every deploy (approved_titles.py).",
+  "titles": {}
+}

@@ -355,8 +355,13 @@ def get_syllabus_for_grade_and_term(grade: int, term: int) -> List[Dict[str, Any
     """Returns official structured CBSE Curriculum chapters for any grade (1-12) and term (1-3),
     with vowelled Arabic titles (title_tashkeel)."""
     from backend.modules.curriculum.title_tashkeel import vowel_title
-    return [{**item, "title_ar": vowel_title(item["title_ar"]), "unit_title_ar": vowel_title(item["unit_title_ar"])}
-            for item in _syllabus_plain(grade, term)]
+    from backend.modules.curriculum.approved_titles import approved_for
+    out = []
+    for item in _syllabus_plain(grade, term):
+        approved = approved_for(grade, term, item.get("lesson_order", 0)) or {}
+        item = {**item, **{k: approved[k] for k in ("title_ar", "title_en", "unit_title_ar", "unit_title_en") if k in approved}}
+        out.append({**item, "title_ar": vowel_title(item["title_ar"]), "unit_title_ar": vowel_title(item["unit_title_ar"])})
+    return out
 
 
 def _syllabus_plain(grade: int, term: int) -> List[Dict[str, Any]]:

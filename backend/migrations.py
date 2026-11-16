@@ -158,6 +158,13 @@ def upgrade():
         conn.commit()
     if renumbered or unfreed:
         print(f"Lessons: renumbered {renumbered} by page; {unfreed} no longer marked as a free chapter")
+    from backend.modules.curriculum.approved_titles import apply_approved_titles
+    with engine.connect() as conn:
+        titled, units_titled = apply_approved_titles(conn)
+        conn.commit()
+    if titled or units_titled:
+        print(f"Applied teacher-approved titles to {titled} chapter(s) and {units_titled} unit(s) "
+              "(backend/modules/curriculum/approved_chapter_titles.json)")
     with engine.connect() as conn:
         vowelled = vowel_stored_titles(conn)
         conn.commit()

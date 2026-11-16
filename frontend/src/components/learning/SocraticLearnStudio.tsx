@@ -26,7 +26,7 @@ interface SocraticMessage {
 const SAMPLE_TOPICS = [
   { id: 'taa_marbutah', title_ar: 'التاء المربوطة والهاء', title_en: 'Taa Marbutah vs. Haa' },
   { id: 'verb_subject', title_ar: 'مطابقة الفعل للفاعل', title_en: 'Subject-Verb Agreement' },
-  { id: 'ball_games', title_ar: 'قوانين ألعاب الكرة', title_en: 'Ball Games Rules & Pitch' },
+  { id: 'main_idea', title_ar: 'الفكرة الرئيسة في النص', title_en: 'Finding the Main Idea' },
   { id: 'nominal_sentence', title_ar: 'الجملة الاسمية والخبر', title_en: 'Nominal Sentence & Predicate' }
 ];
 

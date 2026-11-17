@@ -157,3 +157,46 @@ def set_student_grade(child_id: str, grade: int, *, actor, db) -> dict:
     db.commit()
     db.refresh(child)
     return _serialize(child, db.get(User, child.parent_id), db)
+
+
+def grant_terms(child_id: str, grade: int, terms, note: str, *, actor, db) -> dict:
+    """Unlock terms for a learner without a payment (school deals, staff, store-review demo accounts).
+
+    Recorded on the term access as ``ADMIN-GRANT-...`` so it never counts as revenue, and logged with
+    the admin and the reason. Granting a term that is already unlocked keeps its original record.
+    """
+    import datetime
+    import json
+    import uuid
+    from backend.models import CurriculumAuditEvent
+
+    require_roles(actor, ADMIN_ONLY)
+    grade = _require_grade(grade)
+    terms = sorted({int(t) for t in (terms or [])})
+    if not terms or any(t not in (1, 2, 3) for t in terms):
+        raise ApplicationError(400, "Choose one or more terms: 1, 2 or 3.")
+    note = (note or "").strip()
+    if not note:
+        raise ApplicationError(400, "Say why this access is granted (for example: store review demo).")
+    child = _get_child(child_id, db)
+    ref = f"ADMIN-GRANT-{uuid.uuid4().hex[:8].upper()}"
+    now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+    granted = []
+    for term in terms:
+        access = db.query(TermAccess).filter_by(child_id=child.id, grade=grade, term=term).first()
+        if access is None:
+            access = TermAccess(child_id=child.id, grade=grade, term=term)
+            db.add(access)
+        if not access.is_unlocked:
+            access.is_unlocked = True
+            access.unlocked_at = now
+            access.transaction_ref = ref
+            granted.append(term)
+    db.add(CurriculumAuditEvent(
+        actor_id=getattr(actor, "id", None), action="access_grant", lesson_id="", version_id="",
+        details_json=json.dumps({"action": "access_grant", "child_id": child.id, "grade": grade,
+                                 "terms": terms, "newly_unlocked": granted, "reference": ref, "note": note},
+                                ensure_ascii=False)))
+    db.commit()
+    db.refresh(child)
+    return {**_serialize(child, db.get(User, child.parent_id), db), "granted_terms": granted, "reference": ref}

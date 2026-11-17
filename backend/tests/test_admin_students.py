@@ -152,5 +152,32 @@ class TestAdminStudents(unittest.TestCase):
         self.assertEqual(self.client.delete("/api/admin/students/child_ann", headers=headers).status_code, 403)
 
 
+    def test_admin_grants_terms_without_a_payment(self):
+        headers = self._headers("admin@test.local")
+        res = self.client.post("/api/admin/students/child_sam/grant-terms",
+                               json={"grade": 3, "terms": [1, 2, 3], "note": "Store review demo"}, headers=headers)
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(res.json()["granted_terms"], [1, 2, 3])
+        with self.session() as db:
+            rows = db.query(TermAccess).filter_by(child_id="child_sam", grade=3, is_unlocked=True).all()
+            self.assertEqual(sorted(r.term for r in rows), [1, 2, 3])
+            self.assertTrue(all(r.transaction_ref.startswith("ADMIN-GRANT-") for r in rows))
+            self.assertEqual(db.query(PaymentTransaction).count(), 0)  # never counted as revenue
+        # Granting again changes nothing; an already-paid term keeps its record.
+        again = self.client.post("/api/admin/students/child_ann/grant-terms",
+                                 json={"grade": 5, "terms": [1], "note": "check"}, headers=headers)
+        self.assertEqual(again.json()["granted_terms"], [])
+
+    def test_grant_terms_needs_an_admin_and_a_reason(self):
+        parent = self._headers("parent.ann@test.local")
+        res = self.client.post("/api/admin/students/child_sam/grant-terms",
+                               json={"grade": 3, "terms": [1], "note": "x"}, headers=parent)
+        self.assertEqual(res.status_code, 403)
+        admin = self._headers("admin@test.local")
+        for body in ({"grade": 3, "terms": [1], "note": " "}, {"grade": 3, "terms": [4], "note": "x"},
+                     {"grade": 13, "terms": [1], "note": "x"}):
+            self.assertEqual(self.client.post("/api/admin/students/child_sam/grant-terms", json=body,
+                                              headers=admin).status_code, 400, body)
+
 if __name__ == "__main__":
     unittest.main()

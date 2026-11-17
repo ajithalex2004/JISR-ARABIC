@@ -184,7 +184,7 @@ class CatalogueScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Grade $currentGrade · Term 1',
+                      'Class $currentGrade · Term $currentTerm',
                       style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -2050,6 +2050,8 @@ class CatalogueScreen extends StatelessWidget {
 }
 
 /// Sample reading passages for the featured card: the first Term 1 chapter of these classes only.
+/// Add a class here only once its passage is checked against that chapter's textbook text
+/// (Classes 6 and 8 had passages from a different chapter, so their cards show the real title).
 class _FeaturedPassage {
   final String title;
   final String subtitle;
@@ -2066,19 +2068,5 @@ const Map<int, _FeaturedPassage> _kFeaturedPassages = {
     'كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ الأَكْثَرُ شَعْبِيَّةً فِي العَالَمِ. يُحِبُّهَا الكِبَارُ وَالصِّغَارُ، حَيْثُ يَتَنَافَسُ فِي المَلْعَبِ فَرِيقَانِ كَبِيرَانِ لِتَسْجِيلِ الهَدَفِ فِي شِبَاكِ حَارِسِ المَرْمَى.',
     'كُرَةُ القَدَمِ هِيَ اللُّعْبَةُ الأَكْثَرُ شَعْبِيَّةً فِي العَالَمِ. يُحِبُّهَا الكِبَارُ وَالصِّغَارُ، حَيْثُ يَتَنَافَسُ فِي المَلْعَبِ فَرِيقَانِ كَبِيرَانِ لِتَسْجِيلِ الهَدَفِ فِي شِبَاكِ حَارِسِ المَرْمَى.',
     'Football is the most popular game in the world. Both young and old love it, where two large teams compete on the pitch to score goals into the goalkeeper\'s net.',
-  ),
-  6: _FeaturedPassage(
-    'أَنَا إِمَارَاتِيٌّ وَأَعْتَزُّ بِهُوِيَّتِي (I am Emirati & Proud of My Identity)',
-    'النص القرائي: رُوحُ الاتِّحَادِ وَالاعْتِزَازُ بِالهُوِيَّةِ الوَطَنِيَّةِ (Spirit of the Union & Identity)',
-    'الإِمَارَاتُ وَطَنُ الأَمْجَادِ وَالعَطَاءِ. نَعْتَزُّ بِهُوِيَّتِنَا وَقِيَمِ أَبِينَا زَايِدٍ رَحِمَهُ اللَّهُ فِي بِنَاءِ الإِنْسَانِ وَالوَطَنِ.',
-    'الإِمَارَاتُ وَطَنُ الأَمْجَادِ وَالعَطَاءِ. نَعْتَزُّ بِهُوِيَّتِنَا وَقِيَمِ أَبِينَا زَايِدٍ رَحِمَهُ اللَّهُ فِي بِنَاءِ الإِنْسَانِ وَالوَطَنِ، وَنَرْفَعُ عَلَمَنَا خَفَّاقًا فِي كُلِّ المَيَادِينِ.',
-    'The UAE is the homeland of glories and benevolence. We take immense pride in our authentic identity, the values of our father Zayed in human development, and fluttering our flag high across all arenas.',
-  ),
-  8: _FeaturedPassage(
-    'أَبُو الطَّيِّبِ المُتَنَبِّي شَاعِرُ الحِكْمَةِ (Al-Mutanabbi: Poet of Wisdom)',
-    'النص القرائي: فَرَائِدُ الحِكْمَةِ وَرَوَائِعُ الشِّعْرِ (Pearls of Wisdom & Eloquence)',
-    'أَنَا الَّذِي نَظَرَ الأَعْمَى إِلَى أَدَبِي، وَأَسْمَعَتْ كَلِمَاتِي مَنْ بِهِ صَمَمُ.',
-    'أَنَا الَّذِي نَظَرَ الأَعْمَى إِلَى أَدَبِي ... وَأَسْمَعَتْ كَلِمَاتِي مَنْ بِهِ صَمَمُ. الخَيْلُ وَاللَّيْلُ وَالبَيْدَاءُ تَعْرِفُنِي ... وَالسَّيْفُ وَالرُّمْحُ وَالقِرْطَاسُ وَالقَلَمُ.',
-    'I am the one whose literature was perceived even by the blind, and whose words were heard by the deaf. The steed, the night, and the desert know me, as do the sword, the spear, the parchment, and the pen.',
   ),
 };

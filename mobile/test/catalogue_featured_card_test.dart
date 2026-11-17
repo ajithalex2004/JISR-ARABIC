@@ -70,5 +70,27 @@ void main() {
     expect(find.text('Class 3 · Term 2 · Chapter 1'), findsOneWidget);
     expect(find.text('Free (مجاني)'), findsNothing);
     expect(find.text('Subscription (يحتاج اشتراك)'), findsOneWidget);
+    // The banner names the selected term too.
+    expect(find.text('Class 3 · Term 2'), findsOneWidget);
+  });
+
+  testWidgets('Classes 6 and 8 show their real first chapter, not a passage from another chapter', (tester) async {
+    _tallScreen(tester);
+    for (final grade in [6, 8]) {
+      final lessons = [CurriculumLessonItem.fromMap(_lesson(1, 'Needs and Wants', free: true))];
+      await tester.pumpWidget(_screen(lessons, grade: grade));
+      expect(find.text('عائلتي (Needs and Wants)'), findsOneWidget);
+      expect(find.textContaining('Emirati'), findsNothing);
+      expect(find.textContaining('Mutanabbi'), findsNothing);
+      expect(find.textContaining('النص القرائي'), findsNothing);
+    }
+  });
+
+  testWidgets('Class 5 keeps its checked Ball Games passage', (tester) async {
+    _tallScreen(tester);
+    await tester.pumpWidget(_screen([CurriculumLessonItem.fromMap(_lesson(1, 'Ball Games', free: true))], grade: 5));
+    // Matched on the English words: Arabic vowel marks can be stored in a different order.
+    expect(find.textContaining('The Round Sorceress'), findsOneWidget);
+    expect(find.textContaining('Football is the most popular game'), findsOneWidget);
   });
 }

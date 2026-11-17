@@ -12,6 +12,10 @@ void main() {
         'https://example.test/?buy=1&grade=1&term=1');
   });
 
+  test('the privacy policy link points at the public page', () {
+    expect(privacyPolicyUri().toString(), 'https://app.jisrarabic.com/privacy');
+  });
+
   test('test and direct-install builds keep the in-app checkout', () {
     // The release workflow sets STORE_BUILD=true only for the .aab and iOS builds.
     expect(kStoreBuild, isFalse);

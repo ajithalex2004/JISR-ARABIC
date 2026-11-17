@@ -24,3 +24,14 @@ Future<bool> openWebPurchase(int grade, int term) async {
     return false;
   }
 }
+
+/// The public privacy policy (both stores require a link to it inside the app).
+Uri privacyPolicyUri({String base = kWebAppBase}) => Uri.parse(base).replace(path: '/privacy');
+
+Future<bool> openPrivacyPolicy() async {
+  try {
+    return await launchUrl(privacyPolicyUri(), mode: LaunchMode.externalApplication);
+  } catch (_) {
+    return false;
+  }
+}

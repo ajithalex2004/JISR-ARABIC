@@ -4,6 +4,11 @@ import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 // signed-in learners never download the landing page.
 const App = lazy(() => import('../App'));
 const Landing = lazy(() => import('../components/landing/Landing'));
+const LegalPage = lazy(() => import('../components/legal/LegalPage'));
+
+// Public pages the app stores link to (privacy policy, account deletion). Kept out of the app chunk.
+const LEGAL_PATHS: Record<string, 'privacy' | 'delete-account'> = { '/privacy': 'privacy', '/delete-account': 'delete-account' };
+const legalKind = () => LEGAL_PATHS[window.location.pathname.replace(/\/+$/, '')];
 
 export type EnterIntent = 'signup' | 'login' | 'explore';
 
@@ -65,5 +70,7 @@ export function Root() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
+  const legal = legalKind();
+  if (legal) return <Suspense fallback={<Loading />}><LegalPage kind={legal} /></Suspense>;
   return <Suspense fallback={<Loading />}>{landing ? <Landing onEnter={enterApp} /> : <App />}</Suspense>;
 }

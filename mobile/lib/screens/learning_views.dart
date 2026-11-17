@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../api_service.dart';
+import '../store_purchase.dart';
 import '../arab_english_service.dart';
 import '../widgets/interactive_arabic_text.dart';
 
@@ -254,6 +255,15 @@ class ProfileView extends StatelessWidget {
           ),
           child: Column(
             children: [
+              _profileRow(
+                icon: Icons.privacy_tip_outlined,
+                iconColor: const Color(0xFF58337E),
+                iconBg: const Color(0xFFF3E8FF),
+                titleAr: isArabic ? 'سياسة الخصوصية' : 'Privacy Policy',
+                subtitleEn: isArabic ? 'كيف نستخدم بيانات العائلة ونحميها' : 'How we use and protect your family\'s data',
+                onTap: openPrivacyPolicy,
+              ),
+              const Divider(height: 1, indent: 64, color: Color(0xFFF1F5F9)),
               _profileRow(
                 icon: Icons.logout,
                 iconColor: const Color(0xFFEF4444),

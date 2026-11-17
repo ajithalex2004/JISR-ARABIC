@@ -125,7 +125,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _currentGrade = 5;
   int _currentTerm = 1;
   String _activeView = 'landing'; // 'landing', 'catalogue', 'lesson', 'profile', 'malazim', 'capsules', 'tests', 'mastery', 'ranks', 'parent', 'tutor'
-  String _selectedLessonId = 'lesson_01_ball_games';
+  // Empty until a lesson is opened; Ask Fahim then answers for the child's class.
+  String _selectedLessonId = '';
   CurriculumLessonPackage? _activeLessonPackage;
   LessonViewMode _activeLessonMode = LessonViewMode.textbookReader;
   bool _isArabic = false;
@@ -945,6 +946,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       context: context,
       builder: (ctx) => AskFahimDialog(
         contextLessonId: _selectedLessonId,
+        grade: _currentGrade,
         childId: _activeChild?['id']?.toString(),
         token: _token,
         initialMode: initialMode,
@@ -2134,6 +2136,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         return MindmapsScreen(
           isArabic: _isArabic,
           initialGrade: _currentGrade,
+          term: _currentTerm,
           api: _api,
           token: _token,
           allowedGrades: allowedGrades(_user, _activeChild),

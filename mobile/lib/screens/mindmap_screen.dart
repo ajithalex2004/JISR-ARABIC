@@ -7,6 +7,8 @@ import '../arab_english_service.dart';
 class MindmapsScreen extends StatefulWidget {
   final bool isArabic;
   final int initialGrade;
+  /// The term selected in the app; the server's chapters for this term are shown.
+  final int term;
   final dynamic api;
   final String? token;
   final ValueChanged<int>? onGradeChanged;
@@ -20,6 +22,7 @@ class MindmapsScreen extends StatefulWidget {
     super.key,
     required this.isArabic,
     this.initialGrade = 5,
+    this.term = 1,
     this.api,
     this.token,
     this.onGradeChanged,
@@ -1015,6 +1018,8 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
     super.didUpdateWidget(oldWidget);
     if (widget.initialGrade != oldWidget.initialGrade && widget.initialGrade != _selectedGrade) {
       _loadChaptersForGrade(widget.initialGrade);
+    } else if (widget.term != oldWidget.term) {
+      _loadChaptersForGrade(_selectedGrade);
     }
   }
 
@@ -1027,7 +1032,7 @@ class _MindmapsScreenState extends State<MindmapsScreen> with SingleTickerProvid
 
     if (widget.api != null) {
       try {
-        final res = await widget.api.mindmaps(grade: grade, term: 1, token: widget.token);
+        final res = await widget.api.mindmaps(grade: grade, term: widget.term, token: widget.token);
         if (res != null && res['chapters'] is List && (res['chapters'] as List).isNotEmpty && mounted) {
           final live = _castMapList(res['chapters']);
           if (live.isNotEmpty) {

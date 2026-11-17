@@ -14,7 +14,10 @@ import '../arab_english_service.dart';
 import '../widgets/homework_helper.dart';
 
 class AskFahimDialog extends StatefulWidget {
+  /// The open lesson, or '' when none is open (the tutor then answers for [grade]).
   final String contextLessonId;
+  /// The child's class, for questions asked before any lesson is opened.
+  final int grade;
   final String? childId;
   final String? token;
   final String initialMode; // 'text', 'voice', 'pdf', 'camera', 'exam', 'homework'
@@ -26,7 +29,8 @@ class AskFahimDialog extends StatefulWidget {
 
   const AskFahimDialog({
     super.key,
-    this.contextLessonId = 'lesson_01_ball_games',
+    this.contextLessonId = '',
+    this.grade = 5,
     this.childId,
     this.token,
     this.initialMode = 'text',
@@ -1263,7 +1267,8 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
 
       final data = await _api.askFahim({
         'question': promptWithContext,
-        'context_lesson_id': widget.contextLessonId,
+        if (widget.contextLessonId.isNotEmpty) 'context_lesson_id': widget.contextLessonId,
+        'grade': widget.grade,
         'child_id': widget.childId,
         'attachment_base64': _attachedBase64,
         'attachment_name': _attachedFileName,
@@ -1271,7 +1276,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
       }, token: widget.token);
 
       if (data is Map) {
-        final rawAnswerAr = data['answer_ar'] ?? 'أَهْلًا بِكَ فِي دَرْسِ أَلْعَابِ الكُرَةِ.';
+        final rawAnswerAr = data['answer_ar'] ?? 'عُذْرًا، لَمْ أَسْتَطِعِ الإِجَابَةَ الآنَ. حَاوِلْ مَرَّةً أُخْرَى.';
         final rawQuestionEn = data['question_en']?.toString().trim();
         final rawAnswerEn = data['answer_en']?.toString().trim();
         final answerAr = _cleanAnswerText(rawAnswerAr.toString());
@@ -1791,7 +1796,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                OutlinedButton.icon(
+                if (widget.grade == 5) OutlinedButton.icon(
                   onPressed: _showPdfQuestionSelector,
                   icon: const Icon(Icons.menu_book_rounded, size: 15, color: Color(0xFF6C5CE7)),
                   label: Text(
@@ -2288,7 +2293,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                 _suggestionChip('اقرأ لي النص بالتشكيل', 'Read text with vowels'),
                 _suggestionChip('دربني على نطق المفردات', 'Practice pronunciation'),
               ] else ...[
-                _actionChipCustom(
+                if (widget.grade == 5) _actionChipCustom(
                   icon: Icons.menu_book_rounded,
                   labelAr: '📖 فهرس أسئلة المنهاج',
                   labelEn: '📖 UAE Grade 5 Questions Index',
@@ -2296,8 +2301,8 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                   onTap: _showPdfQuestionSelector,
                 ),
                 _suggestionChip('ما الفرق بين التاء المربوطة والهاء؟', 'Taa Marbutah vs Haa'),
-                _suggestionChip('أعرب جملة (كرة القدم لعبة جماعية)', 'Parse nominal sentence'),
-                _suggestionChip('ما إعراب جملة (سجل اللاعب الهدف)؟', 'Parse verbal sentence'),
+                _suggestionChip('أعرب جملة (القراءة مفيدة)', 'Parse nominal sentence'),
+                _suggestionChip('ما إعراب جملة (كتب الطالب الدرس)؟', 'Parse verbal sentence'),
               ],
             ],
           ),
@@ -2361,7 +2366,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                               ? (widget.isArabic ? 'اسأل سؤالاً حول ملف الـ PDF...' : 'Ask a question about the PDF...')
                               : (_activeMode == 'camera'
                                   ? (widget.isArabic ? 'اسأل حول الصورة الملتقطة...' : 'Ask about captured photo...')
-                                  : (widget.isArabic ? 'اسأل عن ألعاب الكرة أو القواعد...' : 'Ask about ball games or grammar...')))),
+                                  : (widget.isArabic ? 'اسأل عن درسك أو القواعد...' : 'Ask about your lesson or grammar...')))),
                   hintStyle: TextStyle(
                     fontSize: 12,
                     color: _isListening ? Colors.red.shade400 : const Color(0xFF94A3B8),

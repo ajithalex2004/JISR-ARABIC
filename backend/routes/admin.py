@@ -5,7 +5,7 @@ from backend.modules.identity.access import Principal, require_roles
 """HTTP adapter: request parsing, dependency injection, and service delegation."""
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 from pathlib import Path
 import shutil
 from backend.models import Lesson, LessonVersion, ScannedPage
@@ -353,6 +353,19 @@ def update_student(child_id: str, payload: AdminStudentUpdateRequest, actor: Pri
 @router.delete('/students/{child_id}')
 def delete_student(child_id: str, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
     return admin_students.delete_student(child_id, actor=actor, db=db)
+
+
+class AdminGrantTermsRequest(BaseModel):
+    grade: int
+    terms: List[int]
+    note: str
+
+
+@router.post('/students/{child_id}/grant-terms')
+def grant_student_terms(child_id: str, payload: AdminGrantTermsRequest, actor: Principal = Depends(get_current_user),
+                        db: Session = Depends(get_db)):
+    """Unlock terms for a learner without payment (school deals, staff, store-review demo); logged."""
+    return admin_students.grant_terms(child_id, payload.grade, payload.terms, payload.note, actor=actor, db=db)
 
 
 @router.put('/students/{child_id}/grade')

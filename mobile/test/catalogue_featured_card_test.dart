@@ -89,6 +89,8 @@ void main() {
   testWidgets('Class 5 keeps its checked Ball Games passage', (tester) async {
     _tallScreen(tester);
     await tester.pumpWidget(_screen([CurriculumLessonItem.fromMap(_lesson(1, 'Ball Games', free: true))], grade: 5));
-    expect(find.textContaining('السَّاحِرَةُ المُسْتَدِيرَةُ'), findsOneWidget);
+    // Matched on the English words: Arabic vowel marks can be stored in a different order.
+    expect(find.textContaining('The Round Sorceress'), findsOneWidget);
+    expect(find.textContaining('Football is the most popular game'), findsOneWidget);
   });
 }

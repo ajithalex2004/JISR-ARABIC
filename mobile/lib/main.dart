@@ -24,6 +24,7 @@ import 'screens/lesson_player_screen.dart';
 import 'screens/mindmap_screen.dart';
 import 'screens/textbook_reader_screen.dart';
 import 'grade_access.dart';
+import 'store_purchase.dart';
 
 void main() {
   runApp(const JisrArabicApp());
@@ -105,7 +106,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final AuthService _auth = AuthService();
   final ApiService _api = ApiService();
   final FlutterTts _flutterTts = FlutterTts();
@@ -145,6 +146,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _activeLessonPackage = CurriculumLessonPackage.fromStaticChapter1();
     _initTts();
     _restoreSession();
@@ -152,6 +154,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _flutterTts.stop();
     _cloudAudio.dispose();
     super.dispose();
@@ -805,7 +808,55 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  // Set when "Buy" sent a parent to the website, so returning to the app reloads what they own.
+  bool _awaitingWebPurchase = false;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingWebPurchase) {
+      _awaitingWebPurchase = false;
+      _refreshAfterPurchase();
+    }
+  }
+
+  Future<void> _refreshAfterPurchase() async {
+    if (_token != null && _activeChild?['id'] != null) {
+      try {
+        final updatedChild = await _auth.switchChild(_token!, _activeChild!['id'].toString());
+        _applyAuth(updatedChild);
+      } catch (_) {}
+    }
+    await _loadRemoteLearningData();
+    if (mounted) setState(() {});
+  }
+
+  /// Store builds: no checkout in the app (see store_purchase.dart).
+  Future<void> _openStorePurchase(int grade, int term) async {
+    if (kStorePurchase == 'web') {
+      final opened = await openWebPurchase(grade, term);
+      if (opened) {
+        _awaitingWebPurchase = true;
+        return;
+      }
+    }
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(_isArabic ? 'هذا الفصل مقفل' : 'This term is locked'),
+        content: Text(_isArabic
+            ? 'تُدار اشتراكات الفصول من حساب العائلة. تظهر الفصول المفعّلة هنا تلقائيًا.'
+            : "Term passes are managed in your family account. Unlocked terms appear here automatically."),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_isArabic ? 'حسنًا' : 'OK'))],
+      ),
+    );
+  }
+
   void _showPaywallDialog(int grade, int term) {
+    if (kStoreBuild) {
+      _openStorePurchase(grade, term);
+      return;
+    }
     showDialog(
       context: context,
       builder: (ctx) => PaywallDialog(
@@ -985,9 +1036,11 @@ class _MainScreenState extends State<MainScreen> {
             ? null
             : item.comingSoon
                 ? 'Coming soon'
-                : (_currentTerm == 1
-                ? r'Subscription required (USD 10/term)'
-                : r'Term subscription required (USD 10/term)'),
+                : kStoreBuild
+                    ? 'Locked'
+                    : (_currentTerm == 1
+                        ? r'Subscription required (USD 10/term)'
+                        : r'Term subscription required (USD 10/term)'),
       );
     }).toList();
   }

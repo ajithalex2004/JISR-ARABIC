@@ -190,6 +190,12 @@ def upgrade():
         conn.commit()
     for lesson_id in fixed:
         print(f"Published a corrected version of {lesson_id} (backend/modules/curriculum/content_fixes.py)")
+    from backend.modules.curriculum.draft_fixes import apply_draft_fixes
+    with engine.connect() as conn:
+        drafts_fixed = apply_draft_fixes(conn)
+        conn.commit()
+    for lesson_id in drafts_fixed:
+        print(f"Saved a corrected AI draft of {lesson_id} for teacher review (backend/modules/curriculum/draft_fixes.py)")
     print(f"Cleared {refresh_lesson_caches()} cached lesson list(s) and package(s)")
     with engine.connect() as conn:
         seeded = seed_promo_codes(conn)

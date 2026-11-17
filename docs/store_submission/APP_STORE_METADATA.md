@@ -1,3 +1,5 @@
+> Superseded for store text by the "JISR Arabic — App Store Listing Plan" doc; privacy answers are in STORE_COMPLIANCE_AND_DECLARATIONS.md.
+
 # JISR Arabic (فهيم) — App Store & Google Play Store Metadata
 **Platform Targets:** Apple App Store (iOS/iPadOS) & Google Play Store (Android)  
 **Primary Language:** Arabic (العربية)  
@@ -5,7 +7,7 @@
 **Target Category:** Education (التعليم)  
 **Target Age Rating:** 4+ (Apple) / Everyone (Google Play) / Ages 6-12 (Families Program)  
 **Official Website:** `https://jisrarabic.com`  
-**API & Backend Endpoint:** `https://api.jisrarabic.com` (AWS UAE `me-central-1`)  
+**API & Backend Endpoint:** `https://api.jisrarabic.com`  
 
 ---
 
@@ -151,7 +153,7 @@ Together with Fahim (فهيم), our friendly AI voice tutor, learning Arabic tra
 🔒 Enterprise-Grade Privacy & Child Safety
 • Safe, ad-free educational environment tailored for students of all ages.
 • Strict compliance with UAE Federal Decree-Law No. 45/2021 on Personal Data Protection (PDPL) and UAE Child Digital Safety frameworks.
-• All student data is encrypted at rest and in transit, hosted securely in UAE data centers (AWS UAE me-central-1).
+• All traffic is encrypted in transit (HTTPS). No ads, no tracking, no selling of data.
 
 Whether you are preparing for school exams, enhancing your child's mother-tongue proficiency, or building lifelong Arabic fluency, JISR is your bridge to excellence.
 
@@ -213,7 +215,7 @@ Thank you for reviewing JISR Arabic (فهيم).
 
 3. DATA PRIVACY & COMPLIANCE:
 - JISR contains NO third-party advertisements or behavioral tracking SDKs.
-- Audio recordings are processed ephemerally for phonetic evaluation and are not retained or sold.
+- Speaking recordings are turned into text for scoring and are not kept or sold.
 - The app fully complies with the UAE Personal Data Protection Law (Federal Decree-Law No. 45/2021) and COPPA.
 
 If you have any questions or require additional test environments, please contact us at devops@jisrarabic.com.

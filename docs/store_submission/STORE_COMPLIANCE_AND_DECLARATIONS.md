@@ -1,158 +1,84 @@
-# JISR Arabic (فهيم) — Store Compliance, Data Safety & Declarations
-**Platform Targets:** Google Play Console & Apple App Store Connect  
-**Package / Bundle ID:** `com.jisr.app.mobile`  
-**Classification:** K-12 Educational AI Platform  
+# JISR Arabic — store privacy forms (Google Play Data safety, Apple App Privacy)
 
----
+Answers checked against the code on 17 November 2026. The public policy they must match is
+`frontend/src/components/legal/LegalPage.tsx` (https://app.jisrarabic.com/privacy), and account
+deletion is described at https://app.jisrarabic.com/delete-account.
 
-## 1. Google Play Console: Data Safety Form (نموذج أمان البيانات)
+Re-check these answers whenever a feature starts sending new data anywhere.
 
-Google Play mandates an explicit disclosure of all data collected, shared, and encrypted. Use the exact answers below when completing the **Data Safety** section in Google Play Console.
+## What the app does with data (the facts behind every answer)
 
-### 1.1 Data Collection & Security Overview
-- **Does your app collect or share any of the required user data types?**  
-  👉 **Yes**
-- **Is all of the user data collected by your app encrypted in transit?**  
-  👉 **Yes** (All network traffic is encrypted via HTTPS / TLS 1.3).
-- **Do you provide a way for users to request that their data be deleted?**  
-  👉 **Yes** (In-app deletion under Settings > Account, and web deletion portal at `https://jisrarabic.com/delete-account`).
+| Data | Where it goes | Kept? |
+| --- | --- | --- |
+| Parent name, email, optional phone, password hash | JISR servers | Until the account is deleted |
+| Child name, age, class, school name, PIN | JISR servers | Until deleted |
+| Learning progress (answers, scores, mistakes, exams) | JISR servers | Until deleted |
+| Ask Fahim questions | JISR servers, Google Gemini (to answer) | Only questions escalated to a teacher are kept, until deleted |
+| Homework photos | Google Gemini (to answer) | Not kept by JISR |
+| Speaking recordings | Turned into text on the phone where possible; otherwise JISR server and Google Gemini (to transcribe) | Not kept |
+| Purchases, receipts, tax invoices | JISR servers; card details only at Stripe (on the website) | Kept without names after deletion (UAE tax law) |
+| Feedback | JISR servers | Kept without the name after deletion |
+| Email messages | Email delivery service | — |
+| Crash reports, analytics, ads, location, device IDs | Not collected (no such SDKs in the app) | — |
 
----
+## Google Play: Data safety
 
-### 1.2 Data Type Breakdown & Disclosures
+- Does the app collect or share any of the required user data types? **Yes**
+- Is all user data encrypted in transit? **Yes** (HTTPS only)
+- Do you provide a way for users to request deletion? **Yes**: in the app (Profile, Delete Account Permanently), and https://app.jisrarabic.com/delete-account
+- Shared with third parties? **No** for every type below: Google (Gemini), Stripe and the email service act as service providers on JISR's behalf, which Google Play does not count as sharing.
 
-#### A. Personal Info (معلومات شخصية)
-| Sub-Type | Collected? | Shared? | Ephemeral? | Required or Optional? | Purpose |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **Name** | **Yes** | **No** | No | Optional (Student nickname) | App functionality, Personalization |
-| **Email address** | **Yes** | **No** | No | Required for parent/teacher accounts | App functionality, Account management |
-| **User IDs** | **Yes** | **No** | No | Required | App functionality, Account management |
+| Category: data type | Collected | Optional? | Ephemeral? | Purposes |
+| --- | --- | --- | --- | --- |
+| Personal info: Name | Yes | Required (child's name) | No | App functionality, Account management |
+| Personal info: Email address | Yes | Required | No | App functionality, Account management, Developer communications |
+| Personal info: Phone number | Yes | Optional | No | Account management |
+| Personal info: User IDs | Yes | Required | No | App functionality, Account management |
+| Financial info: Purchase history | Yes | Optional | No | App functionality |
+| Photos and videos: Photos | Yes | Optional | Yes | App functionality |
+| Audio: Voice or sound recordings | Yes | Optional | Yes | App functionality |
+| App activity: App interactions | Yes | Required | No | App functionality, Personalization |
+| App activity: Other user-generated content (tutor questions, feedback) | Yes | Optional | No | App functionality |
 
-#### B. Audio Files (ملفات الصوت)
-| Sub-Type | Collected? | Shared? | Ephemeral? | Required or Optional? | Purpose |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **Voice or sound recordings** | **Yes** | **No** | **Yes** | Optional (Used during speaking tasks) | App functionality (Real-time speech & pronunciation evaluation with AI tutor Fahim) |
+Not collected: location, contacts, calendar, web history, files and docs, health, messages (SMS/email),
+app info and performance (crash logs, diagnostics), device or other IDs.
 
-> [!NOTE]
-> Mark **Ephemeral processing = Yes** for Voice recordings. Audio buffers are evaluated in memory for pronunciation scoring and discarded immediately after scoring.
+### Target audience and content
 
-#### C. Photos and Videos (الصور ومقاطع الفيديو)
-| Sub-Type | Collected? | Shared? | Ephemeral? | Required or Optional? | Purpose |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **Photos** | **Yes** | **No** | No | Optional | App functionality (Homework & worksheet scanner OCR) |
+- Target age groups: **6–8, 9–12, 13–15, 16–17** (Classes 1–10). The Families policy applies.
+- Ads: **No ads.**
+- App access: provide the demo parent account and a child PIN for reviewers.
+- Content rating questionnaire: no violence, fear, sexual content, drugs, gambling or profanity; users
+  can't communicate with each other; no location sharing. Expected rating: **Everyone / PEGI 3**.
+- Store builds have **no in-app purchases** (Buy opens the website).
 
-#### D. App Activity & Performance (النشاط والأداء)
-| Sub-Type | Collected? | Shared? | Ephemeral? | Required or Optional? | Purpose |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **App interactions** | **Yes** | **No** | No | Required | Analytics, Progress tracking, Curriculum mastery |
-| **Crash logs & Diagnostics** | **Yes** | **No** | No | Required | Analytics, Bug fixing, Performance monitoring |
+## Apple App Store: App Privacy
 
-#### E. Data Sharing Declaration
-- **Is any collected data shared with third parties or data brokers?**  
-  👉 **Strictly NO**. All data remains within JISR's sovereign AWS UAE infrastructure (`me-central-1`).
+- Do you or your partners use data to track users? **No.**
 
----
+| Data type | Linked to the user | Used for tracking | Purposes |
+| --- | --- | --- | --- |
+| Contact info: Name | Yes | No | App functionality |
+| Contact info: Email address | Yes | No | App functionality |
+| Contact info: Phone number | Yes | No | App functionality |
+| User content: Photos or videos | Yes | No | App functionality |
+| User content: Audio data | Yes | No | App functionality |
+| User content: Other user content (tutor questions, feedback) | Yes | No | App functionality |
+| Identifiers: User ID | Yes | No | App functionality |
+| Usage data: Product interaction | Yes | No | App functionality, Product personalization |
+| Purchases: Purchase history | Yes | No | App functionality |
 
-## 2. Google Play Target Audience and Families Policy
+Not collected: location, health, financial info (card details are taken by Stripe on the website), contacts,
+browsing or search history, sensitive info, diagnostics, other data.
 
-### 2.1 Target Age Group Selection
-- **Target Ages:** Select **6-8**, **9-12**, and **13-17**.
-- **Could your app appeal to children?**  
-  👉 **Yes** (The app is intentionally designed for K-12 students).
+Photos and audio are declared even though JISR doesn't keep them, because they leave the device and
+reach Google's AI. That is the cautious reading of Apple's definition.
 
-### 2.2 Google Play Families Policy Certification
-1. **Ads Declaration:**
-   - "Does your app contain ads?" 👉 **No, my app does not contain ads.**
-2. **Neutral Age Screen:**
-   - Implemented during student onboarding to ensure appropriate curriculum level assignment.
-3. **SDK Compliance:**
-   - JISR uses **zero ad networks** and **zero behavioral tracking SDKs**.
-   - All networking is handled directly by standard Flutter HTTP and secure platform channels.
+Other App Store answers: age rating **4+**; category **Education**; export compliance: **uses only
+standard HTTPS encryption** (exempt); privacy policy URL https://app.jisrarabic.com/privacy.
 
-### 2.3 Android Dangerous Permission Justification
+## Before submitting
 
-| Permission | Technical Name | User-Facing Justification |
-| :--- | :--- | :--- |
-| **Microphone** | `android.permission.RECORD_AUDIO` | **Arabic Speaking Missions:** Allows students to read Arabic phrases aloud and receive real-time pronunciation scoring from Fahim. |
-| **Camera** | `android.permission.CAMERA` | **Worksheet Scanner:** Allows students to photograph physical worksheets and textbook questions for AI-guided tutoring. |
-| **Media Images** | `android.permission.READ_MEDIA_IMAGES` | **Homework Upload:** Allows students to upload pre-existing textbook or worksheet images from their device gallery. |
-
----
-
-## 3. Apple App Store: App Privacy Details (Nutrition Labels)
-
-When completing the **App Privacy** questionnaire in App Store Connect:
-
-### 3.1 Tracking Declaration
-- **Do you or your third-party partners track users across apps and websites owned by other companies?**  
-  👉 **NO**
-
-### 3.2 Data Collected by Type
-
-#### 1. Contact Info: Email Address
-- **Data Used to Track You?** No
-- **Linked to the User?** Yes
-- **Purpose:** App Functionality (Account Management, Login authentication)
-
-#### 2. User Content: Audio Data
-- **Data Used to Track You?** No
-- **Linked to the User?** No (or Yes if associated with student exercise score history)
-- **Purpose:** App Functionality (Speech pronunciation evaluation)
-
-#### 3. User Content: Photos or Videos
-- **Data Used to Track You?** No
-- **Linked to the User?** Yes
-- **Purpose:** App Functionality (Worksheet analysis)
-
-#### 4. Identifiers: User ID
-- **Data Used to Track You?** No
-- **Linked to the User?** Yes
-- **Purpose:** App Functionality (Profile identification, Progress persistence)
-
-#### 5. Usage Data: Product Interaction
-- **Data Used to Track You?** No
-- **Linked to the User?** Yes
-- **Purpose:** Analytics & App Functionality (Curriculum mastery metrics, daily streaks)
-
-#### 6. Diagnostics: Crash Data & Performance Data
-- **Data Used to Track You?** No
-- **Linked to the User?** No
-- **Purpose:** Analytics (App health, runtime stability)
-
----
-
-## 4. IARC & Content Rating Questionnaire
-
-The International Age Rating Coalition (IARC) questionnaire determines the app's global age rating.
-
-| Category / Question | Response | Notes |
-| :--- | :---: | :--- |
-| **Violence:** Does the app contain violence? | **NO** | Zero violent imagery or references. |
-| **Fear:** Does the app contain scary elements? | **NO** | Child-friendly educational content. |
-| **Sexuality:** Does the app contain sexual content or nudity? | **NO** | Entirely educational. |
-| **Controlled Substances:** References to alcohol, tobacco, drugs? | **NO** | Strictly absent. |
-| **Language / Profanity:** Does the app contain crude humor or profanity? | **NO** | Pure classical Modern Standard Arabic (فصحى). |
-| **Miscellaneous: User-to-User Communication?** | **NO** | No unmoderated open chat or public messaging. |
-| **Physical Location Sharing?** | **NO** | No location broadcasting. |
-| **Digital Purchases?** | **Optional / No** | Subscription management occurs via provider or school licensing. |
-
-### Resulting Global Ratings
-- **Google Play:** Rated for **3+** / **Everyone**
-- **Apple App Store:** Rated **4+**
-- **PEGI:** **PEGI 3**
-- **USK:** **USK 0**
-- **ESRB:** **Everyone (E)**
-- **ClassInd:** **L** (General Audience)
-
----
-
-## 5. UAE MoE & Sovereign Compliance Statement
-
-```text
-DECLARATION OF CURRICULUM INTEGRITY & SOVEREIGN DATA HOSTING:
-
-JISR EdTech FZ-LLC certifies that:
-1. The curriculum content provided within JISR Arabic (فهيم) is modeled upon the official United Arab Emirates Ministry of Education (MoE) national Arabic language learning outcomes for K-12 stages.
-2. The platform respects UAE cultural heritage, values, and pedagogical frameworks.
-3. In accordance with the UAE National Data Strategy and Federal Decree-Law No. 45/2021 (PDPL), all backend production APIs and databases are deployed in AWS UAE (me-central-1), ensuring student data remains within the UAE sovereign territory.
-```
+- Fill in `frontend/src/components/legal/legalFacts.ts`: hosting provider and region, and the contact email
+  for privacy requests. The policy uses neutral wording until then.
+- Confirm the company name shown on the pages (taken from the site footer).

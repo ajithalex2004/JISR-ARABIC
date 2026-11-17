@@ -54,6 +54,8 @@ function Footer({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
           <ul>
             {NAV.map(([href, label]) => <li key={href}><a href={href}>{label}</a></li>)}
             <li><button type="button" className="jl-linkbtn" onClick={() => onEnter('signup')}>Open the app</button></li>
+            <li><a href="/privacy">Privacy policy</a></li>
+            <li><a href="/delete-account">Delete account</a></li>
           </ul>
         </nav>
       </div>

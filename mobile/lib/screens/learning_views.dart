@@ -2690,260 +2690,126 @@ class MalazimView extends StatefulWidget {
 
   @override
   State<MalazimView> createState() => _MalazimViewState();
+
+  /// Reads the server's study booklet, `{booklet: {lesson_id, study_mode: {sections}, quick_review_mode}}`
+  /// (a bare booklet is accepted too). Returns `lessonId`, `sections` and `quickReview`; empty when absent.
+  static Map<String, dynamic> parseBooklet(dynamic res) {
+    final booklet = res is Map && res['booklet'] is Map ? res['booklet'] as Map : (res is Map ? res : const {});
+    final study = booklet['study_mode'] is Map ? booklet['study_mode'] as Map : const {};
+    List<String> strings(dynamic v) => v is List ? v.map((e) => e.toString()).toList() : <String>[];
+    final sections = (study['sections'] is List ? study['sections'] as List : const []).whereType<Map>().map((m) {
+      final ex = m['inline_exercise'] is Map ? m['inline_exercise'] as Map : const {};
+      final takeAr = strings(m['key_takeaways_ar']);
+      final takeEn = strings(m['key_takeaways_en']);
+      return <String, dynamic>{
+        'id': (m['section_id'] ?? '').toString(),
+        'title_ar': (m['title_ar'] ?? '').toString(),
+        'title_en': (m['title_en'] ?? '').toString(),
+        'content_ar': (m['content_ar'] ?? '').toString(),
+        'content_en': (m['content_en'] ?? '').toString(),
+        'takeaways': [
+          for (var i = 0; i < takeAr.length; i++) {'ar': takeAr[i], 'en': i < takeEn.length ? takeEn[i] : ''},
+        ],
+        'question_ar': (ex['question_ar'] ?? '').toString(),
+        'question_en': (ex['question_en'] ?? '').toString(),
+        'options_ar': strings(ex['options']),
+        'options_en': strings(ex['options_en']),
+      };
+    }).where((sec) => (sec['id'] as String).isNotEmpty).toList();
+    return {
+      'lessonId': booklet['lesson_id']?.toString(),
+      'sections': sections,
+      'quickReview': booklet['quick_review_mode'] is Map
+          ? Map<String, dynamic>.from(booklet['quick_review_mode'] as Map)
+          : <String, dynamic>{},
+    };
+  }
 }
 
 class _MalazimViewState extends State<MalazimView> {
   String _mode = 'study'; // 'study' or 'quick_review'
   final Map<String, int> _selectedAnswers = {};
   final Map<String, bool> _submittedExercises = {};
+  // The server's verdict per section: answers are checked there, the booklet carries none.
+  final Map<String, Map<String, dynamic>> _checked = {};
+  final Set<String> _checking = {};
   List<Map<String, dynamic>> _sections = [];
+  Map<String, dynamic> _quickReview = {};
+  String? _lessonId;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _sections = _getFallbackSections(widget.grade);
     _fetchLiveMalazim();
   }
 
-  void _fetchLiveMalazim() async {
-    if (widget.api != null) {
-      try {
-        final res = await widget.api!.malazim(grade: widget.grade, token: widget.token);
-        if (res != null && res['study_mode'] is Map && res['study_mode']['sections'] is List && mounted) {
-          final liveSecs = (res['study_mode']['sections'] as List).map((s) {
-            final m = Map<String, dynamic>.from(s as Map);
-            final ex = m['inline_exercise'] is Map ? Map<String, dynamic>.from(m['inline_exercise']) : null;
-            return {
-              'id': m['section_id'] ?? 'sec_01',
-              'title_ar': m['title_ar'] ?? '',
-              'title_en': m['title_en'] ?? '',
-              'content_ar': m['content_ar'] ?? '',
-              'content_en': m['content_en'] ?? '',
-              'takeaways': (m['key_takeaways_ar'] as List? ?? []).map((t) => {'ar': t.toString(), 'en': ''}).toList(),
-              'question_ar': ex?['question_ar'] ?? '',
-              'question_en': ex?['question_en'] ?? '',
-              'options_ar': ex?['options'] is List ? (ex!['options'] as List).cast<String>() : <String>[],
-              'options_en': ex?['options_en'] is List ? (ex!['options_en'] as List).cast<String>() : <String>[],
-              'correct_idx': ex?['correct_index'] ?? 0,
-              'explanation_ar': ex?['explanation_ar'] ?? '',
-              'explanation_en': ex?['explanation_en'] ?? '',
-            };
-          }).toList();
-          if (liveSecs.isNotEmpty) {
-            setState(() => _sections = liveSecs);
-          }
-        }
-      } catch (_) {}
+  Future<void> _fetchLiveMalazim() async {
+    if (mounted) setState(() => _loading = true);
+    Map<String, dynamic> parsed = MalazimView.parseBooklet(null);
+    try {
+      if (widget.api != null) {
+        parsed = MalazimView.parseBooklet(await widget.api!.malazim(grade: widget.grade, token: widget.token));
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _lessonId = parsed['lessonId'] as String?;
+      _sections = parsed['sections'] as List<Map<String, dynamic>>;
+      _quickReview = parsed['quickReview'] as Map<String, dynamic>;
+      _loading = false;
+    });
+  }
+
+  Future<void> _checkAnswer(String sectionId, int answer) async {
+    final lessonId = _lessonId;
+    if (widget.api == null || lessonId == null) return;
+    setState(() => _checking.add(sectionId));
+    dynamic res;
+    try {
+      res = await widget.api!.checkBookletAnswer(lessonId, sectionId, answer, token: widget.token);
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _checking.remove(sectionId);
+      if (res is Map && res['is_correct'] is bool) {
+        _checked[sectionId] = Map<String, dynamic>.from(res);
+        _submittedExercises[sectionId] = true;
+      }
+    });
+    if (!_checked.containsKey(sectionId)) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(const SnackBar(
+          content: Text("تعذّر التحقق من الإجابة · Couldn't check the answer. Please try again.")));
     }
   }
 
-  List<Map<String, dynamic>> _getFallbackSections(int grade) {
-    if (grade == 6) {
-      return _grade6Sections;
-    } else if (grade == 7) {
-      return _grade7Sections;
-    } else if (grade == 8) {
-      return _grade8Sections;
+  /// Shown while loading, or when the server sent nothing for this class.
+  Widget _notesStatus() {
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: CircularProgressIndicator(color: Color(0xFF064E3B))),
+      );
     }
-    return _grade5Sections;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+      ),
+      child: Column(
+        children: [
+          const Text('الملزمة غير متاحة الآن', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          const SizedBox(height: 4),
+          const Text("The study notes for this class couldn't be loaded. Check your connection and try again.",
+              textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+          const SizedBox(height: 10),
+          OutlinedButton(onPressed: _fetchLiveMalazim, child: const Text('إعادة المحاولة · Try again')),
+        ],
+      ),
+    );
   }
-
-  static final List<Map<String, dynamic>> _grade7Sections = [
-    {
-      'id': 'sec_g7_01',
-      'title_ar': '١. وثيقة الأخوة الإنسانية وقيم التسامح في الإمارات',
-      'title_en': '1. Document on Human Fraternity & Values of Tolerance',
-      'content_ar':
-          'تُعَدُّ وَثِيقَةُ الأُخُوَّةِ الإِنْسَانِيَّةِ الَّتِي وُقِّعَتْ فِي أَبُوظَبِي إِعْلَانًا تَارِيخِيًّا لِتَعْزِيزِ الحِوَارِ وَالتَّعَايُشِ السِّلْمِيِّ وَاحْتِرَامِ الآخَرِ، وَتُجَسِّدُ نَهْجَ دَوْلَةِ الإِمَارَاتِ فِي تَرْسِيخِ الأُخُوَّةِ بَيْنَ الشُّعُوبِ.',
-      'content_en':
-          'The Document on Human Fraternity signed in Abu Dhabi is a landmark declaration fostering dialogue, peaceful coexistence, and mutual respect, reflecting the UAE\'s steadfast mission in universal fraternity.',
-      'takeaways': [
-        {'ar': 'وثيقة الأخوة الإنسانية: ميثاق عالمي للتعايش المشترك والسلام.', 'en': 'Human Fraternity Document: Global charter for coexistence and peace.'},
-        {'ar': 'التسامح: ركيزة أساسية في الهوية والمجتمع الإماراتي.', 'en': 'Tolerance: A foundational pillar of UAE society.'},
-      ],
-      'question_ar': 'أين تم توقيع وثيقة الأخوة الإنسانية التاريخية؟',
-      'question_en': 'Where was the historic Document on Human Fraternity signed?',
-      'options_ar': ['أبوظبي', 'القاهرة', 'لندن'],
-      'options_en': ['Abu Dhabi', 'Cairo', 'London'],
-      'correct_idx': 0,
-      'explanation_ar': 'صحيح! وُقّعت الوثيقة التاريخية في عاصمة دولة الإمارات أبوظبي عام 2019.',
-      'explanation_en': 'Correct! Signed in Abu Dhabi, capital of the UAE, in 2019.',
-    },
-  ];
-
-  static final List<Map<String, dynamic>> _grade6Sections = [
-    {
-      'id': 'sec_g6_01',
-      'title_ar': '١. مفهوم الحاجات والرغبات والوعي المالي',
-      'title_en': '1. Needs vs. Desires & Financial Literacy',
-      'content_ar':
-          'يُمَيِّزُ عِلْمُ الِاقْتِصَادِ وَاللُّغَةِ بَيْنَ نَوْعَيْنِ مِنَ المُتَطَلَّبَاتِ:\n١. الحَاجَاتُ: كُلُّ مَا يَلْزَمُ الإِنْسَانَ لِلْبَقَاءِ عَلَى قَيْدِ الحَيَاةِ (كَالمَاءِ، الطَّعَامِ، المَسْكَنِ، وَالدَّوَاءِ).\n٢. الرَّغَبَاتُ: الأَشْيَاءُ التَّحْسِينِيَّةُ وَالتَّرْفِيهِيَّةُ الَّتِي يُمْكِنُ الاسْتِغْنَاءُ عَنْهَا أَوْ تَأْجِيلُهَا (كَالأَلْعَابِ، السَّاعَاتِ الفَاخِرَةِ، وَالسَّفَرِ التَّرْفِيهِيِّ).',
-      'content_en':
-          'Economics and language distinguish between two essential categories:\n1. Needs: What sustains human survival (water, food, shelter, medicine).\n2. Desires/Wants: Upgrades and leisure items that can be postponed or dispensed with without risking life (video games, luxury watches, leisure travel).',
-      'takeaways': [
-        {'ar': 'الحاجات: ضرورية للبقاء ولا يمكن الاستغناء عنها.', 'en': 'Needs: Essential for survival.'},
-        {'ar': 'الرغبات: تحسينية وترفيهية يمكن الاستغناء عنها.', 'en': 'Desires: Luxury additions that can be postponed.'},
-      ],
-      'question_ar': 'أي من العناصر التالية يصنف ضمن (الرغبات) وليس (الحاجات)؟',
-      'question_en': 'Which of the following is classified as a Desire rather than a Need?',
-      'options_ar': ['الغذاء الصحي', 'الدواء عند المرض', 'ساعة ذكية فاخرة'],
-      'options_en': ['Healthy food', 'Medicine when sick', 'A luxury smartwatch'],
-      'correct_idx': 2,
-      'explanation_ar': 'أحسنت! الساعة الذكية الفاخرة رغبة تحسينية وترفيهية وليست حاجة بقاء.',
-      'explanation_en': 'Correct! A luxury smartwatch is a leisure want, not a survival need.',
-    },
-    {
-      'id': 'sec_g6_02',
-      'title_ar': '٢. الأسلوب الخبري والإنشائي الطلبي',
-      'title_en': '2. Declarative Style vs. Creative Request Style',
-      'content_ar':
-          'يَنْقَسِمُ الكَلَامُ فِي اللُّغَةِ العَرَبِيَّةِ إِلَى:\n١. الأُسْلُوبُ الخَبَرِيُّ: كَلَامٌ يَحْتَمِلُ الصِّدْقَ أَوِ الكَذِبَ (مِثْلَ: الأَلْعَابُ الإِلِكْتُرُونِيَّةُ مِنَ الرَّغَبَاتِ).\n٢. الأُسْلُوبُ الإِنْشَائِيُّ الطَّلَبِيُّ: لَا يَحْتَمِلُ الصِّدْقَ وَالكَذِبَ، وَمِنْهُ الِاسْتِفْهَامُ (هَلْ تَعْلَمُ؟)، وَالنِّدَاءُ (يَا بُنَيَّ)، وَالنَّهْيُ (لَا تُسْرِفْ).',
-      'content_en':
-          'Arabic discourse is structured into:\n1. Declarative Style: A proposition verifiable as true or false.\n2. Creative Request Style: Inquiries (Hal/Kayfa), Calling (Yaa), Prohibitions (Laa tusrif), and Commands.',
-      'takeaways': [
-        {'ar': 'الأسلوب الخبري: يحتمل الصدق والكذب.', 'en': 'Declarative: Verifiable true or false.'},
-        {'ar': 'الأسلوب الإنشائي: استفهام، نداء، نهي، أمر.', 'en': 'Creative: Questions, calls, prohibitions.'},
-      ],
-      'question_ar': 'ما نوع الأسلوب في جملة: (كَيْفَ تُقَسِّمُ مَصْرُوفَكَ الشَّهْرِيَّ؟)؟',
-      'question_en': 'What is the sentence style in: "How do you allocate your monthly allowance?"?',
-      'options_ar': ['أسلوب خبري', 'أسلوب إنشائي طلبي (استفهام)', 'أسلوب تعجب'],
-      'options_en': ['Declarative style', 'Creative style (Question)', 'Exclamatory style'],
-      'correct_idx': 1,
-      'explanation_ar': 'صحيح! الجملة سؤال تبدأ بأداة استفهام، فهو أسلوب إنشائي طلبي.',
-      'explanation_en': 'Correct! Beginning with a question word, it is Creative Interrogative style.',
-    },
-  ];
-
-  static final List<Map<String, dynamic>> _grade8Sections = [
-    {
-      'id': 'sec_g8_01',
-      'title_ar': '١. روائع شعر المتنبي ومفهوم الحكمة',
-      'titleEn': '1. Masterpieces of Al-Mutanabbi & Wisdom',
-      'content_ar':
-          'يُعَدُّ أَبُو الطَّيِّبِ المُتَنَبِّي شَاعِرَ العَرَبِيَّةِ الأَكْبَرَ، حَيْثُ تَمَيَّزَ شِعْرُهُ بِالحِكْمَةِ البَالِغَةِ وَالفَصَاحَةِ المُطْلَقَةِ وَالاعْتِزَازِ بِالنَّفْسِ، وَصَارَتْ أَبْيَاتُهُ أَمْثَالًا سَائِرَةً بَيْنَ النَّاسِ.',
-      'content_en':
-          'Abu al-Tayyib al-Mutanabbi is celebrated as the foremost poet of the Arabic language, famed for his philosophical wisdom, supreme eloquence, and proud heroic verses that became enduring proverbs.',
-      'takeaways': [
-        {'ar': 'المتنبي: شاعر الحكمة والفروسية والفصاحة.', 'en': 'Al-Mutanabbi: Poet of wisdom, chivalry, and eloquence.'},
-      ],
-      'question_ar': 'بم اشتهر شعر أبي الطيب المتنبي؟',
-      'question_en': 'What was the hallmark of Abu al-Tayyib al-Mutanabbi\'s poetry?',
-      'options_ar': ['الحكمة البالغة والفروسية', 'الشعر الهزلي', 'القصص الخيالية'],
-      'options_en': ['Philosophical wisdom & valor', 'Humorous poetry', 'Fantasy tales'],
-      'correct_idx': 0,
-      'explanation_ar': 'أحسنت! اشتهر المتنبي بأبيات الحكمة والفروسية وفصاحة البيان.',
-      'explanation_en': 'Well done! Renowned for philosophical wisdom, chivalry, and eloquent eloquence.',
-    },
-  ];
-
-  static final List<Map<String, dynamic>> _grade5Sections = [
-    {
-      'id': 'sec_01',
-      'title_ar': '١. مفهوم الكرة ولقب (الساحرة المستديرة)',
-      'title_en': '1. Ball Concept & \'The Round Witch\' Moniker',
-      'content_ar':
-          'الكرة هي كل جسم مستدير يُصنع من الجلد أو المطاط. وتعد كرة القدم اللعبة الأكثر شعبية في العالم، حيث أطلق عليها عشاقها لقب (الساحرة المستديرة) لأنها سحرت عقول وقلوب أكثر من مليار مشجع حول العالم بجمالها وإثارتها.',
-      'content_en':
-          'A ball is any spherical object crafted from leather or rubber. Football is the world\'s most popular sport, famously dubbed \'The Round Witch\' (الساحرة المستديرة) because its thrill captivates over a billion fans globally.',
-      'takeaways': [
-        {
-          'ar': 'الكرة: كل جسم مستدير يُصنع من الجلد أو المطاط.',
-          'en': 'The Ball: Any spherical round object made of leather or rubber.',
-        },
-        {
-          'ar': 'سبب التسمية: سحرها لعقول وقلوب الملايين بحماسها وشعبيتها الجارفة.',
-          'en': 'Reason for Title: Enchanting the minds and hearts of millions with thrilling excitement.',
-        },
-      ],
-      'question_ar': 'لماذا سميت كرة القدم بـ (الساحرة المستديرة)؟',
-      'question_en': 'Why was football nicknamed \'The Round Witch\' (The Enchantress)?',
-      'options_ar': [
-        'لأنها مصنوعة من خامات سحرية',
-        'لأنها جذبت وسحرت قلوب وعقول ملايين الجماهير',
-        'لأنها تُلعب فقط في المساء',
-      ],
-      'options_en': [
-        'Because it is made of magical materials',
-        'Because it captivated and enchanted the hearts and minds of millions of fans',
-        'Because it is only played in the evening',
-      ],
-      'correct_idx': 1,
-      'explanation_ar': 'أحسنت! لقبت بالساحرة لأن إثارتها وشعبيتها جذبت عقول المشجعين في شتى بقاع الأرض.',
-      'explanation_en': 'Well done! Nicknamed \'The Enchantress\' because its excitement and popularity captivate fans worldwide.',
-    },
-    {
-      'id': 'sec_02',
-      'title_ar': '٢. أبعاد الملعب والمواصفات الرسمية',
-      'title_en': '2. Pitch Dimensions & Official Specifications',
-      'content_ar':
-          'ملعب كرة القدم مستطيل الشكل ومغطى بالعشب الأخضر (الطبيعي أو الاصطناعي). يبلغ طول الملعب بين 100 إلى 110 أمتار، وعرضه بين 64 إلى 75 متراً. أما محيط الكرة الرسمية فيتراوح بين 68 إلى 70 سنتيمتراً ووزنها بين 410 إلى 450 غراماً.',
-      'content_en':
-          'A football pitch is rectangular and turfed with green grass. Length ranges from 100m to 110m, and width from 64m to 75m. The official ball circumference is 68 to 70 cm, weighing 410 to 450 grams.',
-      'takeaways': [
-        {
-          'ar': 'شكل الملعب: مستطيل ومفروش بالعشب الأخضر.',
-          'en': 'Pitch shape: Rectangular covered with green turf.',
-        },
-        {
-          'ar': 'أبعاد الطول: 100 – 110 م | أبعاد العرض: 64 – 75 م.',
-          'en': 'Dimensions: 100–110m in length | 64–75m in width.',
-        },
-        {
-          'ar': 'محيط الكرة: 68 – 70 سم.',
-          'en': 'Ball circumference: 68–70 cm.',
-        },
-      ],
-      'question_ar': 'ما هو محيط كرة القدم القانونية حسب لوائح الاتحاد الدولي؟',
-      'question_en': 'What is the official circumference of a regulation football per FIFA rules?',
-      'options_ar': [
-        '50 إلى 55 سم',
-        '68 إلى 70 سم',
-        '80 إلى 85 سم',
-      ],
-      'options_en': [
-        '50 to 55 cm',
-        '68 to 70 cm',
-        '80 to 85 cm',
-      ],
-      'correct_idx': 1,
-      'explanation_ar': 'صحيح تماماً! يتراوح محيط الكرة الرسمية بين 68 إلى 70 سم.',
-      'explanation_en': 'Spot on! The official regulation ball circumference measures between 68 and 70 cm.',
-    },
-    {
-      'id': 'sec_03',
-      'title_ar': '٣. الفريق والتحكيم في المباراة',
-      'title_en': '3. Team Structure & Officiating Crew',
-      'content_ar':
-          'يتكون كل فريق في كرة القدم من 11 لاعباً أساسياً، أحدهم حارس المرمى. ويقود المباراة طاقم تحكيمي مكوّن من 4 حكام: حكم الساحة الرئيسي، وحكمان مساعدان على خطي التماس (حاملا الراية)، والحكم الرابع المساعد.',
-      'content_en':
-          'Each team fields 11 starting players, including one goalkeeper. Matches are governed by 4 referees: the Head Referee, two Assistant Referees (linesmen), and the Fourth Official.',
-      'takeaways': [
-        {
-          'ar': 'تشكيلة الفريق: 11 لاعباً أساسياً في الملعب أحدهم حارس المرمى.',
-          'en': 'Team roster: 11 starting players on the pitch, including the goalkeeper.',
-        },
-        {
-          'ar': 'طاقم التحكيم: 4 حكام (حكم الساحة + حكمان مساعدان + الحكم الرابع).',
-          'en': 'Officiating crew: 4 referees (Head referee + 2 linesmen + 4th official).',
-        },
-      ],
-      'question_ar': 'كم عدد الحكام الرسميين في مباراة كرة القدم؟',
-      'question_en': 'How many official referees oversee a football match?',
-      'options_ar': [
-        'حكمان فقط',
-        '4 حكام (حكم ساحة + حكمان مساعدان + حكم رابع)',
-        '6 حكام',
-      ],
-      'options_en': [
-        'Only two referees',
-        '4 referees (Head referee + 2 assistants + 4th official)',
-        '6 referees',
-      ],
-      'correct_idx': 1,
-      'explanation_ar': 'أحسنت! طاقم التحكيم مكوّن من 4 حكام لإدارة المباراة بدقة.',
-      'explanation_en': 'Well done! A full 4-referee crew governs every match.',
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -3111,6 +2977,7 @@ class _MalazimViewState extends State<MalazimView> {
         // MODE 1: COMPREHENSIVE STUDY MODE (WITH WORD CHIPS & LISTEN BUTTON)
         // =====================================================================
         if (_mode == 'study') ...[
+          if (_sections.isEmpty) _notesStatus(),
           ..._sections.map((sec) => _buildStudySectionCard(sec)),
         ] else ...[
           // =====================================================================
@@ -3126,7 +2993,9 @@ class _MalazimViewState extends State<MalazimView> {
     final sectionId = sec['id'] as String;
     final isSubmitted = _submittedExercises[sectionId] == true;
     final selectedIdx = _selectedAnswers[sectionId];
-    final isCorrect = selectedIdx == sec['correct_idx'];
+    final verdict = _checked[sectionId] ?? const {};
+    final isCorrect = verdict['is_correct'] == true;
+    final isChecking = _checking.contains(sectionId);
     final takeaways = (sec['takeaways'] as List<Map<String, String>>?) ?? [];
     final optionsAr = (sec['options_ar'] as List<String>?) ?? [];
     final optionsEn = (sec['options_en'] as List<String>?) ?? [];
@@ -3512,13 +3381,9 @@ class _MalazimViewState extends State<MalazimView> {
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      onPressed: selectedIdx == null
+                      onPressed: selectedIdx == null || isChecking
                           ? null
-                          : () {
-                              setState(() {
-                                _submittedExercises[sectionId] = true;
-                              });
-                            },
+                          : () => _checkAnswer(sectionId, selectedIdx),
                       child: const Text('تحقق من الإجابة (Check Answer)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
                   ),
@@ -3557,7 +3422,7 @@ class _MalazimViewState extends State<MalazimView> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          sec['explanation_ar'],
+                          (verdict['explanation_ar'] ?? '').toString(),
                           style: TextStyle(
                             fontSize: 11,
                             color: isCorrect ? const Color(0xFF166534) : const Color(0xFF991B1B),
@@ -3565,7 +3430,7 @@ class _MalazimViewState extends State<MalazimView> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          sec['explanation_en'],
+                          (verdict['explanation_en'] ?? '').toString(),
                           style: TextStyle(
                             fontSize: 10,
                             fontStyle: FontStyle.italic,
@@ -3584,72 +3449,79 @@ class _MalazimViewState extends State<MalazimView> {
   }
 
   Widget _buildQuickReviewCards() {
+    List<Map> items(String key) =>
+        (_quickReview[key] is List ? _quickReview[key] as List : const []).whereType<Map>().toList();
+    final summary = items('high_yield_summary');
+    final formulas = items('essential_formulas');
+    final traps = items('exam_pitfall_warnings');
+    if (summary.isEmpty && formulas.isEmpty && traps.isEmpty) return _notesStatus();
+    final rules = [
+      for (final b in summary) ['${b['bullet_ar'] ?? ''}', '${b['bullet_en'] ?? ''}'],
+      for (final f in formulas)
+        ['${f['title_ar'] ?? ''}: ${f['formula_ar'] ?? ''}', '${f['title_en'] ?? ''}: ${f['formula_en'] ?? ''}'],
+    ];
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('📌 خلاصات الاختبار السريعة (Fast Rules)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF064E3B),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        if (rules.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('📌 خلاصات الاختبار السريعة (Fast Rules)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF064E3B),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () => widget.onVocalize?.call(rules.map((r) => r[0]).join('. ')),
+                      icon: const Icon(Icons.volume_up, size: 15),
+                      label: const Text('استمع للكل', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
-                    onPressed: () {
-                      if (widget.onVocalize != null) {
-                        widget.onVocalize!(
-                            'عدد لاعبي الفريق أحد عشر لاعبا. مدة الشوط الواحد خمس وأربعون دقيقة. محيط الكرة الرسمية ثمانية وستون إلى سبعين سنتيمترا. الجملة الاسمية تتكون من مبتدأ وخبر.');
-                      }
-                    },
-                    icon: const Icon(Icons.volume_up, size: 15),
-                    label: const Text('استمع للكل', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  ),
+                  ],
+                ),
+                const Divider(height: 18),
+                for (final r in rules) ...[
+                  _ruleRow('• ${r[0]}', r[1]),
+                  const SizedBox(height: 8),
                 ],
-              ),
-              const Divider(height: 18),
-              _ruleRow('• عدد لاعبي الفريق: 11 لاعباً في أرض الملعب.', 'Team Size: 11 players on the pitch.'),
-              const SizedBox(height: 8),
-              _ruleRow('• مدة الشوط الواحد: 45 دقيقة (المباراة كاملة 90 دقيقة).', 'Match Duration: 45-min halves (90 mins total).'),
-              const SizedBox(height: 8),
-              _ruleRow('• محيط الكرة الرسمية: 68 إلى 70 سنتيمتراً.', 'Official Ball: 68 to 70 centimeters circumference.'),
-              const SizedBox(height: 8),
-              _ruleRow('• الجملة الاسمية: مبتدأ مرفوع + خبر مرفوع (الكُرَةُ مُسْتَدِيرَةٌ).', 'Nominal Sentence: Nominative Subject + Nominative Predicate.'),
-            ],
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF1F2),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFECDD3), width: 1.5),
+        if (traps.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF1F2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFECDD3), width: 1.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('⚠️ تنبيهات الفخاخ الامتحانية (Exam Traps)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF9F1239))),
+                const Divider(height: 18, color: Color(0xFFFECDD3)),
+                for (final t in traps) ...[
+                  _trapRow('• ${t['warning_ar'] ?? ''}', '${t['warning_en'] ?? ''}'),
+                  const SizedBox(height: 8),
+                ],
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('⚠️ تنبيهات الفخاخ الامتحانية (Exam Traps)',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF9F1239))),
-              const Divider(height: 18, color: Color(0xFFFECDD3)),
-              _trapRow('• انتبه: طاقم التحكيم يتكون من 4 حكام كاملين وليس حكمين فقط.', 'Watch Out: Officiating crew consists of 4 referees, not two.'),
-              const SizedBox(height: 8),
-              _trapRow('• التاء المربوطة (ـة) تنطق تاءً عند الوصل، بينما الهاء (ـه) تنطق هاءً دائماً.', 'Phonetic Rule: Taa Marbutah sounds "t" on connection; Haa is always "h".'),
-            ],
-          ),
-        ),
+        ],
       ],
     );
   }
@@ -3715,201 +3587,46 @@ class CapsulesView extends StatefulWidget {
 
   @override
   State<CapsulesView> createState() => _CapsulesViewState();
+
+  /// Reads the server's capsule list, `{capsules: [...]}` (a bare list is accepted too).
+  static List<Map<String, String>> parseCapsules(dynamic res) {
+    final list = res is List ? res : (res is Map && res['capsules'] is List ? res['capsules'] as List : const []);
+    return list.whereType<Map>().map((m) => {
+          'id': m['id']?.toString() ?? '',
+          'title': m['title_ar']?.toString() ?? '',
+          'titleEn': m['title_en']?.toString() ?? '',
+          'duration': '${m['duration_minutes'] ?? 3} دقائق',
+          'durationEn': '${m['duration_minutes'] ?? 3} mins',
+          'rule': m['summary_ar']?.toString() ?? '',
+          'ruleEn': m['summary_en']?.toString() ?? '',
+        }).where((c) => c['id']!.isNotEmpty).toList();
+  }
 }
 
 class _CapsulesViewState extends State<CapsulesView> {
   List<Map<String, String>> _capsulesList = [];
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _capsulesList = _getFallbackCapsules(widget.grade);
     _fetchLiveCapsules();
   }
 
-  void _fetchLiveCapsules() async {
-    if (widget.api != null) {
-      try {
-        final res = await widget.api!.capsules(grade: widget.grade, token: widget.token);
-        if (res is List && res.isNotEmpty && mounted) {
-          final liveCaps = res.map((c) {
-            final m = Map<String, dynamic>.from(c as Map);
-            return {
-              'id': m['id']?.toString() ?? '',
-              'title': m['title_ar']?.toString() ?? '',
-              'titleEn': m['title_en']?.toString() ?? '',
-              'duration': '${m['duration_minutes'] ?? 3} دقائق',
-              'durationEn': '${m['duration_minutes'] ?? 3} mins',
-              'rule': m['summary_ar']?.toString() ?? '',
-              'ruleEn': m['summary_en']?.toString() ?? '',
-            };
-          }).toList();
-          if (liveCaps.isNotEmpty) {
-            setState(() => _capsulesList = liveCaps);
-          }
-        }
-      } catch (_) {}
-    }
+  Future<void> _fetchLiveCapsules() async {
+    if (mounted) setState(() => _loading = true);
+    var caps = <Map<String, String>>[];
+    try {
+      if (widget.api != null) {
+        caps = CapsulesView.parseCapsules(await widget.api!.capsules(grade: widget.grade, token: widget.token));
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _capsulesList = caps;
+      _loading = false;
+    });
   }
-
-  List<Map<String, String>> _getFallbackCapsules(int grade) {
-    if (grade == 6) {
-      return _grade6Capsules;
-    } else if (grade == 7) {
-      return _grade7Capsules;
-    } else if (grade == 8) {
-      return _grade8Capsules;
-    }
-    return _grade5Capsules;
-  }
-
-  static final List<Map<String, String>> _grade7Capsules = [
-    {
-      'id': 'capsule_g7_01',
-      'title': 'إن وأخواتها والحروف الناسخة',
-      'titleEn': 'Inna & Its Sisters (Accusative Particles)',
-      'duration': '3 دقائق',
-      'durationEn': '3 mins',
-      'rule': 'إِنَّ، أَنَّ، كَأَنَّ، لَكِنَّ، لَيْتَ، لَعَلَّ: تَنْصِبُ المبتدأ وترفع الخبر.',
-      'ruleEn': 'Enters nominal sentence: makes subject accusative and keeps predicate nominative.',
-    },
-    {
-      'id': 'capsule_g7_02',
-      'title': 'تراث الغوص ومصطلحات البحر',
-      'titleEn': 'Pearl Diving Heritage & Sea Terminology',
-      'duration': '4 دقائق',
-      'durationEn': '4 mins',
-      'rule': 'الغيص (الغواص)، السيب (ساحب الحبل)، النوخذة (ربان السفينة)، والطواش (تاجر اللؤلؤ).',
-      'ruleEn': 'Maritime hierarchy: Ghais (diver), Saib (lifeline hauler), Noukhada (captain), Tawash (merchant).',
-    },
-  ];
-
-  static final List<Map<String, String>> _grade6Capsules = [
-    {
-      'id': 'capsule_g6_01',
-      'title': 'الوعي المالي: التفريق بين الحاجات والرغبات',
-      'titleEn': 'Financial Literacy: Needs vs. Desires',
-      'duration': '3 دقائق',
-      'durationEn': '3 mins',
-      'rule': 'الحاجة ضرورية للبقاء (ماء، طعام، دواء)، والرغبة تحسينية وترفيهية يمكن الاستغناء عنها.',
-      'ruleEn': 'Needs are vital for survival; desires are luxury additions that can be postponed.',
-    },
-    {
-      'id': 'capsule_g6_02',
-      'title': 'الأسلوب الخبري والإنشائي الطلبي',
-      'titleEn': 'Declarative vs. Creative Request Style',
-      'duration': '4 دقائق',
-      'durationEn': '4 mins',
-      'rule': 'الخبري يحتمل الصدق والكذب، والإنشائي الطلبي يشمل الاستفهام (هل/كيف)، والنداء (يا)، والنهي (لا).',
-      'ruleEn': 'Declarative is verifiable as true/false; creative request includes inquiries, calls, and prohibitions.',
-    },
-    {
-      'id': 'capsule_g6_03',
-      'title': 'الهمزة المتوسطة وقوة الحركات',
-      'titleEn': 'Middle Hamza & Vowel Strength Hierarchy',
-      'duration': '4 دقائق',
-      'durationEn': '4 mins',
-      'rule': 'صراع الحركات: الكسرة أقوى (نبرة ئـ) > الضمة (واو ؤ) > الفتحة (ألف أ) > السكون.',
-      'ruleEn': 'Vowel battle: Kasrah wins (Nabrah), then Dammah (Waw), then Fathah (Alif), then Sukun.',
-    },
-    {
-      'id': 'capsule_g6_04',
-      'title': 'حروف الجر وعلامة الكسرة',
-      'titleEn': 'Prepositions & Genitive Case',
-      'duration': '3 دقائق',
-      'durationEn': '3 mins',
-      'rule': 'مِنْ، إِلَى، عَنْ، عَلَى، فِي، الباء، الكاف، اللام: تجر الاسم بعدها بالكسرة الظاهرة.',
-      'ruleEn': 'Prepositions govern following singular nouns into the genitive case with Kasrah.',
-    },
-    {
-      'id': 'capsule_g6_05',
-      'title': 'كان وأخواتها والأفعال الناسخة',
-      'titleEn': 'Kana & Its Sisters (Incomplete Verbs)',
-      'duration': '4 دقائق',
-      'durationEn': '4 mins',
-      'rule': 'تدخل على الجملة الاسمية فترفع المبتدأ ويسمى اسمها، وتنصب الخبر ويسمى خبرها.',
-      'ruleEn': 'Enters nominal sentence: keeps subject nominative and makes predicate accusative.',
-    },
-  ];
-
-  static final List<Map<String, String>> _grade8Capsules = [
-    {
-      'id': 'capsule_g8_01',
-      'title': 'الفعل المبني للمجهول ونائب الفاعل',
-      'titleEn': 'Passive Voice & Pro-Agent (Na\'ib al-Fa\'il)',
-      'duration': '4 دقائق',
-      'durationEn': '4 mins',
-      'rule': 'يُحذف الفاعل ويحل المفعول به محله مرفوعاً: (نُظِّمَ المِهْرَجَانُ).',
-      'ruleEn': 'Active doer is omitted, and direct object takes nominative pro-agent role.',
-    },
-    {
-      'id': 'capsule_g8_02',
-      'title': 'بلاغة التشبيه وأركانه الأربعة',
-      'titleEn': 'Rhetoric: Four Pillars of Simile',
-      'duration': '4 دقائق',
-      'durationEn': '4 mins',
-      'rule': 'المشبه + أداة التشبيه + المشبه به + وجه الشبه: (العِلْمُ كَالنُّورِ فِي الهِدَايَةِ).',
-      'ruleEn': 'Topic + Comparator Particle + Vehicle + Ground of Comparison.',
-    },
-  ];
-
-  static final List<Map<String, String>> _grade5Capsules = [
-    {
-      'id': 'capsule_01_taa_marbutah',
-      'title': 'التاء المربوطة (ـة) والهاء (ـه)',
-      'titleEn': 'Taa Marbutah (ـة) & Haa (ـه)',
-      'duration': '3 دقائق',
-      'durationEn': '3 mins',
-      'rule':
-          'حرّك الكلمة بالتنوين: (كُرَةٌ ← تاء مربوطة) بينما (مِيَاهٌ ← هاء دون نقطتين).',
-      'ruleEn':
-          'Test with tanween: (كُرَةٌ -> Taa Marbutah with dots) whereas (مِيَاهٌ -> Haa without dots).'
-    },
-    {
-      'id': 'capsule_02_verb_subject_agreement',
-      'title': 'مطابقة الفعل للفاعل',
-      'titleEn': 'Verb-Subject Agreement',
-      'duration': '4 دقائق',
-      'durationEn': '4 mins',
-      'rule':
-          'يبدأ الفعل بالياء للمذكر (يَرْكُضُ زَايِدٌ)، ويبدأ بالتاء للمؤنث (تَرْكُضُ مَرْيَمُ).',
-      'ruleEn':
-          'Verbs begin with Yaa for masculine (يَرْكُضُ زَايِدٌ), and with Taa for feminine (تَرْكُضُ مَرْيَمُ).'
-    },
-    {
-      'id': 'capsule_03_sound_plurals',
-      'title': 'جمع المذكر والمؤنث السالم',
-      'titleEn': 'Sound Masculine & Feminine Plurals',
-      'duration': '4 دقائق',
-      'durationEn': '4 mins',
-      'rule':
-          'مذكر سالم بزيادة (ـونَ / ـينَ) مثل لاعبونَ، ومؤنث سالم بزيادة (ـات) مثل لاعبات.',
-      'ruleEn':
-          'Sound masculine adds (-oon / -een) like لاعبون, sound feminine adds (-aat) like لاعبات.'
-    },
-    {
-      'id': 'capsule_04_hamza_wasl_qat',
-      'title': 'همزة الوصل والقطع',
-      'titleEn': 'Hamzat Al-Wasl vs. Hamzat Al-Qat',
-      'duration': '3 دقائق',
-      'durationEn': '3 mins',
-      'rule':
-          'ضع حرف الواو قبل الكلمة: (وَاسْتَمَعَ ← وصل تسقط)، و(وَأَكَلَ ← قطع تثبت).',
-      'ruleEn':
-          'Prefix "Waw": If sound drops (وَاسْتَمَعَ -> Wasl), if sounded (وَأَكَلَ -> Qat).'
-    },
-    {
-      'id': 'capsule_05_nominal_verbal_sentence',
-      'title': 'الجملة الاسمية والفعلية',
-      'titleEn': 'Nominal vs. Verbal Sentences',
-      'duration': '5 دقائق',
-      'durationEn': '5 mins',
-      'rule':
-          'الاسمية تبدأ باسم: (مبتدأ + خبر)، والفعلية تبدأ بفعل: (فعل + فاعل).',
-      'ruleEn':
-          'Nominal starts with noun (Subject + Predicate); Verbal starts with verb (Verb + Doer).'
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -3955,7 +3672,7 @@ class _CapsulesViewState extends State<CapsulesView> {
                       style: TextStyle(color: Colors.white60, fontSize: 10)),
                 ],
               ),
-              Text('${widget.completedCapsules.length} / 5 منجزة 🏅',
+              Text('${widget.completedCapsules.where((id) => _capsulesList.any((c) => c['id'] == id)).length} / ${_capsulesList.length} منجزة 🏅',
                   style: const TextStyle(
                       color: Color(0xFFFBBF24),
                       fontWeight: FontWeight.bold,
@@ -3964,6 +3681,20 @@ class _CapsulesViewState extends State<CapsulesView> {
           ),
         ),
         const SizedBox(height: 12),
+        if (_loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_capsulesList.isEmpty)
+          Column(
+            children: [
+              const Text("The capsules for this class couldn't be loaded. Check your connection and try again.",
+                  textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+              const SizedBox(height: 8),
+              OutlinedButton(onPressed: _fetchLiveCapsules, child: const Text('إعادة المحاولة · Try again')),
+            ],
+          ),
         ..._capsulesList.map((cap) {
           final isDone = widget.completedCapsules.contains(cap['id']);
           return Container(

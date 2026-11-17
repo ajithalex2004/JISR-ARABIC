@@ -127,6 +127,13 @@ class ApiService {
     'lesson_id': ?lessonId,
     'child_id': ?childId,
   }, useCache: true);
+  /// Checks a study-booklet exercise on the server (the booklet itself carries no answers).
+  Future<dynamic> checkBookletAnswer(String lessonId, String sectionId, int answer, {String? childId, String? token}) =>
+      post('/api/modules/malazim/${Uri.encodeComponent(lessonId)}/check', token: token, body: {
+        'section_id': sectionId,
+        'answer': answer,
+        'child_id': ?childId,
+      });
   Future<dynamic> completeCapsule(String id, Map<String, dynamic> body, {String? token}) => post('/api/modules/capsules/$id/complete', token: token, body: body);
   Future<dynamic> adaptiveAssessment(String lessonId, {String? childId, String? token}) => get('/api/modules/assessments/adaptive/$lessonId', token: token, query: {'child_id': ?childId});
   Future<dynamic> examSimulation({int grade = 5, int term = 1, String? childId, String? token}) => get('/api/modules/assessments/exam-simulation/$grade/$term', token: token, query: {'child_id': ?childId});

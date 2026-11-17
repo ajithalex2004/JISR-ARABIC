@@ -49,6 +49,30 @@ _GRADE_SKILL_VOCAB: Dict[str, List[Tuple[str, str, str]]] = {
 }
 
 
+
+_DISTRACTOR_ROOTS = ("ك-ت-ب", "ل-ع-ب", "د-ر-س")
+
+
+_DECOY_TITLES = (("أَلْعَابُ الكُرَةِ", "Ball Games"), ("رِحْلَةٌ إِلَى البَحْرِ", "A Trip to the Sea"),
+                 ("رُكُوبُ الخَيْلِ", "Horse Riding"), ("حَدِيقَةُ الحَيَوَانَاتِ", "The Zoo"))
+
+
+def _plain(text: str) -> str:
+    import re
+    return re.sub(r"[\u064b-\u065f\u0670\u0640]", "", text or "").strip().lower()
+
+
+def _title_decoys(title_ar: str, title_en: str, count: int = 2) -> list:
+    """Wrong-answer lesson titles that are not this lesson's own title (Class 5 chapter 1 is Ball Games)."""
+    own = {_plain(title_ar), _plain(title_en)}
+    return [d for d in _DECOY_TITLES if _plain(d[0]) not in own and _plain(d[1]) not in own][:count]
+
+
+def _root_options(answer: str) -> list:
+    """The answer root in the middle (correct_index 1) between two other roots, never a duplicate."""
+    others = [r for r in _DISTRACTOR_ROOTS if r != answer][:2]
+    return [others[0], answer, others[1]]
+
 def _vocab_for_grade(grade: int) -> List[Tuple[str, str, str]]:
     if grade <= 4:
         return _GRADE_SKILL_VOCAB["primary"]
@@ -154,8 +178,8 @@ def generate_booklet(grade: int, term: int = 1, order: int = 1) -> Optional[Dict
                     "inline_exercise": {
                         "question_ar": "مَا عُنْوَانُ الدَّرْسِ الَّذِي تَدْرُسُهُ فِي هَذِهِ المُلْزَمَةِ؟",
                         "question_en": "What is the title of the lesson covered in this booklet?",
-                        "options": [title_ar, "أَلْعَابُ الكُرَةِ", "رِحْلَةٌ إِلَى البَحْرِ"],
-                        "options_en": [title_en, "Ball Games", "A Trip to the Sea"],
+                        "options": [title_ar] + [d[0] for d in _title_decoys(title_ar, title_en)],
+                        "options_en": [title_en] + [d[1] for d in _title_decoys(title_ar, title_en)],
                         "correct_index": 0,
                         "explanation_ar": f"أحسنت! هذه الملزمة مخصصة لدرس ({title_ar}) في الصف {grade}.",
                         "explanation_en": f"Well done! This booklet covers '{title_en}' for Grade {grade}.",
@@ -212,8 +236,9 @@ def generate_booklet(grade: int, term: int = 1, order: int = 1) -> Optional[Dict
                     "inline_exercise": {
                         "question_ar": f"مَا جَذْرُ كَلِمَةِ ({vocab[1][0]})؟",
                         "question_en": f"What is the root of '{vocab[1][0]}' ({vocab[1][1]})?",
-                        "options": ["ك-ت-ب", vocab[1][2], "ل-ع-ب"],
-                        "options_en": ["K-T-B", vocab[1][2], "L-A-B"],
+                        # Two distractor roots that differ from the answer (the root may itself be ك-ت-ب).
+                        "options": _root_options(vocab[1][2]),
+                        "options_en": _root_options(vocab[1][2]),
                         "correct_index": 1,
                         "explanation_ar": f"ممتاز! جذر ({vocab[1][0]}) هو ({vocab[1][2]}).",
                         "explanation_en": f"Excellent! The root of '{vocab[1][0]}' is {vocab[1][2]}.",
@@ -365,8 +390,8 @@ def _build_capsule(grade: int, term: int, idx: int, ch: Dict[str, Any]) -> Dict[
             {
                 "question_ar": "ما عنوان الدرس الذي تتناوله هذه الكبسولة؟",
                 "question_en": "Which lesson does this capsule cover?",
-                "options": ["أَلْعَابُ الكُرَةِ", title_ar, "رُكُوبُ الخَيْلِ"],
-                "options_en": ["Ball Games", title_en, "Horse Riding"],
+                "options": [_title_decoys(title_ar, title_en)[0][0], title_ar, _title_decoys(title_ar, title_en)[1][0]],
+                "options_en": [_title_decoys(title_ar, title_en)[0][1], title_en, _title_decoys(title_ar, title_en)[1][1]],
                 "correct_index": 1,
                 "explanation_ar": f"صحيح! الكبسولة مخصصة لدرس ({title_ar}).",
                 "explanation_en": f"Correct! This capsule covers '{title_en}'.",

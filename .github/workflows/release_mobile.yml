@@ -20,6 +20,14 @@ on:
         description: "API Base URL (Strict HTTPS)"
         required: true
         default: "https://api.jisrarabic.com"
+      store_purchase:
+        description: "Store builds (.aab, iOS): what Buy does. web = open the website's payment page; none = no buying in the app"
+        required: false
+        default: "web"
+        type: choice
+        options:
+          - web
+          - none
       deploy_to_play_store:
         description: "Deploy .aab to Google Play Internal Testing"
         required: false
@@ -117,6 +125,7 @@ jobs:
         env:
           API_BASE_INPUT: ${{ github.event.inputs.api_base }}
           API_BASE_VAR: ${{ vars.FAHIM_API_BASE }}
+          STORE_PURCHASE: ${{ github.event.inputs.store_purchase || 'web' }}
         run: |
           API_BASE="${API_BASE_INPUT:-${API_BASE_VAR:-https://api.jisrarabic.com}}"
           case "$API_BASE" in
@@ -126,6 +135,8 @@ jobs:
           mkdir -p build/app/outputs/symbols
           flutter build appbundle --release \
             --dart-define=FAHIM_API_BASE="$API_BASE" \
+            --dart-define=STORE_BUILD=true \
+            --dart-define=STORE_PURCHASE="$STORE_PURCHASE" \
             --obfuscate \
             --split-debug-info=build/app/outputs/symbols
 
@@ -255,6 +266,8 @@ jobs:
           mkdir -p build/app/outputs/symbols
           flutter build ipa --release \
             --dart-define=FAHIM_API_BASE="${{ steps.api.outputs.base }}" \
+            --dart-define=STORE_BUILD=true \
+            --dart-define=STORE_PURCHASE="${{ github.event.inputs.store_purchase || 'web' }}" \
             --obfuscate \
             --split-debug-info=build/app/outputs/symbols \
             --no-codesign
@@ -281,6 +294,8 @@ jobs:
           mkdir -p build/app/outputs/symbols
           flutter build ios --release --config-only \
             --dart-define=FAHIM_API_BASE="${{ steps.api.outputs.base }}" \
+            --dart-define=STORE_BUILD=true \
+            --dart-define=STORE_PURCHASE="${{ github.event.inputs.store_purchase || 'web' }}" \
             --obfuscate \
             --split-debug-info=build/app/outputs/symbols
 

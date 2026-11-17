@@ -304,6 +304,33 @@ export function App() {
     setIsPaywallOpen(true);
   };
 
+  // Opened from the store apps' "Buy" button (/?buy=1&grade=N&term=T). The store apps take no
+  // payments, so they send parents here: sign in if needed, then this class's term pass screen.
+  const [pendingBuy, setPendingBuy] = useState<{ grade?: number; term: number } | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('buy') !== '1') return null;
+    const grade = Number(params.get('grade'));
+    const term = Number(params.get('term'));
+    return { grade: grade >= 1 && grade <= 12 ? grade : undefined, term: [1, 2, 3].includes(term) ? term : 1 };
+  });
+  useEffect(() => {
+    if (!pendingBuy) return;
+    const params = new URLSearchParams(window.location.search);
+    params.delete('buy');
+    params.delete('term');
+    window.history.replaceState(null, '', window.location.pathname + (params.toString() ? `?${params}` : '') + window.location.hash);
+  }, []);
+  useEffect(() => {
+    if (!pendingBuy || !sessionChecked) return;
+    if (!user) {
+      setAuthModalMode('login');
+      setIsAuthOpen(true);
+      return;
+    }
+    setPendingBuy(null);
+    handleOpenPaywall(pendingBuy.grade, pendingBuy.term);
+  }, [pendingBuy, sessionChecked, user]);
+
   const appContent = (
     <div className="min-h-screen flex flex-col bg-[#fbfbfa] text-slate-900 font-sans selection:bg-emerald-200">
       {/* LHS Persistent Sidebar */}

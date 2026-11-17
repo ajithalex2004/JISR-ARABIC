@@ -77,7 +77,7 @@ const List<CurriculumLessonItem> kClass5Term1Catalogue = [
     startPage: 16,
     isFirstChapterDemo: false,
     isAccessible: false,
-    lockReason: r'Payment required ($33/term)',
+    lockReason: 'Subscription required',
   ),
   CurriculumLessonItem(
     id: 'lesson_03_running',
@@ -89,7 +89,7 @@ const List<CurriculumLessonItem> kClass5Term1Catalogue = [
     startPage: 26,
     isFirstChapterDemo: false,
     isAccessible: false,
-    lockReason: r'Payment required ($33/term)',
+    lockReason: 'Subscription required',
   ),
   CurriculumLessonItem(
     id: 'lesson_04_arts',
@@ -101,7 +101,7 @@ const List<CurriculumLessonItem> kClass5Term1Catalogue = [
     startPage: 36,
     isFirstChapterDemo: false,
     isAccessible: false,
-    lockReason: r'Payment required ($33/term)',
+    lockReason: 'Subscription required',
   ),
   CurriculumLessonItem(
     id: 'lesson_05_reading',
@@ -113,7 +113,7 @@ const List<CurriculumLessonItem> kClass5Term1Catalogue = [
     startPage: 46,
     isFirstChapterDemo: false,
     isAccessible: false,
-    lockReason: r'Payment required ($33/term)',
+    lockReason: 'Subscription required',
   ),
   CurriculumLessonItem(
     id: 'lesson_06_at_school',
@@ -125,7 +125,7 @@ const List<CurriculumLessonItem> kClass5Term1Catalogue = [
     startPage: 56,
     isFirstChapterDemo: false,
     isAccessible: false,
-    lockReason: r'Payment required ($33/term)',
+    lockReason: 'Subscription required',
   ),
   CurriculumLessonItem(
     id: 'lesson_07_at_home',
@@ -137,7 +137,7 @@ const List<CurriculumLessonItem> kClass5Term1Catalogue = [
     startPage: 66,
     isFirstChapterDemo: false,
     isAccessible: false,
-    lockReason: r'Payment required ($33/term)',
+    lockReason: 'Subscription required',
   ),
   CurriculumLessonItem(
     id: 'lesson_08_my_food',
@@ -149,7 +149,7 @@ const List<CurriculumLessonItem> kClass5Term1Catalogue = [
     startPage: 76,
     isFirstChapterDemo: false,
     isAccessible: false,
-    lockReason: r'Payment required ($33/term)',
+    lockReason: 'Subscription required',
   ),
   CurriculumLessonItem(
     id: 'lesson_09_my_clothes',
@@ -161,7 +161,7 @@ const List<CurriculumLessonItem> kClass5Term1Catalogue = [
     startPage: 86,
     isFirstChapterDemo: false,
     isAccessible: false,
-    lockReason: r'Payment required ($33/term)',
+    lockReason: 'Subscription required',
   ),
   CurriculumLessonItem(
     id: 'lesson_10_fun_time',
@@ -173,7 +173,7 @@ const List<CurriculumLessonItem> kClass5Term1Catalogue = [
     startPage: 96,
     isFirstChapterDemo: false,
     isAccessible: false,
-    lockReason: r'Payment required ($33/term)',
+    lockReason: 'Subscription required',
   ),
 ];
 

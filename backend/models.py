@@ -128,6 +128,8 @@ class PaymentTransaction(Base):
     refunded_at = Column(DateTime, nullable=True)
     terms_purchased = Column(String(20), nullable=True)   # e.g. "1,2,3"
     subscription_id = Column(String(36), nullable=True, index=True)
+    provider_payment_intent_id = Column(String(128), nullable=True)  # Stripe pi_..., used to refund and match refunds
+    provider_refund_id = Column(String(128), nullable=True)          # Stripe re_... once refunded
 
 
 class School(Base):

@@ -103,6 +103,9 @@ JISR Arabic uses provider-hosted checkout sessions (Stripe Checkout) to maintain
    FAHIM_PAYMENT_WEBHOOK_SECRET=whsec_...
    ```
 
+### 3.3 Currency: USD only
+All prices are charged in **USD** (VAT included; tax invoices also show the AED equivalent at the 3.6725 peg). Every Checkout Session is created with Adaptive Pricing switched off, so customers are never shown or charged a local currency such as AED. If a payment ever arrives in another currency, the app records the USD amount Stripe converted from, or refuses the event if there is none. In the Stripe Dashboard you can also leave **Settings → Payments → Adaptive Pricing** off.
+
 ### 3.3 Refunds
 - **From the app (admin):** `POST /api/payments/refund/{receipt_number}` refunds the full amount through Stripe first, then locks the terms the payment unlocked. If Stripe refuses, nothing changes in the app. Retrying is safe: Stripe receives one refund per receipt.
 - **From the Stripe Dashboard:** a full refund sends `charge.refunded`, and the app locks the matching terms automatically. Partial refunds are acknowledged but do not lock access.

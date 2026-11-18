@@ -160,6 +160,20 @@ export const api = {
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load payments'));
     return res.json();
   },
+  async adminRefundPayment(receiptNumber: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/payments/refund/${encodeURIComponent(receiptNumber)}`, { method: 'POST' });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not refund payment'));
+    return res.json();
+  },
+  async adminMarkRefunded(receiptNumber: string, body: { method: string; reference: string }) {
+    const res = await authenticatedFetch(`${API_BASE}/api/payments/refund/${encodeURIComponent(receiptNumber)}/manual`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not mark payment as refunded'));
+    return res.json();
+  },
   async adminExport(kind: 'students' | 'parents' | 'payments', filters: Record<string, string | number | undefined> = {}) {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== '' && v !== null) params.set(k, String(v)); });

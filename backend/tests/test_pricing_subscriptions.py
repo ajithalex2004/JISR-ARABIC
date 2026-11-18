@@ -480,5 +480,57 @@ class CheckoutAndSubscriptionsTest(unittest.TestCase):
         notify.assert_not_called()
         self.assertEqual(self._unlocked("child_5"), 0)
 
+    def _mark(self, receipt, **body):
+        payload = {"method": "bank_transfer", "reference": "FT-2026-0042", **body}
+        return self.client.post(f"/api/payments/refund/{receipt}/manual", json=payload,
+                                headers=self._headers(email="admin@test.local"))
+
+    def test_admin_marks_a_refund_paid_outside_stripe(self):
+        receipt = self._paid_term()
+        calls = self._fake_stripe({})
+        res = self._mark(receipt)
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual((res.json()["provider"], res.json()["refund_method"]), ("manual", "bank_transfer"))
+        self.assertEqual(calls, [])  # nothing is sent to Stripe
+        self.assertEqual(self._unlocked("child_5"), 0)
+        with self.session() as db:
+            txn = db.query(PaymentTransaction).filter_by(receipt_number=receipt).one()
+            self.assertEqual((txn.status, txn.refund_method, txn.refund_reference, txn.refunded_by),
+                             ("refunded", "bank_transfer", "FT-2026-0042", "admin_user"))
+        row = next(p for p in self.client.get("/api/admin/payments", headers=self._headers(email="admin@test.local")).json()["payments"]
+                   if p["receipt_number"] == receipt)
+        self.assertEqual((row["status"], row["refund_method"], row["refund_reference"]), ("refunded", "bank_transfer", "FT-2026-0042"))
+        # Already refunded: neither action refunds again.
+        self.assertEqual(self._mark(receipt).status_code, 409)
+        self.assertTrue(self._refund(receipt).json()["already_refunded"])
+        self.assertEqual(calls, [])
+
+    def test_manual_refund_after_a_failed_stripe_refund_is_not_undone(self):
+        receipt = self._paid_term()
+        self._fake_stripe({("POST", "/refunds"): (200, {"id": "re_1", "status": "pending"})})
+        self._refund(receipt)
+        failed = {"id": "re_1", "failure_reason": "expired_or_canceled_card", "payment_intent": "pi_ref",
+                  "metadata": {"receipt_number": receipt}}
+        with patch("backend.alerts.notify"):
+            self._webhook("refund.failed", failed, "evt_m1")
+            self.assertEqual(self._mark(receipt, method="cash", reference="Paid at school office").status_code, 200)
+            # Stripe re-sending the old failure, or a stray failure of another refund, changes nothing.
+            self.assertTrue(self._webhook("refund.failed", failed, "evt_m2").json()["already_recorded"])
+            self.assertTrue(self._webhook("refund.failed", {**failed, "id": "re_9"}, "evt_m3").json()["ignored"])
+        self.assertEqual(self._unlocked("child_5"), 0)
+        with self.session() as db:
+            txn = db.query(PaymentTransaction).filter_by(receipt_number=receipt).one()
+            self.assertEqual((txn.status, txn.refund_method, txn.refund_failure_reason), ("refunded", "cash", None))
+
+    def test_manual_refund_validation_and_admin_only(self):
+        receipt = self._paid_term()
+        self.assertEqual(self._mark(receipt, method="crypto").status_code, 400)
+        self.assertEqual(self._mark(receipt, reference=" ").status_code, 400)
+        self.assertEqual(self._mark("FHM-NOPE").status_code, 404)
+        parent = self.client.post(f"/api/payments/refund/{receipt}/manual", json={"method": "cash", "reference": "abc"},
+                                  headers=self._headers(5))
+        self.assertEqual(parent.status_code, 403)
+        self.assertEqual(self._unlocked("child_5"), 1)
+
 if __name__ == "__main__":
     unittest.main()

@@ -81,8 +81,25 @@ def list_receipts(child_id: str, db: Session=Depends(get_db), actor: Principal=D
 
 @router.post('/refund/{receipt_number}')
 def refund_payment(receipt_number: str, db: Session=Depends(get_db), actor: Principal=Depends(get_current_user)):
+    """Admin: refund in full (through Stripe for card payments) and lock the terms."""
     require_roles(actor, ("admin",))
-    return service.refund_transaction(receipt_number, db=db)
+    result = service.refund_transaction(receipt_number, db=db, actor_id=actor.id)
+    audit_event("payment.refunded", user_id=actor.id, receipt_number=receipt_number, provider=result.get("provider"))
+    return result
+
+
+class ManualRefundRequest(BaseModel):
+    method: str          # bank_transfer | cash | cheque | other
+    reference: str       # bank / cheque reference or a short note
+
+
+@router.post('/refund/{receipt_number}/manual')
+def mark_refunded_manually(receipt_number: str, req: ManualRefundRequest, db: Session=Depends(get_db),
+                           actor: Principal=Depends(get_current_user)):
+    """Admin: record a refund already paid outside Stripe (no money is moved) and lock the terms."""
+    require_roles(actor, ("admin",))
+    return service.mark_refunded_manually(receipt_number, method=req.method, reference=req.reference,
+                                          actor_id=actor.id, db=db)
 
 
 class CheckoutStartRequest(BaseModel):

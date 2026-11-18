@@ -162,6 +162,8 @@ def _stripe_session(child, grade, terms, plan_name, price, promo, promo_pct, aut
         "client_reference_id": child.id,
         "metadata": meta,
         "line_items": [{"quantity": 1, "price_data": {"currency": "usd", "product_data": product}}],
+        # Charge in USD only: no Adaptive Pricing (Stripe would otherwise show and charge local currency, e.g. AED).
+        "adaptive_pricing": {"enabled": False},
     }
     if parent and parent.email:
         params["customer_email"] = parent.email
@@ -284,6 +286,23 @@ def _ts(value) -> Optional[datetime.datetime]:
         return None
 
 
+def _usd_amount(obj: dict, field: str) -> float:
+    """The USD amount of a paid Checkout Session or invoice.
+
+    Prices are in USD only. If a payment still arrives in another currency (Adaptive Pricing turned on
+    in the Stripe Dashboard), the USD amount Stripe converted from is used, so receipts and tax
+    invoices never record e.g. AED as dollars; with no USD amount at all the event is refused.
+    """
+    currency = (obj.get("currency") or "usd").lower()
+    if currency == "usd":
+        return (obj.get(field) or 0) / 100
+    conversion = obj.get("currency_conversion") or {}
+    if (conversion.get("source_currency") or "").lower() == "usd" and conversion.get(field) is not None:
+        return conversion[field] / 100
+    raise ApplicationError(422, f"Payment {obj.get('id')} is in {currency.upper()}; JISR charges in USD only. "
+                                "Turn off Adaptive Pricing / other currencies in the Stripe Dashboard.")
+
+
 def _id(value) -> Optional[str]:
     """A Stripe reference that may arrive as an id or as an expanded object."""
     return value.get("id") if isinstance(value, dict) else value
@@ -319,7 +338,7 @@ def handle_event(event_type: str, obj: dict, db: Session) -> Optional[dict]:
         child = _child(meta["child_id"], db)
         terms = [int(t) for t in meta.get("terms", "1").split(",") if t.strip().isdigit()] or [1]
         txn = record_purchase(child=child, grade=int(meta.get("grade") or child.default_grade or 1), terms=terms,
-                              amount_usd=(obj.get("amount_total") or 0) / 100, provider_ref=obj.get("id"),
+                              amount_usd=_usd_amount(obj, "amount_total"), provider_ref=obj.get("id"),
                               payment_method="card", promo=meta.get("promo_code") or "",
                               payment_intent=_id(obj.get("payment_intent")), db=db)
         db.commit()
@@ -337,7 +356,7 @@ def handle_event(event_type: str, obj: dict, db: Session) -> Optional[dict]:
             return {"received": True, "unknown_subscription": provider_id}
         lines = (obj.get("lines") or {}).get("data") or []
         period_end = _ts(((lines[0] if lines else {}).get("period") or {}).get("end"))
-        txn = apply_cycle(sub, amount_usd=(obj.get("amount_paid") or 0) / 100, provider_ref=obj.get("id"),
+        txn = apply_cycle(sub, amount_usd=_usd_amount(obj, "amount_paid"), provider_ref=obj.get("id"),
                           promo=sub.promo_code or "", period_end=period_end,
                           payment_intent=stripe_api.invoice_payment_intent(obj), db=db)
         db.commit()

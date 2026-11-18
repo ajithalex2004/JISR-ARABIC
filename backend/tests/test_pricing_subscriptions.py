@@ -234,12 +234,14 @@ class CheckoutAndSubscriptionsTest(unittest.TestCase):
         self.assertEqual(session["discounts[0][coupon]"], "JISR-ONCE-10_0")
         self.assertEqual(session["subscription_data[metadata][terms]"], "1,2,3")
         self.assertEqual(session["customer_email"], "p0@test.local")
+        self.assertEqual((session["line_items[0][price_data][currency]"], session["adaptive_pricing[enabled]"]), ("usd", "false"))
 
     def test_stripe_checkout_session_for_one_term_with_a_promo(self):
         session = self._stripe_checkout(plan="term", terms=[2], promo_code="JISR10")
         self.assertEqual(session["mode"], "payment")
         self.assertEqual(session["line_items[0][price_data][unit_amount]"], "900")
         self.assertEqual(session["metadata[terms]"], "2")
+        self.assertEqual((session["line_items[0][price_data][currency]"], session["adaptive_pricing[enabled]"]), ("usd", "false"))
         self.assertIn("Term 2", session["line_items[0][price_data][product_data][name]"])
 
     def _webhook(self, event_type, obj, event_id="evt_1"):
@@ -531,6 +533,22 @@ class CheckoutAndSubscriptionsTest(unittest.TestCase):
                                   headers=self._headers(5))
         self.assertEqual(parent.status_code, 403)
         self.assertEqual(self._unlocked("child_5"), 1)
+
+    def test_payments_are_recorded_in_usd_even_if_stripe_converted_them(self):
+        meta = {"flow": "checkout_v2", "child_id": "child_8", "parent_id": "parent_8", "grade": "5", "terms": "2",
+                "plan": "term", "promo_code": ""}
+        # Adaptive Pricing switched on in the Dashboard: the customer paid AED 36.73 for USD 10.00.
+        converted = {"id": "cs_aed", "mode": "payment", "payment_status": "paid", "currency": "aed", "amount_total": 3673,
+                     "currency_conversion": {"source_currency": "usd", "amount_total": 1000}, "metadata": meta}
+        self.assertEqual(self._webhook("checkout.session.completed", converted, "evt_aed").status_code, 200)
+        with self.session() as db:
+            txn = db.query(PaymentTransaction).filter_by(provider_event_id="cs_aed").one()
+            self.assertEqual((float(txn.amount_usd), txn.currency), (10.0, "USD"))
+        # No USD amount at all: refused rather than recorded as dollars (Stripe retries; nothing unlocked).
+        foreign = {**converted, "id": "cs_eur", "currency": "eur", "currency_conversion": None,
+                   "metadata": {**meta, "child_id": "child_9", "parent_id": "parent_9"}}
+        self.assertEqual(self._webhook("checkout.session.completed", foreign, "evt_eur").status_code, 422)
+        self.assertEqual(self._unlocked("child_9"), 0)
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,6 +5,7 @@ from decimal import Decimal
 from sqlalchemy import or_
 
 from backend.models import ChildProfile, PaymentTransaction, User
+from backend.modules.billing.service import paid_through_stripe
 from backend.modules.identity.access import require_roles
 
 ADMIN_ONLY = ("admin",)
@@ -49,6 +50,10 @@ def serialize_payment(txn: PaymentTransaction, parent: User | None, child: Child
         "tax_invoice_number": txn.tax_invoice_number,
         "status": status,
         "refunded_at": txn.refunded_at.isoformat() if txn.refunded_at else None,
+        "refund_failure_reason": txn.refund_failure_reason,
+        "refund_method": txn.refund_method,
+        "refund_reference": txn.refund_reference,
+        "refund_via_stripe": paid_through_stripe(txn),
     }
 
 

@@ -128,6 +128,13 @@ class PaymentTransaction(Base):
     refunded_at = Column(DateTime, nullable=True)
     terms_purchased = Column(String(20), nullable=True)   # e.g. "1,2,3"
     subscription_id = Column(String(36), nullable=True, index=True)
+    provider_payment_intent_id = Column(String(128), nullable=True)  # Stripe pi_..., used to refund and match refunds
+    provider_refund_id = Column(String(128), nullable=True)          # Stripe re_... once refunded
+    failed_refund_id = Column(String(128), nullable=True)            # last Stripe refund that failed (re_...)
+    refund_failure_reason = Column(String(255), nullable=True)       # why it failed, shown to admins
+    refund_method = Column(String(30), nullable=True)      # stripe | in_app | bank_transfer | cash | cheque | other
+    refund_reference = Column(String(255), nullable=True)  # bank / cheque reference or note for a manual refund
+    refunded_by = Column(String(36), nullable=True)        # admin user id (empty for Stripe Dashboard refunds)
 
 
 class School(Base):

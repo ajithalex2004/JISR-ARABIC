@@ -285,5 +285,252 @@ class CheckoutAndSubscriptionsTest(unittest.TestCase):
             self.assertEqual([(float(p.amount_usd), p.terms_purchased) for p in payments], [(10.0, "2")])
 
 
+    # --- refunds --------------------------------------------------------------------------
+
+    def _fake_stripe(self, routes):
+        """Patch httpx with a fake Stripe: routes maps (method, path) -> (status, payload). Returns the call log."""
+        import httpx
+        from urllib.parse import parse_qsl, urlsplit
+        calls = []
+
+        class Response:
+            def __init__(self, status, payload):
+                self.status_code, self._payload, self.content, self.text = status, payload, b"x", json.dumps(payload)
+
+            def json(self):
+                return self._payload
+
+        def fake_request(method, url, content=None, headers=None, timeout=None):
+            sent = httpx.Request(method, url, content=content, headers=headers)
+            sent.read()
+            path = urlsplit(url).path.removeprefix("/v1")
+            calls.append((method, path, dict(parse_qsl(sent.content.decode() or urlsplit(url).query)), dict(sent.headers)))
+            route = routes.get((method, path), (404, {"error": {"message": f"No route {method} {path}"}}))
+            status, payload = route(calls[-1][2]) if callable(route) else route
+            return Response(status, payload)
+
+        env = patch.dict(os.environ, {"FAHIM_PAYMENT_PROVIDER": "stripe", "STRIPE_SECRET_KEY": "sk_test_x"})
+        net = patch("httpx.request", side_effect=fake_request)
+        env.start(), net.start()
+        self.addCleanup(env.stop)
+        self.addCleanup(net.stop)
+        return calls
+
+    def _paid_term(self, i=5, session_id="cs_ref", payment_intent="pi_ref", amount=1000):
+        meta = {"flow": "checkout_v2", "child_id": f"child_{i}", "parent_id": f"parent_{i}", "grade": "5", "terms": "2",
+                "plan": "term", "promo_code": ""}
+        obj = {"id": session_id, "mode": "payment", "payment_status": "paid", "amount_total": amount, "metadata": meta}
+        if payment_intent:
+            obj["payment_intent"] = payment_intent
+        res = self._webhook("checkout.session.completed", obj, f"evt_{session_id}")
+        self.assertEqual(res.status_code, 200, res.text)
+        return res.json()["receipt_number"]
+
+    def _unlocked(self, child_id):
+        with self.session() as db:
+            return db.query(TermAccess).filter_by(child_id=child_id, is_unlocked=True).count()
+
+    def _refund(self, receipt):
+        return self.client.post(f"/api/payments/refund/{receipt}", headers=self._headers(email="admin@test.local"))
+
+    def test_admin_refund_goes_through_stripe_once_and_locks_the_term(self):
+        receipt = self._paid_term()
+        calls = self._fake_stripe({("POST", "/refunds"): (200, {"id": "re_1", "status": "succeeded"})})
+        res = self._refund(receipt)
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual((res.json()["provider"], res.json()["refund_id"]), ("stripe", "re_1"))
+        [(method, path, data, headers)] = calls
+        self.assertEqual((data["payment_intent"], data["metadata[receipt_number]"]), ("pi_ref", receipt))
+        self.assertEqual(headers["idempotency-key"], f"jisr-refund-{receipt}")
+        self.assertEqual(self._unlocked("child_5"), 0)
+        with self.session() as db:
+            txn = db.query(PaymentTransaction).filter_by(receipt_number=receipt).one()
+            self.assertEqual((txn.status, txn.provider_refund_id), ("refunded", "re_1"))
+            self.assertIsNotNone(txn.refunded_at)
+        # A second click does not refund again; Stripe's own charge.refunded event is then a no-op.
+        self.assertTrue(self._refund(receipt).json()["already_refunded"])
+        self.assertEqual(len(calls), 1)
+        echo = self._webhook("charge.refunded", {"id": "ch_1", "payment_intent": "pi_ref", "refunded": True}, "evt_r")
+        self.assertTrue(echo.json()["already_refunded"])
+
+    def test_refund_finds_the_payment_intent_of_an_older_checkout(self):
+        receipt = self._paid_term(session_id="cs_old", payment_intent=None)
+        calls = self._fake_stripe({("GET", "/checkout/sessions/cs_old"): (200, {"id": "cs_old", "payment_intent": "pi_old"}),
+                                   ("POST", "/refunds"): (200, {"id": "re_2", "status": "pending"})})
+        self.assertEqual(self._refund(receipt).status_code, 200)
+        self.assertEqual(calls[-1][2]["payment_intent"], "pi_old")
+        with self.session() as db:
+            self.assertEqual(db.query(PaymentTransaction).filter_by(receipt_number=receipt).one().provider_payment_intent_id,
+                             "pi_old")
+
+    def test_refund_of_a_subscription_payment_uses_the_invoice(self):
+        meta = {"flow": "checkout_v2", "child_id": "child_6", "parent_id": "parent_6", "grade": "5", "terms": "1,2,3",
+                "plan": "annual", "promo_code": ""}
+        self._webhook("checkout.session.completed", {"id": "cs_s", "mode": "subscription", "subscription": "sub_6",
+                                                     "customer": "cus_6", "metadata": meta}, "evt_s1")
+        receipt = self._webhook("invoice.paid", {"id": "in_6", "subscription": "sub_6", "amount_paid": 2550,
+                                                 "subscription_details": {"metadata": meta}}, "evt_s2").json()["receipt_number"]
+        calls = self._fake_stripe({
+            ("GET", "/invoices/in_6"): (200, {"id": "in_6", "payments": {"data": [
+                {"status": "paid", "payment": {"type": "payment_intent", "payment_intent": "pi_inv"}}]}}),
+            ("POST", "/refunds"): (200, {"id": "re_3", "status": "succeeded"})})
+        self.assertEqual(self._refund(receipt).status_code, 200)
+        self.assertEqual(calls[-1][2]["payment_intent"], "pi_inv")
+        self.assertEqual(self._unlocked("child_6"), 0)
+
+    def test_failed_stripe_refund_keeps_access(self):
+        receipt = self._paid_term()
+        self._fake_stripe({("POST", "/refunds"): (400, {"error": {"message": "Charge already refunded"}})})
+        res = self._refund(receipt)
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("Charge already refunded", res.text)
+        self.assertEqual(self._unlocked("child_5"), 1)
+        with self.session() as db:
+            self.assertEqual(db.query(PaymentTransaction).filter_by(receipt_number=receipt).one().status, "succeeded")
+
+    def test_stripe_payment_cannot_be_marked_refunded_without_a_key(self):
+        receipt = self._paid_term()
+        self.assertEqual(self._refund(receipt).status_code, 503)
+        self.assertEqual(self._unlocked("child_5"), 1)
+
+    def test_simulated_payment_refund_does_not_call_stripe(self):
+        receipt = self._checkout(7).json()["receipt_number"]
+        calls = self._fake_stripe({})
+        res = self._refund(receipt)
+        self.assertEqual((res.status_code, res.json()["provider"]), (200, "none"))
+        self.assertEqual(calls, [])
+        self.assertEqual(self._unlocked("child_7"), 0)
+
+    def test_dashboard_refund_webhook_locks_the_term(self):
+        receipt = self._paid_term()
+        partial = self._webhook("charge.refunded", {"id": "ch_1", "payment_intent": "pi_ref", "refunded": False,
+                                                    "amount_refunded": 300}, "evt_p")
+        self.assertTrue(partial.json()["partial_refund"])
+        self.assertEqual(self._unlocked("child_5"), 1)
+        full = self._webhook("charge.refunded", {"id": "ch_1", "payment_intent": "pi_ref", "refunded": True,
+                                                 "refunds": {"data": [{"id": "re_dash"}]}}, "evt_f")
+        self.assertEqual(full.json(), {"received": True, "receipt_number": receipt, "status": "refunded"})
+        self.assertEqual(self._unlocked("child_5"), 0)
+        with self.session() as db:
+            self.assertEqual(db.query(PaymentTransaction).filter_by(receipt_number=receipt).one().provider_refund_id, "re_dash")
+
+    def test_dashboard_refund_of_an_older_payment_is_matched_through_stripe(self):
+        receipt = self._paid_term(session_id="cs_old", payment_intent=None)
+        self._fake_stripe({("GET", "/checkout/sessions"): lambda query: (
+            200, {"data": [{"id": "cs_old"}] if query.get("payment_intent") == "pi_old" else []}),
+            ("GET", "/invoice_payments"): (200, {"data": []})})
+        res = self._webhook("charge.refunded", {"id": "ch_2", "payment_intent": "pi_old", "refunded": True}, "evt_o")
+        self.assertEqual(res.json()["receipt_number"], receipt)
+        self.assertEqual(self._unlocked("child_5"), 0)
+        unknown = self._webhook("charge.refunded", {"id": "ch_3", "payment_intent": "pi_unknown", "refunded": True}, "evt_u")
+        self.assertEqual((unknown.status_code, unknown.json()["unmatched"]), (200, True))
+
+    def test_failed_refund_restores_access_and_a_retry_makes_a_new_refund(self):
+        receipt = self._paid_term()
+        calls = self._fake_stripe({("POST", "/refunds"): (200, {"id": "re_1", "status": "pending"})})
+        self.assertEqual(self._refund(receipt).status_code, 200)
+        self.assertEqual(self._unlocked("child_5"), 0)
+        failed = {"id": "re_1", "status": "failed", "failure_reason": "expired_or_canceled_card",
+                  "payment_intent": "pi_ref", "metadata": {"receipt_number": receipt}}
+        with patch("backend.alerts.notify") as notify:
+            res = self._webhook("refund.failed", failed, "evt_rf")
+            self.assertEqual(res.json(), {"received": True, "receipt_number": receipt, "status": "refund_failed",
+                                          "access_restored": True})
+            self.assertTrue(self._webhook("refund.failed", failed, "evt_rf2").json()["already_recorded"])
+        self.assertEqual(notify.call_count, 1)
+        self.assertIn(receipt, notify.call_args.args[1])
+        self.assertEqual(self._unlocked("child_5"), 1)
+        with self.session() as db:
+            txn = db.query(PaymentTransaction).filter_by(receipt_number=receipt).one()
+            self.assertEqual((txn.status, txn.refunded_at, txn.provider_refund_id, txn.failed_refund_id),
+                             ("succeeded", None, None, "re_1"))
+            self.assertIn("expired_or_canceled_card", txn.refund_failure_reason)
+        admin = self.client.get("/api/admin/payments", headers=self._headers(email="admin@test.local")).json()
+        row = next(p for p in admin["payments"] if p["receipt_number"] == receipt)
+        self.assertEqual(row["status"], "succeeded")
+        self.assertIn("expired_or_canceled_card", row["refund_failure_reason"])
+        # Retrying uses a new idempotency key, so Stripe makes a new refund rather than replaying re_1.
+        calls = self._fake_stripe({("POST", "/refunds"): (200, {"id": "re_2", "status": "succeeded"})})
+        self.assertEqual(self._refund(receipt).json()["refund_id"], "re_2")
+        self.assertEqual(calls[-1][3]["idempotency-key"], f"jisr-refund-{receipt}-after-re_1")
+        with self.session() as db:
+            txn = db.query(PaymentTransaction).filter_by(receipt_number=receipt).one()
+            self.assertEqual((txn.status, txn.provider_refund_id, txn.refund_failure_reason), ("refunded", "re_2", None))
+
+    def test_failed_dashboard_refund_arriving_first_never_locks_access(self):
+        receipt = self._paid_term()
+        with patch("backend.alerts.notify"):
+            res = self._webhook("refund.failed", {"id": "re_d", "status": "failed", "failure_reason": "lost_or_stolen_card",
+                                                  "payment_intent": "pi_ref", "charge": "ch_d"}, "evt_d1")
+        self.assertEqual((res.json()["receipt_number"], res.json()["access_restored"]), (receipt, False))
+        self._fake_stripe({("GET", "/charges/ch_d"): (200, {"id": "ch_d", "refunded": False})})
+        late = self._webhook("charge.refunded", {"id": "ch_d", "payment_intent": "pi_ref", "refunded": True}, "evt_d2")
+        self.assertTrue(late.json()["refund_no_longer_valid"])
+        self.assertEqual(self._unlocked("child_5"), 1)
+
+    def test_refund_failed_for_another_refund_or_unknown_payment_changes_nothing(self):
+        receipt = self._paid_term()
+        self._fake_stripe({("POST", "/refunds"): (200, {"id": "re_ok", "status": "succeeded"})})
+        self._refund(receipt)
+        with patch("backend.alerts.notify") as notify:
+            other = self._webhook("refund.failed", {"id": "re_old", "payment_intent": "pi_ref"}, "evt_x1")
+            unknown = self._webhook("refund.failed", {"id": "re_zz", "payment_intent": "pi_zz"}, "evt_x2")
+        self.assertTrue(other.json()["ignored"])
+        self.assertTrue(unknown.json()["unmatched"])
+        notify.assert_not_called()
+        self.assertEqual(self._unlocked("child_5"), 0)
+
+    def _mark(self, receipt, **body):
+        payload = {"method": "bank_transfer", "reference": "FT-2026-0042", **body}
+        return self.client.post(f"/api/payments/refund/{receipt}/manual", json=payload,
+                                headers=self._headers(email="admin@test.local"))
+
+    def test_admin_marks_a_refund_paid_outside_stripe(self):
+        receipt = self._paid_term()
+        calls = self._fake_stripe({})
+        res = self._mark(receipt)
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual((res.json()["provider"], res.json()["refund_method"]), ("manual", "bank_transfer"))
+        self.assertEqual(calls, [])  # nothing is sent to Stripe
+        self.assertEqual(self._unlocked("child_5"), 0)
+        with self.session() as db:
+            txn = db.query(PaymentTransaction).filter_by(receipt_number=receipt).one()
+            self.assertEqual((txn.status, txn.refund_method, txn.refund_reference, txn.refunded_by),
+                             ("refunded", "bank_transfer", "FT-2026-0042", "admin_user"))
+        row = next(p for p in self.client.get("/api/admin/payments", headers=self._headers(email="admin@test.local")).json()["payments"]
+                   if p["receipt_number"] == receipt)
+        self.assertEqual((row["status"], row["refund_method"], row["refund_reference"]), ("refunded", "bank_transfer", "FT-2026-0042"))
+        # Already refunded: neither action refunds again.
+        self.assertEqual(self._mark(receipt).status_code, 409)
+        self.assertTrue(self._refund(receipt).json()["already_refunded"])
+        self.assertEqual(calls, [])
+
+    def test_manual_refund_after_a_failed_stripe_refund_is_not_undone(self):
+        receipt = self._paid_term()
+        self._fake_stripe({("POST", "/refunds"): (200, {"id": "re_1", "status": "pending"})})
+        self._refund(receipt)
+        failed = {"id": "re_1", "failure_reason": "expired_or_canceled_card", "payment_intent": "pi_ref",
+                  "metadata": {"receipt_number": receipt}}
+        with patch("backend.alerts.notify"):
+            self._webhook("refund.failed", failed, "evt_m1")
+            self.assertEqual(self._mark(receipt, method="cash", reference="Paid at school office").status_code, 200)
+            # Stripe re-sending the old failure, or a stray failure of another refund, changes nothing.
+            self.assertTrue(self._webhook("refund.failed", failed, "evt_m2").json()["already_recorded"])
+            self.assertTrue(self._webhook("refund.failed", {**failed, "id": "re_9"}, "evt_m3").json()["ignored"])
+        self.assertEqual(self._unlocked("child_5"), 0)
+        with self.session() as db:
+            txn = db.query(PaymentTransaction).filter_by(receipt_number=receipt).one()
+            self.assertEqual((txn.status, txn.refund_method, txn.refund_failure_reason), ("refunded", "cash", None))
+
+    def test_manual_refund_validation_and_admin_only(self):
+        receipt = self._paid_term()
+        self.assertEqual(self._mark(receipt, method="crypto").status_code, 400)
+        self.assertEqual(self._mark(receipt, reference=" ").status_code, 400)
+        self.assertEqual(self._mark("FHM-NOPE").status_code, 404)
+        parent = self.client.post(f"/api/payments/refund/{receipt}/manual", json={"method": "cash", "reference": "abc"},
+                                  headers=self._headers(5))
+        self.assertEqual(parent.status_code, 403)
+        self.assertEqual(self._unlocked("child_5"), 1)
+
 if __name__ == "__main__":
     unittest.main()

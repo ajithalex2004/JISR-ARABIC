@@ -128,11 +128,23 @@ def refund_target(provider_ref: str, payment_intent: str | None = None) -> Dict[
                                 "refund it in the Stripe Dashboard instead.")
 
 
-def create_refund(target: Dict[str, str], *, receipt_number: str) -> dict:
-    """Full refund of a payment; the idempotency key makes a retried click refund only once."""
+def create_refund(target: Dict[str, str], *, receipt_number: str, after_failed: str | None = None) -> dict:
+    """Full refund of a payment; the idempotency key makes a retried click refund only once.
+
+    After a refund failed, `after_failed` (its id) gives the retry a new key, so Stripe makes a new
+    refund instead of replaying the failed one.
+    """
+    key = f"jisr-refund-{receipt_number}" + (f"-after-{after_failed}" if after_failed else "")
     return request("POST", "/refunds", {**target, "reason": "requested_by_customer",
-                                        "metadata": {"receipt_number": receipt_number}},
-                   idempotency_key=f"jisr-refund-{receipt_number}")
+                                        "metadata": {"receipt_number": receipt_number}}, idempotency_key=key)
+
+
+def charge_fully_refunded(charge_id: str) -> bool | None:
+    """Stripe's current view of a charge (events can arrive out of order); None when it can't be checked."""
+    try:
+        return bool(request("GET", f"/charges/{charge_id}").get("refunded"))
+    except ApplicationError:
+        return None
 
 
 def purchase_refs_for(payment_intent: str) -> List[str]:

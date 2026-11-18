@@ -288,6 +288,7 @@ def _mark_refunded(txn: PaymentTransaction, *, refund_id: str | None, db: Sessio
     txn.refunded_at = datetime.datetime.utcnow()
     if refund_id:
         txn.provider_refund_id = refund_id
+    txn.refund_failure_reason = None
     db.query(TermAccess).filter(TermAccess.transaction_ref == txn.receipt_number).update({"is_unlocked": False})
     db.commit()
 
@@ -315,7 +316,7 @@ def refund_transaction(receipt_number: str, *, db: Session):
             raise ApplicationError(503, "This card payment was taken by Stripe, but STRIPE_SECRET_KEY is not set, "
                                         "so it cannot be refunded from here.")
         target = stripe_api.refund_target(txn.provider_event_id, txn.provider_payment_intent_id)
-        refund = stripe_api.create_refund(target, receipt_number=receipt_number)
+        refund = stripe_api.create_refund(target, receipt_number=receipt_number, after_failed=txn.failed_refund_id)
         if refund.get("status") in ("failed", "canceled"):
             raise ApplicationError(502, f"Stripe could not refund this payment (refund {refund.get('id')} "
                                         f"{refund.get('status')}: {refund.get('failure_reason') or 'no reason given'})")
@@ -355,10 +356,68 @@ def handle_charge_refunded(charge: dict, *, db: Session) -> dict:
         return {"received": True, "unmatched": True, "charge": charge.get("id")}
     if txn.refunded_at or txn.status == "refunded":
         return {"received": True, "receipt_number": txn.receipt_number, "already_refunded": True}
+    # A refund that failed straight after (refund.failed may arrive first) must not lock access.
+    if stripe_api.secret_key() and charge.get("id") and stripe_api.charge_fully_refunded(charge["id"]) is False:
+        db.commit()
+        return {"received": True, "receipt_number": txn.receipt_number, "refund_no_longer_valid": True}
 
     refunds = (charge.get("refunds") or {}).get("data") or []
     _mark_refunded(txn, refund_id=refunds[0].get("id") if refunds else None, db=db)
     return {"received": True, "receipt_number": txn.receipt_number, "status": "refunded"}
+
+
+def handle_refund_failed(refund: dict, *, db: Session) -> dict:
+    """Stripe `refund.failed`: the money never went back (e.g. the card was closed), so the payment
+    stands again. Access is restored, the reason is kept for admins, and admins are alerted to
+    return the money another way (bank transfer) or retry.
+    """
+    as_id = lambda v: v.get("id") if isinstance(v, dict) else v  # noqa: E731
+    refund_id = refund.get("id")
+    pi, charge = as_id(refund.get("payment_intent")), as_id(refund.get("charge"))
+    receipt = (refund.get("metadata") or {}).get("receipt_number")
+
+    query = db.query(PaymentTransaction)
+    txn = (query.filter(PaymentTransaction.provider_refund_id == refund_id).first() if refund_id else None) \
+        or (query.filter(PaymentTransaction.receipt_number == receipt).first() if receipt else None) \
+        or (query.filter(PaymentTransaction.provider_payment_intent_id == pi).first() if pi else None)
+    if txn is None:
+        refs = [r for r in (pi, charge) if r]
+        txn = query.filter(PaymentTransaction.provider_event_id.in_(refs)).first() if refs else None
+    if txn is None:
+        import logging
+        logging.getLogger("fahim.billing").warning("refund.failed for %s matched no payment", refund_id)
+        return {"received": True, "unmatched": True, "refund": refund_id}
+    if txn.failed_refund_id == refund_id:
+        return {"received": True, "receipt_number": txn.receipt_number, "already_recorded": True}
+    if txn.provider_refund_id and txn.provider_refund_id != refund_id:
+        # A different refund of this payment succeeded; this failure changes nothing.
+        return {"received": True, "receipt_number": txn.receipt_number, "ignored": True}
+
+    reason = refund.get("failure_reason") or "unknown"
+    was_refunded = bool(txn.refunded_at or txn.status == "refunded")
+    txn.status, txn.refunded_at, txn.provider_refund_id = "succeeded", None, None
+    txn.failed_refund_id, txn.refund_failure_reason = refund_id, f"Stripe refund {refund_id} failed: {reason}"[:255]
+    if was_refunded:
+        db.query(TermAccess).filter(TermAccess.transaction_ref == txn.receipt_number).update(
+            {"is_unlocked": True, "unlocked_at": datetime.datetime.utcnow()})
+    db.commit()
+
+    from backend.observability import audit_event
+    audit_event("payment.refund_failed", receipt_number=txn.receipt_number, refund_id=refund_id, reason=reason)
+    try:
+        from backend import alerts
+        amount = f"USD {float(txn.amount_usd or 0):.2f}"
+        alerts.notify("payments", f"[JISR] Refund failed for receipt {txn.receipt_number}",
+                      f"Stripe could not return {amount} for receipt {txn.receipt_number} "
+                      f"(refund {refund_id}, reason: {reason}).\n\n"
+                      "The payment is marked as paid again and the family's access has been restored.\n"
+                      "Retry the refund from the admin payments page, or return the money another way "
+                      "(e.g. bank transfer).")
+    except Exception:  # an alert problem must never make Stripe retry the event
+        import logging
+        logging.getLogger("fahim.billing").exception("Could not send the refund-failed alert")
+    return {"received": True, "receipt_number": txn.receipt_number, "status": "refund_failed",
+            "access_restored": was_refunded}
 
 
 def handle_stripe_webhook(body: bytes, stripe_signature: str | None, *, db: Session):
@@ -412,6 +471,8 @@ def handle_stripe_webhook(body: bytes, stripe_signature: str | None, *, db: Sess
         return handled
     if event_type == "charge.refunded":
         return handle_charge_refunded(data_obj, db=db)
+    if event_type == "refund.failed":
+        return handle_refund_failed(data_obj, db=db)
 
     if event_type in ("checkout.session.completed", "payment_intent.succeeded"):
         metadata = data_obj.get("metadata", {})

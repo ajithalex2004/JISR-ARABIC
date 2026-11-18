@@ -130,6 +130,8 @@ class PaymentTransaction(Base):
     subscription_id = Column(String(36), nullable=True, index=True)
     provider_payment_intent_id = Column(String(128), nullable=True)  # Stripe pi_..., used to refund and match refunds
     provider_refund_id = Column(String(128), nullable=True)          # Stripe re_... once refunded
+    failed_refund_id = Column(String(128), nullable=True)            # last Stripe refund that failed (re_...)
+    refund_failure_reason = Column(String(255), nullable=True)       # why it failed, shown to admins
 
 
 class School(Base):

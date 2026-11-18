@@ -49,6 +49,7 @@ def serialize_payment(txn: PaymentTransaction, parent: User | None, child: Child
         "tax_invoice_number": txn.tax_invoice_number,
         "status": status,
         "refunded_at": txn.refunded_at.isoformat() if txn.refunded_at else None,
+        "refund_failure_reason": txn.refund_failure_reason,
     }
 
 

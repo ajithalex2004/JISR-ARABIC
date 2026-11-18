@@ -93,6 +93,7 @@ JISR Arabic uses provider-hosted checkout sessions (Stripe Checkout) to maintain
      - `customer.subscription.updated`
      - `customer.subscription.deleted`
      - `charge.refunded`
+     - `refund.failed`
 3. Click **Add endpoint** and reveal the **Signing secret** (`whsec_...`).
 4. Set in your environment:
    ```bash
@@ -105,6 +106,7 @@ JISR Arabic uses provider-hosted checkout sessions (Stripe Checkout) to maintain
 ### 3.3 Refunds
 - **From the app (admin):** `POST /api/payments/refund/{receipt_number}` refunds the full amount through Stripe first, then locks the terms the payment unlocked. If Stripe refuses, nothing changes in the app. Retrying is safe: Stripe receives one refund per receipt.
 - **From the Stripe Dashboard:** a full refund sends `charge.refunded`, and the app locks the matching terms automatically. Partial refunds are acknowledged but do not lock access.
+- **If a refund fails** (e.g. the card was closed), Stripe sends `refund.failed`: the payment is marked as paid again, the family's access is restored, the reason is shown on the admin payments page, and admins are emailed. Retrying the refund creates a new Stripe refund; otherwise return the money another way, such as a bank transfer.
 - Refunding a subscription payment does not cancel the subscription; turn off auto-renew as well if the family is leaving.
 
 ---

@@ -425,5 +425,60 @@ class CheckoutAndSubscriptionsTest(unittest.TestCase):
         unknown = self._webhook("charge.refunded", {"id": "ch_3", "payment_intent": "pi_unknown", "refunded": True}, "evt_u")
         self.assertEqual((unknown.status_code, unknown.json()["unmatched"]), (200, True))
 
+    def test_failed_refund_restores_access_and_a_retry_makes_a_new_refund(self):
+        receipt = self._paid_term()
+        calls = self._fake_stripe({("POST", "/refunds"): (200, {"id": "re_1", "status": "pending"})})
+        self.assertEqual(self._refund(receipt).status_code, 200)
+        self.assertEqual(self._unlocked("child_5"), 0)
+        failed = {"id": "re_1", "status": "failed", "failure_reason": "expired_or_canceled_card",
+                  "payment_intent": "pi_ref", "metadata": {"receipt_number": receipt}}
+        with patch("backend.alerts.notify") as notify:
+            res = self._webhook("refund.failed", failed, "evt_rf")
+            self.assertEqual(res.json(), {"received": True, "receipt_number": receipt, "status": "refund_failed",
+                                          "access_restored": True})
+            self.assertTrue(self._webhook("refund.failed", failed, "evt_rf2").json()["already_recorded"])
+        self.assertEqual(notify.call_count, 1)
+        self.assertIn(receipt, notify.call_args.args[1])
+        self.assertEqual(self._unlocked("child_5"), 1)
+        with self.session() as db:
+            txn = db.query(PaymentTransaction).filter_by(receipt_number=receipt).one()
+            self.assertEqual((txn.status, txn.refunded_at, txn.provider_refund_id, txn.failed_refund_id),
+                             ("succeeded", None, None, "re_1"))
+            self.assertIn("expired_or_canceled_card", txn.refund_failure_reason)
+        admin = self.client.get("/api/admin/payments", headers=self._headers(email="admin@test.local")).json()
+        row = next(p for p in admin["payments"] if p["receipt_number"] == receipt)
+        self.assertEqual(row["status"], "succeeded")
+        self.assertIn("expired_or_canceled_card", row["refund_failure_reason"])
+        # Retrying uses a new idempotency key, so Stripe makes a new refund rather than replaying re_1.
+        calls = self._fake_stripe({("POST", "/refunds"): (200, {"id": "re_2", "status": "succeeded"})})
+        self.assertEqual(self._refund(receipt).json()["refund_id"], "re_2")
+        self.assertEqual(calls[-1][3]["idempotency-key"], f"jisr-refund-{receipt}-after-re_1")
+        with self.session() as db:
+            txn = db.query(PaymentTransaction).filter_by(receipt_number=receipt).one()
+            self.assertEqual((txn.status, txn.provider_refund_id, txn.refund_failure_reason), ("refunded", "re_2", None))
+
+    def test_failed_dashboard_refund_arriving_first_never_locks_access(self):
+        receipt = self._paid_term()
+        with patch("backend.alerts.notify"):
+            res = self._webhook("refund.failed", {"id": "re_d", "status": "failed", "failure_reason": "lost_or_stolen_card",
+                                                  "payment_intent": "pi_ref", "charge": "ch_d"}, "evt_d1")
+        self.assertEqual((res.json()["receipt_number"], res.json()["access_restored"]), (receipt, False))
+        self._fake_stripe({("GET", "/charges/ch_d"): (200, {"id": "ch_d", "refunded": False})})
+        late = self._webhook("charge.refunded", {"id": "ch_d", "payment_intent": "pi_ref", "refunded": True}, "evt_d2")
+        self.assertTrue(late.json()["refund_no_longer_valid"])
+        self.assertEqual(self._unlocked("child_5"), 1)
+
+    def test_refund_failed_for_another_refund_or_unknown_payment_changes_nothing(self):
+        receipt = self._paid_term()
+        self._fake_stripe({("POST", "/refunds"): (200, {"id": "re_ok", "status": "succeeded"})})
+        self._refund(receipt)
+        with patch("backend.alerts.notify") as notify:
+            other = self._webhook("refund.failed", {"id": "re_old", "payment_intent": "pi_ref"}, "evt_x1")
+            unknown = self._webhook("refund.failed", {"id": "re_zz", "payment_intent": "pi_zz"}, "evt_x2")
+        self.assertTrue(other.json()["ignored"])
+        self.assertTrue(unknown.json()["unmatched"])
+        notify.assert_not_called()
+        self.assertEqual(self._unlocked("child_5"), 0)
+
 if __name__ == "__main__":
     unittest.main()

@@ -21,6 +21,10 @@ from typing import Optional, Dict, Any, List, Tuple
 from sqlalchemy.orm import Session
 from backend.observability import logger
 
+# Bump when the way papers are answered changes: answers cached under an older version (e.g. long
+# explanations, or answers made without reading the paper) are then never served again.
+CACHE_VERSION = "answers-only-v2"
+
 # L1 In-Memory Cache: {content_hash: {data, cached_at, hits}}
 _L1_MEMORY_CACHE: Dict[str, Dict[str, Any]] = {}
 _MAX_L1_ENTRIES = 500
@@ -46,7 +50,7 @@ def compute_content_hash(raw_data: Any) -> str:
     else:
         data_bytes = str(raw_data).encode("utf-8")
 
-    return hashlib.sha256(data_bytes).hexdigest()
+    return hashlib.sha256(CACHE_VERSION.encode("utf-8") + b":" + data_bytes).hexdigest()
 
 
 def compute_semantic_hash(text: Optional[str]) -> Optional[str]:
@@ -66,7 +70,7 @@ def compute_semantic_hash(text: Optional[str]) -> Optional[str]:
 
     # Take leading representative window (up to 1200 characters)
     window = cleaned[:1200]
-    return hashlib.sha256(window.encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"{CACHE_VERSION}:{window}".encode("utf-8")).hexdigest()
 
 
 def get_cached_paper(

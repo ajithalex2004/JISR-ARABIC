@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import {
   X, Sparkles, Send, UserCheck, MessageSquare, Volume2, Camera,
-  FileText, Upload, CheckCircle2, AlertCircle, BookOpen, ShieldCheck, Loader2
+  FileText, Upload, CheckCircle2, AlertCircle, ShieldCheck, Loader2
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ArabEnglishToggleSwitch } from '../common/ArabEnglishToggleSwitch';
 import { HomeworkHelper } from './HomeworkHelper';
+
+// Matches the server's limit for uploaded papers (base64 of about 5 MB).
+const MAX_PAPER_BYTES = 5 * 1024 * 1024;
 
 interface AskFahimModalProps {
   isOpen: boolean;
@@ -87,6 +90,13 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // The server accepts papers up to about 5 MB; larger files would be rejected after uploading.
+    if (file.size > MAX_PAPER_BYTES) {
+      setPaperError(`This file is ${(file.size / 1024 / 1024).toFixed(1)} MB. Please upload a paper under 5 MB (a photo of each page, or a smaller PDF).`);
+      e.target.value = '';
+      return;
+    }
+    setPaperError(null);
     setPaperFileName(file.name);
     setPaperMimeType(file.type || 'application/pdf');
     setPaperTitle(file.name.replace(/\.[^/.]+$/, ""));
@@ -439,7 +449,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
                       <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900">
                         <span className="flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Model Answer · الإجابة النموذجية</span>
+                          <span>Answer · الإجابة</span>
                         </span>
                         <button
                           onClick={() => audioManager.playArabic(q.model_answer_ar)}
@@ -450,7 +460,11 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
                         </button>
                       </div>
                       <div className="text-sm font-extrabold text-emerald-950 text-right font-arabic leading-relaxed" dir="rtl">
-                        {q.model_answer_ar}
+                        {q.model_answer_ar || (
+                          <span className="text-amber-800 font-semibold">
+                            لم تتضح هذه الإجابة من الورقة — راجعها مع المعلم · Not readable on the paper: check with a teacher
+                          </span>
+                        )}
                       </div>
                       {q.model_answer_en && (
                         <div className="text-[11px] text-emerald-800">
@@ -459,32 +473,8 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
                       )}
                     </div>
 
-                    {/* Explanation & Grammar Rule */}
-                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1">
-                      <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">
-                        Linguistic Rationale & Grammar Rule (الشرح والتعليل):
-                      </div>
-                      <div className="text-xs text-slate-800 text-right font-arabic leading-relaxed" dir="rtl">
-                        {q.explanation_ar}
-                      </div>
-                      {q.explanation_en && (
-                        <div className="text-[11px] text-slate-600 italic">
-                          {q.explanation_en}
-                        </div>
-                      )}
-                      {q.rule_summary_ar && (
-                        <div className="mt-1 text-[11px] font-semibold text-purple-900 bg-purple-50 p-1.5 rounded border border-purple-100 text-right" dir="rtl">
-                          💡 {q.rule_summary_ar}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Footer: Textbook Citation & Optional Escalation */}
-                    <div className="flex items-center justify-between pt-1 text-[11px]">
-                      <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
-                        <BookOpen className="w-3.5 h-3.5 text-purple-600" />
-                        <span>{q.textbook_reference}</span>
-                      </div>
+                    {/* Footer: optional teacher review (answers only: no explanations or textbook citations) */}
+                    <div className="flex items-center justify-end pt-1 text-[11px]">
                       <button
                         onClick={() => handleEscalateQuestion(q.question_number)}
                         className="text-[10px] text-amber-800 hover:text-amber-950 hover:underline flex items-center gap-1 font-semibold"

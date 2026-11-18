@@ -61,6 +61,7 @@ FAHIM_SECRET_KEY=<existing secret, 32+ characters>
 FAHIM_CORS_ORIGINS=https://app.jisrarabic.com
 
 GEMINI_API_KEY=<your key>
+FAHIM_PAPER_MODEL=<optional: stronger Gemini model for reading question papers>
 
 RESEND_API_KEY=<your Resend key>
 FAHIM_SMTP_FROM=JISR Arabic <noreply@jisrarabic.com>

@@ -383,17 +383,18 @@ CRITICAL DIRECTIVES:
 
 2. ANSWERING THE QUESTIONS:
    - Carefully read and analyze all sections, questions, and instructions in the uploaded document.
-   - If the student specifies a question number (e.g. Question 1, Question 2, Question 5, etc.) or a specific topic, locate that exact question in the uploaded document and solve it thoroughly with full linguistic explanation, grammatical parsing, and vocabulary analysis.
-   - If the student asks to solve all questions or summarize, provide the complete, ordered solution for the questions in the document.
-   - Never refuse or evade answering. Use your AI intelligence and language skills to solve every exercise with accuracy.
+   - If the student specifies a question number (e.g. Question 1, Question 2.b) or a specific topic, locate that exact question in the uploaded document and answer only that question.
+   - If the student asks to solve all questions, answer every question in the document, in order.
+   - Give ONLY the answer: no explanation, no reasoning, no grammatical analysis (إعراب) unless the question asks for it, no rules and no references. Keep each answer as short as the question allows.
+   - If a question cannot be read or needs information that is not in the document, say so briefly instead of guessing.
 
 3. MANDATORY BILINGUAL INTERLEAVING:
    - For every question and every answer, provide the vocalized Arabic line followed immediately by its English translation beneath it (prefixed with 🇬🇧).
    - Format:
      [Arabic Question with tashkeel]
        🇬🇧 [English translation of question]
-     - [Arabic Model Answer with tashkeel & grammatical explanation]
-       🇬🇧 [English translation and reasoning]
+     - [Arabic answer only, with tashkeel]
+       🇬🇧 [English translation of the answer only]
    - Do NOT use '**Answer.**' or '**Answer:**' or '**الإِجَابَةُ:**' labels. Present answers directly.
 
 You must respond ONLY with a valid JSON object with the following fields:
@@ -401,7 +402,7 @@ You must respond ONLY with a valid JSON object with the following fields:
   "teacher_name": "Ask Fahim (اسأل فاهم)",
   "question_en": "<Clear, concise English translation of the student's question>",
   "answer_ar": "<Bilingual interleaved response containing Arabic questions and answers with English translations directly beneath each>",
-  "answer_en": "<Comprehensive English summary/explanation of the solution>",
+  "answer_en": "<The English answers only, no explanation>",
   "page_reference": "<Document name or section reference>",
   "lesson_title": "<Uploaded document title>",
   "escalated_to_tutor": false,
@@ -436,58 +437,47 @@ You must respond ONLY with a valid JSON object with the following fields:
 }
 """
 
-QUESTION_PAPER_SYSTEM_PROMPT = """You are Ustadh Fahim (الأستاذ فاهم), Chief Examiner and Arabic Curriculum Expert for the UAE Ministry of Education (وزارة التربية والتعليم بدولة الإمارات العربية المتحدة) Grade 5 Arabic curriculum.
+QUESTION_PAPER_SYSTEM_PROMPT = """You are Ustadh Fahim (الأستاذ فاهم), an expert Arabic teacher for the UAE Arabic curriculum.
 
-Your mission is to examine the provided Question Paper (which may be an uploaded document/image/PDF or raw text), identify and segment each individual question, and provide the official Model Answer, step-by-step reasoning/explanation, grammatical analysis (I'rab/Nahw/Sarf), and exact CBSE Curriculum textbook page citation.
+You are given a question paper (an uploaded image or PDF, and/or typed text). Your task is to ANSWER every question on it, accurately and briefly.
 
-MINIMAL ESCALATION DIRECTIVE:
-- Your primary objective is to resolve ALL standard questions authoritatively and autonomously without escalating to a human teacher.
-- Do NOT escalate to a human teacher for normal curriculum questions, multiple-choice questions, grammar parsing, reading comprehension, or vocabulary matching.
-- Set "escalated": false for all questions you can answer using CBSE Curriculum standards.
-- ONLY set "escalated": true in extreme edge cases (e.g. if the image is completely blank, unreadable, illegible, or if the question explicitly refers to a private unattached school document).
+ACCURACY RULES:
+- The uploaded paper is the only source. Read it carefully, including any reading passage, word bank, options or instructions printed on it, and answer from it.
+- Copy each question exactly as it is printed (keep its numbering, e.g. 1, 2, 3 or 1.a). Do not invent, merge, reword or skip questions.
+- For multiple choice, give the correct option exactly as printed. For true/false, give صح or خطأ (and the corrected statement only if the question asks for it). For fill-in-the-blank, give the missing word(s). For questions about a passage, answer from the passage.
+- Write Arabic answers with correct spelling and the tashkeel needed to read them correctly.
+- Do not use any textbook lesson, story or example that is not on the paper.
+- If a question cannot be read (blurred, cut off) or needs information that is not on the paper, do not guess: give an empty answer, set "confidence" to "low", "escalated" to true and a short "escalation_reason".
 
-For each detected question, output:
-1. question_number: Integer (1, 2, 3...)
-2. question_text_ar: Exact question text in Arabic.
-3. question_text_en: English translation of the question.
-4. question_type: One of ["mcq", "grammar_parsing", "reading_comprehension", "vocabulary", "fill_in_blank", "creative_writing"].
-5. model_answer_ar: The official, definitive model answer in Arabic with accurate tashkeel (diacritics).
-6. model_answer_en: Clear English translation of the model answer.
-7. explanation_ar: Clear, step-by-step grammatical or factual explanation of why this answer is correct according to CBSE Curriculum rules.
-8. explanation_en: English explanation of the rule or concept.
-9. textbook_reference: Specific citation to the CBSE Curriculum textbook (e.g. "كتاب الطالب ص 8 - ألعاب الكرة").
-10. lesson_id: The relevant lesson ID (e.g. "lesson_01_ball_games", "lesson_02_horse_riding", etc.).
-11. rule_summary_ar: Concise linguistic or grammatical rule (e.g. "الفاعل: اسم مرفوع يدل على من قام بالفعل وعلامة رفعه الضمة الظاهرة").
-12. confidence: "high", "medium", or "low".
-13. escalated: false (unless strictly illegible).
-14. escalation_reason: null (or brief explanation if escalated).
+ANSWER ONLY:
+- Give ONLY the final answer to each question: no explanation, no reasoning, no grammatical analysis (إعراب) unless the question itself asks for إعراب, no rules, no tips and no textbook or page references.
+- Keep each answer as short as the question allows (an option, a word, a phrase or one or two sentences; longer only for writing tasks that ask for it).
+- "explanation_ar", "explanation_en", "textbook_reference" and "rule_summary_ar" must be empty strings.
 
-Respond ONLY with a valid JSON object matching this structure:
+Respond ONLY with a valid JSON object:
 {
-  "paper_title": "<Title of exam paper in Arabic/English>",
-  "grade": 5,
-  "term": 1,
-  "total_questions": 3,
+  "paper_title": "<title printed on the paper, or a short description>",
+  "grade": <the grade given to you>,
+  "term": <the term given to you>,
+  "total_questions": <number of questions answered>,
   "questions": [
     {
       "question_number": 1,
-      "question_text_ar": "...",
-      "question_text_en": "...",
-      "question_type": "...",
-      "model_answer_ar": "...",
-      "model_answer_en": "...",
-      "explanation_ar": "...",
-      "explanation_en": "...",
-      "textbook_reference": "...",
-      "lesson_id": "lesson_01_ball_games",
-      "rule_summary_ar": "...",
-      "confidence": "high",
+      "question_label": "<numbering exactly as printed, e.g. 1, 2.b, السؤال الأول>",
+      "question_text_ar": "<question exactly as printed>",
+      "question_text_en": "<short English translation of the question>",
+      "question_type": "mcq" | "true_false" | "fill_in_blank" | "short_answer" | "reading_comprehension" | "grammar" | "vocabulary" | "writing",
+      "model_answer_ar": "<the answer only>",
+      "model_answer_en": "<English translation of the answer only>",
+      "explanation_ar": "",
+      "explanation_en": "",
+      "textbook_reference": "",
+      "rule_summary_ar": "",
+      "confidence": "high" | "medium" | "low",
       "escalated": false,
       "escalation_reason": null
     }
-  ],
-  "model_used": "<model name>",
-  "escalation_summary": "<Summary statement indicating autonomous resolution>"
+  ]
 }
 """
 
@@ -994,8 +984,9 @@ CRITICAL DIRECTIVE - UPLOADED DOCUMENT / AI SKILLS:
 - The student has uploaded an external document or image: '{effective_doc_name}'.
 - DO NOT rely on or reference the Grade 5 textbook (Ball Games / ألعاب الكرة) or any standard curriculum textbook!
 - Use your full AI reasoning skills, linguistic expertise, and contextual intelligence to read, analyze, and directly solve the question asked from the uploaded document!
-- If the student specifies a question number or item (e.g. Question 1, Sub-question 1.5, Question 2, etc.), locate that exact question inside the uploaded document and solve it thoroughly.
-- If the student asks for a full solution or summary of the uploaded document, provide a comprehensive pedagogical solution of the document.
+- If the student specifies a question number or item (e.g. Question 1, Sub-question 1.5, Question 2, etc.), locate that exact question inside the uploaded document and answer only that question.
+- If the student asks to solve the whole document, answer every question in order.
+- Give ONLY the answers: no explanations, reasoning, grammatical analysis (unless asked for), rules or references.
 - Provide vocalized Arabic and high-quality English translations beneath every line.
 """
 
@@ -1024,13 +1015,18 @@ CRITICAL FORMATTING REQUIREMENT (BILINGUAL INTERLEAVING):
         """.strip()
         from backend.ai.errors import AILimitReached, AIUnavailable
         ask = dict(system=ATTACHMENT_SYSTEM_PROMPT if has_attachment else ASK_FAHIM_SYSTEM_PROMPT,
-                   temperature=0.3, json=True, learner_id=req.child_id)
+                   temperature=0.1 if has_attachment else 0.3, json=True, learner_id=req.child_id)
+        if has_attachment:
+            ask.update(tier="strong", gemini_model=_paper_model())
         try:
             response = _ai_generate("ask_fahim", client, prompt=user_prompt, attachments=attachments, **ask)
         except (AIUnavailable, AILimitReached):
             raise
         except Exception as api_err:
-            logger.warning(f"AI call with attachment failed ({api_err}), retrying with clean text prompt...")
+            if attachments:
+                # Without the document the AI would make up the questions and answers.
+                raise
+            logger.warning(f"AI call failed ({api_err}), retrying once...")
             response = _ai_generate("ask_fahim", client, prompt=user_prompt, **ask)
         if response and response.text:
             data = json.loads(response.text)
@@ -1120,89 +1116,124 @@ Student Grade: {req.grade}
         return None
 
 
-def _solve_question_paper_gemini(req: QuestionPaperSolveRequest, client) -> Optional[QuestionPaperSolveResponse]:
-    """Query Gemini 2.0 Flash to solve uploaded question paper with multimodal vision or text."""
-    try:
-        import base64
+PAPER_UNREADABLE_EN = ("Fahim could not read this question paper. Please try again, or upload a clearer photo "
+                       "or PDF (one page per photo works best).")
 
-        attachments = []
-        doc_text = ""
-        if req.document_base64:
-            if (req.mime_type or "").lower() == "application/pdf":
-                doc_text = _extract_text_from_pdf_base64(req.document_base64)
-            try:
-                raw_b64 = req.document_base64
-                if "," in raw_b64:
-                    raw_b64 = raw_b64.split(",", 1)[1]
-                doc_bytes = base64.b64decode(raw_b64)
-                if len(doc_bytes) < 4 * 1024 * 1024:
-                    mime = req.mime_type or "application/pdf"
-                    attachments.append((doc_bytes, mime))
-            except Exception as b64_err:
-                logger.warning(f"Failed to decode document_base64 for Gemini vision: {b64_err}")
 
-        doc_text_section = f"\n\nEXTRACTED DOCUMENT TEXT:\n{doc_text[:6000]}" if doc_text else ""
+# Papers are read by a stronger model than chat when one is configured (FAHIM_PAPER_MODEL, else the
+# drafting model): the default chat model is a "lite" model that misreads scanned Arabic papers.
+def _paper_model() -> str:
+    return (os.getenv("FAHIM_PAPER_MODEL") or os.getenv("FAHIM_DRAFT_MODEL") or GEMINI_MODEL).strip()
 
-        text_prompt = f"""
-Exam Paper Title: {req.paper_title or 'CBSE Curriculum Arabic Examination'}
-Target Grade: {req.grade} (Term {req.term})
-Content / Specific Questions:
-{req.text_content or 'Analyze the attached exam paper document and provide comprehensive solutions for all detected questions.'}{doc_text_section}
 
-Instructions:
-- Provide high quality, authoritative solutions matching the CBSE Curriculum.
-- Minimize escalation: resolve all normal questions with high confidence without escalating to a human tutor.
-""".strip()
-        from backend.ai.errors import AILimitReached, AIUnavailable
-        ask = dict(system=QUESTION_PAPER_SYSTEM_PROMPT, temperature=0.2, json=True, tier="strong",
-                   learner_id=req.child_id)
-        try:
-            response = _ai_generate("paper_solver", client, prompt=text_prompt, attachments=attachments, **ask)
-        except (AIUnavailable, AILimitReached):
-            raise
-        except Exception as api_err:
-            logger.warning(f"AI solve_question_paper call with attachment failed ({api_err}), retrying with text prompt...")
-            response = _ai_generate("paper_solver", client, prompt=text_prompt, **ask)
+class PaperUnreadable(RuntimeError):
+    """The uploaded paper could not be sent to or answered by the AI; never answer it from elsewhere."""
 
-        if response and response.text:
-            data = json.loads(response.text)
-            parsed_questions: List[SolvedQuestion] = []
-            for q in data.get("questions", []):
-                escalated = bool(q.get("escalated", False))
-                if req.force_escalation:
-                    escalated = True
 
-                parsed_questions.append(SolvedQuestion(
-                    question_number=int(q.get("question_number", len(parsed_questions) + 1)),
-                    question_text_ar=q.get("question_text_ar", ""),
-                    question_text_en=q.get("question_text_en"),
-                    question_type=q.get("question_type", "mcq"),
-                    model_answer_ar=q.get("model_answer_ar", ""),
-                    model_answer_en=q.get("model_answer_en", ""),
-                    explanation_ar=q.get("explanation_ar", ""),
-                    explanation_en=q.get("explanation_en", ""),
-                    textbook_reference=q.get("textbook_reference", f"كتاب اللغة العربية - الصف {req.grade}"),
-                    lesson_id=q.get("lesson_id"),
-                    rule_summary_ar=q.get("rule_summary_ar"),
-                    confidence=q.get("confidence", "high"),
-                    escalated=escalated,
-                    escalation_reason=q.get("escalation_reason") if escalated else None
-                ))
-
-            if parsed_questions:
-                return QuestionPaperSolveResponse(
-                    paper_title=data.get("paper_title", req.paper_title or "ورقة اختبار اللغة العربية - منهاج الإمارات"),
-                    grade=int(data.get("grade", req.grade)),
-                    term=int(data.get("term", req.term)),
-                    total_questions=len(parsed_questions),
-                    questions=parsed_questions,
-                    model_used="AI Assistant",
-                    escalation_summary=data.get("escalation_summary", f"تَمَّ حَلُّ جَمِيعِ الأَسْئِلَةِ ({len(parsed_questions)}) بِنَجَاحٍ بِنَاءً عَلَى المِنْهَاجِ الوِزَارِيِّ.")
-                )
-    except Exception as e:
-        logger.warning(f"Gemini solve_question_paper query failed, falling back: {e}")
-        _gemini_failed("Question paper solver", e)
+def _paper_attachment(req: QuestionPaperSolveRequest):
+    """(bytes, mime) of the uploaded paper, or None when only text was given."""
+    if not req.document_base64:
         return None
+    raw_b64 = req.document_base64.split(",", 1)[1] if "," in req.document_base64 else req.document_base64
+    try:
+        doc_bytes = base64.b64decode(raw_b64)
+    except Exception as err:
+        raise PaperUnreadable(f"the file could not be decoded ({err})") from err
+    if not doc_bytes:
+        raise PaperUnreadable("the file is empty")
+    mime = (req.mime_type or "").lower()
+    if mime not in ("application/pdf", "image/png", "image/jpeg", "image/jpg", "image/webp"):
+        mime = "application/pdf" if doc_bytes[:4] == b"%PDF" else "image/jpeg"
+    return doc_bytes, "image/jpeg" if mime == "image/jpg" else mime
+
+
+def _solve_question_paper_gemini(req: QuestionPaperSolveRequest, client) -> Optional[QuestionPaperSolveResponse]:
+    """Answer every question on the uploaded paper (answers only), reading the paper itself.
+
+    The paper is always sent to the AI: there is no text-only retry and no size cut-off below the
+    request limit, because without the paper the AI would make up the questions and answers.
+    Raises PaperUnreadable when the paper could not be answered.
+    """
+    attachment = _paper_attachment(req)
+    attachments = [attachment] if attachment else []
+    typed = (req.text_content or "").strip()
+    if not attachments and not typed:
+        raise PaperUnreadable("no paper was uploaded and no questions were typed")
+    doc_text = ""
+    if attachment and attachment[1] == "application/pdf":
+        doc_text = _extract_text_from_pdf_base64(req.document_base64)
+
+    # Text pulled out of an Arabic PDF is often scrambled, so it is only a hint next to the PDF itself.
+    doc_text_section = (
+        "\n\nTEXT EXTRACTED FROM THE PDF (may be scrambled; where it differs from the attached paper, "
+        f"trust the paper):\n{doc_text[:6000]}" if doc_text else ""
+    )
+    source_line = ("The question paper is attached. Answer every question on it." if attachments
+                   else "The questions are typed below. Answer every one.")
+    typed_section = f"\nTyped questions / instructions:\n{typed}" if typed else ""
+    text_prompt = (
+        f"Paper title: {req.paper_title or 'Arabic question paper'}\n"
+        f"Grade: {req.grade} · Term: {req.term} (UAE Arabic curriculum)\n"
+        f"{source_line}{typed_section}{doc_text_section}\n\n"
+        "Give only the answers, exactly as instructed. No explanations."
+    )
+    ask = dict(system=QUESTION_PAPER_SYSTEM_PROMPT, temperature=0.1, json=True, tier="strong",
+               gemini_model=_paper_model(), learner_id=req.child_id)
+    try:
+        response = _ai_generate("paper_solver", client, prompt=text_prompt, attachments=attachments, **ask)
+    except Exception as api_err:
+        # A learner limit or an AI outage is raised as such (AILimitReached / GeminiUnavailable).
+        _gemini_failed("Question paper solver", api_err)
+        logger.warning(f"AI could not read the question paper: {api_err}")
+        raise PaperUnreadable(str(api_err)) from api_err
+
+    try:
+        data = json.loads(response.text) if response and response.text else {}
+    except ValueError as err:
+        raise PaperUnreadable(f"the AI reply was not valid JSON ({err})") from err
+
+    parsed_questions: List[SolvedQuestion] = []
+    for q in data.get("questions") or []:
+        escalated = bool(q.get("escalated", False)) or req.force_escalation
+        try:
+            number = int(q.get("question_number"))
+        except (TypeError, ValueError):
+            number = len(parsed_questions) + 1
+        label = str(q.get("question_label") or "").strip()
+        question_ar = str(q.get("question_text_ar") or "").strip()
+        if label and label != str(number) and not question_ar.startswith(label):
+            question_ar = f"({label}) {question_ar}"
+        parsed_questions.append(SolvedQuestion(
+            question_number=number,
+            question_text_ar=question_ar,
+            question_text_en=q.get("question_text_en"),
+            question_type=q.get("question_type") or "short_answer",
+            model_answer_ar=str(q.get("model_answer_ar") or "").strip(),
+            model_answer_en=str(q.get("model_answer_en") or "").strip(),
+            # Answers only: explanations, rules and textbook references are never shown.
+            explanation_ar="",
+            explanation_en="",
+            textbook_reference="",
+            lesson_id=None,
+            rule_summary_ar=None,
+            confidence=q.get("confidence") or "high",
+            escalated=escalated,
+            escalation_reason=(q.get("escalation_reason") or "Teacher review requested.") if escalated else None,
+        ))
+    if not parsed_questions:
+        raise PaperUnreadable("no questions were found on the paper")
+
+    unanswered = sum(1 for q in parsed_questions if not q.model_answer_ar)
+    return QuestionPaperSolveResponse(
+        paper_title=data.get("paper_title") or req.paper_title or "ورقة أسئلة",
+        grade=req.grade,
+        term=req.term,
+        total_questions=len(parsed_questions),
+        questions=parsed_questions,
+        model_used="AI Assistant",
+        escalation_summary=(f"{unanswered} question(s) could not be read clearly and need a teacher's check."
+                            if unanswered else f"All {len(parsed_questions)} questions answered."),
+    )
 
 
 def _solve_arabic_grammar_query(clean_q: str, query_lower: str) -> Optional[Dict[str, Any]]:
@@ -2393,8 +2424,8 @@ def _ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None
                 return _enrich_fahim_response({
                     "teacher_name": "Ask Fahim (اسأل فاهم)",
                     "question_en": cached_q.get("question_text_en"),
-                    "answer_ar": f"📌 السُّؤَالُ {target_q_num}: {cached_q.get('question_text_ar')}\n  🇬🇧 {cached_q.get('question_text_en')}\n\n• {cached_q.get('model_answer_ar')}\n  🇬🇧 {cached_q.get('model_answer_en')}\n\n📖 الشَّرْحُ: {cached_q.get('explanation_ar', '')}\n  🇬🇧 {cached_q.get('explanation_en', '')}",
-                    "answer_en": f"Question {target_q_num}: {cached_q.get('question_text_en')}\n{cached_q.get('model_answer_en')}\nExplanation: {cached_q.get('explanation_en', '')}",
+                    "answer_ar": f"📌 السُّؤَالُ {target_q_num}: {cached_q.get('question_text_ar')}\n  🇬🇧 {cached_q.get('question_text_en')}\n\n• {cached_q.get('model_answer_ar')}\n  🇬🇧 {cached_q.get('model_answer_en')}",
+                    "answer_en": f"Question {target_q_num}: {cached_q.get('question_text_en')}\n{cached_q.get('model_answer_en')}",
                     "page_reference": cached_q.get("textbook_reference", "Worksheet / ورقة العمل"),
                     "lesson_title": "ورقة عمل محلولة (Cached Worksheet)",
                     "escalated_to_tutor": False,
@@ -3127,26 +3158,34 @@ def solve_question_paper(req: QuestionPaperSolveRequest, *, db: Session) -> Ques
                 escalation_summary=f"تَمَّ اسْتِرْجَاعُ حَلِّ الوَرَقَةِ فَوْرِيًّا مِنَ الذَّاكِرَةِ (عدد مرات الاستخدام: {cached_paper.get('hit_count', 1)})."
             )
 
-    # 1. Try Gemini 2.0 Flash
+    # 1. Read and answer the paper with the AI
+    from backend.errors import ApplicationError
+    from backend.ai.errors import AILimitReached
     client = _get_gemini_client()
     result = None
+    from_ai = False
     if _ai_ready(client):
         try:
             result = _solve_question_paper_gemini(req, client)
+            from_ai = result is not None
         except GeminiUnavailable:
             # The fallback only knows one Grade 5 paper; never serve (or cache) it for this one.
-            from backend.errors import ApplicationError
             raise ApplicationError(503, FAHIM_RESTING_EN)
         except AILimitReached as limit:
-            from backend.errors import ApplicationError
             raise ApplicationError(429, _limit_text(limit)[1])
+        except PaperUnreadable as err:
+            logger.warning(f"Question paper not answered: {err}")
+            raise ApplicationError(502, PAPER_UNREADABLE_EN)
 
-    # 2. Deterministic Fallback if client is unavailable or failed
+    # 2. The fixed answers below belong to one Grade 5 paper: only for typed practice text, never for an
+    # uploaded paper, which would get another paper's answers.
     if not result:
+        if req.document_base64:
+            raise ApplicationError(503, FAHIM_RESTING_EN)
         result = _solve_question_paper_fallback(req)
 
-    # Persist to L1 & L2 cache for all subsequent students/uploads
-    if result and result.questions:
+    # Persist to L1 & L2 cache for all subsequent students/uploads (AI answers only, never a fallback)
+    if from_ai and result and result.questions:
         try:
             q_dicts = [q.dict() if hasattr(q, "dict") else q.model_dump() for q in result.questions]
             save_cached_paper(

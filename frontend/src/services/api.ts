@@ -174,6 +174,24 @@ export const api = {
     if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not mark payment as refunded'));
     return res.json();
   },
+  async adminListStoredAnswers() {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/stored-answers`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load stored answers'));
+    return res.json();
+  },
+  async adminGetStoredAnswers(paperId: number) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/stored-answers/${paperId}`);
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not load these answers'));
+    return res.json();
+  },
+  async adminClearStoredAnswers(paperId?: number) {
+    const url = paperId === undefined
+      ? `${API_BASE}/api/admin/stored-answers?confirm=all`
+      : `${API_BASE}/api/admin/stored-answers/${paperId}`;
+    const res = await authenticatedFetch(url, { method: 'DELETE' });
+    if (!res.ok) throw new Error(await parseErrorDetail(res, 'Could not clear stored answers'));
+    return res.json() as Promise<{ deleted: number }>;
+  },
   async adminExport(kind: 'students' | 'parents' | 'payments', filters: Record<string, string | number | undefined> = {}) {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== '' && v !== null) params.set(k, String(v)); });

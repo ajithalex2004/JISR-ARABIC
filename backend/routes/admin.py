@@ -442,6 +442,51 @@ def update_promo_code(promo_id: str, payload: dict, actor: Principal = Depends(g
     return admin_promos.update_promo(promo_id, payload, actor=actor, db=db)
 
 
+@router.get('/stored-answers')
+def list_stored_answers(actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Question papers whose answers are stored and reused for identical uploads (no AI cost)."""
+    require_roles(actor, ('admin',))
+    from backend.modules.tutoring import caching
+    return caching.list_cached_papers(db)
+
+
+@router.get('/stored-answers/{paper_id}')
+def get_stored_answers(paper_id: int, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    """One stored paper's questions and answers, to check them before clearing."""
+    require_roles(actor, ('admin',))
+    from backend.modules.tutoring import caching
+    detail = caching.get_cached_paper_detail(db, paper_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="Stored answers not found (they may already have been cleared)")
+    return detail
+
+
+@router.delete('/stored-answers/{paper_id}')
+def clear_stored_answers(paper_id: int, actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Clear one paper's stored answers: its next upload is read again by the AI."""
+    require_roles(actor, ('admin',))
+    from backend.modules.tutoring import caching
+    from backend.observability import audit_event
+    deleted = caching.clear_cached_papers(db, paper_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Stored answers not found (they may already have been cleared)")
+    audit_event("admin.stored_answers_cleared", user_id=actor.id, paper_id=paper_id, deleted=deleted)
+    return {"deleted": deleted}
+
+
+@router.delete('/stored-answers')
+def clear_all_stored_answers(confirm: str = "", actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Clear every stored paper answer; requires ?confirm=all so it can't happen by accident."""
+    require_roles(actor, ('admin',))
+    if confirm != "all":
+        raise HTTPException(status_code=400, detail="Add ?confirm=all to clear every stored answer")
+    from backend.modules.tutoring import caching
+    from backend.observability import audit_event
+    deleted = caching.clear_cached_papers(db)
+    audit_event("admin.stored_answers_cleared", user_id=actor.id, paper_id="all", deleted=deleted)
+    return {"deleted": deleted}
+
+
 @router.get('/subscriptions')
 def list_subscriptions(actor: Principal = Depends(get_current_user), db: Session = Depends(get_db)):
     """Every auto-renewing subscription with its family, plan, status and next renewal."""

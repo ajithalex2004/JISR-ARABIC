@@ -1,6 +1,7 @@
 # JISR Arabic outreach playbook
 
 The `jisr-outreach` agent (`.claude/agents/jisr-outreach.md`) reads this file before every task.
+It prospects through the ProspectHalo connector (connect it in claude.ai connector settings).
 Edit it to change who we contact, what we offer and how we sound. Facts the agent may state about
 JISR Arabic come **only** from this file; anything marked **TO CONFIRM** is never sent until you fill it in.
 

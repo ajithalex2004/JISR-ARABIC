@@ -12,6 +12,28 @@ import { HomeworkHelper } from './HomeworkHelper';
 // Matches the server's limit for uploaded papers (base64 of about 5 MB).
 const MAX_PAPER_BYTES = 5 * 1024 * 1024;
 
+type ModeTab = 'chat' | 'homework' | 'paper';
+
+// Each mode keeps its own colour so the three buttons are easy to tell apart: a tinted background
+// and border when not selected, and the solid colour (white text) when selected.
+const MODE_TABS: Array<{ id: ModeTab; label: string; Icon: typeof MessageSquare; idle: string; active: string }> = [
+  {
+    id: 'chat', label: 'Chat Tutor (حوار مع فاهم)', Icon: MessageSquare,
+    idle: 'bg-purple-50 text-purple-900 border-purple-300 hover:bg-purple-100 focus-visible:ring-purple-400',
+    active: 'bg-purple-600 text-white border-purple-700 shadow-sm ring-2 ring-purple-200 focus-visible:ring-purple-400',
+  },
+  {
+    id: 'homework', label: 'Homework Helper (مساعد الواجب)', Icon: Camera,
+    idle: 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 focus-visible:ring-amber-400',
+    active: 'bg-amber-700 text-white border-amber-800 shadow-sm ring-2 ring-amber-200 focus-visible:ring-amber-400',
+  },
+  {
+    id: 'paper', label: 'Exam Paper Assistant (مساعد أوراق الامتحانات)', Icon: FileText,
+    idle: 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100 focus-visible:ring-emerald-400',
+    active: 'bg-emerald-700 text-white border-emerald-800 shadow-sm ring-2 ring-emerald-200 focus-visible:ring-emerald-400',
+  },
+];
+
 interface AskFahimModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -28,7 +50,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
   childId,
   grade = 5
 }) => {
-  const [activeTab, setActiveTab] = useState<'chat' | 'homework' | 'paper'>('chat');
+  const [activeTab, setActiveTab] = useState<ModeTab>('chat');
   const [question, setQuestion] = useState<string>('');
   const [messages, setMessages] = useState<Array<{ sender: 'user' | 'fahim'; text_ar: string; text_en?: string; escalated?: boolean }>>([
     {
@@ -182,40 +204,25 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
         </div>
 
         {/* Mode Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 pt-3 pb-1 border-b border-slate-100">
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              activeTab === 'chat'
-                ? 'bg-purple-100 text-purple-900 border border-purple-300'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Chat Tutor (حوار مع فاهم)</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('homework')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              activeTab === 'homework'
-                ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <Camera className="w-3.5 h-3.5" />
-            <span>Homework Helper (مساعد الواجب)</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('paper')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              activeTab === 'paper'
-                ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Exam Paper Assistant (مساعد أوراق الامتحانات)</span>
-          </button>
+        <div className="flex flex-wrap gap-2 pt-3 pb-2 border-b border-slate-100" role="tablist" aria-label="Ask Fahim modes">
+          {MODE_TABS.map(({ id, label, Icon, idle, active }) => {
+            const selected = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setActiveTab(id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                  selected ? active : idle
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {activeTab === 'homework' && <HomeworkHelper childId={childId} grade={grade} />}

@@ -136,5 +136,49 @@ class TestQuestionPaperAnswers(unittest.TestCase):
         self.assertIn("Give ONLY the answers", gateway.calls[0]["prompt"])
 
 
+class TestWrongModelName(unittest.TestCase):
+    """A model name Gemini doesn't know (e.g. FAHIM_PAPER_MODEL) must not look like an outage."""
+
+    def setUp(self):
+        from backend.redis_client import _fallback_cache
+        _fallback_cache.clear()
+        self.addCleanup(_fallback_cache.clear)
+
+    def _client(self):
+        calls = []
+
+        def generate_content(**kw):
+            calls.append(kw["model"])
+            if kw["model"] == "gemini-unknown":
+                raise RuntimeError("404 NOT_FOUND. models/gemini-unknown is not found for API version v1beta, "
+                                   "or is not supported for generateContent.")
+            return SimpleNamespace(text=json.dumps(REPLY), usage_metadata=None)
+        return SimpleNamespace(models=SimpleNamespace(generate_content=generate_content)), calls
+
+    def test_rejected_paper_model_falls_back_to_the_default_and_never_switches_gemini_off(self):
+        from backend.ai import gateway
+        client, calls = self._client()
+        with patch.dict(os.environ, {"FAHIM_PAPER_MODEL": "gemini-unknown"}), \
+                patch.object(assistant, "_get_gemini_client", return_value=client), \
+                patch("backend.alerts.record_failure") as alerted, \
+                patch("backend.modules.tutoring.caching.save_cached_paper"):
+            for _ in range(gateway.FAILURES_TO_SWITCH + 1):
+                result = assistant.solve_question_paper(
+                    QuestionPaperSolveRequest(document_base64=_b64(PDF_BYTES)), db=MagicMock(spec=Session))
+                caching._L1_MEMORY_CACHE.clear()
+        self.assertEqual(result.questions[0].model_answer_ar, "الطَّالِبُ")
+        self.assertEqual(calls[:2], ["gemini-unknown", assistant.GEMINI_MODEL])
+        self.assertIsNone(gateway.switched_until("gemini"))
+        self.assertIn("gemini-unknown", alerted.call_args.args[1])  # admins still hear about the bad setting
+
+    def test_a_wrong_default_model_is_still_an_outage(self):
+        from backend.ai import gateway
+        err = RuntimeError("404 NOT_FOUND. models/x is not found")
+        self.assertTrue(gateway.is_model_not_found(err))
+        self.assertTrue(gateway.is_outage(err))
+        self.assertFalse(gateway._is_custom_gemini_model(gateway.AIRequest(feature="f", prompt="p")))
+        self.assertFalse(gateway._is_custom_gemini_model(
+            gateway.AIRequest(feature="f", prompt="p", gemini_model=assistant.GEMINI_MODEL)))
+
 if __name__ == "__main__":
     unittest.main()

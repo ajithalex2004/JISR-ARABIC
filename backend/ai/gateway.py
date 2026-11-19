@@ -104,6 +104,14 @@ def _status_code(exc: BaseException) -> Optional[int]:
     return int(match.group(1)) if match else None
 
 
+def is_model_not_found(exc: BaseException) -> bool:
+    """The provider does not know the requested model (a wrong model name in a setting)."""
+    text = str(exc).lower()
+    if _status_code(exc) == 404:
+        return True
+    return "model" in text and any(k in text for k in ("not found", "is not supported", "unknown model", "does not exist"))
+
+
 def is_outage(exc: BaseException) -> bool:
     """True when the provider itself is failing (switch provider), False for a bad request."""
     if isinstance(exc, AIUnavailable) or is_quota_error(exc):
@@ -181,6 +189,11 @@ def _check_limits(request: AIRequest) -> None:
         raise AILimitReached("daily", f"This learner has used today's {limit} AI requests.")
 
 
+def _is_custom_gemini_model(request: AIRequest) -> bool:
+    from backend.modules.tutoring.assistant import GEMINI_MODEL
+    return bool(request.gemini_model) and request.gemini_model != GEMINI_MODEL
+
+
 def generate(request: AIRequest, *, gemini_client=_UNSET) -> AIResponse:
     """Answer with the first provider that can; see the module docstring for the rules.
 
@@ -215,6 +228,16 @@ def generate(request: AIRequest, *, gemini_client=_UNSET) -> AIResponse:
             usage.record(feature=request.feature, provider=provider.name, model=model, ok=False,
                          fallback=provider.name != primary, latency_ms=latency,
                          learner_id=request.learner_id, error=str(exc))
+            if provider.name == "gemini" and _is_custom_gemini_model(request) and is_model_not_found(exc):
+                # A wrong model name in a setting: the caller retries with the default model. Not an
+                # outage, so it never switches Gemini off for every feature; admins are still alerted.
+                from backend import alerts
+                from backend.ai.errors import ModelNotFound
+                alerts.record_failure("gemini", f"{request.feature}: model '{model}' was rejected, "
+                                                f"using the default model instead: {exc}")
+                logger.warning("AI %s: model %s rejected (%s); falling back to the default model",
+                               request.feature, model, exc)
+                raise ModelNotFound(model, str(exc)) from exc
             if not is_outage(exc):
                 raise
             from backend import alerts

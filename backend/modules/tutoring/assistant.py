@@ -512,9 +512,18 @@ def _ai_ready(client) -> bool:
 
 
 def _ai_generate(feature: str, client, **fields):
-    """Call the AI gateway (Gemini first via this client, then any configured fallback)."""
+    """Call the AI gateway (Gemini first via this client, then any configured fallback).
+
+    A model named in a setting (FAHIM_PAPER_MODEL, FAHIM_DRAFT_MODEL) that Gemini rejects falls back to
+    the default model, so a wrong model name never stops Fahim answering.
+    """
     from backend.ai import gateway
-    return gateway.generate(gateway.AIRequest(feature=feature, **fields), gemini_client=client)
+    from backend.ai.errors import ModelNotFound
+    try:
+        return gateway.generate(gateway.AIRequest(feature=feature, **fields), gemini_client=client)
+    except ModelNotFound:
+        fields = dict(fields, gemini_model=None)
+        return gateway.generate(gateway.AIRequest(feature=feature, **fields), gemini_client=client)
 
 
 # Shown to learners instead of canned answers while Gemini is down: the keyword fallbacks only

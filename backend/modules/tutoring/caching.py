@@ -25,9 +25,47 @@ from backend.observability import logger
 # explanations, or answers made without reading the paper) are then never served again.
 CACHE_VERSION = "answers-only-v2"
 
-# L1 In-Memory Cache: {content_hash: {data, cached_at, hits}}
+# L1 In-Memory Cache: {content_hash: {data, cached_at, hits, gen}}
 _L1_MEMORY_CACHE: Dict[str, Dict[str, Any]] = {}
 _MAX_L1_ENTRIES = 500
+
+# Each API worker process keeps its own L1 copy. Clearing stored answers bumps this shared
+# generation (Redis), so every worker drops L1 copies made before the clear.
+_GENERATION_KEY = "papers:cache_generation"
+_GENERATION_TTL_SECONDS = 10 * 365 * 24 * 3600
+
+
+def _generation() -> str:
+    try:
+        from backend.redis_client import cache_get
+        return str(cache_get(_GENERATION_KEY) or "0")
+    except Exception:
+        return "0"
+
+
+def _bump_generation() -> None:
+    import uuid
+    try:
+        from backend.redis_client import cache_set
+        cache_set(_GENERATION_KEY, uuid.uuid4().hex, ttl_seconds=_GENERATION_TTL_SECONDS)
+    except Exception as err:
+        logger.warning(f"Could not bump the paper cache generation: {err}")
+
+
+def _l1_get(content_hash: str) -> Optional[Dict[str, Any]]:
+    entry = _L1_MEMORY_CACHE.get(content_hash)
+    if entry is None:
+        return None
+    if entry.get("gen") != _generation():  # cleared by an admin (possibly in another worker)
+        _L1_MEMORY_CACHE.pop(content_hash, None)
+        return None
+    return entry
+
+
+def _l1_put(content_hash: str, entry: Dict[str, Any]) -> None:
+    if content_hash not in _L1_MEMORY_CACHE and len(_L1_MEMORY_CACHE) >= _MAX_L1_ENTRIES:
+        _L1_MEMORY_CACHE.pop(next(iter(_L1_MEMORY_CACHE)), None)
+    _L1_MEMORY_CACHE[content_hash] = dict(entry, gen=_generation())
 
 
 def _strip_arabic_tashkeel(text: str) -> str:
@@ -86,8 +124,8 @@ def get_cached_paper(
         return None
 
     # 1. Check L1 Memory Cache
-    if content_hash and content_hash in _L1_MEMORY_CACHE:
-        entry = _L1_MEMORY_CACHE[content_hash]
+    entry = _l1_get(content_hash) if content_hash else None
+    if entry is not None:
         entry["hit_count"] = entry.get("hit_count", 0) + 1
         entry["last_accessed_at"] = datetime.datetime.utcnow().isoformat()
         logger.info(f"[L1 Cache Hit] Found document {content_hash[:12]} in memory (Hits: {entry['hit_count']})")
@@ -124,16 +162,11 @@ def get_cached_paper(
                 }
 
                 # Promote to L1 Memory Cache
-                if len(_L1_MEMORY_CACHE) >= _MAX_L1_ENTRIES:
-                    # Pop oldest entry
-                    oldest_key = next(iter(_L1_MEMORY_CACHE))
-                    _L1_MEMORY_CACHE.pop(oldest_key, None)
-
-                _L1_MEMORY_CACHE[record.content_hash] = {
+                _l1_put(record.content_hash, {
                     "data": parsed_data,
                     "cached_at": (record.created_at or datetime.datetime.utcnow()).isoformat(),
                     "hit_count": record.hit_count,
-                }
+                })
 
                 logger.info(f"[L2 Cache Hit] Loaded document {record.content_hash[:12]} from DB (Hits: {record.hit_count})")
                 return parsed_data
@@ -167,15 +200,11 @@ def save_cached_paper(
     }
 
     # 1. Save to L1 Memory Cache
-    if len(_L1_MEMORY_CACHE) >= _MAX_L1_ENTRIES:
-        oldest_key = next(iter(_L1_MEMORY_CACHE))
-        _L1_MEMORY_CACHE.pop(oldest_key, None)
-
-    _L1_MEMORY_CACHE[content_hash] = {
+    _l1_put(content_hash, {
         "data": data,
         "cached_at": datetime.datetime.utcnow().isoformat(),
         "hit_count": 1,
-    }
+    })
 
     # 2. Save to L2 Database Cache
     if db:
@@ -226,3 +255,72 @@ def get_cached_question_answer(
             return q
 
     return None
+
+
+# --- Admin: review and clear stored answers -----------------------------------------------------
+
+def _iso(value) -> Optional[str]:
+    return value.isoformat() if value else None
+
+
+def list_cached_papers(db: Session, limit: int = 200) -> Dict[str, Any]:
+    """Stored paper answers, most recently used first (without the answers themselves)."""
+    from backend.models import DocumentSolutionCache
+    query = db.query(DocumentSolutionCache)
+    total = query.count()
+    rows = query.order_by(DocumentSolutionCache.last_accessed_at.desc()).limit(limit).all()
+    return {
+        "total": total,
+        "papers": [{
+            "id": r.id,
+            "paper_title": r.paper_title or r.file_name or "Untitled paper",
+            "file_name": r.file_name,
+            "file_type": r.file_type,
+            "total_questions": r.total_questions or 0,
+            "reuses": max(0, (r.hit_count or 1) - 1),  # the first save counts as 1
+            "created_at": _iso(r.created_at),
+            "last_accessed_at": _iso(r.last_accessed_at),
+        } for r in rows],
+    }
+
+
+def get_cached_paper_detail(db: Session, paper_id: int) -> Optional[Dict[str, Any]]:
+    """One stored paper with its questions and answers, for an admin to check."""
+    from backend.models import DocumentSolutionCache
+    record = db.get(DocumentSolutionCache, paper_id)
+    if record is None:
+        return None
+    try:
+        questions = json.loads(record.questions_json or "[]")
+    except ValueError:
+        questions = []
+    return {
+        "id": record.id,
+        "paper_title": record.paper_title or record.file_name or "Untitled paper",
+        "questions": [{
+            "question_number": q.get("question_number"),
+            "question_text_ar": q.get("question_text_ar"),
+            "question_text_en": q.get("question_text_en"),
+            "model_answer_ar": q.get("model_answer_ar"),
+            "model_answer_en": q.get("model_answer_en"),
+        } for q in questions if isinstance(q, dict)],
+    }
+
+
+def clear_cached_papers(db: Session, paper_id: Optional[int] = None) -> int:
+    """Delete one stored paper (paper_id) or all of them; returns how many were deleted.
+
+    The next upload of a cleared paper is read again by the AI. In-memory copies in every API
+    worker are dropped too (shared generation), not only in this one.
+    """
+    from backend.models import DocumentSolutionCache
+    query = db.query(DocumentSolutionCache)
+    if paper_id is not None:
+        query = query.filter(DocumentSolutionCache.id == paper_id)
+    deleted = query.delete(synchronize_session=False)
+    db.commit()
+    _L1_MEMORY_CACHE.clear()
+    _bump_generation()
+    logger.info(f"[Cache Cleared] Removed {deleted} stored paper answer(s)"
+                + (f" (paper {paper_id})" if paper_id is not None else " (all)"))
+    return deleted

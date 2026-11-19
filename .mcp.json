@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "prospecthalo": {
+      "type": "http",
+      "url": "https://app.prospecthalo.ai/api/agent/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer ${PROSPECTHALO_API_KEY:-proxy-injected}"
+      }
+    }
+  }
+}

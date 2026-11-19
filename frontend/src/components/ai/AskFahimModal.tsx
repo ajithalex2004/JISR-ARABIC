@@ -287,7 +287,8 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Ask about your lesson, words, or grammar (اسأل عن الدرس أو المفردات أو القواعد)..."
-                className="sharp-input flex-1 text-xs rounded-xl"
+                aria-label="Your question for Fahim"
+                className="flex-1 min-w-0 text-xs px-4 py-2.5 rounded-[0.875rem] border-2 border-purple-500 bg-purple-50 text-slate-900 placeholder:text-slate-600 outline-none transition-colors hover:border-purple-600 focus:border-purple-700 focus:bg-white focus:ring-2 focus:ring-purple-200"
               />
               <button
                 type="submit"

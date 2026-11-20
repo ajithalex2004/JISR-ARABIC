@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   BookOpen, Clock, FileText, CheckCircle2,
-  Volume2, ArrowRight, Sparkles, Layers, Bookmark, GraduationCap
+  Volume2, ArrowRight, Sparkles, Layers, Bookmark, GraduationCap, AlertTriangle
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { audioManager } from '../../services/audio';
@@ -118,6 +118,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
 
   const studyMode = bookletData?.study_mode;
   const quickReview = bookletData?.quick_review_mode;
+  const quickNotes = normalizeQuickReview(quickReview);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -362,7 +363,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
       {activeMode === 'quick_review' && quickReview && (
         <div className="space-y-6">
           {/* Bulleted Rules Card */}
-          <div className="bg-white border-2 border-slate-900 p-5 shadow-sm">
+          {quickNotes.rules.length > 0 && <div className="bg-white border-2 border-slate-900 p-5 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
               <Bookmark className="w-4 h-4 text-emerald-800" />
               <div>
@@ -375,7 +376,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
               </div>
             </div>
             <div className="divide-y divide-slate-200">
-              {quickReview.bullet_rules.map((item: any, idx: number) => (
+              {quickNotes.rules.map((item, idx) => (
                 <div key={idx} className="py-3">
                   <div className="font-arabic text-sm text-slate-900 font-semibold text-right" dir="rtl">
                     • {item.rule_ar}
@@ -388,10 +389,10 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
                 </div>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* Vocabulary Flashcards Grid */}
-          <div className="bg-white border-2 border-slate-900 p-5 shadow-sm">
+          {quickNotes.flashcards.length > 0 && <div className="bg-white border-2 border-slate-900 p-5 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
               <Layers className="w-4 h-4 text-emerald-800" />
               <div>
@@ -404,7 +405,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {quickReview.vocabulary_flashcards.map((card: any, idx: number) => (
+              {quickNotes.flashcards.map((card: any, idx: number) => (
                 <div key={idx} className="p-3.5 bg-slate-50 border border-slate-300 flex flex-col justify-between">
                   <div className="flex justify-between items-center mb-1.5">
                     <div>
@@ -439,10 +440,10 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
                 </div>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* Grammar Formulas */}
-          <div className="bg-white border-2 border-slate-900 p-5 shadow-sm">
+          {quickNotes.formulas.length > 0 && <div className="bg-white border-2 border-slate-900 p-5 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4 text-emerald-800" />
               <div>
@@ -455,7 +456,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {quickReview.grammar_formulas.map((form: any, idx: number) => (
+              {quickNotes.formulas.map((form: any, idx: number) => (
                 <div key={idx} className="p-3.5 bg-amber-50/60 border border-amber-300">
                   <span className="text-xs font-bold text-amber-950 block mb-0.5 font-arabic">{form.title_ar}</span>
                   {form.title_en && <span className="text-[11px] text-slate-600 block mb-1 font-sans">{form.title_en}</span>}
@@ -474,10 +475,65 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
                 </div>
               ))}
             </div>
-          </div>
+          </div>}
 
+          {/* Exam Pitfalls */}
+          {quickNotes.warnings.length > 0 && <div className="bg-white border-2 border-slate-900 p-5 shadow-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-700" />
+              <div>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider font-arabic">
+                  تنبيهات وأخطاء شائعة في الامتحان
+                </h3>
+                <span className="text-[11px] text-slate-500 font-sans block">
+                  Common Exam Pitfalls
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {quickNotes.warnings.map((w, idx) => (
+                <div key={idx} className="p-3 bg-red-50 border border-red-200">
+                  <div className="font-arabic text-sm text-slate-900 font-semibold text-right" dir="rtl">⚠ {w.warning_ar}</div>
+                  {w.warning_en && (
+                    <div className="text-xs text-slate-600 font-sans italic mt-1 text-left" dir="ltr">{w.warning_en}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>}
+
+          {!quickNotes.rules.length && !quickNotes.flashcards.length && !quickNotes.formulas.length && !quickNotes.warnings.length && (
+            <p className="text-sm text-slate-600 text-center">لا تتوفر ملاحظات سريعة لهذا الدرس بعد. · Quick notes aren't available for this lesson yet.</p>
+          )}
         </div>
       )}
     </div>
   );
 };
+
+type QuickRule = { rule_ar: string; rule_en?: string };
+type QuickWarning = { warning_ar: string; warning_en?: string };
+
+/**
+ * Booklets store quick notes in two formats: the Grade 5 booklet uses bullet_rules,
+ * vocabulary_flashcards and grammar_formulas; Grades 6-7 and the generated booklets for other
+ * grades use high_yield_summary and essential_formulas. Read either, and treat a missing list as
+ * empty, so the 15-minute notes never crash on a field another format doesn't have.
+ */
+export function normalizeQuickReview(q: any): {
+  rules: QuickRule[]; flashcards: any[]; formulas: any[]; warnings: QuickWarning[];
+} {
+  const list = (v: any): any[] => (Array.isArray(v) ? v : []);
+  const rules: QuickRule[] = list(q?.bullet_rules).length
+    ? list(q?.bullet_rules).filter((r) => r?.rule_ar)
+    : list(q?.high_yield_summary)
+        .filter((b) => b?.bullet_ar || b?.rule_ar)
+        .map((b) => ({ rule_ar: b.bullet_ar ?? b.rule_ar, rule_en: b.bullet_en ?? b.rule_en }));
+  return {
+    rules,
+    flashcards: list(q?.vocabulary_flashcards).filter((c) => c?.word_ar),
+    formulas: (list(q?.grammar_formulas).length ? list(q?.grammar_formulas) : list(q?.essential_formulas))
+      .filter((f) => f?.formula_ar || f?.title_ar),
+    warnings: list(q?.exam_pitfall_warnings).filter((w) => w?.warning_ar),
+  };
+}

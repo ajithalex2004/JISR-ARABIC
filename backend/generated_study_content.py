@@ -498,3 +498,48 @@ def generate_mindmap_chapters(grade: int, term: int = 1) -> List[Dict[str, Any]]
             ],
         })
     return chapters
+
+
+# ---------------------------------------------------------------------------
+# Grammar rules tree (Mindmaps & Flowcharts page)
+# ---------------------------------------------------------------------------
+
+def grade_grammar_rules(grade: int) -> List[Dict[str, Any]]:
+    """The grammar rules a grade studies, in the shape of the Mindmaps page's rules tree.
+
+    Rules come from the grade's hand-written Unit 1 booklet formulas (Grades 6 and 7) and the
+    grade's grammar focus in the official syllabus. Grades without a syllabus entry get no rules
+    rather than another grade's (the Grade 5 tree is hand-written on the page itself).
+    """
+    from backend.malazim_bank import MALAZIM_DATA
+
+    rules: List[Dict[str, Any]] = []
+    authored = MALAZIM_DATA.get(f"lesson_g{grade}_t1_ch01") if grade != 5 else None
+    formulas = ((authored or {}).get("quick_review_mode") or {}).get("essential_formulas") or []
+    for idx, form in enumerate(formulas, start=1):
+        if not (form.get("title_ar") and form.get("formula_ar")):
+            continue
+        example = [{"sentenceAr": form["example_ar"], "sentenceEn": form.get("example_en", ""),
+                    "analysisAr": "", "analysisEn": ""}] if form.get("example_ar") else []
+        rules.append({
+            "key": f"g{grade}_unit1_{idx}",
+            "titleAr": form["title_ar"], "titleEn": form.get("title_en", ""),
+            "badgeAr": "الوحدة 1", "badgeEn": "Unit 1",
+            "ruleAr": "", "ruleEn": "",
+            "formulaAr": form["formula_ar"], "formulaEn": form.get("formula_en", ""),
+            "examples": example,
+        })
+
+    focus = GRADE_GRAMMAR_MAP.get(grade)
+    if focus:
+        rules.append({
+            "key": f"g{grade}_focus",
+            "titleAr": focus["rule_ar"], "titleEn": focus["rule_en"],
+            "badgeAr": f"الصف {grade}", "badgeEn": f"Grade {grade}",
+            "ruleAr": "", "ruleEn": focus.get("explanation", ""),
+            "formulaAr": focus["rule_ar"], "formulaEn": focus["rule_en"],
+            "examples": [{"sentenceAr": ex["phrase_ar"], "sentenceEn": ex.get("translation_en", ""),
+                          "analysisAr": "", "analysisEn": ""}
+                         for ex in focus.get("examples", []) if ex.get("phrase_ar")],
+        })
+    return rules

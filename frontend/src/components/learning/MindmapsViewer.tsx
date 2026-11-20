@@ -5,7 +5,7 @@ import {
   Bookmark, GraduationCap, CheckCircle2,
   ExternalLink, Layers
 } from 'lucide-react';
-import { MINDMAP_CHAPTERS, CURRICULUM_RULES, MindmapChapter, getFallbackMindmapChapters } from '../../data/mindmapData';
+import { MINDMAP_CHAPTERS, CURRICULUM_RULES, MindmapChapter, GrammarRule, getFallbackMindmapChapters } from '../../data/mindmapData';
 import { audioManager } from '../../services/audio';
 import { api } from '../../services/api';
 import { User, ChildProfile } from '../../types';
@@ -25,9 +25,24 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
   onSelectGrade,
   onOpenAskFahim
 }) => {
+  // Same rule as the textbook, booklets and capsules: admins see every grade, a learner only their
+  // own grade, a parent only their children's grades.
   const availableGrades = useMemo(() => {
-    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-  }, []);
+    if (user?.role === 'admin') {
+      return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    }
+    if (user?.role === 'learner' && activeChild?.default_grade) {
+      return [activeChild.default_grade];
+    }
+    if (user?.role === 'parent' && user.children && user.children.length > 0) {
+      const grades = Array.from(new Set(user.children.map((c) => c.default_grade).filter(Boolean))).sort((a, b) => a - b);
+      if (grades.length > 0) return grades;
+    }
+    if (activeChild?.default_grade) {
+      return [activeChild.default_grade];
+    }
+    return [initialGrade || 5];
+  }, [user, activeChild, initialGrade]);
 
   const [selectedGrade, setSelectedGrade] = useState<number>(() => {
     if (activeChild?.default_grade && user?.role !== 'admin') {
@@ -45,13 +60,23 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
   const [langMode, setLangMode] = useState<'both' | 'ar' | 'en'>('both');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedRuleKey, setSelectedRuleKey] = useState<string>('sentence_types');
+  // Grammar rules for grades other than 5 come from the API with the grade's mindmaps; the Grade 5
+  // rules tree and syntax flowchart are hand-written (CURRICULUM_RULES and the flowchart below).
+  const [gradeRules, setGradeRules] = useState<GrammarRule[]>([]);
   const [playingText, setPlayingText] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialGrade && initialGrade !== selectedGrade) {
+    if (initialGrade && initialGrade !== selectedGrade && availableGrades.includes(initialGrade)) {
       setSelectedGrade(initialGrade);
     }
   }, [initialGrade]);
+
+  // Keep the shown grade within the grades this user may see.
+  useEffect(() => {
+    if (!availableGrades.includes(selectedGrade)) {
+      setSelectedGrade(availableGrades[0]);
+    }
+  }, [availableGrades, selectedGrade]);
 
   useEffect(() => {
     if (user?.role !== 'admin' && activeChild?.default_grade) {
@@ -67,6 +92,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
       if (!isCancelled) {
         setChapters(fallback);
         setSelectedChapterId(fallback[0]?.id || 'chapter_1');
+        setGradeRules([]);
       }
 
       try {
@@ -74,6 +100,9 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
         if (!isCancelled && res.success && res.chapters && res.chapters.length > 0) {
           setChapters(res.chapters);
           setSelectedChapterId(res.chapters[0].id);
+        }
+        if (!isCancelled && res.success && Array.isArray(res.grammar_rules)) {
+          setGradeRules(res.grammar_rules);
         }
       } catch (err) {
         if (!isCancelled) {
@@ -89,6 +118,14 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
   const activeChapter: MindmapChapter = useMemo(() => {
     return chapters.find(c => c.id === selectedChapterId) || chapters[0] || MINDMAP_CHAPTERS[0];
   }, [chapters, selectedChapterId]);
+
+  // The rules tree and flowchart follow the selected grade: Grade 5 has its hand-written tree and
+  // sentence-parsing flowchart; every other grade shows its own grammar from the syllabus.
+  const isGrade5 = selectedGrade === 5;
+  const displayedRules: GrammarRule[] = isGrade5 ? CURRICULUM_RULES : gradeRules;
+  useEffect(() => {
+    setSelectedRuleKey(displayedRules[0]?.key || '');
+  }, [selectedGrade, gradeRules]);
 
   const handleSpeak = (text: string) => {
     setPlayingText(text);
@@ -408,7 +445,64 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
       {/* ========================================================================= */}
       {/* TAB 2: SYNTAX DECISION FLOWCHARTS                                         */}
       {/* ========================================================================= */}
-      {activeTab === 'flowchart' && (
+      {activeTab === 'flowchart' && !isGrade5 && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 rounded-3xl p-5 border border-purple-200 shadow-xs flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-md">
+              <GitFork className="w-6 h-6 transform rotate-90" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-slate-900">
+                خُطُوَاتُ تَطْبِيقِ قَوَاعِدِ الصَّفِّ {selectedGrade} (Grade {selectedGrade} Grammar Steps)
+              </h3>
+              <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
+                Each rule studied in Grade {selectedGrade}, step by step: what the rule is, its formula, and worked examples.
+              </p>
+            </div>
+          </div>
+          {displayedRules.length === 0 ? (
+            <p className="text-sm text-slate-600 text-center bg-white rounded-3xl p-6 border border-slate-200">
+              لا تتوفر مخططات قواعد لهذا الصف بعد. · Grammar flowcharts aren't available for Grade {selectedGrade} yet.
+            </p>
+          ) : displayedRules.map((rule, rIdx) => (
+            <div key={rule.key} className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
+              <div className="max-w-2xl mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-4 shadow-md text-center space-y-1">
+                <div className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 text-[11px] font-black tracking-wide">
+                  القَاعِدَةُ {rIdx + 1} (Rule {rIdx + 1}) · {rule.badgeAr}
+                </div>
+                <h4 className="text-lg font-black">{rule.titleAr}</h4>
+                {rule.titleEn && <p className="text-xs text-blue-100">{rule.titleEn}</p>}
+              </div>
+              <div className="flex justify-center text-slate-400" aria-hidden="true">↓</div>
+              <div className="max-w-2xl mx-auto p-4 rounded-2xl bg-teal-50 border border-teal-200 text-center space-y-1">
+                <div className="text-[11px] font-extrabold uppercase text-teal-800">المُعَادَلَةُ (Formula)</div>
+                <div className="text-sm font-black text-teal-950" dir="rtl">{rule.formulaAr}</div>
+                {rule.formulaEn && <div className="text-xs text-teal-700 italic">{rule.formulaEn}</div>}
+                {rule.ruleEn && rule.ruleEn !== rule.formulaEn && <div className="text-xs text-slate-600 pt-1">{rule.ruleEn}</div>}
+              </div>
+              {rule.examples.length > 0 && <>
+                <div className="flex justify-center text-slate-400" aria-hidden="true">↓</div>
+                <div className="max-w-2xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {rule.examples.map((ex, eIdx) => (
+                    <div key={eIdx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase text-slate-500 block">مِثَالٌ (Example)</span>
+                        <span className="text-sm font-black text-slate-900 block" dir="rtl">{ex.sentenceAr}</span>
+                        {ex.sentenceEn && <span className="text-xs text-slate-500 italic">{ex.sentenceEn}</span>}
+                      </div>
+                      <button onClick={() => handleSpeak(ex.sentenceAr)} className="p-1.5 rounded-xl text-slate-400 hover:text-purple-600 hover:bg-white" title="استمع إلى الجملة">
+                        <Volume2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'flowchart' && isGrade5 && (
         <div className="space-y-6">
           {/* Flowchart Header Banner */}
           <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 rounded-3xl p-5 border border-purple-200 shadow-xs flex items-center gap-4">
@@ -698,7 +792,12 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
 
           {/* Rules Accordion / Cards List */}
           <div className="space-y-4">
-            {CURRICULUM_RULES.map((rule) => {
+            {displayedRules.length === 0 && (
+              <p className="text-sm text-slate-600 text-center bg-white rounded-3xl p-6 border border-slate-200">
+                لا تتوفر قواعد لهذا الصف بعد. · Grammar rules aren't available for Grade {selectedGrade} yet.
+              </p>
+            )}
+            {displayedRules.map((rule) => {
               const isSelected = selectedRuleKey === rule.key;
               return (
                 <div
@@ -753,8 +852,8 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
 
                       {/* Rule Explanations */}
                       <div className="space-y-1.5 text-xs sm:text-sm leading-relaxed">
-                        <p className="text-slate-800 font-bold">{rule.ruleAr}</p>
-                        <p className="text-slate-600">{rule.ruleEn}</p>
+                        {rule.ruleAr && <p className="text-slate-800 font-bold">{rule.ruleAr}</p>}
+                        {rule.ruleEn && <p className="text-slate-600">{rule.ruleEn}</p>}
                       </div>
 
                       {/* Parsed Examples Table */}
@@ -787,8 +886,8 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
                               </div>
 
                               <div className="text-xs space-y-1">
-                                <p className="text-slate-700 font-bold leading-relaxed">{ex.analysisAr}</p>
-                                <p className="text-slate-500 text-[11px] leading-relaxed italic">{ex.analysisEn}</p>
+                                {ex.analysisAr && <p className="text-slate-700 font-bold leading-relaxed">{ex.analysisAr}</p>}
+                                {ex.analysisEn && <p className="text-slate-500 text-[11px] leading-relaxed italic">{ex.analysisEn}</p>}
                               </div>
                             </div>
                           ))}

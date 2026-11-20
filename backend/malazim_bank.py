@@ -11,7 +11,7 @@ from typing import Dict, Any, List
 MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
     "lesson_01_ball_games": {
         "lesson_id": "lesson_01_ball_games",
-        "title_ar": "ملزمة ألعاب الكرة — الوحدة الأولى",
+        "title_ar": "مُلْزَمَةُ أَلْعَابِ الكُرَةِ — الوَحْدَةُ الأُولَى",
         "title_en": "Ball Games Smart Booklet — Unit 1",
         "grade": 5,
         "term": 1,
@@ -28,25 +28,25 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
             "sections": [
                 {
                     "section_id": "sec_01_concept",
-                    "title_ar": "١. مفهوم الكرة ولقب (الساحرة المستديرة)",
+                    "title_ar": "١. مَفْهُومُ الكُرَةِ وَلَقَبُ (السَّاحِرَةِ المُسْتَدِيرَةِ)",
                     "title_en": "1. Ball Concept & 'The Round Witch' Moniker",
-                    "content_ar": "الكرة هي كل جسم مستدير يُصنع من الجلد أو المطاط. وتعد كرة القدم اللعبة الأكثر شعبية في العالم، حيث أطلق عليها عشاقها لقب (الساحرة المستديرة) لأنها سحرت عقول وقلوب أكثر من مليار مشجع حول العالم بجمالها وإثارتها.",
+                    "content_ar": "الكُرَةُ هِيَ كُلُّ جِسْمٍ مُسْتَدِيرٍ يُصْنَعُ مِنَ الجِلْدِ أَوِ المَطَّاطِ. وَتُعَدُّ كُرَةُ القَدَمِ اللُّعْبَةَ الأَكْثَرَ شَعْبِيَّةً فِي العَالَمِ، حَيْثُ أَطْلَقَ عَلَيْهَا عُشَّاقُهَا لَقَبَ (السَّاحِرَةِ المُسْتَدِيرَةِ) لِأَنَّهَا سَحَرَتْ عُقُولَ وَقُلُوبَ أَكْثَرَ مِنْ مِلْيَارِ مُشَجِّعٍ حَوْلَ العَالَمِ بِجَمَالِهَا وَإِثَارَتِهَا.",
                     "content_en": "A ball is any spherical object crafted from leather or rubber. Football is the world's most popular sport, famously dubbed 'The Round Witch' (الساحرة المستديرة) because its thrill captivates over a billion fans globally.",
                     "key_takeaways_ar": [
-                        "الكرة: كل جسم مستدير.",
-                        "سبب التسمية: سحرها لعقول وقلوب الملايين بحماسها وشعبيتها الجارفة."
+                        "الكُرَةُ: كُلُّ جِسْمٍ مُسْتَدِيرٍ.",
+                        "سَبَبُ التَّسْمِيَةِ: سِحْرُهَا لِعُقُولِ وَقُلُوبِ المَلَايِينِ بِحَمَاسِهَا وَشَعْبِيَّتِهَا الجَارِفَةِ."
                     ],
                     "key_takeaways_en": [
                         "The Ball: Any spherical round object.",
                         "Reason for Title: Enchanting the minds and hearts of millions with thrilling excitement."
                     ],
                     "inline_exercise": {
-                        "question_ar": "لماذا سميت كرة القدم بـ (الساحرة المستديرة)؟",
+                        "question_ar": "لِمَاذَا سُمِّيَتْ كُرَةُ القَدَمِ بِـ (السَّاحِرَةِ المُسْتَدِيرَةِ)؟",
                         "question_en": "Why was football nicknamed 'The Round Witch' (The Enchantress)?",
                         "options": [
-                            "لأنها مصنوعة من خامات سحرية",
-                            "لأنها جذبت وسحرت قلوب وعقول ملايين الجماهير",
-                            "لأنها تُلعب فقط في المساء"
+                            "لِأَنَّهَا مَصْنُوعَةٌ مِنْ خَامَاتٍ سِحْرِيَّةٍ",
+                            "لِأَنَّهَا جَذَبَتْ وَسَحَرَتْ قُلُوبَ وَعُقُولَ مَلَايِينِ الجَمَاهِيرِ",
+                            "لِأَنَّهَا تُلْعَبُ فَقَطْ فِي المَسَاءِ"
                         ],
                         "options_en": [
                             "Because it is made of magical materials",
@@ -54,20 +54,20 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
                             "Because it is only played in the evening"
                         ],
                         "correct_index": 1,
-                        "explanation_ar": "أحسنت! لقبت بالساحرة لأن إثارتها وشعبيتها جذبت عقول المشجعين في شتى بقاع الأرض.",
+                        "explanation_ar": "أَحْسَنْتَ! لُقِّبَتْ بِالسَّاحِرَةِ لِأَنَّ إِثَارَتَهَا وَشَعْبِيَّتَهَا جَذَبَتْ عُقُولَ المُشَجِّعِينَ فِي شَتَّى بِقَاعِ الأَرْضِ.",
                         "explanation_en": "Well done! Nicknamed 'The Enchantress' because its excitement and popularity captivate fans worldwide."
                     }
                 },
                 {
                     "section_id": "sec_02_rules",
-                    "title_ar": "٢. أبعاد الملعب والمواصفات الرسمية",
+                    "title_ar": "٢. أَبْعَادُ المَلْعَبِ وَالمُوَاصَفَاتُ الرَّسْمِيَّةُ",
                     "title_en": "2. Pitch Dimensions & Official Specifications",
-                    "content_ar": "ملعب كرة القدم مستطيل الشكل ومغطى بالعشب الأخضر (الطبيعي أو الاصطناعي). يبلغ طول الملعب بين 100 إلى 110 أمتار، وعرضه بين 64 إلى 75 متراً. أما محيط الكرة الرسمية فيتراوح بين 68 إلى 70 سنتيمتراً ووزنها بين 410 إلى 450 غراماً.",
+                    "content_ar": "مَلْعَبُ كُرَةِ القَدَمِ مُسْتَطِيلُ الشَّكْلِ وَمُغَطًّى بِالعُشْبِ الأَخْضَرِ (الطَّبِيعِيِّ أَوِ الاصْطِنَاعِيِّ). يَبْلُغُ طُولُ المَلْعَبِ بَيْنَ 100 إِلَى 110 أَمْتَارٍ، وَعَرْضُهُ بَيْنَ 64 إِلَى 75 مِتْرًا. أَمَّا مُحِيطُ الكُرَةِ الرَّسْمِيَّةِ فَيَتَرَاوَحُ بَيْنَ 68 إِلَى 70 سَنْتِيمِتْرًا وَوَزْنُهَا بَيْنَ 410 إِلَى 450 غِرَامًا.",
                     "content_en": "A football pitch is rectangular and turfed with green grass. Length ranges from 100m to 110m, and width from 64m to 75m. The official ball circumference is 68 to 70 cm, weighing 410 to 450 grams.",
                     "key_takeaways_ar": [
-                        "شكل الملعب: مستطيل ومفروش بالعشب الأخضر.",
-                        "أبعاد الطول: 100 – 110 م | أبعاد العرض: 64 – 75 م.",
-                        "محيط الكرة: 68 – 70 سم."
+                        "شَكْلُ المَلْعَبِ: مُسْتَطِيلٌ وَمَفْرُوشٌ بِالعُشْبِ الأَخْضَرِ.",
+                        "أَبْعَادُ الطُّولِ: 100 – 110 م | أَبْعَادُ العَرْضِ: 64 – 75 م.",
+                        "مُحِيطُ الكُرَةِ: 68 – 70 سم."
                     ],
                     "key_takeaways_en": [
                         "Pitch shape: Rectangular covered with green turf.",
@@ -75,12 +75,12 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
                         "Ball circumference: 68–70 cm."
                     ],
                     "inline_exercise": {
-                        "question_ar": "ما هو محيط كرة القدم القانونية حسب لوائح الاتحاد الدولي؟",
+                        "question_ar": "مَا هُوَ مُحِيطُ كُرَةِ القَدَمِ القَانُونِيَّةِ حَسَبَ لَوَائِحِ الاتِّحَادِ الدَّوْلِيِّ؟",
                         "question_en": "What is the official circumference of a regulation football per FIFA rules?",
                         "options": [
-                            "50 إلى 55 سم",
-                            "68 إلى 70 سم",
-                            "80 إلى 85 سم"
+                            "50 إِلَى 55 سم",
+                            "68 إِلَى 70 سم",
+                            "80 إِلَى 85 سم"
                         ],
                         "options_en": [
                             "50 to 55 cm",
@@ -88,20 +88,20 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
                             "80 to 85 cm"
                         ],
                         "correct_index": 1,
-                        "explanation_ar": "صحيح تماماً! يتراوح محيط الكرة الرسمية بين 68 إلى 70 سم.",
+                        "explanation_ar": "صَحِيحٌ تَمَامًا! يَتَرَاوَحُ مُحِيطُ الكُرَةِ الرَّسْمِيَّةِ بَيْنَ 68 إِلَى 70 سم.",
                         "explanation_en": "Spot on! The official regulation ball circumference measures between 68 and 70 cm."
                     }
                 },
                 {
                     "section_id": "sec_03_referees",
-                    "title_ar": "٣. الفريق والتحكيم في المباراة",
+                    "title_ar": "٣. الفَرِيقُ وَالتَّحْكِيمُ فِي المُبَارَاةِ",
                     "title_en": "3. Team Structure & Officiating Crew",
-                    "content_ar": "يتكون كل فريق في كرة القدم من 11 لاعباً أساسياً، أحدهم حارس المرمى. ويقود المباراة طاقم تحكيمي مكوّن من 4 حكام: حكم الساحة الرئيسي، وحكمان مساعدان على خطي التماس (حاملا الراية)، والحكم الرابع المساعد.",
+                    "content_ar": "يَتَكَوَّنُ كُلُّ فَرِيقٍ فِي كُرَةِ القَدَمِ مِنْ 11 لَاعِبًا أَسَاسِيًّا، أَحَدُهُمْ حَارِسُ المَرْمَى. وَيَقُودُ المُبَارَاةَ طَاقَمٌ تَحْكِيمِيٌّ مُكَوَّنٌ مِنْ 4 حُكَّامٍ: حَكَمُ السَّاحَةِ الرَّئِيسِيُّ، وَحَكَمَانِ مُسَاعِدَانِ عَلَى خَطَّيِ التَّمَاسِّ (حَامِلَا الرَّايَةِ)، وَالحَكَمُ الرَّابِعُ المُسَاعِدُ.",
                     "content_en": "Each team fields 11 starting players, including one goalkeeper. Matches are governed by 4 referees: the Head Referee, two Assistant Referees (linesmen), and the Fourth Official.",
                     "key_takeaways_ar": [
-                        "عدد لاعبي الفريق: 11 لاعباً في أرض الملعب.",
-                        "مدة المباراة: 90 دقيقة مقسمة إلى شوطين (45 دقيقة لكل شوط).",
-                        "طاقم التحكيم: 4 حكام لتطبيق العدالة وقوانين اللعبة."
+                        "عَدَدُ لَاعِبِي الفَرِيقِ: 11 لَاعِبًا فِي أَرْضِ المَلْعَبِ.",
+                        "مُدَّةُ المُبَارَاةِ: 90 دَقِيقَةً مُقَسَّمَةً إِلَى شَوْطَيْنِ (45 دَقِيقَةً لِكُلِّ شَوْطٍ).",
+                        "طَاقَمُ التَّحْكِيمِ: 4 حُكَّامٍ لِتَطْبِيقِ العَدَالَةِ وَقَوَانِينِ اللُّعْبَةِ."
                     ],
                     "key_takeaways_en": [
                         "Team size: 11 starting players on the pitch.",
@@ -109,12 +109,12 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
                         "Officiating crew: 4 match officials upholding fairness and rules."
                     ],
                     "inline_exercise": {
-                        "question_ar": "كم عدد الحكام الإجمالي الذين يديرون مباراة كرة القدم الرسمية؟",
+                        "question_ar": "كَمْ عَدَدُ الحُكَّامِ الإِجْمَالِيُّ الَّذِينَ يُدِيرُونَ مُبَارَاةَ كُرَةِ القَدَمِ الرَّسْمِيَّةَ؟",
                         "question_en": "How many total referees officiate an official football match?",
                         "options": [
-                            "حكمان فقط",
-                            "3 حكام",
-                            "4 حكام"
+                            "حَكَمَانِ فَقَطْ",
+                            "3 حُكَّامٍ",
+                            "4 حُكَّامٍ"
                         ],
                         "options_en": [
                             "Only 2 referees",
@@ -122,31 +122,31 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
                             "4 referees"
                         ],
                         "correct_index": 2,
-                        "explanation_ar": "إجابة ممتازة! يدير المباراة 4 حكام (حكم الساحة، حكمان مساعدان، والحكم الرابع).",
+                        "explanation_ar": "إِجَابَةٌ مُمْتَازَةٌ! يُدِيرُ المُبَارَاةَ 4 حُكَّامٍ (حَكَمُ السَّاحَةِ، حَكَمَانِ مُسَاعِدَانِ، وَالحَكَمُ الرَّابِعُ).",
                         "explanation_en": "Excellent answer! 4 referees manage the match (Head referee, two assistant referees, and the fourth official)."
                     }
                 },
                 {
                     "section_id": "sec_04_sports_types",
-                    "title_ar": "٤. تصنيف الرياضات: جماعية وفردية",
+                    "title_ar": "٤. تَصْنِيفُ الرِّيَاضَاتِ: جَمَاعِيَّةٌ وَفَرْدِيَّةٌ",
                     "title_en": "4. Sports Classification: Collective vs. Individual",
-                    "content_ar": "تنقسم الرياضات إلى نوعين رئيسيين: رياضات جماعية تتطلب روح الفريق والتعاون (مثل: كرة القدم، كرة السلة، الكرة الطائرة)، ورياضات فردية يعتمد فيها الإنجاز على مهارة شخص واحد (مثل: الرماية، ركوب الخيل، السباحة، ألعاب القوى).",
+                    "content_ar": "تَنْقَسِمُ الرِّيَاضَاتُ إِلَى نَوْعَيْنِ رَئِيسِيَّيْنِ: رِيَاضَاتٍ جَمَاعِيَّةٍ تَتَطَلَّبُ رُوحَ الفَرِيقِ وَالتَّعَاوُنَ (مِثْلَ: كُرَةِ القَدَمِ، كُرَةِ السَّلَّةِ، الكُرَةِ الطَّائِرَةِ)، وَرِيَاضَاتٍ فَرْدِيَّةٍ يَعْتَمِدُ فِيهَا الإِنْجَازُ عَلَى مَهَارَةِ شَخْصٍ وَاحِدٍ (مِثْلَ: الرِّمَايَةِ، رُكُوبِ الخَيْلِ، السِّبَاحَةِ، أَلْعَابِ القُوَى).",
                     "content_en": "Sports are classified into two primary categories: Collective Sports requiring team coordination (football, basketball, volleyball), and Individual Sports relying on solo mastery (archery, horse riding, swimming, athletics).",
                     "key_takeaways_ar": [
-                        "الرياضة الجماعية: يشترك فيها فريق متعاون.",
-                        "الرياضة الفردية: يمارسها رياضي بمفرده."
+                        "الرِّيَاضَةُ الجَمَاعِيَّةُ: يَشْتَرِكُ فِيهَا فَرِيقٌ مُتَعَاوِنٌ.",
+                        "الرِّيَاضَةُ الفَرْدِيَّةُ: يُمَارِسُهَا رِيَاضِيٌّ بِمُفْرَدِهِ."
                     ],
                     "key_takeaways_en": [
                         "Collective sport: Involves a collaborative team.",
                         "Individual sport: Practiced by an athlete independently."
                     ],
                     "inline_exercise": {
-                        "question_ar": "أي الرياضات التالية تعد رياضة فردية؟",
+                        "question_ar": "أَيُّ الرِّيَاضَاتِ التَّالِيَةِ تُعَدُّ رِيَاضَةً فَرْدِيَّةً؟",
                         "question_en": "Which of the following sports is considered an individual sport?",
                         "options": [
-                            "كرة القدم",
-                            "الرماية وركوب الخيل",
-                            "كرة السلة"
+                            "كُرَةُ القَدَمِ",
+                            "الرِّمَايَةُ وَرُكُوبُ الخَيْلِ",
+                            "كُرَةُ السَّلَّةِ"
                         ],
                         "options_en": [
                             "Football",
@@ -154,7 +154,7 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
                             "Basketball"
                         ],
                         "correct_index": 1,
-                        "explanation_ar": "رائع! الرماية وركوب الخيل رياضتان فرديتان يعتمد فيهما اللاعب على قدراته الذاتية.",
+                        "explanation_ar": "رَائِعٌ! الرِّمَايَةُ وَرُكُوبُ الخَيْلِ رِيَاضَتَانِ فَرْدِيَّتَانِ يَعْتَمِدُ فِيهِمَا اللَّاعِبُ عَلَى قُدُرَاتِهِ الذَّاتِيَّةِ.",
                         "explanation_en": "Superb! Archery and horse riding are individual sports where performance depends on solo skill."
                     }
                 }
@@ -170,45 +170,45 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
             "target_review_time": "15 minutes",
             "bullet_rules": [
                 {
-                    "rule_ar": "الكرة جسم مستدير، وكرة القدم تلقب بـ (الساحرة المستديرة).",
+                    "rule_ar": "الكُرَةُ جِسْمٌ مُسْتَدِيرٌ، وَكُرَةُ القَدَمِ تُلَقَّبُ بِـ (السَّاحِرَةِ المُسْتَدِيرَةِ).",
                     "rule_en": "A ball is spherical; football is dubbed 'The Round Witch'."
                 },
                 {
-                    "rule_ar": "عدد اللاعبين في الملعب: 11 لاعباً لكل فريق (شوطان مدة كل منهما 45 دقيقة).",
+                    "rule_ar": "عَدَدُ اللَّاعِبِينَ فِي المَلْعَبِ: 11 لَاعِبًا لِكُلِّ فَرِيقٍ (شَوْطَانِ مُدَّةُ كُلٍّ مِنْهُمَا 45 دَقِيقَةً).",
                     "rule_en": "Players per team: 11 on pitch (Two 45-minute halves)."
                 },
                 {
-                    "rule_ar": "طول الملعب: 100 إلى 110 أمتار | العرض: 64 إلى 75 متراً.",
+                    "rule_ar": "طُولُ المَلْعَبِ: 100 إِلَى 110 أَمْتَارٍ | العَرْضُ: 64 إِلَى 75 مِتْرًا.",
                     "rule_en": "Pitch Length: 100-110m | Width: 64-75m."
                 },
                 {
-                    "rule_ar": "طاقم التحكيم: 4 حكام رسميين لإدارة المباراة.",
+                    "rule_ar": "طَاقَمُ التَّحْكِيمِ: 4 حُكَّامٍ رَسْمِيِّينَ لِإِدَارَةِ المُبَارَاةِ.",
                     "rule_en": "Officiating crew: 4 official referees."
                 },
                 {
-                    "rule_ar": "الرياضات الجماعية: كرة القدم والسلة والطائرة | الفردية: الرماية والفروسية والسباحة.",
+                    "rule_ar": "الرِّيَاضَاتُ الجَمَاعِيَّةُ: كُرَةُ القَدَمِ وَالسَّلَّةِ وَالطَّائِرَةِ | الفَرْدِيَّةُ: الرِّمَايَةُ وَالفُرُوسِيَّةُ وَالسِّبَاحَةُ.",
                     "rule_en": "Collective: Football, Basketball | Individual: Archery, Falconry, Equestrian."
                 }
             ],
             "vocabulary_flashcards": [
-                {"word_ar": "المُسْتَدِيرَةُ", "word_en": "The Round (Spherical)", "meaning_ar": "التي على شكل دائرة", "meaning_en": "Having the shape of a circle/sphere", "opposite_ar": "المربعة أو المستقيمة", "opposite_en": "Square or straight"},
-                {"word_ar": "الجَمَاعِيَّةُ", "word_en": "Collective (Team)", "meaning_ar": "يشارك فيها أكثر من شخص", "meaning_en": "Involving more than one person", "opposite_ar": "الفَرْدِيَّةُ", "opposite_en": "Individual (Solo)"},
-                {"word_ar": "المِضْمَارُ", "word_en": "The Track", "meaning_ar": "ميدان السباق والركض", "meaning_en": "The field for racing and running", "opposite_ar": "—", "opposite_en": "—"},
-                {"word_ar": "السَّاحِرَةُ", "word_en": "The Enchantress", "meaning_ar": "الفاتنة الجاذبة للقلوب", "meaning_en": "The captivating charmer of hearts", "opposite_ar": "المُنَفِّرَةُ", "opposite_en": "Repelling"}
+                {"word_ar": "المُسْتَدِيرَةُ", "word_en": "The Round (Spherical)", "meaning_ar": "الَّتِي عَلَى شَكْلِ دَائِرَةٍ", "meaning_en": "Having the shape of a circle/sphere", "opposite_ar": "المُرَبَّعَةُ أَوِ المُسْتَقِيمَةُ", "opposite_en": "Square or straight"},
+                {"word_ar": "الجَمَاعِيَّةُ", "word_en": "Collective (Team)", "meaning_ar": "يُشَارِكُ فِيهَا أَكْثَرُ مِنْ شَخْصٍ", "meaning_en": "Involving more than one person", "opposite_ar": "الفَرْدِيَّةُ", "opposite_en": "Individual (Solo)"},
+                {"word_ar": "المِضْمَارُ", "word_en": "The Track", "meaning_ar": "مَيْدَانُ السِّبَاقِ وَالرَّكْضِ", "meaning_en": "The field for racing and running", "opposite_ar": "—", "opposite_en": "—"},
+                {"word_ar": "السَّاحِرَةُ", "word_en": "The Enchantress", "meaning_ar": "الفَاتِنَةُ الجَاذِبَةُ لِلْقُلُوبِ", "meaning_en": "The captivating charmer of hearts", "opposite_ar": "المُنَفِّرَةُ", "opposite_en": "Repelling"}
             ],
             "grammar_formulas": [
                 {
-                    "title_ar": "الجملة الاسمية",
+                    "title_ar": "الجُمْلَةُ الاسْمِيَّةُ",
                     "title_en": "The Nominal Sentence",
-                    "formula_ar": "مبتدأ (مرفوع) + خبر (مرفوع)",
+                    "formula_ar": "مُبْتَدَأٌ (مَرْفُوعٌ) + خَبَرٌ (مَرْفُوعٌ)",
                     "formula_en": "Subject (Nominative / Dammah) + Predicate (Nominative / Dammah)",
-                    "example_ar": "الكُرَةُ مُسْتَدِيرَةٌ (الكرة: مبتدأ مرفوع، مستديرة: خبر مرفوع).",
+                    "example_ar": "الكُرَةُ مُسْتَدِيرَةٌ (الكُرَةُ: مُبْتَدَأٌ مَرْفُوعٌ، مُسْتَدِيرَةٌ: خَبَرٌ مَرْفُوعٌ).",
                     "example_en": "The ball is round (Al-Kuratu: nominative subject, mustadeeratun: nominative predicate)."
                 },
                 {
-                    "title_ar": "مطابقة الفعل للفاعل",
+                    "title_ar": "مُطَابَقَةُ الفِعْلِ لِلْفَاعِلِ",
                     "title_en": "Subject-Verb Gender Agreement",
-                    "formula_ar": "مذكر ← يَلْعَبُ الطَّالِبُ | مؤنث ← تَلْعَبُ الطَّالِبَةُ",
+                    "formula_ar": "مُذَكَّرٌ ← يَلْعَبُ الطَّالِبُ | مُؤَنَّثٌ ← تَلْعَبُ الطَّالِبَةُ",
                     "formula_en": "Masculine Subject -> Verb starts with Yaa | Feminine Subject -> Verb starts with Taa",
                     "example_ar": "يُحِبُّ زَايِدٌ كُرَةَ القَدَمِ / تُحِبُّ مَرْيَمُ كُرَةَ السَّلَّةِ.",
                     "example_en": "Zayed loves football / Maryam loves basketball."
@@ -216,15 +216,15 @@ MALAZIM_DATA: Dict[str, Dict[str, Any]] = {
             ],
             "exam_pitfall_warnings": [
                 {
-                    "warning_ar": "لا تخلط بين عدد الحكام (4 حكام) وعدد المساعدين فقط (حكمان مساعدان).",
+                    "warning_ar": "لَا تَخْلِطْ بَيْنَ عَدَدِ الحُكَّامِ (4 حُكَّامٍ) وَعَدَدِ المُسَاعِدِينَ فَقَطْ (حَكَمَانِ مُسَاعِدَانِ).",
                     "warning_en": "Do not confuse total match referees (4 officials) with just assistant referees (2 linesmen)."
                 },
                 {
-                    "warning_ar": "انتبه: مدة الشوط الواحد 45 دقيقة، بينما مدة المباراة كاملة 90 دقيقة دون الوقت الإضافي.",
+                    "warning_ar": "انْتَبِهْ: مُدَّةُ الشَّوْطِ الوَاحِدِ 45 دَقِيقَةً، بَيْنَمَا مُدَّةُ المُبَارَاةِ كَامِلَةً 90 دَقِيقَةً دُونَ الوَقْتِ الإِضَافِيِّ.",
                     "warning_en": "Note: One half is 45 minutes, while the full match is 90 minutes regular time."
                 },
                 {
-                    "warning_ar": "التاء المربوطة (ـة/ة) تنطق هاءً عند الوقف وتاءً عند الوصل، بعكس الهاء (ـه/ه) التي تنطق دائماً هاءً.",
+                    "warning_ar": "التَّاءُ المَرْبُوطَةُ (ـة/ة) تُنْطَقُ هَاءً عِنْدَ الوَقْفِ وَتَاءً عِنْدَ الوَصْلِ، بِعَكْسِ الهَاءِ (ـه/ه) الَّتِي تُنْطَقُ دَائِمًا هَاءً.",
                     "warning_en": "Taa Marbutah (ـة) sounds as /h/ at pause and /t/ in flow; regular Haa (ـه) always sounds as /h/."
                 }
             ]

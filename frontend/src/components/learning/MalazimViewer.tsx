@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   BookOpen, Clock, FileText, CheckCircle2,
-  Volume2, ArrowRight, Sparkles, Layers, Bookmark, GraduationCap, AlertTriangle
+  Volume2, ArrowRight, Sparkles, Layers, Bookmark, GraduationCap, AlertTriangle, Lock
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
-import { User, ChildProfile } from '../../types';
+import { User, ChildProfile, LessonSummary, TermSummary } from '../../types';
 
 interface MalazimViewerProps {
   user?: User | null;
@@ -14,6 +14,8 @@ interface MalazimViewerProps {
   initialGrade?: number;
   lessonId?: string;
   onSelectGrade?: (grade: number) => void;
+  /** Admin review: show this booklet as learners would, with no selectors and no fetching. */
+  previewBooklet?: any;
 }
 
 export const MalazimViewer: React.FC<MalazimViewerProps> = ({
@@ -21,8 +23,10 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
   activeChild,
   initialGrade = 5,
   lessonId,
-  onSelectGrade
+  onSelectGrade,
+  previewBooklet
 }) => {
+  const preview = previewBooklet != null;
   const availableGrades = useMemo(() => {
     if (user?.role === 'admin') {
       return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -68,28 +72,86 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
   const [feedback, setFeedback] = useState<Record<string, any>>({});
   const [error, setError] = useState('');
 
-  const targetLessonId = lessonId || (selectedGrade === 5 ? 'lesson_01_ball_games' : `lesson_g${selectedGrade}_t1_ch01`);
+  // Term and chapter selection: the same term/chapter lists (and lock states) as Curriculum & Lessons.
+  const firstChapterId = (grade: number) => (grade === 5 ? 'lesson_01_ball_games' : `lesson_g${grade}_t1_ch01`);
+  const [terms, setTerms] = useState<TermSummary[]>([]);
+  const [selectedTerm, setSelectedTerm] = useState<number>(1);
+  const [chapters, setChapters] = useState<LessonSummary[]>([]);
+  const [selectedLessonId, setSelectedLessonId] = useState<string>(() => firstChapterId(selectedGrade));
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  const isOpenable = (c: LessonSummary) => c.is_accessible && !c.coming_soon && c.status !== 'coming_soon';
+  const targetLessonId = lessonId || selectedLessonId;
 
   useEffect(() => {
+    if (preview) return;
+    let cancelled = false;
+    setSelectedTerm(1);
+    setSelectedLessonId(firstChapterId(selectedGrade));
+    api.getTerms(selectedGrade, activeChild?.id)
+      .then((list) => { if (!cancelled) setTerms(Array.isArray(list) ? list : []); })
+      .catch(() => { if (!cancelled) setTerms([]); });
+    return () => { cancelled = true; };
+  }, [selectedGrade, activeChild?.id]);
+
+  useEffect(() => {
+    if (preview) return;
+    let cancelled = false;
+    api.getLessons(selectedGrade, selectedTerm, activeChild?.id)
+      .then((list) => {
+        if (cancelled) return;
+        const rows = Array.isArray(list) ? [...list].sort((a, b) => a.lesson_order - b.lesson_order) : [];
+        setChapters(rows);
+        if (lessonId) return;
+        // Keep the open chapter if it is in this term; otherwise open the term's first available chapter.
+        setSelectedLessonId((current) => (rows.some((c) => c.id === current && isOpenable(c))
+          ? current
+          : (rows.find(isOpenable)?.id ?? '')));
+      })
+      .catch(() => { if (!cancelled) setChapters([]); });
+    return () => { cancelled = true; };
+  }, [selectedGrade, selectedTerm, activeChild?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
     const fetchBooklet = async () => {
-      setLoading(true);
-      setBookletData(null);
       setSelectedAnswers({});
       setSubmittedExercises({});
       setFeedback({});
+      setError('');
+      if (preview) {
+        if (previewBooklet?.grade) setSelectedGrade(previewBooklet.grade);
+        setBookletData(previewBooklet);
+        setLoading(false);
+        setHasLoaded(true);
+        return;
+      }
+      if (!targetLessonId) {
+        setBookletData(null);
+        setLoading(false);
+        setHasLoaded(true);
+        return;
+      }
+      setLoading(true);
       try {
         const res = await api.getMalazim(targetLessonId, activeChild?.id, selectedGrade);
-        if (res.success && res.booklet) {
-          setBookletData(res.booklet);
-        }
+        if (cancelled) return;
+        setBookletData(res.success && res.booklet ? res.booklet : null);
       } catch (err) {
+        if (cancelled) return;
         console.error('Failed to load malazim:', err);
+        setBookletData(null);
+        setError(err instanceof Error ? err.message : 'Could not load this booklet');
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setHasLoaded(true);
+        }
       }
     };
     fetchBooklet();
-  }, [targetLessonId, selectedGrade, activeChild?.id]);
+    return () => { cancelled = true; };
+  }, [targetLessonId, selectedGrade, activeChild?.id, previewBooklet]);
 
   const handleSelectOption = (sectionId: string, optionIdx: number) => {
     if (submittedExercises[sectionId]) return;
@@ -99,6 +161,18 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
   const handleSubmitExercise = async (sectionId: string) => {
     try {
       setError('');
+      if (preview) {
+        const exercise = previewBooklet?.study_mode?.sections?.find((s: any) => s.section_id === sectionId)?.inline_exercise;
+        const result = exercise && {
+          is_correct: selectedAnswers[sectionId] === exercise.correct_index,
+          correct_index: exercise.correct_index,
+          explanation_ar: exercise.explanation_ar,
+          explanation_en: exercise.explanation_en,
+        };
+        setFeedback(prev => ({ ...prev, [sectionId]: result }));
+        setSubmittedExercises(prev => ({ ...prev, [sectionId]: true }));
+        return;
+      }
       const result = await api.checkBookletAnswer(targetLessonId, sectionId, selectedAnswers[sectionId], activeChild?.id);
       setFeedback(prev => ({ ...prev, [sectionId]: result }));
       setSubmittedExercises(prev => ({ ...prev, [sectionId]: true }));
@@ -107,7 +181,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
     }
   };
 
-  if (loading) {
+  if (loading && !hasLoaded) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 text-center text-slate-600">
         <BookOpen className="w-8 h-8 text-emerald-800 animate-pulse mx-auto mb-2" />
@@ -125,7 +199,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
       {error && <p role="alert" className="text-red-700 mb-4">{error}</p>}
 
       {/* Grade Selector Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white border border-slate-200 p-3 rounded-sm shadow-2xs">
+      {!preview && <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white border border-slate-200 p-3 rounded-sm shadow-2xs">
         <div className="flex items-center gap-2.5 flex-wrap">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
             <GraduationCap className="w-4 h-4 text-emerald-800" />
@@ -155,10 +229,83 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
           <span className="text-slate-300">|</span>
           <span className="font-semibold text-emerald-800">{bookletData?.pages_reference || `Grade ${selectedGrade}`}</span>
         </div>
-      </div>
+      </div>}
+
+      {/* Term & Chapter Selector */}
+      {!lessonId && !preview && (
+        <div className="mb-4 bg-white border border-slate-200 p-3 rounded-sm shadow-2xs space-y-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-800">الفصل الدراسي (Term):</span>
+            {(terms.length ? terms.map((t) => t.term) : [1, 2, 3]).map((t) => {
+              const info = terms.find((x) => x.term === t);
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  aria-pressed={selectedTerm === t}
+                  onClick={() => setSelectedTerm(t)}
+                  className={`px-3 py-1 rounded-sm text-xs font-bold transition-all flex items-center gap-1 ${
+                    selectedTerm === t ? 'bg-emerald-800 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {info && !info.is_unlocked && <Lock className="w-3 h-3" aria-label="locked" />}
+                  الفصل {t} (Term {t})
+                </button>
+              );
+            })}
+            {loading && <span className="text-[11px] text-slate-500">جَارٍ التَّحْمِيلُ… · Loading…</span>}
+          </div>
+          <div>
+            <span className="text-xs font-bold text-slate-800 block mb-1.5">الدرس (Chapter):</span>
+            <div className="flex gap-2 overflow-x-auto pb-1" role="list">
+              {chapters.map((c, idx) => {
+                const open = isOpenable(c);
+                const comingSoon = c.coming_soon || c.status === 'coming_soon';
+                const active = c.id === targetLessonId;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    role="listitem"
+                    disabled={!open}
+                    aria-current={active ? 'true' : undefined}
+                    title={!open ? (comingSoon ? 'Coming soon' : (c.lock_reason || 'Locked: unlock this term to open it')) : c.title_en}
+                    onClick={() => open && setSelectedLessonId(c.id)}
+                    className={`shrink-0 text-right px-3 py-2 border-2 rounded-sm transition-all min-w-[9rem] ${
+                      active
+                        ? 'bg-emerald-800 border-emerald-900 text-white'
+                        : open
+                          ? 'bg-emerald-50 border-emerald-200 text-slate-900 hover:bg-emerald-100'
+                          : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-2 text-[10px] font-bold">
+                      <span>{idx + 1}</span>
+                      {!open && (comingSoon ? <span>Coming soon</span> : <Lock className="w-3 h-3" aria-label="locked" />)}
+                    </span>
+                    <span className="block text-sm font-black font-arabic leading-snug" dir="rtl">{c.title_ar}</span>
+                    <span className={`block text-[10px] ${active ? 'text-emerald-100' : 'text-slate-500'}`}>{c.title_en}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!loading && !bookletData && !error && (
+        <div className="mb-6 p-6 bg-white border-2 border-slate-200 text-center space-y-1">
+          <Lock className="w-6 h-6 text-slate-400 mx-auto" />
+          <p className="text-sm font-bold text-slate-800">
+            {chapters.length && !chapters.some(isOpenable)
+              ? 'هذا الفصل الدراسي مقفل. · This term is locked: unlock it in Curriculum & Lessons to open its booklets.'
+              : 'لا تتوفر ملزمة لهذا الدرس. · No study booklet is available for this chapter.'}
+          </p>
+        </div>
+      )}
 
       {/* Header Banner */}
-      <div className="bg-emerald-950 text-white border-2 border-slate-900 p-6 mb-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      {bookletData && <div className="bg-emerald-950 text-white border-2 border-slate-900 p-6 mb-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="bg-amber-400 text-slate-950 text-[10px] font-bold px-2 py-0.5 rounded-2xs uppercase tracking-wider">
@@ -206,7 +353,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>}
 
       {/* MODE 1: STUDY MODE */}
       {activeMode === 'study' && studyMode && (

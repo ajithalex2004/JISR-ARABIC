@@ -753,6 +753,35 @@ export const api = {
     return jsonOrThrow(res);
   },
 
+  /** Smart Study Booklets written by AI: each chapter of a grade/term with its booklet status. */
+  async getBooklets(grade: number, term: number) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/booklets?grade=${grade}&term=${term}`);
+    return jsonOrThrow(res);
+  },
+
+  async writeBooklets(grade: number, term: number, lessonIds?: string[], overwrite = false) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/booklets/write`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grade, term, lesson_ids: lessonIds, overwrite }),
+    });
+    return jsonOrThrow(res);
+  },
+
+  async getBookletDraft(draftId: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/booklets/drafts/${encodeURIComponent(draftId)}`);
+    return jsonOrThrow(res);
+  },
+
+  async reviewBookletDraft(draftId: string, action: 'publish' | 'unpublish' | 'reject', note = '') {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/booklets/drafts/${encodeURIComponent(draftId)}/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note }),
+    });
+    return jsonOrThrow(res);
+  },
+
   async getLessonVersions(lessonId: string) {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/lessons/${encodeURIComponent(lessonId)}/versions`);
     return jsonOrThrow(res);

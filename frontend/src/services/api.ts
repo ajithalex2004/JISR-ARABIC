@@ -1083,8 +1083,7 @@ export const api = {
 
   async getExamSimulation(grade: number = 5, term: number = 1, childId?: string) {
     const res = await authenticatedFetch(`${API_BASE}/api/modules/assessments/exam-simulation/${grade}/${term}${childId ? `?child_id=${encodeURIComponent(childId)}` : ''}`);
-    if (!res.ok) throw new Error('Failed to load exam simulation');
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   async submitExamSimulation(data: {

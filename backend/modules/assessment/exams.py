@@ -72,44 +72,67 @@ def _scope_contents(grade: int, term: int, *, db: Session):
     return out
 
 
-def _questions_for_scope(grade: int, term: int, *, db: Session, contents=None):
-    """The term's exam questions (exam_practice) from published lessons with real content."""
-    questions = []
-    for lesson_id, content in (contents if contents is not None else _scope_contents(grade, term, db=db)):
-        for question in (content.get("exam_practice") or {}).get("objective_questions", []):
-            item = _exam_item(lesson_id, question, source="exam")
-            if item:
-                questions.append(item)
-    return questions
+_PRACTICE_TYPES = {"multiple_choice", "choice"}
+
+
+def _practice_items(lesson_id: str, content: dict) -> list:
+    """A chapter's multiple-choice practice questions in the exam's format."""
+    items = [_exam_item(lesson_id, a, source="practice") for a in content.get("practice_activities") or []
+             if isinstance(a, dict) and a.get("type", "multiple_choice") in _PRACTICE_TYPES]
+    return [i for i in items if i]
+
+
+def _round_robin(per_chapter: list) -> list:
+    """One item from each chapter in turn, so a selection spreads over the whole term."""
+    queues = [list(items) for items in per_chapter]
+    out = []
+    while any(queues):
+        for items in queues:
+            if items:
+                out.append(items.pop(0))
+    return out
 
 
 def _practice_questions_for_scope(contents):
     """Multiple-choice practice questions, taken one chapter at a time so a top-up spreads over the term."""
-    per_lesson = []
-    for lesson_id, content in contents:
-        items = [_exam_item(lesson_id, a, source="practice") for a in content.get("practice_activities") or []
-                 if isinstance(a, dict) and a.get("type", "multiple_choice") == "multiple_choice"]
-        per_lesson.append([i for i in items if i])
-    out = []
-    while any(per_lesson):
-        for items in per_lesson:
-            if items:
-                out.append(items.pop(0))
-    return out
+    return _round_robin([_practice_items(lesson_id, content) for lesson_id, content in contents])
 
 EXAM_QUESTION_COUNT = 10
 
 
 def _exam_questions(grade: int, term: int, *, db: Session):
-    """Ten questions for the term, from lessons with real content: its exam questions first.
+    """Ten questions for the term, spread over its chapters.
 
-    Class 5 keeps its curated banks when its published exam questions can't fill an exam. Other
-    classes are topped up with the term's own practice questions; a term with fewer than ten in
-    all gets a shorter exam, and one with none gets a clear "not available yet" message."""
+    Questions are dealt one chapter at a time: each chapter offers its exam questions first, then
+    its practice questions, so a term with ten chapters gets a question from every chapter rather
+    than only the first chapters' questions. Class 5 keeps its curated banks for a term whose
+    lessons can't fill an exam; other classes get a shorter exam, and a term with no questions at
+    all gets a clear "not available yet" message."""
     contents = _scope_contents(grade, term, db=db)
-    questions = _questions_for_scope(grade, term, db=db, contents=contents)
+    exams_by_chapter, practice_by_chapter = [], []
+    for lesson_id, content in contents:
+        exams_by_chapter.append([item for item in (_exam_item(lesson_id, q, source="exam")
+                                 for q in (content.get("exam_practice") or {}).get("objective_questions", [])) if item])
+        practice_by_chapter.append(_practice_items(lesson_id, content))
+    # 1. One question from every chapter (its exam question if it has one), 2. the rest of the exam
+    # questions one chapter at a time, 3. practice questions one chapter at a time.
+    firsts = [(exams or practice)[:1] for exams, practice in zip(exams_by_chapter, practice_by_chapter)]
+    candidates = (_round_robin(firsts) + _round_robin(exams_by_chapter) + _round_robin(practice_by_chapter))
+    chosen, seen = [], set()
+    for item in candidates:
+        if len(chosen) >= EXAM_QUESTION_COUNT:
+            break
+        if item["id"] not in seen:
+            chosen.append(item)
+            seen.add(item["id"])
+    # Shown in chapter order, each chapter's exam questions before its practice questions.
+    order = {item["id"]: (ci, pos) for ci, items in enumerate(zip(exams_by_chapter, practice_by_chapter))
+             for pos, item in enumerate(items[0] + items[1])}
+    # Every question carries the same weight: ten marks each, so a full exam is out of 100 like the
+    # curated banks (exam and practice questions come with different marks of their own).
+    questions = [{**item, "points": 10} for item in sorted(chosen, key=lambda item: order[item["id"]])]
     if len(questions) >= EXAM_QUESTION_COUNT:
-        return questions[:EXAM_QUESTION_COUNT]
+        return questions
 
     # Curated Class 5 banks, used while its published lessons can't fill a full exam.
     if grade == 5 and term == 1:
@@ -122,14 +145,6 @@ def _exam_questions(grade: int, term: int, *, db: Session):
         from backend.assessment_bank import ASSESSMENT_QUESTIONS_TERM3
         return ASSESSMENT_QUESTIONS_TERM3
 
-    # Other classes: top up with the term's own practice questions.
-    seen = {q["id"] for q in questions}
-    for item in _practice_questions_for_scope(contents):
-        if len(questions) >= EXAM_QUESTION_COUNT:
-            break
-        if item["id"] not in seen:
-            questions.append(item)
-            seen.add(item["id"])
     if questions:
         return questions
     from backend.modules.curriculum.coming_soon import coming_soon_message

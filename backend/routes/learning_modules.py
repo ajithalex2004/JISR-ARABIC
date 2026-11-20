@@ -53,9 +53,10 @@ def list_capsules(
 @router.get('/mindmaps')
 def list_mindmaps(grade: int = Query(5, ge=1, le=12), term: int = Query(1, ge=1, le=3)):
     """Concept-map chapters for the requested grade/term, built from the official syllabus."""
-    from backend.generated_study_content import generate_mindmap_chapters
+    from backend.generated_study_content import generate_mindmap_chapters, grade_grammar_rules
     return {"success": True, "grade": grade, "term": term,
-            "chapters": generate_mindmap_chapters(grade, term)}
+            "chapters": generate_mindmap_chapters(grade, term),
+            "grammar_rules": grade_grammar_rules(grade)}
 
 @router.get('/capsules/{capsule_id}')
 def get_capsule(capsule_id: str):

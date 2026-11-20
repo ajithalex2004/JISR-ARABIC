@@ -22,6 +22,15 @@ def _resolve_booklet_lesson_id(lesson_id) -> str:
     return actual_lesson_id
 
 
+def _booklet_for(db: Session, lesson_id: str):
+    """The hand-written booklet, else the published AI-written one, else the generated one."""
+    from backend.malazim_bank import MALAZIM_DATA
+    from backend.modules.curriculum.booklet_writer import published_booklet
+    if lesson_id in MALAZIM_DATA:
+        return MALAZIM_DATA[lesson_id]
+    return published_booklet(db, lesson_id) or get_malazim_booklet(lesson_id)
+
+
 def get_malazim(lesson_id: str, child_id=None, is_reviewer=False, *, db: Session, actor=None):
     """
     Retrieve interactive study booklet for a lesson or grade.
@@ -33,7 +42,7 @@ def get_malazim(lesson_id: str, child_id=None, is_reviewer=False, *, db: Session
 
     reviewer = bool(actor is not None and getattr(actor, "role", None) in {"admin", "tutor"}) and is_reviewer
     require_lesson(db, actor, actual_lesson_id, child_id, is_reviewer=is_reviewer)
-    booklet = get_malazim_booklet(actual_lesson_id)
+    booklet = _booklet_for(db, actual_lesson_id)
     if booklet is None:
         raise ApplicationError(404, "Study booklet not available for this lesson")
     return {
@@ -159,7 +168,7 @@ def check_booklet_answer(lesson_id, payload, *, db: Session, actor=None):
     actual_lesson_id = _resolve_booklet_lesson_id(lesson_id)
 
     require_lesson(db, actor, actual_lesson_id, payload.child_id)
-    booklet = get_malazim_booklet(actual_lesson_id)
+    booklet = _booklet_for(db, actual_lesson_id)
     if booklet is None:
         raise ApplicationError(404, "Study booklet not found")
     for section in booklet["study_mode"]["sections"]:

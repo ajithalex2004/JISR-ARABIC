@@ -14,6 +14,8 @@ interface MalazimViewerProps {
   initialGrade?: number;
   lessonId?: string;
   onSelectGrade?: (grade: number) => void;
+  /** Admin review: show this booklet as learners would, with no selectors and no fetching. */
+  previewBooklet?: any;
 }
 
 export const MalazimViewer: React.FC<MalazimViewerProps> = ({
@@ -21,8 +23,10 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
   activeChild,
   initialGrade = 5,
   lessonId,
-  onSelectGrade
+  onSelectGrade,
+  previewBooklet
 }) => {
+  const preview = previewBooklet != null;
   const availableGrades = useMemo(() => {
     if (user?.role === 'admin') {
       return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -80,6 +84,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
   const targetLessonId = lessonId || selectedLessonId;
 
   useEffect(() => {
+    if (preview) return;
     let cancelled = false;
     setSelectedTerm(1);
     setSelectedLessonId(firstChapterId(selectedGrade));
@@ -90,6 +95,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
   }, [selectedGrade, activeChild?.id]);
 
   useEffect(() => {
+    if (preview) return;
     let cancelled = false;
     api.getLessons(selectedGrade, selectedTerm, activeChild?.id)
       .then((list) => {
@@ -113,6 +119,13 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
       setSubmittedExercises({});
       setFeedback({});
       setError('');
+      if (preview) {
+        if (previewBooklet?.grade) setSelectedGrade(previewBooklet.grade);
+        setBookletData(previewBooklet);
+        setLoading(false);
+        setHasLoaded(true);
+        return;
+      }
       if (!targetLessonId) {
         setBookletData(null);
         setLoading(false);
@@ -138,7 +151,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
     };
     fetchBooklet();
     return () => { cancelled = true; };
-  }, [targetLessonId, selectedGrade, activeChild?.id]);
+  }, [targetLessonId, selectedGrade, activeChild?.id, previewBooklet]);
 
   const handleSelectOption = (sectionId: string, optionIdx: number) => {
     if (submittedExercises[sectionId]) return;
@@ -148,6 +161,18 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
   const handleSubmitExercise = async (sectionId: string) => {
     try {
       setError('');
+      if (preview) {
+        const exercise = previewBooklet?.study_mode?.sections?.find((s: any) => s.section_id === sectionId)?.inline_exercise;
+        const result = exercise && {
+          is_correct: selectedAnswers[sectionId] === exercise.correct_index,
+          correct_index: exercise.correct_index,
+          explanation_ar: exercise.explanation_ar,
+          explanation_en: exercise.explanation_en,
+        };
+        setFeedback(prev => ({ ...prev, [sectionId]: result }));
+        setSubmittedExercises(prev => ({ ...prev, [sectionId]: true }));
+        return;
+      }
       const result = await api.checkBookletAnswer(targetLessonId, sectionId, selectedAnswers[sectionId], activeChild?.id);
       setFeedback(prev => ({ ...prev, [sectionId]: result }));
       setSubmittedExercises(prev => ({ ...prev, [sectionId]: true }));
@@ -174,7 +199,7 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
       {error && <p role="alert" className="text-red-700 mb-4">{error}</p>}
 
       {/* Grade Selector Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white border border-slate-200 p-3 rounded-sm shadow-2xs">
+      {!preview && <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white border border-slate-200 p-3 rounded-sm shadow-2xs">
         <div className="flex items-center gap-2.5 flex-wrap">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
             <GraduationCap className="w-4 h-4 text-emerald-800" />
@@ -204,10 +229,10 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
           <span className="text-slate-300">|</span>
           <span className="font-semibold text-emerald-800">{bookletData?.pages_reference || `Grade ${selectedGrade}`}</span>
         </div>
-      </div>
+      </div>}
 
       {/* Term & Chapter Selector */}
-      {!lessonId && (
+      {!lessonId && !preview && (
         <div className="mb-4 bg-white border border-slate-200 p-3 rounded-sm shadow-2xs space-y-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-slate-800">الفصل الدراسي (Term):</span>

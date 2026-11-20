@@ -864,3 +864,66 @@ def review_sentence_alignment(alignment_id: str, payload: AlignmentReviewRequest
         raise HTTPException(status_code=404, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------------------------
+# Smart Study Booklets written by AI from each chapter's published lesson (admin review required)
+# ---------------------------------------------------------------------------------------------
+
+class BookletWriteRequest(BaseModel):
+    grade: int
+    term: int
+    lesson_ids: Optional[list[str]] = None
+    overwrite: bool = False
+
+
+class BookletReviewRequest(BaseModel):
+    note: str = ""
+
+
+@router.get('/booklets')
+def list_booklets(grade: int, term: int, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """Each chapter of a grade/term: where its booklet comes from and its latest AI draft."""
+    require_roles(actor, ('admin',))
+    from backend.modules.curriculum.booklet_writer import booklet_overview
+    return {"grade": grade, "term": term, "chapters": booklet_overview(db, grade, term)}
+
+
+@router.post('/booklets/write')
+def write_booklets(req: BookletWriteRequest, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """Queue AI writing of a grade/term's booklets (or some chapters of it)."""
+    require_roles(actor, ('admin',))
+    import os
+    if not (1 <= req.grade <= 12 and req.term in (1, 2, 3)):
+        raise HTTPException(status_code=400, detail='grade must be 1-12 and term 1-3')
+    if not (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("ANTHROPIC_API_KEY")):
+        raise HTTPException(status_code=503, detail='No AI provider is configured (GEMINI_API_KEY or ANTHROPIC_API_KEY)')
+    if not db.query(Lesson).filter(Lesson.grade == req.grade, Lesson.term == req.term).first():
+        raise HTTPException(status_code=404, detail=f'No chapters found for Grade {req.grade} Term {req.term}')
+    from backend.tasks.queue import enqueue_task
+    task = enqueue_task(
+        task_type="write_booklets",
+        params={"grade": req.grade, "term": req.term, "lesson_ids": req.lesson_ids,
+                "overwrite": req.overwrite, "actor_id": actor.id},
+        actor_id=actor.id,
+    )
+    return {"task_id": task.id, "poll_url": f"/api/tasks/{task.id}", "status": "queued"}
+
+
+@router.get('/booklets/drafts/{draft_id}')
+def get_booklet_draft(draft_id: str, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    require_roles(actor, ('admin',))
+    from backend.modules.curriculum.booklet_writer import draft_detail
+    return draft_detail(db, draft_id)
+
+
+@router.post('/booklets/drafts/{draft_id}/{action}')
+def review_booklet_draft(draft_id: str, action: str, req: BookletReviewRequest | None = None,
+                         db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """publish (learners see it), unpublish (back to draft) or reject."""
+    require_roles(actor, ('admin',))
+    from backend.modules.curriculum.booklet_writer import review_draft, draft_detail
+    from backend.observability import audit_event
+    draft = review_draft(db, draft_id, action, actor_id=actor.id, note=(req.note if req else ""))
+    audit_event(f"admin.booklet_{action}", user_id=actor.id, lesson_id=draft.lesson_id, draft_id=draft.id)
+    return draft_detail(db, draft_id)

@@ -692,3 +692,31 @@ class SentenceAlignment(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     reviewed_by = Column(String(36), nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
+
+
+class BookletDraft(Base):
+    """An AI-written Smart Study Booklet for one chapter, written from the chapter's published lesson.
+
+    Learners only see a booklet whose status is "published", and only one per chapter is published at
+    a time (publishing another retires it to "superseded"). The three hand-authored Chapter 1
+    booklets in backend/malazim_bank.py always win over these.
+    """
+    __tablename__ = "booklet_drafts"
+    __table_args__ = (
+        Index("ix_booklet_drafts_lesson_status", "lesson_id", "status"),
+    )
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    lesson_id = Column(String(100), nullable=False, index=True)
+    grade = Column(Integer, nullable=False)
+    term = Column(Integer, nullable=False)
+    booklet_json = Column(Text, nullable=False)
+    status = Column(String(20), default="draft", nullable=False)  # draft | published | rejected | superseded
+    source_version_id = Column(String(100), nullable=True)        # the lesson version it was written from
+    model = Column(String(80), nullable=True)
+    cost_usd = Column(Float, nullable=True)
+    created_by = Column(String(36), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    reviewed_by = Column(String(36), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    review_note = Column(Text, nullable=True)

@@ -401,10 +401,29 @@ def handle_draft_lessons(params: Dict[str, Any], update_progress: Callable[[int]
         db.close()
 
 
+def handle_write_booklets(params: Dict[str, Any], update_progress: Callable[[int], None]) -> Dict[str, Any]:
+    """AI-write the Smart Study Booklets of a grade/term from the published lessons (admin review required)."""
+    from backend.database import SessionLocal
+    from backend.modules.curriculum.booklet_writer import write_booklets
+
+    db = SessionLocal()
+    try:
+        return write_booklets(
+            int(params["grade"]), int(params["term"]), db=db,
+            lesson_ids=params.get("lesson_ids") or None,
+            overwrite=bool(params.get("overwrite")),
+            actor_id=params.get("actor_id"),
+            progress=update_progress,
+        )
+    finally:
+        db.close()
+
+
 TASK_HANDLERS = {
     "synthesize_audio": handle_synthesize_audio,
     "bulk_enroll_learners": handle_bulk_enroll_learners,
     "send_weekly_digest": handle_send_weekly_digest,
     "process_textbook_ocr": handle_process_textbook_ocr,
     "draft_lessons": handle_draft_lessons,
+    "write_booklets": handle_write_booklets,
 }

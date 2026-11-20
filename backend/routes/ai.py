@@ -15,6 +15,7 @@ from backend.schemas import (
     HomeworkCheckRequest,
 )
 from backend.modules.tutoring import assistant as service
+from backend.modules.curriculum.entitlements import require_paid_ai
 
 router = APIRouter(prefix='/api/ai', tags=['Ask & Learn AI Tutor'])
 
@@ -24,7 +25,7 @@ def ask_fahim(req: AskFahimRequest, db: Session=Depends(get_db), actor: Optional
     Conversational teacher: 'Ask Fahim' (اسأل فاهم).
     Safely responds using approved curriculum context.
     Never reveals assessment keys and provides deterministic teacher escalation on complex queries.
-    Allows guest users to interact with Fahim without mandatory login.
+    Part of the paid plan: signed-out visitors and free-tier accounts are refused.
     """
     if req.attachment_type and req.attachment_type.lower() not in {"image/jpeg", "image/png", "image/webp", "application/pdf"}:
         from backend.errors import ApplicationError
@@ -40,6 +41,7 @@ def ask_fahim(req: AskFahimRequest, db: Session=Depends(get_db), actor: Optional
                     req.child_id = first_c.id
 
         optional_child(db, actor, req.child_id)
+    require_paid_ai(db, actor)
     return service.ask_fahim(req=req, db=db, actor=actor)
 
 @router.post('/socratic-learn', response_model=SocraticLearnResponse)
@@ -61,6 +63,7 @@ def socratic_learn(req: SocraticLearnRequest, db: Session=Depends(get_db), actor
                     req.child_id = first_c.id
 
         optional_child(db, actor, req.child_id)
+    require_paid_ai(db, actor)
     return service.socratic_learn(req=req)
 
 @router.post('/solve-question-paper', response_model=QuestionPaperSolveResponse)
@@ -90,6 +93,7 @@ def solve_question_paper(
                     req.child_id = first_c.id
 
         optional_child(db, actor, req.child_id)
+    require_paid_ai(db, actor)
 
     # Access control: Admin or Unlocked Term
     is_admin = bool(actor and actor.role == "admin")
@@ -121,6 +125,7 @@ def _homework_learner(db: Session, actor: Optional[Principal], child_id: Optiona
             first_c = visible_children(db, actor).first()
             child_id = first_c.id if first_c else None
     optional_child(db, actor, child_id)
+    require_paid_ai(db, actor)
     return actor.id, child_id or actor.id
 
 @router.post('/homework/scan')

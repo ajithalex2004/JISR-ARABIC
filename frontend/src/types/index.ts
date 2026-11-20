@@ -17,6 +17,9 @@ export interface ChildProfile {
   learning_plan?: string;
   // Registered grade plus grades the parent has paid for; only these can be opened.
   entitled_grades?: number[];
+  // Paid (or voucher) terms, e.g. "grade_5_term_1"; is_unlocked is true when there is at least one.
+  unlocked_terms?: string[];
+  is_unlocked?: boolean;
 }
 
 export interface DiagnosticOption {

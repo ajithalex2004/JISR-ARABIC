@@ -321,11 +321,52 @@ class TestAccessControl(unittest.TestCase):
         self.assertEqual(self.client.post(path, json=payload).status_code, 401)
         self.assertEqual(self.client.post(path, json={**payload, "child_id": "a1"}, headers=self.auth()).status_code, 402)
 
+    def test_ask_fahim_is_locked_on_the_free_tier(self):
+        """Ask Fahim (chat, mentor, homework helper, paper assistant) needs a paid term."""
+        from backend.models import TermAccess
+        ask = lambda headers, child="a1": self.client.post(
+            "/api/ai/ask-fahim", headers=headers, json={"question": "ما هي الرياضة؟", "child_id": child})
+        homework = lambda headers: self.client.post(
+            "/api/ai/homework/check", headers=headers,
+            json={"scan_id": "x", "question_number": "1", "answer_text": "أ", "child_id": "a1"})
+        paper = lambda headers: self.client.post(
+            "/api/ai/solve-question-paper", headers=headers, json={"text_content": "س1", "child_id": "a1"})
+        # Signed out: sign in first. Free parent and free student: paid plan required, on every AI service.
+        self.assertEqual(ask({}).status_code, 401)
+        free = ask(self.auth("pa"))
+        self.assertEqual(free.status_code, 402)
+        self.assertIn("paid plan", free.json()["detail"])
+        self.assertEqual(ask(self.auth("pa", role="learner", child="a1")).status_code, 402)
+        self.assertEqual(homework(self.auth("pa")).status_code, 402)
+        self.assertEqual(paper(self.auth("pa")).status_code, 402)
+        # Mentors and admins are never locked.
+        self.assertEqual(ask(self.auth("ad")).status_code, 200)
+        # A paid term for one child opens Ask Fahim for the parent and that child, not for the free sibling.
+        with self.session() as db:
+            db.add(TermAccess(child_id="a1", grade=5, term=1, is_unlocked=True))
+            db.commit()
+        self.assertEqual(ask(self.auth("pa")).status_code, 200)
+        self.assertEqual(ask(self.auth("pa", role="learner", child="a1")).status_code, 200)
+        self.assertEqual(ask(self.auth("pa", role="learner", child="a2"), child="a2").status_code, 402)
+        # Another family stays free.
+        self.assertEqual(ask(self.auth("pb"), child="b1").status_code, 402)
+        # A refunded (re-locked) term locks Ask Fahim again.
+        with self.session() as db:
+            db.query(TermAccess).update({"is_unlocked": False})
+            db.commit()
+        self.assertEqual(ask(self.auth("pa")).status_code, 402)
+
     def test_learner_role_access_to_learning_and_gamification_endpoints(self):
         learner_auth = self.auth("pa", role="learner", child="a1")
         sibling_auth = self.auth("pa", role="learner", child="a2")
 
-        # 1. AI Assistant Endpoints (Ask Fahim & Socratic Learn)
+        # 1. AI Assistant Endpoints (Ask Fahim & Socratic Learn): locked on the free tier, open once paid.
+        free = self.client.post("/api/ai/ask-fahim", headers=learner_auth, json={"question": "ما هي الرياضة؟", "child_id": "a1"})
+        self.assertEqual(free.status_code, 402)
+        from backend.models import TermAccess
+        with self.session() as db:
+            db.add(TermAccess(child_id="a1", grade=5, term=1, is_unlocked=True))
+            db.commit()
         ask_res = self.client.post("/api/ai/ask-fahim", headers=learner_auth, json={"question": "ما هي الرياضة؟", "child_id": "a1"})
         self.assertEqual(ask_res.status_code, 200)
         self.assertIn("answer_ar", ask_res.json())

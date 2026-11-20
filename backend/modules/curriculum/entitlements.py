@@ -43,3 +43,42 @@ def require_grade_change_allowed(child: ChildProfile, new_grade: Optional[int], 
             402,
             f"Grade {new_grade} is not unlocked for {child.name}. Unlock Grade {new_grade} to switch to it.",
         )
+
+
+# Ask Fahim (chat, the step-by-step mentor, the homework helper and the exam paper assistant) is
+# part of the paid plan: free-tier students and parents see it locked.
+AI_STAFF_ROLES = {"admin", "tutor", "school_admin"}
+
+
+def has_paid_plan(db, actor) -> bool:
+    """Whether this account may use Ask Fahim.
+
+    Staff always may. A student (learner session) may when their own profile has an unlocked
+    (paid or voucher) term; a parent may when any of their children has one.
+    """
+    if actor is None:
+        return False
+    role = getattr(actor, "role", None)
+    if role in AI_STAFF_ROLES:
+        return True
+    query = db.query(TermAccess.id).filter(TermAccess.is_unlocked == True)  # noqa: E712
+    if role == "learner":
+        child_id = getattr(actor, "child_id", None)
+        if not child_id:
+            return False
+        return query.filter(TermAccess.child_id == child_id).first() is not None
+    if role == "parent":
+        child_ids = db.query(ChildProfile.id).filter(ChildProfile.parent_id == actor.id)
+        return query.filter(TermAccess.child_id.in_(child_ids)).first() is not None
+    return False
+
+
+def require_paid_ai(db, actor) -> None:
+    """Refuse Ask Fahim to signed-out visitors (401) and free-tier accounts (402)."""
+    if actor is None:
+        raise ApplicationError(401, "Sign in to use Ask Fahim.")
+    if not has_paid_plan(db, actor):
+        raise ApplicationError(
+            402,
+            "Ask Fahim is part of the paid plan. Unlock a term (USD 10) or the full year (USD 25.50) to use it.",
+        )

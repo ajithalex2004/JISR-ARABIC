@@ -321,6 +321,20 @@ class TestAccessControl(unittest.TestCase):
         self.assertEqual(self.client.post(path, json=payload).status_code, 401)
         self.assertEqual(self.client.post(path, json={**payload, "child_id": "a1"}, headers=self.auth()).status_code, 402)
 
+    def test_student_completing_a_capsule_turns_it_from_pending_to_done(self):
+        learner = self.auth("pa", role="learner", child="a1")
+        listing = lambda: {c["id"]: c["is_completed"] for c in self.client.get(
+            "/api/modules/capsules?child_id=a1", headers=learner).json()["capsules"]}
+        self.assertFalse(listing()["capsule_01_taa_marbutah"])  # "Pending" before it is done
+        from backend.capsules_bank import get_capsule_by_id
+        quiz = get_capsule_by_id("capsule_01_taa_marbutah")["quiz"]
+        answers = {str(i): q["correct_index"] for i, q in enumerate(quiz)}
+        done = self.client.post("/api/modules/capsules/capsule_01_taa_marbutah/complete", headers=learner,
+                                json={"child_id": "a1", "answers": answers})
+        self.assertEqual(done.status_code, 200)
+        self.assertEqual(done.json()["score"], 100.0)  # scored from the answers the student sent
+        self.assertTrue(listing()["capsule_01_taa_marbutah"])
+
     def test_ask_fahim_is_locked_on_the_free_tier(self):
         """Ask Fahim (chat, mentor, homework helper, paper assistant) needs a paid term."""
         from backend.models import TermAccess

@@ -56,6 +56,7 @@ export const CapsulesGrid: React.FC<CapsulesGridProps> = ({ user, activeChild, i
   const [completedCount, setCompletedCount] = useState<number>(0);
   const [selectedCapsule, setSelectedCapsule] = useState<any | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
+  const [completeError, setCompleteError] = useState('');
   const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
   const [isCompletedState, setIsCompletedState] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -82,6 +83,7 @@ export const CapsulesGrid: React.FC<CapsulesGridProps> = ({ user, activeChild, i
   const openCapsule = (cap: any) => {
     setSelectedCapsule(cap);
     setQuizAnswers({});
+    setCompleteError('');
     setQuizSubmitted(false);
     setIsCompletedState(cap.is_completed);
   };
@@ -103,8 +105,11 @@ export const CapsulesGrid: React.FC<CapsulesGridProps> = ({ user, activeChild, i
 
     if (activeChild?.id) {
       try {
+        setCompleteError('');
         await api.completeCapsule(selectedCapsule.id, {
           child_id: activeChild.id,
+          // The server scores the answers; without them every capsule was saved with 0%.
+          answers: Object.fromEntries(Object.entries(quizAnswers).map(([q, o]) => [String(q), o])),
           score: scorePct,
           time_spent_seconds: selectedCapsule.duration_minutes * 60
         });
@@ -112,6 +117,7 @@ export const CapsulesGrid: React.FC<CapsulesGridProps> = ({ user, activeChild, i
         fetchCapsules();
       } catch (err) {
         console.error('Failed to complete capsule:', err);
+        setCompleteError(err instanceof Error ? err.message : 'Your result could not be saved. Please try again.');
       }
     }
   };
@@ -444,10 +450,14 @@ export const CapsulesGrid: React.FC<CapsulesGridProps> = ({ user, activeChild, i
                 </button>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-emerald-800 flex items-center gap-1">
-                    <CheckCircle className="w-4 h-4" />
-                    <span>تم الإنجاز ونيل وسام الكبسولة 🏅 (Capsule Badge Earned)</span>
-                  </span>
+                  {completeError ? (
+                    <span role="alert" className="text-xs font-bold text-red-700">لم يُحفظ الإنجاز · {completeError}</span>
+                  ) : (
+                    <span className="text-xs font-bold text-emerald-800 flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>تم الإنجاز ونيل وسام الكبسولة 🏅 (Capsule Badge Earned)</span>
+                    </span>
+                  )}
                   <button
                     onClick={() => setSelectedCapsule(null)}
                     className="bg-emerald-900 text-white text-xs font-bold px-4 py-2 border-2 border-slate-900"

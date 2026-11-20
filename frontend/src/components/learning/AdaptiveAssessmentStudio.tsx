@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Award, Clock, CheckCircle2, XCircle, AlertCircle, BarChart3,
-  Layers, ArrowRight, ArrowLeft, RefreshCw, Sparkles, BookOpen
+  Layers, ArrowRight, ArrowLeft, RefreshCw, Sparkles, BookOpen, Lock
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
-import { ChildProfile } from '../../types';
+import { ChildProfile, TermSummary } from '../../types';
 
 interface AdaptiveAssessmentStudioProps {
   activeChild: ChildProfile | null;
@@ -24,28 +24,53 @@ export const AdaptiveAssessmentStudio: React.FC<AdaptiveAssessmentStudioProps> =
   const [examResult, setExamResult] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const grade = activeChild?.default_grade || 5;
+  // The term whose exam is shown: the learner's saved term by default, changeable before starting.
+  const [examTerm, setExamTerm] = useState<number>(activeChild?.selected_term || 1);
+  const [terms, setTerms] = useState<TermSummary[]>([]);
+  const [examError, setExamError] = useState('');
+  const [examLoadCount, setExamLoadCount] = useState(0);  // bumped by Retake: a new exam session
+
+  useEffect(() => {
+    setExamTerm(activeChild?.selected_term || 1);
+    let cancelled = false;
+    api.getTerms(grade, activeChild?.id)
+      .then((list) => { if (!cancelled) setTerms(Array.isArray(list) ? list : []); })
+      .catch(() => { if (!cancelled) setTerms([]); });
+    return () => { cancelled = true; };
+  }, [activeChild?.id, grade]);
 
   // Fetch Exam Data
   useEffect(() => {
+    let cancelled = false;
     const fetchExam = async () => {
       setLoading(true);
+      setExamData(null);
+      setExamError('');
+      setExamAnswers({});
+      setCurrentQuestionIdx(0);
+      setIsExamActive(false);
+      setIsExamSubmitted(false);
+      setExamResult(null);
       try {
-        const grade = activeChild?.default_grade || 5;
-        const term = activeChild?.selected_term || 1;
-        const res = await api.getExamSimulation(grade, term, activeChild?.id);
+        const res = await api.getExamSimulation(grade, examTerm, activeChild?.id);
+        if (cancelled) return;
         if (res.success && res.exam) {
           setExamData(res.exam);
           setSessionId(res.session_id || null);
           setSecondsRemaining(res.exam.time_limit_seconds || 1200);
         }
       } catch (err) {
+        if (cancelled) return;
         console.error('Failed to load exam:', err);
+        setExamError(err instanceof Error ? err.message : 'This exam could not be loaded.');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchExam();
-  }, [activeChild?.id]);
+    return () => { cancelled = true; };
+  }, [activeChild?.id, grade, examTerm, examLoadCount]);
 
   // Timer countdown
   useEffect(() => {
@@ -75,8 +100,8 @@ export const AdaptiveAssessmentStudio: React.FC<AdaptiveAssessmentStudioProps> =
     try {
       const res = await api.submitExamSimulation({
         child_id: activeChild?.id || 'guest_child',
-        grade: activeChild?.default_grade || 5,
-        term: activeChild?.selected_term || 1,
+        grade,
+        term: examTerm,
         answers: examAnswers,
         time_taken_seconds: Math.max(timeSpent, 30)
         ,session_id: sessionId || undefined
@@ -139,7 +164,36 @@ export const AdaptiveAssessmentStudio: React.FC<AdaptiveAssessmentStudioProps> =
       {/* TAB 1: OFFICIAL EXAM SIMULATION */}
       {activeTab === 'simulation' && (
         <div>
-          {!isExamActive && !isExamSubmitted ? (
+          {!isExamActive && (
+            <div className="max-w-2xl mx-auto mb-4 bg-white border border-slate-200 p-3 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-800">الفصل الدراسي (Term):</span>
+              {(terms.length ? terms.map((t) => t.term) : [1, 2, 3]).map((t) => {
+                const info = terms.find((x) => x.term === t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={examTerm === t}
+                    onClick={() => setExamTerm(t)}
+                    className={`px-3 py-1 text-xs font-bold flex items-center gap-1 ${
+                      examTerm === t ? 'bg-emerald-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    {info && !info.is_unlocked && <Lock className="w-3 h-3" aria-label="locked" />}
+                    الفصل {t} (Term {t})
+                  </button>
+                );
+              })}
+              {loading && <span className="text-[11px] text-slate-500">جَارٍ التَّحْمِيلُ… · Loading…</span>}
+            </div>
+          )}
+          {examError && !isExamActive ? (
+            <div role="alert" className="bg-white border-2 border-slate-300 p-8 text-center max-w-2xl mx-auto space-y-2">
+              <Lock className="w-6 h-6 text-slate-400 mx-auto" />
+              <p className="text-sm font-bold text-slate-800">{examError}</p>
+              <p className="text-xs text-slate-500">Unlock this term in Curriculum & Lessons, or choose another term.</p>
+            </div>
+          ) : !isExamActive && !isExamSubmitted ? (
             /* Exam Start Screen */
             <div className="bg-white border-2 border-slate-900 p-8 text-center max-w-2xl mx-auto shadow-sm">
               <div className="w-16 h-16 bg-emerald-900 text-amber-400 flex items-center justify-center font-bold text-2xl mx-auto mb-4 border-2 border-slate-900">
@@ -149,7 +203,7 @@ export const AdaptiveAssessmentStudio: React.FC<AdaptiveAssessmentStudioProps> =
                 {examData?.exam_title_ar || 'محاكاة الاختبار'}
               </h2>
               <p className="text-xs text-slate-500 mb-6 font-mono">
-                {examData?.curriculum} · الصف 5 الفصل 1
+                {examData?.curriculum} · الصف {grade} الفصل {examTerm}
               </p>
 
               <div className="grid grid-cols-3 gap-3 bg-slate-50 p-4 border border-slate-200 mb-6 text-xs">
@@ -168,8 +222,9 @@ export const AdaptiveAssessmentStudio: React.FC<AdaptiveAssessmentStudioProps> =
               </div>
 
               <button
+                disabled={!examData || loading}
                 onClick={() => setIsExamActive(true)}
-                className="bg-emerald-900 text-white text-sm font-bold px-8 py-3 border-2 border-slate-900 uppercase tracking-wider hover:bg-emerald-800 transition-colors shadow-sm"
+                className="bg-emerald-900 text-white text-sm font-bold px-8 py-3 border-2 border-slate-900 uppercase tracking-wider hover:bg-emerald-800 transition-colors shadow-sm disabled:opacity-50"
               >
                 ابدأ الاختبار الآن (Start Exam Now)
               </button>
@@ -480,13 +535,7 @@ export const AdaptiveAssessmentStudio: React.FC<AdaptiveAssessmentStudioProps> =
 
                 <div className="mt-6 text-center">
                   <button
-                    onClick={() => {
-                      setIsExamSubmitted(false);
-                      setIsExamActive(false);
-                      setExamAnswers({});
-                      setCurrentQuestionIdx(0);
-                      setSecondsRemaining(examData?.time_limit_seconds || 1200);
-                    }}
+                    onClick={() => setExamLoadCount((n) => n + 1)}
                     className="bg-emerald-900 text-white text-xs font-bold px-6 py-2.5 border-2 border-slate-900 uppercase tracking-wider hover:bg-emerald-800"
                   >
                     إعادة محاكاة الاختبار (Retake Exam Simulation)

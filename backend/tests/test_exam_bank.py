@@ -57,14 +57,34 @@ class TestExamBank(unittest.TestCase):
         self._lesson("g7_t1_2", 7, 1, 2, self._real(["e3"], ["q1", "q2", "q3", "q4"]))
         ids = [q["id"] for q in _exam_questions(7, 1, db=self.db)]
         self.assertEqual(len(ids), EXAM_QUESTION_COUNT)
-        # Exam questions first, then practice questions alternating between chapters.
-        self.assertEqual(ids[:3], ["g7_t1_1:e1", "g7_t1_1:e2", "g7_t1_2:e3"])
-        self.assertEqual(ids[3:7], ["g7_t1_1:p1", "g7_t1_2:q1", "g7_t1_1:p2", "g7_t1_2:q2"])
+        # Every exam question is used, then practice questions alternate between chapters; the exam
+        # lists them in chapter order, each chapter's exam questions first.
+        self.assertEqual(ids, ["g7_t1_1:e1", "g7_t1_1:e2", "g7_t1_1:p1", "g7_t1_1:p2", "g7_t1_1:p3", "g7_t1_1:p4",
+                               "g7_t1_2:e3", "g7_t1_2:q1", "g7_t1_2:q2", "g7_t1_2:q3"])
 
-    def test_practice_top_ups_carry_one_mark_and_an_answer_key(self):
+    def test_every_chapter_gets_a_question(self):
+        # Chapter 1 alone has enough exam questions for a whole exam; the others still appear.
+        self._lesson("g7_t1_1", 7, 1, 1, self._real([f"e{i}" for i in range(12)], []))
+        for order in range(2, 6):
+            self._lesson(f"g7_t1_{order}", 7, 1, order, self._real([], [f"p{order}"]))
+        ids = [q["id"] for q in _exam_questions(7, 1, db=self.db)]
+        self.assertEqual(len(ids), EXAM_QUESTION_COUNT)
+        self.assertEqual({i.split(":")[0] for i in ids}, {f"g7_t1_{o}" for o in range(1, 6)})
+        self.assertEqual(sum(i.startswith("g7_t1_1:") for i in ids), 6)
+
+    def test_class_5_term_1_covers_every_chapter(self):
+        """The real Class 5 lessons: Term 1's exam has a question from each of its ten chapters."""
+        from backend.curriculum_seed import seed_database
+        seed_database(self.db, include_demo_data=False)
+        for term, chapters in ((1, 10), (2, 6), (3, 6)):
+            ids = [q["id"] for q in _exam_questions(5, term, db=self.db)]
+            self.assertEqual(len(ids), EXAM_QUESTION_COUNT)
+            self.assertEqual(len({i.split(":")[0] for i in ids}), chapters, f"Term {term}")
+
+    def test_questions_carry_ten_marks_and_an_answer_key(self):
         self._lesson("g7_t1_1", 7, 1, 1, self._real([], ["p1"]))
         (q,) = _exam_questions(7, 1, db=self.db)
-        self.assertEqual((q["points"], q["correct_index"], q["options"]), (1, 1, ["أ", "ب"]))
+        self.assertEqual((q["points"], q["correct_index"], q["options"]), (10, 1, ["أ", "ب"]))
 
     def test_placeholder_lessons_add_no_questions(self):
         self._lesson("g7_t2_1", 7, 2, 1, self._real(["e1"], []))

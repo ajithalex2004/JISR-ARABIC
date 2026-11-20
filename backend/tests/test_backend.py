@@ -573,8 +573,9 @@ class TestFahimBackend(unittest.TestCase):
         self.assertEqual(exam_data["exam"]["total_questions"], 10)
         self.assertEqual(exam_data["exam"]["time_limit_minutes"], 20)
 
-        from backend.assessment_bank import ASSESSMENT_QUESTIONS
-        correct_answers = {q["id"]: q["correct_index"] for q in ASSESSMENT_QUESTIONS}
+        from backend.modules.assessment.exams import _exam_questions
+        with SessionLocal() as exam_db:
+            correct_answers = {q["id"]: q["correct_index"] for q in _exam_questions(5, 1, db=exam_db)}
 
         exam_sub = self.client.post("/api/modules/assessments/submit-exam", json={
             "child_id": child_id,

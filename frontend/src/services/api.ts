@@ -1064,14 +1064,14 @@ export const api = {
     return res.json();
   },
 
-  async completeCapsule(capsuleId: string, data: { child_id: string; score?: number; time_spent_seconds?: number }) {
+  /** answers: the chosen option per quiz question ({"0": 1, ...}); the server scores them. */
+  async completeCapsule(capsuleId: string, data: { child_id: string; answers: Record<string, number>; score?: number; time_spent_seconds?: number }) {
     const res = await authenticatedFetch(`${API_BASE}/api/modules/capsules/${capsuleId}/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Failed to complete capsule');
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   // 3.5 Adaptive Assessments & Exam Simulation

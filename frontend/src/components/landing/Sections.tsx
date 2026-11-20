@@ -79,7 +79,7 @@ export function Pricing({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
       <div className="jl-wrap">
         <header className="jl-head jl-head--center" data-reveal>
           <p className="jl-kicker">Simple pricing</p>
-          <h2 id="jl-pricing-title" className="jl-h2">Less than a single tutoring hour <em>for the whole year</em>.</h2>
+          <h2 id="jl-pricing-title" className="jl-h2">Less than a single mentoring hour <em>for the whole year</em>.</h2>
         </header>
         <ul className="jl-plans">
           {PLANS.map((p, i) => (

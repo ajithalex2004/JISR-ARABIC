@@ -21,7 +21,7 @@ const TABS = [
   { key: 'booklets', label: 'Study booklets', render: () => <BookletsAdmin /> },
   { key: 'words', label: 'Word meanings', render: () => <WordReviewQueue /> },
   { key: 'health', label: 'System health', render: () => <SystemHealth /> },
-  { key: 'tutors', label: 'Tutors', render: () => <TutorAssignments /> },
+  { key: 'tutors', label: 'Mentors', render: () => <TutorAssignments /> },
 ] as const;
 
 type TabKey = typeof TABS[number]['key'];

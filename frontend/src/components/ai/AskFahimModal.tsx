@@ -18,7 +18,7 @@ type ModeTab = 'chat' | 'homework' | 'paper';
 // and border when not selected, and the solid colour (white text) when selected.
 const MODE_TABS: Array<{ id: ModeTab; label: string; Icon: typeof MessageSquare; idle: string; active: string }> = [
   {
-    id: 'chat', label: 'Chat Tutor (حوار مع فاهم)', Icon: MessageSquare,
+    id: 'chat', label: 'Chat Mentor (حوار مع فاهم)', Icon: MessageSquare,
     idle: 'bg-purple-50 text-purple-900 border-purple-300 hover:bg-purple-100 focus-visible:ring-purple-400',
     active: 'bg-purple-600 text-white border-purple-700 shadow-sm ring-2 ring-purple-200 focus-visible:ring-purple-400',
   },
@@ -100,7 +100,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
         {
           sender: 'fahim',
           text_ar: 'عُذْرًا، تَعَذَّرَ الِاتِّصَالُ حَالِيًّا. يُرْجَى مُرَاجَعَةِ مُعَلِّمِكَ الخُصُوصِيِّ.',
-          text_en: 'Connection issue. Please review with your assigned tutor.'
+          text_en: 'Connection issue. Please review with your assigned mentor.'
         }
       ]);
     } finally {
@@ -159,13 +159,13 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
     try {
       await api.solveQuestionPaper({
         paper_title: `${paperTitle} - Question ${qNumber}`,
-        text_content: `Question ${qNumber} needs human tutor certification.`,
+        text_content: `Question ${qNumber} needs human mentor certification.`,
         grade,
         term: 1,
         child_id: childId,
         force_escalation: true
       });
-      alert('تم رفع هذا السؤال إلى قائمة المعلم الخاص للمراجعة والتصديق! (Escalated to human tutor queue)');
+      alert('تم رفع هذا السؤال إلى قائمة المعلم الخاص للمراجعة والتصديق! (Escalated to human mentor queue)');
     } catch (e: any) {
       alert('تعذر إرسال الطلب للمعلم حالياً');
     }
@@ -198,7 +198,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
               </span>
             </h2>
             <p className="text-[11px] text-slate-500">
-              CBSE Curriculum Arabic Tutor · Autonomous Exam Paper Assistant
+              CBSE Curriculum Arabic Mentor · Autonomous Exam Paper Assistant
             </p>
           </div>
         </div>
@@ -227,7 +227,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
 
         {activeTab === 'homework' && <HomeworkHelper childId={childId} grade={grade} />}
 
-        {/* TAB 1: Chat Tutor */}
+        {/* TAB 1: Chat Mentor */}
         {activeTab === 'chat' && (
           <>
             <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-50 border border-slate-200 my-3 rounded-xl">
@@ -268,7 +268,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
                   {m.escalated && (
                     <div className="mt-2 bg-amber-100 p-1.5 text-[10px] text-amber-950 font-bold border border-amber-300 rounded flex items-center gap-1">
                       <UserCheck className="w-3 h-3 text-amber-700" />
-                      <span>Escalated to human Arabic tutor for personal guidance.</span>
+                      <span>Escalated to human Arabic mentor for personal guidance.</span>
                     </div>
                   )}
                 </div>

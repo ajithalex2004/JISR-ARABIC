@@ -81,7 +81,7 @@ export const api = {
   },
   async tutorAssignments() {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/tutor-assignments`);
-    if (!res.ok) throw new Error('Could not load tutor assignments');
+    if (!res.ok) throw new Error('Could not load mentor assignments');
     return res.json();
   },
   async setTutorAssignment(tutorId: string, childId: string, enabled: boolean) {
@@ -1001,7 +1001,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Failed to connect to Socratic AI Tutor');
+    if (!res.ok) throw new Error('Failed to connect to Socratic AI Mentor');
     return res.json();
   },
 

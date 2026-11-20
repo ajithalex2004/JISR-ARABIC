@@ -563,7 +563,7 @@ class _PaywallDialogState extends State<PaywallDialog> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Ask Fahim AI Tutor Companion (Default Selection: ON)
+                  // Ask Fahim AI Mentor Companion (Default Selection: ON)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
@@ -593,7 +593,7 @@ class _PaywallDialogState extends State<PaywallDialog> {
                               Row(
                                 children: [
                                   Text(
-                                    isAr ? '🤖 مساعد المعلم الذكي (اسأل فاهم)' : '🤖 Ask Fahim AI Tutor Companion',
+                                    isAr ? '🤖 مساعد المعلم الذكي (اسأل فاهم)' : '🤖 Ask Fahim AI Mentor Companion',
                                     style: const TextStyle(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.bold,

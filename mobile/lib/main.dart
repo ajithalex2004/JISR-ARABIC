@@ -928,7 +928,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         SnackBar(
           content: Text(_isArabic
               ? 'مساعد المعلم الذكي (فاهم) يتطلب تفعيل الاشتراك في المنهاج.'
-              : 'Ask Fahim AI Tutor requires an active subscription to access.'),
+              : 'Ask Fahim AI Mentor requires an active subscription to access.'),
           backgroundColor: const Color(0xFF58337E),
           behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
@@ -1828,7 +1828,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                           color: Color(0xFFD97706), size: 18),
                     ),
                     title: Text(
-                      _isArabic ? 'لوحة المعلم والتصحيح' : 'Tutor Queue',
+                      _isArabic ? 'لوحة المعلم والتصحيح' : 'Mentor Queue',
                       style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,

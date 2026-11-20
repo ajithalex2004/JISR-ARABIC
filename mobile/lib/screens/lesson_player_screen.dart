@@ -2296,7 +2296,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
-                  '✓ أحسنت! تم إرسال جملتك بنجاح إلى قائمة تدقيق المعلم (Tutor Queue) لمراجعتها وتقديم ملاحظات مفصلة.',
+                  '✓ أحسنت! تم إرسال جملتك بنجاح إلى قائمة تدقيق المعلم (Mentor Queue) لمراجعتها وتقديم ملاحظات مفصلة.',
                   style: TextStyle(color: Color(0xFF166534), fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),

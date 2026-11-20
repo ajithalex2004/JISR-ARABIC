@@ -143,11 +143,11 @@ def assign_tutor(class_id: str, tutor_id: str, *, db: Session, actor) -> Dict[st
     require_class_scope(db, actor, class_id)
     tutor = db.get(User, tutor_id)
     if not tutor or tutor.role != "tutor":
-        raise ApplicationError(400, "User is not a tutor")
+        raise ApplicationError(400, "User is not a mentor")
 
     if actor.role == "school_admin":
         if tutor.school_id and tutor.school_id != actor.school_id:
-            raise ApplicationError(403, "Tutor belongs to a different school")
+            raise ApplicationError(403, "Mentor belongs to a different school")
 
     assignment = db.get(TutorClassAssignment, (tutor_id, class_id))
     if not assignment:
@@ -172,7 +172,7 @@ def unassign_tutor(class_id: str, tutor_id: str, *, db: Session, actor) -> Dict[
 def tutor_classes(tutor_id: str, *, db: Session, actor) -> List[Dict[str, Any]]:
     require_roles(actor, ("admin", "school_admin", "tutor"))
     if actor.role == "tutor" and actor.id != tutor_id:
-        raise ApplicationError(403, "Tutors may view only their own classes")
+        raise ApplicationError(403, "Mentors may view only their own classes")
 
     query = (
         db.query(SchoolClass)

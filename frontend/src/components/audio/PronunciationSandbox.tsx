@@ -240,7 +240,7 @@ export const PronunciationSandbox: React.FC = () => {
             </div>
 
             <p className="text-[11px] text-slate-500 mt-2">
-              Microphone recordings stay private to this browser session unless explicitly submitted for tutor review.
+              Microphone recordings stay private to this browser session unless explicitly submitted for mentor review.
             </p>
           </div>
         </div>

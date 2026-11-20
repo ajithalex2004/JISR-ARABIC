@@ -96,7 +96,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setDebugOtp(null);
   };
 
-  // 1. Password Login (Parent or Tutor)
+  // 1. Password Login (Parent or Mentor)
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -391,7 +391,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Tutor (المعلم)
+                Mentor (المعلم)
               </button>
 
               <button
@@ -437,7 +437,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
-          {/* MODE: LOGIN -> PARENT, TUTOR & ADMIN ROLE */}
+          {/* MODE: LOGIN -> PARENT, MENTOR & ADMIN ROLE */}
           {mode === 'login' && (loginRole === 'parent' || loginRole === 'tutor' || loginRole === 'admin') && (
             <div className="space-y-3.5">
               {loginRole === 'parent' && (
@@ -480,7 +480,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder={loginRole === 'parent' ? 'Enter your email' : loginRole === 'admin' ? 'Enter admin email' : 'Enter tutor email'}
+                      placeholder={loginRole === 'parent' ? 'Enter your email' : loginRole === 'admin' ? 'Enter admin email' : 'Enter mentor email'}
                       className="w-full text-xs font-medium text-slate-800 placeholder-slate-400 outline-none bg-transparent"
                     />
                   </div>

@@ -29,7 +29,7 @@ def submit_for_tutor(req: TutorSubmissionRequest, *, db: Session):
     return {
         "success": True,
         "submission_id": submission.id,
-        "message": "Submission routed to tutor queue successfully."
+        "message": "Submission routed to mentor queue successfully."
     }
 
 
@@ -69,7 +69,7 @@ def review_submission(req: TutorReviewRequest, *, actor, db: Session):
     if not sub:
         raise ApplicationError(status_code=404, detail="Submission not found")
     if req.tutor_score < 0 or req.tutor_score > 100:
-        raise ApplicationError(422, "Tutor score must be between 0 and 100")
+        raise ApplicationError(422, "Mentor score must be between 0 and 100")
 
     sub.tutor_id = actor.id
     sub.tutor_score = req.tutor_score

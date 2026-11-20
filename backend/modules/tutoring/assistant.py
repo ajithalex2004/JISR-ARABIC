@@ -2553,9 +2553,9 @@ def _ask_fahim(req: AskFahimRequest, *, db: Session, actor: Optional[Any] = None
                 "تم تحويل سؤالك المتقدم إلى معلمك الخاص لمراجعته وشرحه لك بالتفصيل خطوة بخطوة. "
                 "سيقوم الأستاذ بالرد عليك قريباً في صندوق المحادثات! 🌟"
             ),
-            "answer_en": "Your advanced inquiry has been forwarded to your private tutor for a personalized step-by-step explanation.",
+            "answer_en": "Your advanced inquiry has been forwarded to your private mentor for a personalized step-by-step explanation.",
             "page_reference": "إشراف المعلم الخاص",
-            "lesson_title": "متابعة المعلم المباشر (Tutor Escalation)",
+            "lesson_title": "متابعة المعلم المباشر (Mentor Escalation)",
             "escalated_to_tutor": True,
             "tutor_escalation_message": "تم إرسال السؤال إلى الأستاذ للمتابعة الشخصية."
         }, effective_query)

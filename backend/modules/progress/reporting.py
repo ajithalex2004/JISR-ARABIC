@@ -145,7 +145,7 @@ def skill_breakdown(attempts, *, db: Session) -> dict:
         }
     skills["speaking_fluency"] = {
         "name_ar": "الطلاقة الشفهية والنطق", "name_en": "Oral Pronunciation & Speaking", "assessed": False,
-        "status_note": "Awaiting tutor evaluation of recorded speech mission / لم يُقيّم بعد",
+        "status_note": "Awaiting mentor evaluation of recorded speech mission / لم يُقيّم بعد",
         "score_pct": None, "evidence_count": 0, "evidence_source_en": None,
     }
     skills["writing_composition"] = {

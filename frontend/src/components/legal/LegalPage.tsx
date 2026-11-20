@@ -48,7 +48,7 @@ function Privacy() {
           <tr><td>Parent's name, email address and, if given, phone number; a password (stored only as a scrambled hash)</td><td>To create and secure the account, send sign-in codes, receipts and, if the parent turns it on, a weekly progress email</td></tr>
           <tr><td>Each child's name, age, class (grade) and school name, and the PIN their parent sets</td><td>To show the right lessons for the child's class and let them sign in</td></tr>
           <tr><td>Learning progress: lessons opened, answers, scores, mistakes, exams and study tools used</td><td>To track progress, suggest what to practise, and show the parent dashboard and tips</td></tr>
-          <tr><td>Questions typed or spoken to Ask Fahim, the AI tutor, and photos of homework a child chooses to send</td><td>To answer the question. Questions a child asks a teacher to review are kept with the child's account for that teacher.</td></tr>
+          <tr><td>Questions typed or spoken to Ask Fahim, the AI mentor, and photos of homework a child chooses to send</td><td>To answer the question. Questions a child asks a teacher to review are kept with the child's account for that teacher.</td></tr>
           <tr><td>Speaking practice recordings</td><td>To score pronunciation (see "Voice recordings" below)</td></tr>
           <tr><td>Payments: the passes bought, amounts, receipts and UAE tax invoices</td><td>To unlock the terms paid for and keep the records UAE tax law requires. Card details go straight to our payment provider; we never see or store them.</td></tr>
           <tr><td>Feedback you send us</td><td>To fix problems and improve the lessons</td></tr>

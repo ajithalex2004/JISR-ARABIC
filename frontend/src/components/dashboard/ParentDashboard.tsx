@@ -470,11 +470,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
             </div>
           </div>
 
-          {/* Tutor feedback & parent tips */}
+          {/* Mentor feedback & parent tips */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
             <div className="p-3.5 border border-slate-200 bg-slate-50 space-y-2">
               <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
-                Tutor Pedagogical Observation
+                Mentor Pedagogical Observation
               </span>
               <p className="text-xs text-slate-700 leading-relaxed italic">
                 "{weeklyDigest.tutor_feedback_summary_en}"

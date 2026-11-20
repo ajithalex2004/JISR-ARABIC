@@ -55,7 +55,7 @@ export const TutorDashboard: React.FC = () => {
       <div className="sharp-card p-5 border-l-4 border-l-emerald-900 bg-white flex justify-between items-center">
         <div>
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-            Assigned Arabic Tutor Queue (بوابة المعلم الخصوصي)
+            Assigned Arabic Mentor Queue (بوابة المعلم الخصوصي)
           </span>
           <h1 className="text-xl font-black text-slate-900">
             Student Submissions Review & Rubric Evaluation

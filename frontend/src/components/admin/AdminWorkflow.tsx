@@ -60,7 +60,7 @@ export const AdminWorkflow: React.FC = () => {
         practice_activities: [],
         speaking_mission: { title_ar: 'المهمة', title_en: 'Mission', scenario_en: '', prompts_ar: [], recording_task_en: '' },
         parent_companion: { title_ar: 'بطاقة ولي الأمر', title_en: 'Parent Card', summary_en: '', dinner_table_prompts: [], home_practice_checklist: [] },
-        tutor_handover: { title_ar: 'بطاقة المعلم', title_en: 'Tutor Card', learner_focus: 'CBSE 5', unobserved_fields_note: '', rubric_categories: [] },
+        tutor_handover: { title_ar: 'بطاقة المعلم', title_en: 'Mentor Card', learner_focus: 'CBSE 5', unobserved_fields_note: '', rubric_categories: [] },
         exam_practice: { title_ar: 'الاختبار', title_en: 'Exam', total_marks: 10, objective_questions: [], writing_task: { id: 'w1', prompt_ar: '', prompt_en: '', marks: 4 } },
         spaced_recall: { title_ar: 'التذكر', title_en: 'Spaced Recall', linked_concepts: [] }
       },

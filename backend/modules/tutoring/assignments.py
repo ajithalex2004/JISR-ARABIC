@@ -8,16 +8,16 @@ def set_assignment(tutor_id, child_id, *, actor, db):
     require_roles(actor, SCHOOL_ADMIN_ROLES)
     tutor = db.get(User, tutor_id)
     if tutor is None or tutor.role != "tutor":
-        raise ApplicationError(400, "Select a tutor account")
+        raise ApplicationError(400, "Select a mentor account")
     child = db.get(ChildProfile, child_id)
     if child is None:
         raise ApplicationError(404, "Learner not found")
 
     if actor.role == "school_admin":
         if child.school_id != actor.school_id:
-            raise ApplicationError(403, "Cannot assign tutor to learner from another school")
+            raise ApplicationError(403, "Cannot assign mentor to learner from another school")
         if tutor.school_id and tutor.school_id != actor.school_id:
-            raise ApplicationError(403, "Tutor belongs to a different school")
+            raise ApplicationError(403, "Mentor belongs to a different school")
 
     # Composite primary key prevents duplicate grants.
     assignment = db.get(TutorAssignment, (tutor_id, child_id))

@@ -14,7 +14,7 @@ import '../arab_english_service.dart';
 import '../widgets/homework_helper.dart';
 
 class AskFahimDialog extends StatefulWidget {
-  /// The open lesson, or '' when none is open (the tutor then answers for [grade]).
+  /// The open lesson, or '' when none is open (the mentor then answers for [grade]).
   final String contextLessonId;
   /// The child's class, for questions asked before any lesson is opened.
   final int grade;
@@ -182,14 +182,14 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                           ? 'أَهْلًا بِكَ فِي مُسَاعِدِ الامْتِحَانَاتِ الذَّكِيِّ. يُمْكِنُكَ إِرْفَاقُ وَرَقَةِ الامْتِحَانِ أَوْ لَصْقُ الأَسْئِلَةِ لِحَلِّهَا فَوْرِيًّا بِالاعْتِمَادِ عَلَى مِنْهَاجِ الإِمَارَاتِ.'
                           : 'مَرْحَبًا بِكَ! أَنَا مُعَلِّمُكَ (فَاهِم). كَيْفَ أُسَاعِدُكَ فِي دَرْسِكَ أَوِ القَوَاعِدِ اليَوْمَ؟'))),
           'text_en': _activeMode == 'voice'
-              ? 'Welcome to the Voice Tutor session! Speak with me and I will respond to you aloud.'
+              ? 'Welcome to the Voice Mentor session! Speak with me and I will respond to you aloud.'
               : (_activeMode == 'pdf'
                   ? 'Welcome! You can upload a PDF textbook or worksheet to summarize and ask questions.'
                   : (_activeMode == 'camera'
                       ? 'Welcome! Snap a photo of your exercise or textbook page for instant solutions.'
                       : (_activeMode == 'exam'
                           ? 'Welcome to the Exam Paper Assistant. Attach or paste your exam questions for verified CBSE Curriculum solutions.'
-                          : 'Hello! I am your conversational tutor, Ustadh Fahim. How can I assist you with your lesson or grammar today?'))),
+                          : 'Hello! I am your conversational mentor, Ustadh Fahim. How can I assist you with your lesson or grammar today?'))),
           'escalated': false,
         }
       ]
@@ -1047,7 +1047,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
               content: Text(
                 widget.isArabic
                     ? 'يرجى تفعيل صلاحية الميكروفون لاستخدام المحادثة الصوتية.'
-                    : 'Please grant microphone permissions to use voice tutor.',
+                    : 'Please grant microphone permissions to use voice mentor.',
               ),
               backgroundColor: Colors.amber.shade900,
             ),
@@ -1397,7 +1397,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
     try {
       await _api.solveQuestionPaper({
         'paper_title': '$_paperTitle - Question $qNumber',
-        'text_content': 'Question $qNumber ($qText) needs human tutor certification.',
+        'text_content': 'Question $qNumber ($qText) needs human mentor certification.',
         'grade': 5,
         'term': 1,
         'child_id': widget.childId,
@@ -1411,7 +1411,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
             content: Text(
               widget.isArabic
                   ? 'تم رفع هذا السؤال للمعلم الخاص للمراجعة والتصديق!'
-                  : 'Escalated to human tutor queue for review!',
+                  : 'Escalated to human mentor queue for review!',
             ),
           ),
         );
@@ -1492,7 +1492,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                               spacing: 5,
                               children: [
                                 Text(
-                                  widget.isArabic ? 'اسأل فاهم الذكي' : 'Ask Fahim AI Tutor',
+                                  widget.isArabic ? 'اسأل فاهم الذكي' : 'Ask Fahim AI Mentor',
                                   style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF1E293B)),
                                 ),
                                 Container(
@@ -1503,7 +1503,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                                     border: Border.all(color: const Color(0xFFA7F3D0)),
                                   ),
                                   child: Text(
-                                    widget.isArabic ? 'معلم معتمد' : 'AI Tutor',
+                                    widget.isArabic ? 'معلم معتمد' : 'AI Mentor',
                                     style: const TextStyle(
                                       fontSize: 7.5,
                                       fontWeight: FontWeight.bold,
@@ -1514,7 +1514,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                               ],
                             ),
                             Text(
-                              widget.isArabic ? 'المعلم السقراطي لمناهج الإمارات' : 'Socratic Conversational Arabic Tutor',
+                              widget.isArabic ? 'المعلم السقراطي لمناهج الإمارات' : 'Socratic Conversational Arabic Mentor',
                               style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1914,7 +1914,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                       Text(
                         _isListening
                             ? (widget.isArabic ? 'جاري الاستماع... تحدث باللغة العربية الآن' : 'Listening... Speak in Arabic now')
-                            : (widget.isArabic ? 'المعلم الصوتي التفاعلي' : 'Interactive Voice Tutor'),
+                            : (widget.isArabic ? 'المعلم الصوتي التفاعلي' : 'Interactive Voice Mentor'),
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.bold,
@@ -2194,7 +2194,7 @@ class _AskFahimDialogState extends State<AskFahimDialog> {
                                   child: Text(
                                     widget.isArabic
                                         ? 'تم توجيه السؤال إلى معلمك الخاص للمراجعة والمتابعة.'
-                                        : 'Escalated to human tutor for personalized review.',
+                                        : 'Escalated to human mentor for personalized review.',
                                     style: const TextStyle(fontSize: 9.5, color: Color(0xFF78350F), fontWeight: FontWeight.bold),
                                   ),
                                 ),

@@ -93,14 +93,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: 'CBSE Curriculum Model',
       isView: (v: string) => v === 'tests'
     },
-    ...(user?.role === 'learner' ? [] : [{
+    // Ask Fahim is for everyone, students included (same as the header's Ask Fahim button).
+    {
       id: 'ask_fahim',
-      titleEn: 'Ask Fahim (AI Tutor)',
+      titleEn: 'Ask Fahim (AI Mentor)',
       titleAr: 'اسأل فهيم',
       icon: Sparkles,
       action: onOpenAskFahim,
       highlight: true
-    }, {
+    },
+    ...(user?.role === 'learner' ? [] : [{
       id: 'mastery',
       titleEn: 'Mastery Heatmap',
       titleAr: 'لوحة الإتقان',
@@ -121,7 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: UserIcon,
       isView: (v: string) => v === 'profile'
     }] : []),
-    // Teachers check the AI's Arabic–English word matches (tutors have no admin panel).
+    // Teachers check the AI's Arabic–English word matches (mentors have no admin panel).
     ...(user?.role === 'tutor' || user?.role === 'admin' ? [{
       id: 'word-matches',
       titleEn: 'Word Matches Review',

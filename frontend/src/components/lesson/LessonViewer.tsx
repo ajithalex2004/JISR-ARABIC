@@ -1238,7 +1238,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                 <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider font-mono">
                   Writing Section ({content.exam_practice.writing_task.marks} Marks)
                 </span>
-                <span className="text-xs text-slate-500 font-medium">Tutor-Evaluated Rubric</span>
+                <span className="text-xs text-slate-500 font-medium">Mentor-Evaluated Rubric</span>
               </div>
               <div className="text-right">
                 <ArabicWordSpans text={content.exam_practice.writing_task.prompt_ar} className="text-base font-bold text-slate-900" />
@@ -1264,7 +1264,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                 </div>
                 {examFeedback.writingRouted && (
                   <div className="text-xs text-emerald-800">
-                    Your paragraph writing has been routed to the tutor queue for rubric evaluation.
+                    Your paragraph writing has been routed to the mentor queue for rubric evaluation.
                   </div>
                 )}
               </div>

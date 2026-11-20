@@ -107,7 +107,7 @@ def class_audit_log(class_id: str, db: Session = Depends(get_db), actor: Princip
 def tutor_classes(tutor_id: str, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
     require_roles(actor, ('admin', 'school_admin', 'tutor'))
     if actor.role == 'tutor' and actor.id != tutor_id:
-        raise HTTPException(status_code=403, detail='Tutors may view only their own classes')
+        raise HTTPException(status_code=403, detail='Mentors may view only their own classes')
     return school.tutor_classes(tutor_id, db=db, actor=actor)
 
 @router.post('/curriculum-upload')

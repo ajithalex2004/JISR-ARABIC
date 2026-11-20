@@ -655,7 +655,7 @@ class _AuthDialogState extends State<AuthDialog> {
                       _buildRoleTab('student_pin',
                           _dialogIsArabic ? 'طالب' : 'Student'),
                       _buildRoleTab(
-                          'tutor', _dialogIsArabic ? 'المعلم' : 'Tutor'),
+                          'tutor', _dialogIsArabic ? 'المعلم' : 'Mentor'),
                       _buildRoleTab(
                           'admin', _dialogIsArabic ? 'المسؤول' : 'Admin'),
                     ],
@@ -723,7 +723,7 @@ class _AuthDialogState extends State<AuthDialog> {
                 ),
               ],
 
-              // PARENT, TUTOR OR ADMIN LOGIN FORM
+              // PARENT, MENTOR OR ADMIN LOGIN FORM
               if (!_isSignup &&
                   (_loginRole == 'parent' || _loginRole == 'tutor' || _loginRole == 'admin')) ...[
                 if (_loginRole == 'parent') ...[
@@ -767,7 +767,7 @@ class _AuthDialogState extends State<AuthDialog> {
                         : (_loginRole == 'tutor'
                             ? (_dialogIsArabic
                                 ? 'البريد الإلكتروني للمعلم'
-                                : 'Tutor Email ID')
+                                : 'Mentor Email ID')
                             : (_dialogIsArabic
                                 ? 'البريد الإلكتروني للمسؤول'
                                 : 'Admin Email Address')),

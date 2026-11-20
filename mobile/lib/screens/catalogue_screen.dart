@@ -1411,7 +1411,7 @@ class CatalogueScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isArabic ? 'اسأل فاهم (المعلم الذكي)' : 'Ask Fahim (AI Tutor)',
+                        isArabic ? 'اسأل فاهم (المعلم الذكي)' : 'Ask Fahim (AI Mentor)',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
@@ -1457,7 +1457,7 @@ class CatalogueScreen extends StatelessWidget {
                   icon: Icons.mic_rounded,
                   iconColor: const Color(0xFF10B981),
                   bgColor: Colors.white,
-                  title: isArabic ? 'تحدث صوتياً' : 'Voice Tutor',
+                  title: isArabic ? 'تحدث صوتياً' : 'Voice Mentor',
                   subtitle: isArabic ? 'حوار ناطق' : 'Speak Aloud',
                   onTap: () => onOpenAskFahimMode?.call('voice') ?? onOpenAskFahim(),
                 ),

@@ -114,6 +114,8 @@ export function App() {
   const [paywallGrade, setPaywallGrade] = useState<number>(5);
   const [paywallTerm, setPaywallTerm] = useState<number>(1);
   const [paywallChapterName, setPaywallChapterName] = useState<string | undefined>(undefined);
+  // What the plans screen was opened for: a locked chapter (default) or Ask Fahim.
+  const [paywallFeature, setPaywallFeature] = useState<'content' | 'ask_fahim'>('content');
   const [isAskFahimOpen, setIsAskFahimOpen] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [readerInitialPage, setReaderInitialPage] = useState<number>(7);
@@ -227,7 +229,18 @@ export function App() {
     if (isGuest && view !== 'lesson') return promptSignup();
     setCurrentView(view);
   };
-  const openAskFahim = () => (isGuest ? promptSignup() : setIsAskFahimOpen(true));
+  // Ask Fahim is part of the paid plan: free-tier students and parents see it locked and get the
+  // plans screen (the server refuses it too). Mentors and admins always have it.
+  const askFahimLocked = !!user && !['admin', 'tutor', 'school_admin'].includes(user.role) && !(
+    user.role === 'learner'
+      ? !!activeChild?.is_unlocked
+      : (user.children || []).some((c) => c.is_unlocked)
+  );
+  const openAskFahim = () => {
+    if (isGuest) return promptSignup();
+    if (askFahimLocked) return handleOpenPaywall(undefined, undefined, undefined, 'ask_fahim');
+    setIsAskFahimOpen(true);
+  };
 
   const handleAuthSuccess = (auth: AuthResponse, _isNewSignup?: boolean) => {
     authFromLanding.current = false;
@@ -297,7 +310,8 @@ export function App() {
     }
   };
 
-  const handleOpenPaywall = (grade?: number, term?: number, chapterName?: string) => {
+  const handleOpenPaywall = (grade?: number, term?: number, chapterName?: string, feature: 'content' | 'ask_fahim' = 'content') => {
+    setPaywallFeature(feature);
     setPaywallGrade(grade ?? activeChild?.default_grade ?? 5);
     setPaywallTerm(term ?? activeChild?.selected_term ?? 1);
     setPaywallChapterName(chapterName);
@@ -349,6 +363,7 @@ export function App() {
         }}
         onLogout={handleLogout}
         onOpenAskFahim={openAskFahim}
+        askFahimLocked={askFahimLocked}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
@@ -375,6 +390,7 @@ export function App() {
           }}
           onLogout={handleLogout}
           onOpenAskFahim={openAskFahim}
+          askFahimLocked={askFahimLocked}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
@@ -440,7 +456,15 @@ export function App() {
         )}
 
         {currentView === 'learn' && (
-          <SocraticLearnStudio activeChild={activeChild} />
+          askFahimLocked || isGuest ? (
+            <div className="max-w-xl mx-auto my-12 bg-white border-2 border-slate-900 p-8 text-center space-y-3" role="status">
+              <p className="text-base font-black text-slate-900">تَعَلَّمْ مَعَ فَهِيم · Learn with Fahim</p>
+              <p className="text-sm text-slate-700">Fahim, the AI mentor, is part of the paid plan. Unlock a term or the full year to use it.</p>
+              <button type="button" onClick={openAskFahim} className="bg-emerald-900 text-white text-sm font-bold px-6 py-2.5">See plans</button>
+            </div>
+          ) : (
+            <SocraticLearnStudio activeChild={activeChild} />
+          )
         )}
 
         {currentView === 'mindmaps' && (
@@ -449,9 +473,7 @@ export function App() {
             activeChild={activeChild}
             initialGrade={appGrade}
             onSelectGrade={setAppGrade}
-            onOpenAskFahim={(_query) => {
-              setIsAskFahimOpen(true);
-            }}
+            onOpenAskFahim={() => openAskFahim()}
           />
         )}
 
@@ -568,6 +590,7 @@ export function App() {
         grade={paywallGrade}
         term={paywallTerm}
         chapterName={paywallChapterName}
+        feature={paywallFeature}
         activeChild={activeChild}
         onPaymentSuccess={async () => {
           // Reload the account so newly paid grades appear in the grade picker.

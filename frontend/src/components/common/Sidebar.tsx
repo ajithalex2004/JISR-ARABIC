@@ -2,7 +2,7 @@ import React from 'react';
 import {
   BookOpen, BookText, Clock, FlaskConical, Sparkles,
   Target, Trophy, User as UserIcon, LogOut,
-  ChevronRight, CheckCircle, ShieldCheck, Settings, GitFork, Link2
+  ChevronRight, CheckCircle, ShieldCheck, Settings, GitFork, Link2, Lock
 } from 'lucide-react';
 import { User, ChildProfile } from '../../types';
 
@@ -15,6 +15,8 @@ interface SidebarProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   onOpenAskFahim: () => void;
+  /** Free tier: Ask Fahim shows a lock and opens the plans screen. */
+  askFahimLocked?: boolean;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
@@ -36,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenAuth,
   onLogout,
   onOpenAskFahim,
+  askFahimLocked = false,
   isOpenMobile = false,
   onCloseMobile
 }) => {
@@ -97,10 +100,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'ask_fahim',
       titleEn: 'Ask Fahim (AI Mentor)',
-      titleAr: 'اسأل فهيم',
+      titleAr: askFahimLocked ? 'اسأل فهيم · الباقة المدفوعة (Paid plan)' : 'اسأل فهيم',
       icon: Sparkles,
       action: onOpenAskFahim,
-      highlight: true
+      highlight: true,
+      locked: askFahimLocked
     },
     ...(user?.role === 'learner' ? [] : [{
       id: 'mastery',
@@ -255,7 +259,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 </div>
 
-                {isHighlighted ? (
+                {(item as any).locked ? (
+                  <Lock className="w-3.5 h-3.5 text-slate-500" aria-label="Locked: paid plan" />
+                ) : isHighlighted ? (
                   <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin-slow" />
                 ) : (
                   <ChevronRight

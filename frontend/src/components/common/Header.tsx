@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   User as UserIcon, Sparkles,
-  LogOut, CheckCircle, ChevronDown, Plus, Users, Compass, Menu
+  LogOut, CheckCircle, ChevronDown, Plus, Users, Compass, Menu, Lock
 } from 'lucide-react';
 import { User, ChildProfile } from '../../types';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
@@ -31,6 +31,8 @@ interface HeaderProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   onOpenAskFahim: () => void;
+  /** Free tier: the button shows a lock and opens the plans screen. */
+  askFahimLocked?: boolean;
   onToggleMobileMenu?: () => void;
 }
 
@@ -47,6 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   onLogout,
   onOpenAskFahim,
+  askFahimLocked = false,
   onToggleMobileMenu
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -161,9 +164,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenAskFahim}
             className="text-xs py-2 px-3.5 rounded-full flex items-center gap-1.5 shadow-md bg-gradient-to-r from-[#6C5CE7] to-[#8E44AD] text-white font-bold transform hover:scale-105 active:scale-95 transition-all"
-            title="Ask Fahim - Your Conversational Arabic Teacher"
+            title={askFahimLocked ? 'Ask Fahim is part of the paid plan' : 'Ask Fahim - Your Conversational Arabic Teacher'}
+            aria-label={askFahimLocked ? 'Ask Fahim (locked: paid plan)' : undefined}
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            {askFahimLocked ? <Lock className="w-3.5 h-3.5 text-amber-300" /> : <Sparkles className="w-3.5 h-3.5 text-amber-300" />}
             <span className="hidden sm:inline">اسأل فهيم (Ask Fahim)</span>
             <span className="sm:hidden">Ask Fahim</span>
           </button>

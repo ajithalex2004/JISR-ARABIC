@@ -11,6 +11,8 @@ interface PaywallModalProps {
   grade: number;
   term: number;
   chapterName?: string;
+  /** What the screen was opened for: a locked chapter (default) or Ask Fahim. */
+  feature?: 'content' | 'ask_fahim';
   activeChild: ChildProfile | null;
   onPaymentSuccess: () => void;
   // Students (PIN login) can't pay; only a parent account can buy plans.
@@ -33,6 +35,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   grade,
   term,
   chapterName,
+  feature = 'content',
   activeChild,
   onPaymentSuccess,
   canPurchase = true,
@@ -162,9 +165,21 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           </div>
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Fahim AI · الباقات والاشتراكات</div>
-            <h2 className="text-base font-black text-slate-900 uppercase tracking-tight">Unlock Curriculum & Exam Bank · Class {grade}</h2>
+            <h2 className="text-base font-black text-slate-900 uppercase tracking-tight">
+              {feature === 'ask_fahim' ? 'Unlock Ask Fahim (AI Mentor)' : <>Unlock Curriculum & Exam Bank · Class {grade}</>}
+            </h2>
           </div>
         </div>
+
+        {feature === 'ask_fahim' && (
+          <div className="bg-purple-50 border-l-4 border-purple-700 p-3 mb-4 text-xs text-purple-950">
+            <div className="font-bold mb-1 text-purple-900">اسأل فهيم جزء من الباقة المدفوعة · Ask Fahim is part of the paid plan</div>
+            <p className="leading-relaxed">
+              Fahim, the AI mentor (chat, homework helper and exam paper assistant), opens with any paid plan:
+              one term for {usd(TERM_USD)}, or the full year for {usd(ANNUAL_USD)} (save 15%).
+            </p>
+          </div>
+        )}
 
         <div className="bg-emerald-50 border-l-4 border-emerald-700 p-3 mb-4 text-xs text-emerald-950">
           <div className="font-bold flex items-center gap-1.5 mb-1 text-emerald-900">

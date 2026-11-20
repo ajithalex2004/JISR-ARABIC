@@ -626,8 +626,20 @@ def get_malazim_booklet(lesson_id: str = "lesson_01_ball_games") -> Dict[str, An
         if generated is not None:
             return generated
 
-    # Default to requested or fallback to Grade 5
-    return MALAZIM_DATA.get(lesson_id) or MALAZIM_DATA.get("lesson_01_ball_games")
+    # Curriculum chapter ids that don't follow lesson_gX_tY_chZZ (Grade 5's lesson_02_horse_riding,
+    # lesson_11_arab_cities, ...): find the chapter in the syllabus. These used to fall back to the
+    # Grade 5 "Ball Games" booklet, so every Grade 5 chapter showed Chapter 1.
+    from backend.modules.curriculum.syllabus_data import get_dynamic_lesson_spec
+    spec = get_dynamic_lesson_spec(str(lesson_id).strip())
+    if spec is not None:
+        grade, term, order = int(spec.grade), int(spec.term), int(spec.lesson_order)
+        authored = MALAZIM_DATA.get(f"lesson_g{grade}_t{term}_ch{order:02d}")
+        if authored is not None:
+            return authored
+        return generate_booklet(grade, term, order)
+
+    # Unknown id: no booklet (the API answers 404) rather than another chapter's.
+    return None
 
 
 def get_malazim_by_grade(grade: int = 5) -> Dict[str, Any]:

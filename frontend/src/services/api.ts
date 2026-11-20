@@ -1051,6 +1051,13 @@ export const api = {
     return res.json();
   },
 
+  /** One chapter's grammar rules (Mindmaps flowchart and rules tree); source 'grade' = its grade's rules. */
+  async getChapterGrammar(lessonId: string, childId?: string) {
+    const query = childId ? `?child_id=${encodeURIComponent(childId)}` : '';
+    const res = await authenticatedFetch(`${API_BASE}/api/modules/mindmaps/grammar/${encodeURIComponent(lessonId)}${query}`);
+    return jsonOrThrow(res);
+  },
+
   async getCapsule(capsuleId: string) {
     const res = await authenticatedFetch(`${API_BASE}/api/modules/capsules/${capsuleId}`);
     if (!res.ok) throw new Error('Failed to load capsule details');

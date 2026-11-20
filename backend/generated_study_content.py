@@ -543,3 +543,27 @@ def grade_grammar_rules(grade: int) -> List[Dict[str, Any]]:
                          for ex in focus.get("examples", []) if ex.get("phrase_ar")],
         })
     return rules
+
+
+def chapter_grammar_rules(content: Dict[str, Any], lesson_id: str) -> List[Dict[str, Any]]:
+    """A chapter's own grammar (its published lesson's grammar lab) in the rules-tree shape."""
+    lab = (content or {}).get("grammar_lab") or {}
+    rules: List[Dict[str, Any]] = []
+    for idx, sec in enumerate(lab.get("sections") or [], start=1):
+        if not isinstance(sec, dict) or not sec.get("rule_name_ar"):
+            continue
+        examples = []
+        for ex in sec.get("examples") or []:
+            if isinstance(ex, dict) and (ex.get("phrase_ar") or ex.get("sentence_ar")):
+                examples.append({"sentenceAr": ex.get("phrase_ar") or ex.get("sentence_ar"),
+                                 "sentenceEn": ex.get("translation_en") or ex.get("sentence_en", ""),
+                                 "analysisAr": ex.get("analysis_ar", ""), "analysisEn": ex.get("analysis_en", "")})
+        rules.append({
+            "key": f"{lesson_id}_rule_{idx}",
+            "titleAr": sec["rule_name_ar"], "titleEn": sec.get("rule_name_en", ""),
+            "badgeAr": "قَاعِدَةُ الدَّرْسِ", "badgeEn": "Chapter rule",
+            "ruleAr": sec.get("explanation_ar", ""), "ruleEn": sec.get("explanation_en", ""),
+            "formulaAr": sec.get("formula_ar", ""), "formulaEn": sec.get("formula_en", ""),
+            "examples": examples,
+        })
+    return rules

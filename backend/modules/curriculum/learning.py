@@ -31,6 +31,30 @@ def _booklet_for(db: Session, lesson_id: str):
     return published_booklet(db, lesson_id) or get_malazim_booklet(lesson_id)
 
 
+def get_chapter_grammar(lesson_id: str, child_id=None, *, db: Session, actor=None):
+    """One chapter's grammar rules for the Mindmaps flowchart and rules tree.
+
+    From the chapter's published lesson; a chapter without a grammar lab gets its grade's rules
+    (source "grade") so the tabs are never empty. Locked chapters answer 402 like the booklets.
+    """
+    import json
+    from backend.generated_study_content import chapter_grammar_rules, grade_grammar_rules
+    from backend.modules.curriculum.booklet_writer import published_version
+
+    lesson_id = _resolve_booklet_lesson_id(lesson_id)
+    lesson = require_lesson(db, actor, lesson_id, child_id)
+    version = published_version(db, lesson_id)
+    rules = []
+    if version is not None:
+        try:
+            rules = chapter_grammar_rules(json.loads(version.content_json), lesson_id)
+        except (TypeError, ValueError):
+            rules = []
+    if rules:
+        return {"success": True, "lesson_id": lesson_id, "source": "chapter", "rules": rules}
+    return {"success": True, "lesson_id": lesson_id, "source": "grade", "rules": grade_grammar_rules(int(lesson.grade))}
+
+
 def get_malazim(lesson_id: str, child_id=None, is_reviewer=False, *, db: Session, actor=None):
     """
     Retrieve interactive study booklet for a lesson or grade.

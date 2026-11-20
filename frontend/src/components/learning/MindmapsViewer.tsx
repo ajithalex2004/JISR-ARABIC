@@ -9,6 +9,7 @@ import { MINDMAP_CHAPTERS, CURRICULUM_RULES, MindmapChapter, GrammarRule, getFal
 import { audioManager } from '../../services/audio';
 import { api } from '../../services/api';
 import { User, ChildProfile } from '../../types';
+import { ChapterPicker, useChapterPicker } from './ChapterPicker';
 
 interface MindmapsViewerProps {
   user?: User | null;
@@ -64,6 +65,11 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
   // rules tree and syntax flowchart are hand-written (CURRICULUM_RULES and the flowchart below).
   const [gradeRules, setGradeRules] = useState<GrammarRule[]>([]);
   const [playingText, setPlayingText] = useState<string | null>(null);
+  // The chosen term and chapter drive all three tabs (locked chapters can't be chosen).
+  const picker = useChapterPicker(selectedGrade, activeChild?.id);
+  const [chapterRules, setChapterRules] = useState<GrammarRule[] | null>(null);
+  const [rulesSource, setRulesSource] = useState<'chapter' | 'grade'>('chapter');
+  const [rulesError, setRulesError] = useState('');
 
   useEffect(() => {
     if (initialGrade && initialGrade !== selectedGrade && availableGrades.includes(initialGrade)) {
@@ -96,7 +102,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
       }
 
       try {
-        const res = await api.getMindmaps(selectedGrade, 1);
+        const res = await api.getMindmaps(selectedGrade, picker.selectedTerm);
         if (!isCancelled && res.success && res.chapters && res.chapters.length > 0) {
           setChapters(res.chapters);
           setSelectedChapterId(res.chapters[0].id);
@@ -113,19 +119,46 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
     };
     fetchMindmaps();
     return () => { isCancelled = true; };
-  }, [selectedGrade]);
+  }, [selectedGrade, picker.selectedTerm]);
 
   const activeChapter: MindmapChapter = useMemo(() => {
-    return chapters.find(c => c.id === selectedChapterId) || chapters[0] || MINDMAP_CHAPTERS[0];
-  }, [chapters, selectedChapterId]);
+    return chapters.find(c => c.id === picker.selectedLessonId)
+      || chapters.find(c => c.id === selectedChapterId) || chapters[0] || MINDMAP_CHAPTERS[0];
+  }, [chapters, selectedChapterId, picker.selectedLessonId]);
 
-  // The rules tree and flowchart follow the selected grade: Grade 5 has its hand-written tree and
-  // sentence-parsing flowchart; every other grade shows its own grammar from the syllabus.
-  const isGrade5 = selectedGrade === 5;
-  const displayedRules: GrammarRule[] = isGrade5 ? CURRICULUM_RULES : gradeRules;
+  // The flowchart and rules tree follow the chosen chapter's own grammar (from its published
+  // lesson). Grade 5 Chapter 1 keeps its hand-written decision tree and rules tree.
+  const lessonId = picker.selectedLessonId;
+  const handWritten = selectedGrade === 5 && lessonId === 'lesson_01_ball_games';
+  useEffect(() => {
+    let cancelled = false;
+    setChapterRules(null);
+    setRulesError('');
+    if (!lessonId || handWritten) return;
+    api.getChapterGrammar(lessonId, activeChild?.id)
+      .then((res) => {
+        if (cancelled) return;
+        setChapterRules(Array.isArray(res.rules) ? res.rules : []);
+        setRulesSource(res.source === 'grade' ? 'grade' : 'chapter');
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setChapterRules(null);
+        setRulesError(err instanceof Error ? err.message : 'Could not load this chapter\'s grammar');
+      });
+    return () => { cancelled = true; };
+  }, [lessonId, handWritten, activeChild?.id]);
+  const displayedRules: GrammarRule[] = handWritten ? CURRICULUM_RULES : (chapterRules ?? (rulesError ? gradeRules : []));
+  const showGradeNote = !handWritten && (rulesSource === 'grade' || (chapterRules === null && !!rulesError));
+  const rulesLoading = !handWritten && !!lessonId && chapterRules === null && !rulesError;
   useEffect(() => {
     setSelectedRuleKey(displayedRules[0]?.key || '');
-  }, [selectedGrade, gradeRules]);
+  }, [selectedGrade, lessonId, chapterRules, gradeRules]);
+  const chapterNotice = !lessonId
+    ? 'لَا يُوجَدُ دَرْسٌ مُتَاحٌ فِي هٰذَا الفَصْلِ. · No chapter in this term is open: unlock the term in Curriculum & Lessons.'
+    : rulesLoading ? 'جَارٍ التَّحْمِيلُ… · Loading this chapter\'s grammar…'
+    : showGradeNote ? `This chapter has no grammar section of its own yet, so Grade ${selectedGrade}'s rules are shown.`
+    : '';
 
   const handleSpeak = (text: string) => {
     setPlayingText(text);
@@ -267,10 +300,15 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
         </div>
       </div>
 
+      <ChapterPicker picker={picker} />
+      {(activeTab !== 'mindmap' || !lessonId) && chapterNotice && (
+        <p className="text-sm text-slate-700 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3" role="status">{chapterNotice}</p>
+      )}
+
       {/* ========================================================================= */}
       {/* TAB 1: LESSON CONCEPT MINDMAP                                              */}
       {/* ========================================================================= */}
-      {activeTab === 'mindmap' && (
+      {activeTab === 'mindmap' && lessonId && (
         <div className="space-y-6">
           {/* Chapter Selector Carousel / Pills */}
           <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs space-y-3">
@@ -278,7 +316,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
               <div className="flex items-center gap-2">
                 <GraduationCap className="w-4 h-4 text-indigo-600" />
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                  فصول المنهاج (CBSE Curriculum Grade {selectedGrade} Term 1 Chapters)
+                  {activeChapter.titleAr} · {activeChapter.titleEn} (Grade {selectedGrade} Term {picker.selectedTerm})
                 </h3>
               </div>
               {/* Search Bar */}
@@ -294,28 +332,6 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
-              {chapters.map((ch, idx) => {
-                const isSelected = ch.id === selectedChapterId;
-                return (
-                  <button
-                    key={ch.id}
-                    onClick={() => setSelectedChapterId(ch.id)}
-                    className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
-                      isSelected
-                        ? 'bg-indigo-600 text-white shadow-md'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70'
-                    }`}
-                  >
-                    <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
-                      {idx + 1}
-                    </span>
-                    <span>{ch.titleAr}</span>
-                    <span className="text-[10px] opacity-80 hidden sm:inline">({ch.titleEn})</span>
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
           {/* Active Chapter Summary Banner */}
@@ -445,7 +461,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
       {/* ========================================================================= */}
       {/* TAB 2: SYNTAX DECISION FLOWCHARTS                                         */}
       {/* ========================================================================= */}
-      {activeTab === 'flowchart' && !isGrade5 && (
+      {activeTab === 'flowchart' && !handWritten && (
         <div className="space-y-6">
           <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 rounded-3xl p-5 border border-purple-200 shadow-xs flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-md">
@@ -453,16 +469,16 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
             </div>
             <div>
               <h3 className="text-base font-black text-slate-900">
-                خُطُوَاتُ تَطْبِيقِ قَوَاعِدِ الصَّفِّ {selectedGrade} (Grade {selectedGrade} Grammar Steps)
+                خُطُوَاتُ تَطْبِيقِ قَوَاعِدِ الدَّرْسِ: {activeChapter.titleAr} ({activeChapter.titleEn} Grammar Steps)
               </h3>
               <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
-                Each rule studied in Grade {selectedGrade}, step by step: what the rule is, its formula, and worked examples.
+                Each grammar rule of this chapter, step by step: what the rule is, its formula, and worked examples.
               </p>
             </div>
           </div>
-          {displayedRules.length === 0 ? (
+          {displayedRules.length === 0 && !rulesLoading && lessonId ? (
             <p className="text-sm text-slate-600 text-center bg-white rounded-3xl p-6 border border-slate-200">
-              لا تتوفر مخططات قواعد لهذا الصف بعد. · Grammar flowcharts aren't available for Grade {selectedGrade} yet.
+              لا تتوفر مخططات قواعد لهذا الدرس بعد. · Grammar flowcharts aren't available for this chapter yet.
             </p>
           ) : displayedRules.map((rule, rIdx) => (
             <div key={rule.key} className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
@@ -473,13 +489,16 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
                 <h4 className="text-lg font-black">{rule.titleAr}</h4>
                 {rule.titleEn && <p className="text-xs text-blue-100">{rule.titleEn}</p>}
               </div>
-              <div className="flex justify-center text-slate-400" aria-hidden="true">↓</div>
-              <div className="max-w-2xl mx-auto p-4 rounded-2xl bg-teal-50 border border-teal-200 text-center space-y-1">
-                <div className="text-[11px] font-extrabold uppercase text-teal-800">المُعَادَلَةُ (Formula)</div>
-                <div className="text-sm font-black text-teal-950" dir="rtl">{rule.formulaAr}</div>
-                {rule.formulaEn && <div className="text-xs text-teal-700 italic">{rule.formulaEn}</div>}
-                {rule.ruleEn && rule.ruleEn !== rule.formulaEn && <div className="text-xs text-slate-600 pt-1">{rule.ruleEn}</div>}
-              </div>
+              {(rule.formulaAr || rule.ruleAr || rule.ruleEn) && <>
+                <div className="flex justify-center text-slate-400" aria-hidden="true">↓</div>
+                <div className="max-w-2xl mx-auto p-4 rounded-2xl bg-teal-50 border border-teal-200 text-center space-y-1">
+                  <div className="text-[11px] font-extrabold uppercase text-teal-800">{rule.formulaAr ? 'المُعَادَلَةُ (Formula)' : 'القَاعِدَةُ (The rule)'}</div>
+                  {rule.formulaAr && <div className="text-sm font-black text-teal-950" dir="rtl">{rule.formulaAr}</div>}
+                  {rule.formulaEn && <div className="text-xs text-teal-700 italic">{rule.formulaEn}</div>}
+                  {rule.ruleAr && <div className="text-sm font-bold text-slate-800 pt-1" dir="rtl">{rule.ruleAr}</div>}
+                  {rule.ruleEn && rule.ruleEn !== rule.formulaEn && <div className="text-xs text-slate-600 pt-1">{rule.ruleEn}</div>}
+                </div>
+              </>}
               {rule.examples.length > 0 && <>
                 <div className="flex justify-center text-slate-400" aria-hidden="true">↓</div>
                 <div className="max-w-2xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -502,7 +521,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
         </div>
       )}
 
-      {activeTab === 'flowchart' && isGrade5 && (
+      {activeTab === 'flowchart' && handWritten && (
         <div className="space-y-6">
           {/* Flowchart Header Banner */}
           <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 rounded-3xl p-5 border border-purple-200 shadow-xs flex items-center gap-4">
@@ -781,7 +800,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-900">
-                  شجرة القواعد النحوية الشاملة (Comprehensive Grammar Rules Tree)
+                  شجرة القواعد النحوية: {activeChapter.titleAr} (Grammar Rules Tree · {activeChapter.titleEn})
                 </h3>
                 <p className="text-xs text-slate-600">
                   Curriculum syntax formulas with parsed mathematical structures, example sentences, and English translations.
@@ -792,9 +811,9 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
 
           {/* Rules Accordion / Cards List */}
           <div className="space-y-4">
-            {displayedRules.length === 0 && (
+            {displayedRules.length === 0 && !rulesLoading && lessonId && (
               <p className="text-sm text-slate-600 text-center bg-white rounded-3xl p-6 border border-slate-200">
-                لا تتوفر قواعد لهذا الصف بعد. · Grammar rules aren't available for Grade {selectedGrade} yet.
+                لا تتوفر قواعد لهذا الدرس بعد. · Grammar rules aren't available for this chapter yet.
               </p>
             )}
             {displayedRules.map((rule) => {
@@ -838,7 +857,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
                   {isSelected && (
                     <div className="px-5 pb-5 pt-2 border-t border-slate-100 space-y-4">
                       {/* Mathematical Syntax Formula */}
-                      <div className="p-3.5 rounded-2xl bg-teal-50 border border-teal-200/70 space-y-1">
+                      {rule.formulaAr && <div className="p-3.5 rounded-2xl bg-teal-50 border border-teal-200/70 space-y-1">
                         <div className="text-[11px] font-extrabold uppercase text-teal-800">
                           المُعَادَلَةُ النَّحْوِيَّةُ (Grammar Syntax Formula)
                         </div>
@@ -848,7 +867,7 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
                         <div className="text-xs text-teal-700 italic">
                           {rule.formulaEn}
                         </div>
-                      </div>
+                      </div>}
 
                       {/* Rule Explanations */}
                       <div className="space-y-1.5 text-xs sm:text-sm leading-relaxed">

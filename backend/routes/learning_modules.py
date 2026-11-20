@@ -58,6 +58,12 @@ def list_mindmaps(grade: int = Query(5, ge=1, le=12), term: int = Query(1, ge=1,
             "chapters": generate_mindmap_chapters(grade, term),
             "grammar_rules": grade_grammar_rules(grade)}
 
+@router.get('/mindmaps/grammar/{lesson_id}')
+def chapter_grammar(lesson_id: str, child_id: Optional[str] = None, db: Session = Depends(get_db),
+                    actor: Optional[Principal] = Depends(get_optional_user)):
+    """One chapter's grammar rules (flowchart and rules tree), from its published lesson."""
+    return service.get_chapter_grammar(lesson_id, child_id, db=db, actor=actor)
+
 @router.get('/capsules/{capsule_id}')
 def get_capsule(capsule_id: str):
     """Retrieve full content, audio script, and checkpoint quiz for a capsule."""

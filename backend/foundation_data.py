@@ -512,27 +512,456 @@ STAGE_D = [
             q("Which word means 'then'?", ["وَ", "ثُمَّ", "لِأَنَّ"], 1, "ثُمَّ means 'then'.")]),
 ]
 
+# ---------------------------------------------------------------------------------------------
+# Extra lessons: reading extras (B), core concepts and grammar extras (C), everyday Arabic (E)
+# ---------------------------------------------------------------------------------------------
+
+def cards(prompt_en: str, items: List[tuple]) -> Dict[str, Any]:
+    """Word cards: tap to hear, with the English meaning."""
+    return {"type": "cards", "prompt_en": prompt_en, "items": [{"ar": a, "en": e} for a, e in items]}
+
+
+EXTRA_B = [
+    lesson("b11_hidden_alif", "كَلِمَاتٌ فِيهَا أَلِفٌ تُنْطَقُ وَلَا تُكْتَبُ", "Words with a hidden alif",
+           "A few very common words have a long 'aa' you hear but do not see written.",
+           ["هَذَا is said haadhaa: there is a long aa after هـ that is not written.",
+            "The same in هَذِهِ (haadhihi), ذَلِكَ (dhaalika), لَكِنْ (laakin), هَؤُلَاءِ (haa'ulaa'i).",
+            "In the Qur'an and some books it is shown as a small upright alif: هٰذَا، الرَّحْمٰنُ، اللّٰهُ.",
+            "Learn these words by sight: they appear on almost every page."],
+           [ex("هَذَا كِتَابٌ", "this is a book (haadhaa)"), ex("ذَلِكَ بَيْتٌ", "that is a house (dhaalika)"),
+            ex("لَكِنْ", "but (laakin)"), ex("اللّٰهُ", "Allah: the long aa is shown by a small alif")],
+           [q("How do you say هَذَا?", ["hadha (short a)", "haadhaa (long aa)"], 1,
+              "هَذَا has a hidden long aa after هـ: haadhaa."),
+            q("Which word has a long aa you hear but don't see?", ["هُوَ", "لَكِنْ", "هِيَ"], 1,
+              "لَكِنْ is said laakin: the alif is not written.")]),
+
+    lesson("b12_silent_letters", "حُرُوفٌ تُكْتَبُ وَلَا تُنْطَقُ", "Silent letters",
+           "Some letters are written but not pronounced.",
+           ["The alif after the plural و is silent: كَتَبُوا (katabuu), ذَهَبُوا (dhahabuu).",
+            "The و at the end of the name عَمْرٌو is silent: it is said 'amr.",
+            "The ل of ال is silent before a sun letter: الشَّمْسُ (ash-shams).",
+            "The joining hamza is silent in the middle of speech: فِي البَيْتِ (fil-bayt)."],
+           [ex("كَتَبُوا", "they wrote: the last alif is silent"), ex("ذَهَبُوا", "they went: the last alif is silent"),
+            ex("عَمْرٌو", "Amr (a name): the و is silent"), ex("الشَّمْسُ", "the sun: the ل is silent")],
+           [q("In كَتَبُوا, which letter is silent?", ["ك", "و", "ا"], 2,
+              "The alif after the plural و is written but not pronounced."),
+            q("Which name ends with a silent و?", ["عُمَرُ", "عَمْرٌو"], 1, "عَمْرٌو is said 'amr; the و only tells it apart from عُمَرُ.")]),
+
+    lesson("b13_vowel_length", "الحَرَكَةُ القَصِيرَةُ وَالطَّوِيلَةُ", "Short or long vowel? The meaning changes",
+           "Making a vowel short or long can turn one word into a different word.",
+           ["كَتَبَ (he wrote) and كَاتَبَ (he wrote to someone) differ only in a long aa.",
+            "مَلِكٌ is a king; مَالِكٌ is an owner.", "جَمَلٌ is a camel; جَمَالٌ is beauty.",
+            "Hold a long vowel about twice as long as a short one."],
+           [ex("كَتَبَ", "he wrote"), ex("كَاتَبَ", "he wrote to (someone)"), ex("مَلِكٌ", "a king"),
+            ex("مَالِكٌ", "an owner"), ex("جَمَلٌ", "a camel"), ex("جَمَالٌ", "beauty")],
+           [q("Which word means 'an owner'?", ["مَلِكٌ", "مَالِكٌ"], 1, "مَالِكٌ has a long aa: maalik, an owner."),
+            q("Which word has only short vowels?", ["جَمَلٌ", "جَمَالٌ"], 0, "جَمَلٌ (a camel) has no long vowel.")],
+           activity=sort_activity("Does the word have a long vowel?",
+                                  [{"id": "long", "label": "Has a long vowel"}, {"id": "short", "label": "Only short vowels"}],
+                                  [{"text": w, "bucket": b} for w, b in [
+                                      ("كَتَبَ", "short"), ("كَاتَبَ", "long"), ("مَلِكٌ", "short"), ("مَالِكٌ", "long"),
+                                      ("جَمَلٌ", "short"), ("جَمَالٌ", "long"), ("قَلَمٌ", "short"), ("فِيلٌ", "long")]])),
+
+    lesson("b14_hamza_seats", "مَوَاقِعُ الهَمْزَةِ", "Where the hamza sits",
+           "The hamza can sit on an alif, a waw, a dotless yaa, or alone on the line.",
+           ["At the start of a word the hamza always sits on an alif: أَسَدٌ، إِبِلٌ.",
+            "In the middle it follows the strongest vowel next to it: kasra → ئ (بِئْرٌ), damma → ؤ (سُؤَالٌ), fatha → أ (سَأَلَ).",
+            "At the end, after a long vowel or a sukun, it sits alone on the line: سَمَاءٌ، شَيْءٌ."],
+           [ex("أَسَدٌ", "a lion: hamza on alif"), ex("سُؤَالٌ", "a question: hamza on waw"),
+            ex("بِئْرٌ", "a well: hamza on a dotless yaa"), ex("سَمَاءٌ", "a sky: hamza on the line")],
+           [q("Where does the hamza sit in سُؤَالٌ?", ["On alif (أ)", "On waw (ؤ)", "On yaa (ئ)"], 1,
+              "The damma before it is the strongest vowel, so it sits on waw: ؤ."),
+            q("Which word has the hamza alone on the line?", ["سَمَاءٌ", "سَأَلَ", "بِئْرٌ"], 0,
+              "After the long aa at the end, the hamza sits on the line: سَمَاءٌ.")]),
+
+    lesson("b15_fluency", "القِرَاءَةُ الطَّلِيقَةُ", "Reading fluently",
+           "Read short sentences aloud, first slowly and correctly, then smoothly.",
+           ["Listen to the model reading first.", "Read word by word, with every vowel.",
+            "Read the sentence again, more smoothly. Then time yourself.",
+            "Fluent reading is correct and smooth, not just fast."],
+           [ex("البَيْتُ كَبِيرٌ وَجَمِيلٌ.", "the house is big and beautiful."),
+            ex("يَلْعَبُ أَحْمَدُ بِالكُرَةِ فِي الحَدِيقَةِ.", "Ahmed plays with the ball in the garden.")],
+           [q("What should you do first?", ["Listen to the model reading", "Read as fast as you can", "Skip the vowels"], 0,
+              "Listening first shows you how the sentence should sound."),
+            q("Reading fluently means reading…", ["correctly and smoothly", "only fast", "without vowels"], 0,
+              "Fluency is correct and smooth reading.")],
+           activity={"type": "fluency", "items": [
+               "ذَهَبَ الوَلَدُ إِلَى المَدْرَسَةِ.",
+               "البَيْتُ كَبِيرٌ وَجَمِيلٌ.",
+               "يَلْعَبُ أَحْمَدُ بِالكُرَةِ فِي الحَدِيقَةِ.",
+               "قَرَأَتْ مَرْيَمُ قِصَّةً جَمِيلَةً قَبْلَ النَّوْمِ."]}),
+]
+
+EXTRA_C = [
+    lesson("c14_definite", "النَّكِرَةُ وَالمَعْرِفَةُ", "Definite and indefinite: ال or tanween",
+           "A word with tanween means 'a …'; a word with ال means 'the …'. A word never has both.",
+           ["Indefinite (نَكِرَة): ends in tanween: كِتَابٌ (a book).",
+            "Definite (مَعْرِفَة): starts with ال and has no tanween: الكِتَابُ (the book).",
+            "Never both: البَيْتٌ is wrong.", "Names are definite without ال: أَحْمَدُ، مَرْيَمُ."],
+           [ex("كِتَابٌ", "a book"), ex("الكِتَابُ", "the book"), ex("شَجَرَةٌ", "a tree"), ex("الشَّجَرَةُ", "the tree")],
+           [q("Which word means 'the house'?", ["بَيْتٌ", "البَيْتُ"], 1, "ال makes it definite: البَيْتُ."),
+            q("Which word is wrong?", ["البَيْتٌ", "البَيْتُ", "بَيْتٌ"], 0, "A word can't have both ال and tanween.")],
+           activity=sort_activity("Definite (the …) or indefinite (a …)?",
+                                  [{"id": "def", "label": "Definite (the …)"}, {"id": "indef", "label": "Indefinite (a …)"}],
+                                  [{"text": w, "bucket": b} for w, b in [
+                                      ("كِتَابٌ", "indef"), ("الكِتَابُ", "def"), ("قَلَمٌ", "indef"), ("المَدْرَسَةُ", "def"),
+                                      ("شَجَرَةٌ", "indef"), ("الوَلَدُ", "def"), ("بَابٌ", "indef"), ("الشَّمْسُ", "def")]])),
+
+    lesson("c15_attached_pronouns", "الضَّمَائِرُ المُتَّصِلَةُ", "Attached pronouns: my, your, his, her",
+           "Small endings joined to a noun show whose it is: كِتَابِي (my book), كِتَابُهَا (her book).",
+           ["ـِي my · ـُكَ your (boy) · ـُكِ your (girl) · ـُهُ his · ـُهَا her · ـُنَا our · ـُهُمْ their",
+            "Before these endings, ة becomes ت: مَدْرَسَةٌ → مَدْرَسَتِي.",
+            "The same endings join verbs and prepositions: يُحِبُّنِي، مَعَكَ، لَهُ."],
+           [ex("هَذَا كِتَابِي", "this is my book"), ex("بَيْتُهُ كَبِيرٌ", "his house is big"),
+            ex("هَذِهِ مَدْرَسَتِي", "this is my school"), ex("قَلَمُكَ جَمِيلٌ", "your pen is beautiful")],
+           [q("Which means 'her book'?", ["كِتَابُهُ", "كِتَابُهَا", "كِتَابِي"], 1, "ـُهَا means her."),
+            q("How do you write 'my school'?", ["مَدْرَسَةِي", "مَدْرَسَتِي"], 1, "ة becomes ت before the ending: مَدْرَسَتِي.")],
+           table={"headers": ["Ending", "Meaning", "Example"],
+                  "rows": [["ـِي", "my", "كِتَابِي"], ["ـُكَ / ـُكِ", "your (boy / girl)", "كِتَابُكَ / كِتَابُكِ"],
+                           ["ـُهُ", "his", "كِتَابُهُ"], ["ـُهَا", "her", "كِتَابُهَا"], ["ـُنَا", "our", "كِتَابُنَا"],
+                           ["ـُهُمْ", "their", "كِتَابُهُمْ"]]}),
+
+    lesson("c16_adjectives", "النَّعْتُ وَالمَنْعُوتُ", "Adjectives match their noun",
+           "An adjective comes after its noun and copies it: masculine or feminine, with or without ال, and the same ending.",
+           ["Gender: بَيْتٌ كَبِيرٌ · سَيَّارَةٌ كَبِيرَةٌ.",
+            "ال: if the noun has ال, so does the adjective: البَيْتُ الكَبِيرُ.",
+            "Ending: the adjective takes the same vowel as the noun: فِي بَيْتٍ كَبِيرٍ."],
+           [ex("بَيْتٌ كَبِيرٌ", "a big house"), ex("البَيْتُ الكَبِيرُ", "the big house"),
+            ex("سَيَّارَةٌ جَمِيلَةٌ", "a beautiful car"), ex("السَّيَّارَةُ الجَمِيلَةُ", "the beautiful car")],
+           [q("Complete: البِنْتُ ….", ["الذَّكِيُّ", "الذَّكِيَّةُ", "ذَكِيَّةٌ"], 1,
+              "The noun is feminine with ال, so the adjective is too: البِنْتُ الذَّكِيَّةُ."),
+            q("Which is correct?", ["بَيْتٌ الكَبِيرُ", "بَيْتٌ كَبِيرٌ"], 1, "No ال on the noun, so none on the adjective.")]),
+
+    lesson("c17_idafa", "الإِضَافَةُ", "The possessive construct: X of Y",
+           "Two nouns side by side mean 'X of Y': كِتَابُ الطَّالِبِ (the student's book).",
+           ["The first word has no ال and no tanween: كِتَابُ.",
+            "The second word takes kasra: الطَّالِبِ.",
+            "Read it as 'the book of the student' = 'the student's book'."],
+           [ex("كِتَابُ الطَّالِبِ", "the student's book"), ex("بَابُ البَيْتِ", "the door of the house"),
+            ex("سَيَّارَةُ أَبِي", "my father's car"), ex("مُعَلِّمُ المَدْرَسَةِ", "the school's teacher")],
+           [q("Which means 'the door of the house'?", ["البَابُ البَيْتِ", "بَابُ البَيْتِ", "بَابٌ البَيْتُ"], 1,
+              "The first word has no ال and no tanween; the second takes kasra."),
+            q("In كِتَابُ الطَّالِبِ, which vowel does the second word take?", ["Fatha", "Kasra", "Damma"], 1,
+              "The second word of the construct takes kasra.")]),
+
+    lesson("c18_present_tense", "الفِعْلُ المُضَارِعُ مَعَ الضَّمَائِرِ", "Present-tense verbs with pronouns",
+           "A present verb starts with أ، نـ، يـ or تـ to show who is doing the action.",
+           ["أَكْتُبُ I write · نَكْتُبُ we write",
+            "تَكْتُبُ you write (boy) · تَكْتُبِينَ you write (girl)",
+            "يَكْتُبُ he writes · تَكْتُبُ she writes · يَكْتُبُونَ they write",
+            "Remember the four starting letters: أ ن ي ت."],
+           [ex("أَنَا أَكْتُبُ الدَّرْسَ", "I write the lesson"), ex("هِيَ تَقْرَأُ قِصَّةً", "she reads a story"),
+            ex("نَحْنُ نَلْعَبُ", "we play"), ex("هُمْ يَدْرُسُونَ", "they study")],
+           [q("Which means 'she writes'?", ["يَكْتُبُ", "تَكْتُبُ", "أَكْتُبُ"], 1, "تَكْتُبُ is 'she writes' (and 'you write' to a boy)."),
+            q("Which means 'we write'?", ["نَكْتُبُ", "يَكْتُبُونَ", "تَكْتُبِينَ"], 0, "نـ at the start means 'we'.")],
+           table={"headers": ["Pronoun", "Verb", "Meaning"],
+                  "rows": [["أَنَا", "أَكْتُبُ", "I write"], ["نَحْنُ", "نَكْتُبُ", "we write"], ["أَنْتَ", "تَكْتُبُ", "you write (boy)"],
+                           ["أَنْتِ", "تَكْتُبِينَ", "you write (girl)"], ["هُوَ", "يَكْتُبُ", "he writes"], ["هِيَ", "تَكْتُبُ", "she writes"],
+                           ["هُمْ", "يَكْتُبُونَ", "they write"]]}),
+
+    lesson("c19_roots", "الجَذْرُ وَالأُسْرَةُ اللُّغَوِيَّةُ", "Roots: one root, many words",
+           "Most Arabic words grow from a root of three letters. Know the root and you can guess the meaning.",
+           ["The root ك ت ب is about writing: كَتَبَ، كَاتِبٌ، كِتَابٌ، مَكْتَبٌ، مَكْتَبَةٌ.",
+            "To find the root, take away the extra letters (م، ا، ة، ي، و، ت…) and keep the three main ones.",
+            "Words with مَـ at the start are often places: مَكْتَبٌ، مَلْعَبٌ، مَدْرَسَةٌ."],
+           [ex("كَتَبَ", "he wrote (ك ت ب)"), ex("مَكْتَبَةٌ", "a library (ك ت ب)"),
+            ex("مَدْرَسَةٌ", "a school (د ر س)"), ex("مَلْعَبٌ", "a playground (ل ع ب)")],
+           [q("What is the root of مَكْتَبَةٌ?", ["ك ت ب", "م ك ت", "ت ب ة"], 0, "Take away م and ة: ك ت ب."),
+            q("Which word is NOT from the root د ر س?", ["مَدْرَسَةٌ", "دَرْسٌ", "مَلْعَبٌ"], 2, "مَلْعَبٌ comes from ل ع ب (play).")],
+           activity={"type": "roots", "families": [
+               {"root": "ك ت ب", "meaning_en": "writing", "words": [
+                   {"ar": "كَتَبَ", "en": "he wrote"}, {"ar": "كَاتِبٌ", "en": "a writer"}, {"ar": "كِتَابٌ", "en": "a book"},
+                   {"ar": "مَكْتَبٌ", "en": "a desk / an office"}, {"ar": "مَكْتَبَةٌ", "en": "a library"}]},
+               {"root": "د ر س", "meaning_en": "studying", "words": [
+                   {"ar": "دَرَسَ", "en": "he studied"}, {"ar": "دَرْسٌ", "en": "a lesson"}, {"ar": "مَدْرَسَةٌ", "en": "a school"},
+                   {"ar": "مُدَرِّسٌ", "en": "a teacher"}]},
+               {"root": "ع ل م", "meaning_en": "knowing", "words": [
+                   {"ar": "عَلِمَ", "en": "he knew"}, {"ar": "عِلْمٌ", "en": "knowledge"}, {"ar": "مُعَلِّمٌ", "en": "a teacher"},
+                   {"ar": "عَالِمٌ", "en": "a scientist"}]},
+               {"root": "ل ع ب", "meaning_en": "playing", "words": [
+                   {"ar": "لَعِبَ", "en": "he played"}, {"ar": "لُعْبَةٌ", "en": "a toy / a game"}, {"ar": "مَلْعَبٌ", "en": "a playground"},
+                   {"ar": "لَاعِبٌ", "en": "a player"}]}]}),
+
+    lesson("c20_linking_words", "أَدَوَاتُ الرَّبْطِ", "Linking words",
+           "Linking words join words and sentences.",
+           ["وَ and · فَـ and then (straight after) · ثُمَّ then (later)",
+            "أَوْ or · لَكِنْ but · لِأَنَّ because"],
+           [ex("أَكَلْتُ خُبْزًا وَجُبْنًا", "I ate bread and cheese"), ex("دَخَلَ المُعَلِّمُ فَوَقَفَ الطُّلَّابُ", "the teacher came in and the students stood up"),
+            ex("دَرَسْتُ ثُمَّ نِمْتُ", "I studied, then I slept"), ex("الجَوُّ حَارٌّ لَكِنَّهُ جَمِيلٌ", "the weather is hot but it is nice")],
+           [q("Which word means 'because'?", ["لَكِنْ", "لِأَنَّ", "أَوْ"], 1, "لِأَنَّ means because."),
+            q("Which word means 'then, after a while'?", ["فَـ", "ثُمَّ"], 1, "ثُمَّ shows a gap in time; فَـ is straight after.")]),
+
+    lesson("c21_kaana", "كَانَ: الجُمْلَةُ فِي المَاضِي", "كَانَ: saying 'was'",
+           "كَانَ (was) turns a nominal sentence into the past. The predicate then takes fatha.",
+           ["الجَوُّ جَمِيلٌ → كَانَ الجَوُّ جَمِيلًا (the weather was nice).",
+            "The subject keeps damma; the predicate takes fatha (or tanween fath).",
+            "For a feminine subject use كَانَتْ: كَانَتِ السَّمَاءُ صَافِيَةً."],
+           [ex("كَانَ الجَوُّ جَمِيلًا", "the weather was nice"), ex("كَانَتِ السَّمَاءُ صَافِيَةً", "the sky was clear"),
+            ex("كَانَ الطَّالِبُ مُجْتَهِدًا", "the student was hard-working")],
+           [q("Complete: كَانَ الطَّالِبُ …", ["مُجْتَهِدٌ", "مُجْتَهِدًا"], 1, "After كَانَ, the predicate takes fatha: مُجْتَهِدًا."),
+            q("Which word goes with البِنْتُ?", ["كَانَ", "كَانَتْ"], 1, "البِنْتُ is feminine: كَانَتْ.")]),
+
+    lesson("c22_comparing", "اسْمُ التَّفْضِيلِ", "Comparing: bigger than…",
+           "Use the pattern أَفْعَلُ + مِنْ to compare two things.",
+           ["كَبِيرٌ → أَكْبَرُ (bigger) · صَغِيرٌ → أَصْغَرُ (smaller)",
+            "طَوِيلٌ → أَطْوَلُ (taller) · جَمِيلٌ → أَجْمَلُ (more beautiful)",
+            "Add مِنْ for 'than': الفِيلُ أَكْبَرُ مِنَ القِطِّ."],
+           [ex("الفِيلُ أَكْبَرُ مِنَ القِطِّ", "the elephant is bigger than the cat"),
+            ex("أَخِي أَطْوَلُ مِنِّي", "my brother is taller than me"),
+            ex("بُرْجُ خَلِيفَةَ أَعْلَى بُرْجٍ فِي العَالَمِ", "Burj Khalifa is the tallest tower in the world")],
+           [q("What is 'bigger'?", ["أَكْبَرُ", "كِبَارٌ", "كَبِيرَةٌ"], 0, "كَبِيرٌ on the pattern أَفْعَلُ: أَكْبَرُ."),
+            q("Complete: الجَبَلُ أَعْلَى … البَيْتِ", ["مِنَ", "فِي", "عَلَى"], 0, "'Than' is مِنْ: أَعْلَى مِنَ البَيْتِ.")]),
+
+    lesson("c23_numbers", "الأَعْدَادُ مِنْ ١ إِلَى ١٠", "Numbers 1 to 10",
+           "Count from one to ten, and read the Arabic digits ٠ – ٩.",
+           ["Arabic digits: ٠ ١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩.",
+            "Numbers are written left to right, even inside Arabic text: ١٢ is twelve.",
+            "With nouns, 3–10 take the opposite gender (ثَلَاثَةُ أَقْلَامٍ، ثَلَاثُ بَنَاتٍ). Learn the counting words first."],
+           [ex("وَاحِدٌ، اثْنَانِ، ثَلَاثَةٌ", "one, two, three"), ex("عِنْدِي خَمْسَةُ أَقْلَامٍ", "I have five pens"),
+            ex("عُمُرِي عَشْرُ سَنَوَاتٍ", "I am ten years old")],
+           [q("Which number is ٧?", ["سَبْعَةٌ", "تِسْعَةٌ", "سِتَّةٌ"], 0, "٧ is seven: سَبْعَةٌ."),
+            q("How is twelve written in Arabic digits?", ["١٢", "٢١"], 0, "Digits run left to right: ١٢.")],
+           activity=cards("Tap a number to hear it.", [
+               ("وَاحِدٌ", "1 ١ one"), ("اثْنَانِ", "2 ٢ two"), ("ثَلَاثَةٌ", "3 ٣ three"), ("أَرْبَعَةٌ", "4 ٤ four"),
+               ("خَمْسَةٌ", "5 ٥ five"), ("سِتَّةٌ", "6 ٦ six"), ("سَبْعَةٌ", "7 ٧ seven"), ("ثَمَانِيَةٌ", "8 ٨ eight"),
+               ("تِسْعَةٌ", "9 ٩ nine"), ("عَشَرَةٌ", "10 ١٠ ten")])),
+]
+
+STAGE_E = [
+    lesson("e1_greetings", "التَّحِيَّاتُ وَعِبَارَاتُ الأَدَبِ", "Greetings and polite words",
+           "Everyday greetings, their replies and polite phrases.",
+           ["Each greeting has its own reply: صَبَاحُ الخَيْرِ → صَبَاحُ النُّورِ.",
+            "السَّلَامُ عَلَيْكُمْ → وَعَلَيْكُمُ السَّلَامُ.",
+            "Say شُكْرًا (thank you) and reply عَفْوًا (you're welcome)."],
+           [ex("السَّلَامُ عَلَيْكُمْ", "peace be upon you (hello)"), ex("وَعَلَيْكُمُ السَّلَامُ", "and upon you be peace (reply)"),
+            ex("كَيْفَ حَالُكَ؟", "how are you?"), ex("بِخَيْرٍ، وَالحَمْدُ لِلَّهِ", "fine, thank God")],
+           [q("What is the reply to صَبَاحُ الخَيْرِ?", ["صَبَاحُ النُّورِ", "مَعَ السَّلَامَةِ"], 0, "صَبَاحُ الخَيْرِ → صَبَاحُ النُّورِ."),
+            q("How do you say 'thank you'?", ["عَفْوًا", "شُكْرًا"], 1, "شُكْرًا is thank you; عَفْوًا is the reply.")],
+           activity=cards("Tap a phrase to hear it.", [
+               ("السَّلَامُ عَلَيْكُمْ", "hello (peace be upon you)"), ("وَعَلَيْكُمُ السَّلَامُ", "reply to hello"),
+               ("صَبَاحُ الخَيْرِ", "good morning"), ("صَبَاحُ النُّورِ", "reply to good morning"),
+               ("مَسَاءُ الخَيْرِ", "good evening"), ("أَهْلًا وَسَهْلًا", "welcome"),
+               ("مِنْ فَضْلِكَ", "please"), ("شُكْرًا", "thank you"), ("عَفْوًا", "you're welcome"),
+               ("مَعَ السَّلَامَةِ", "goodbye")])),
+
+    lesson("e2_introduce", "أُعَرِّفُ بِنَفْسِي", "Introducing yourself",
+           "Say your name, age, class, where you live and what you like.",
+           ["اِسْمِي … my name is …", "عُمُرِي … سَنَوَاتٍ I am … years old", "أَنَا فِي الصَّفِّ … I am in Class …",
+            "أَسْكُنُ فِي … I live in …", "أُحِبُّ … I like …"],
+           [ex("اِسْمِي مَرْيَمُ", "my name is Maryam"), ex("عُمُرِي عَشْرُ سَنَوَاتٍ", "I am ten years old"),
+            ex("أَنَا فِي الصَّفِّ الخَامِسِ", "I am in Class 5"), ex("أَسْكُنُ فِي دُبَيّ", "I live in Dubai"),
+            ex("أُحِبُّ القِرَاءَةَ", "I like reading")],
+           [q("How do you say 'my name is'?", ["اِسْمِي", "اِسْمُكَ"], 0, "اِسْمِي: name + ـِي (my)."),
+            q("Which means 'I live in'?", ["أَسْكُنُ فِي", "أُحِبُّ"], 0, "أَسْكُنُ فِي means I live in.")],
+           activity={"type": "builder", "items": [
+               {"words": ["اِسْمِي", "مَرْيَمُ"], "en": "My name is Maryam."},
+               {"words": ["أَنَا", "فِي", "الصَّفِّ", "الخَامِسِ"], "en": "I am in Class 5."},
+               {"words": ["أَسْكُنُ", "فِي", "دُبَيّ"], "en": "I live in Dubai."},
+               {"words": ["أُحِبُّ", "القِرَاءَةَ", "وَالرَّسْمَ"], "en": "I like reading and drawing."}]}),
+
+    lesson("e3_family_body", "أُسْرَتِي وَجِسْمِي", "My family and my body",
+           "Words for the family and the parts of the body.",
+           ["Family: أَبٌ، أُمٌّ، أَخٌ، أُخْتٌ، جَدٌّ، جَدَّةٌ.", "Body: رَأْسٌ، عَيْنٌ، أُذُنٌ، أَنْفٌ، فَمٌ، يَدٌ، رِجْلٌ.",
+            "Add ـِي for 'my': أَبِي، أُمِّي، يَدِي."],
+           [ex("هَذَا أَبِي وَهَذِهِ أُمِّي", "this is my father and this is my mother"), ex("لِي أَخٌ وَأُخْتٌ", "I have a brother and a sister"),
+            ex("أَرَى بِعَيْنِي", "I see with my eye")],
+           [q("Which word means 'grandmother'?", ["جَدٌّ", "جَدَّةٌ", "أُمٌّ"], 1, "جَدَّةٌ is grandmother (ة for feminine)."),
+            q("Which body part do you hear with?", ["أُذُنٌ", "أَنْفٌ", "فَمٌ"], 0, "أُذُنٌ is an ear.")],
+           activity=cards("Tap a word to hear it.", [
+               ("أَبٌ", "father"), ("أُمٌّ", "mother"), ("أَخٌ", "brother"), ("أُخْتٌ", "sister"), ("جَدٌّ", "grandfather"),
+               ("جَدَّةٌ", "grandmother"), ("رَأْسٌ", "head"), ("عَيْنٌ", "eye"), ("أُذُنٌ", "ear"), ("أَنْفٌ", "nose"),
+               ("فَمٌ", "mouth"), ("يَدٌ", "hand"), ("رِجْلٌ", "leg / foot")])),
+
+    lesson("e4_colours_classroom", "الأَلْوَانُ وَأَدَوَاتُ الصَّفِّ", "Colours and the classroom",
+           "Colour words and the things in your classroom.",
+           ["Colours: أَحْمَرُ، أَزْرَقُ، أَخْضَرُ، أَصْفَرُ، أَبْيَضُ، أَسْوَدُ.",
+            "A colour for a feminine noun changes: قَلَمٌ أَحْمَرُ but وَرْدَةٌ حَمْرَاءُ.",
+            "Classroom: قَلَمٌ، كِتَابٌ، دَفْتَرٌ، مِمْحَاةٌ، حَقِيبَةٌ، سَبُّورَةٌ، كُرْسِيٌّ."],
+           [ex("القَلَمُ أَحْمَرُ", "the pen is red"), ex("الحَقِيبَةُ زَرْقَاءُ", "the bag is blue"),
+            ex("فِي حَقِيبَتِي دَفْتَرٌ وَمِمْحَاةٌ", "in my bag there is a notebook and an eraser")],
+           [q("Which word means 'green'?", ["أَخْضَرُ", "أَصْفَرُ", "أَزْرَقُ"], 0, "أَخْضَرُ is green."),
+            q("Which is 'an eraser'?", ["دَفْتَرٌ", "مِمْحَاةٌ", "سَبُّورَةٌ"], 1, "مِمْحَاةٌ is an eraser.")],
+           activity=cards("Tap a word to hear it.", [
+               ("أَحْمَرُ", "red"), ("أَزْرَقُ", "blue"), ("أَخْضَرُ", "green"), ("أَصْفَرُ", "yellow"), ("أَبْيَضُ", "white"),
+               ("أَسْوَدُ", "black"), ("قَلَمٌ", "pen"), ("دَفْتَرٌ", "notebook"), ("مِمْحَاةٌ", "eraser"),
+               ("حَقِيبَةٌ", "bag"), ("سَبُّورَةٌ", "board"), ("كُرْسِيٌّ", "chair")])),
+
+    lesson("e5_food", "الطَّعَامُ وَالشَّرَابُ", "Food and drink",
+           "Words for food and drink, and how to ask for something politely.",
+           ["Food: خُبْزٌ، أَرُزٌّ، دَجَاجٌ، سَمَكٌ، تُفَّاحٌ، مَوْزٌ.", "Drinks: مَاءٌ، حَلِيبٌ، عَصِيرٌ.",
+            "Ask politely: أُرِيدُ … مِنْ فَضْلِكَ."],
+           [ex("أَنَا جَائِعٌ", "I am hungry"), ex("أُرِيدُ مَاءً مِنْ فَضْلِكَ", "I would like water, please"),
+            ex("أُحِبُّ الأَرُزَّ وَالدَّجَاجَ", "I like rice and chicken")],
+           [q("Which word means 'milk'?", ["حَلِيبٌ", "عَصِيرٌ", "مَاءٌ"], 0, "حَلِيبٌ is milk."),
+            q("How do you ask politely for water?", ["أُرِيدُ مَاءً مِنْ فَضْلِكَ", "مَاءٌ!"], 0, "Add مِنْ فَضْلِكَ (please).")],
+           activity=cards("Tap a word to hear it.", [
+               ("خُبْزٌ", "bread"), ("أَرُزٌّ", "rice"), ("دَجَاجٌ", "chicken"), ("سَمَكٌ", "fish"), ("تُفَّاحٌ", "apples"),
+               ("مَوْزٌ", "bananas"), ("مَاءٌ", "water"), ("حَلِيبٌ", "milk"), ("عَصِيرٌ", "juice")])),
+
+    lesson("e6_days_months", "أَيَّامُ الأُسْبُوعِ وَالشُّهُورُ", "Days of the week and months",
+           "The days of the week and the twelve months.",
+           ["The week starts with يَوْمُ الأَحَدِ (Sunday) in many Arab countries; the UAE weekend is السَّبْتُ وَالأَحَدُ.",
+            "Ask the day: مَا اليَوْمُ؟ Answer: اليَوْمُ الخَمِيسُ.",
+            "Months used in the UAE: يَنَايِرُ، فِبْرَايِرُ، مَارِسُ … دِيسَمْبَرُ."],
+           [ex("اليَوْمُ الخَمِيسُ", "today is Thursday"), ex("عِيدُ مِيلَادِي فِي شَهْرِ مَايُو", "my birthday is in May")],
+           [q("Which day is Friday?", ["الجُمُعَةُ", "الخَمِيسُ", "السَّبْتُ"], 0, "الجُمُعَةُ is Friday."),
+            q("How do you ask 'what day is it?'", ["مَا اليَوْمُ؟", "كَمْ عُمُرُكَ؟"], 0, "مَا اليَوْمُ؟ asks for the day.")],
+           activity=cards("Tap a day or month to hear it.", [
+               ("الأَحَدُ", "Sunday"), ("الاثْنَيْنُ", "Monday"), ("الثُّلَاثَاءُ", "Tuesday"), ("الأَرْبِعَاءُ", "Wednesday"),
+               ("الخَمِيسُ", "Thursday"), ("الجُمُعَةُ", "Friday"), ("السَّبْتُ", "Saturday"),
+               ("يَنَايِرُ", "January"), ("فِبْرَايِرُ", "February"), ("مَارِسُ", "March"), ("أَبْرِيلُ", "April"),
+               ("مَايُو", "May"), ("يُونْيُو", "June"), ("يُولْيُو", "July"), ("أُغُسْطُسُ", "August"),
+               ("سِبْتَمْبَرُ", "September"), ("أُكْتُوبَرُ", "October"), ("نُوفَمْبَرُ", "November"), ("دِيسَمْبَرُ", "December")])),
+]
+
+
+def _order(lessons: List[Dict[str, Any]], ids: List[str]) -> List[Dict[str, Any]]:
+    by_id = {l["id"]: l for l in lessons}
+    assert set(ids) == set(by_id), set(ids) ^ set(by_id)
+    return [by_id[i] for i in ids]
+
+
+# Stage B and C mix the first lessons with the extras, in teaching order.
+STAGE_B_ORDERED = _order(STAGE_B + EXTRA_B, [
+    "b1_short_vowels", "b2_long_vowels", "b13_vowel_length", "b3_tanween", "b4_shadda", "b5_sun_moon", "b6_hamza",
+    "b14_hamza_seats", "b7_alif_maqsura", "b11_hidden_alif", "b12_silent_letters", "b8_stopping", "b9_stop_test",
+    "b10_syllables", "b15_fluency"])
+STAGE_C_ORDERED = _order(STAGE_C + EXTRA_C, [
+    "c1_gender", "c14_definite", "c2_number", "c16_adjectives", "c3_demonstratives", "c4_pronouns",
+    "c15_attached_pronouns", "c5_relative", "c6_prepositions", "c17_idafa", "c7_time_place", "c12_parts_of_speech",
+    "c18_present_tense", "c19_roots", "c13_sentences", "c21_kaana", "c20_linking_words", "c8_questions",
+    "c9_emphasis", "c10_negation", "c11_exception", "c22_comparing", "c23_numbers"])
+
 STAGES = [
     {"id": "A", "title_ar": "الحُرُوفُ وَالكِتَابَةُ", "title_en": "Letters and writing",
      "summary_en": "The alphabet, letter shapes, King letters, letter families and the sounds that are easy to confuse.",
      "lessons": STAGE_A},
     {"id": "B", "title_ar": "قَوَاعِدُ القِرَاءَةِ", "title_en": "Reading mechanics",
-     "summary_en": "Vowels, sukun, long vowels, tanween, shadda, sun and moon letters, hamza, the stop test and syllables.",
-     "lessons": STAGE_B},
+     "summary_en": "Vowels, long and short, tanween, shadda, sun and moon letters, hamza, hidden and silent letters, the stop test, syllables and fluent reading.",
+     "lessons": STAGE_B_ORDERED},
     {"id": "C", "title_ar": "قَوَاعِدُ أَوَّلِيَّةٌ", "title_en": "First grammar",
-     "summary_en": "Gender, the dual and plural, pointing words, pronouns, prepositions, questions, emphasis, negation and simple sentences.",
-     "lessons": STAGE_C},
+     "summary_en": "ال and tanween, gender and number, adjectives, pronouns (separate and attached), the possessive construct, verbs, roots, linking words, كان, questions, negation, comparing and numbers.",
+     "lessons": STAGE_C_ORDERED},
     {"id": "D", "title_ar": "الكِتَابَةُ وَالتَّرْقِيمُ", "title_en": "Writing and punctuation",
      "summary_en": "Punctuation, building sentences and short paragraphs.",
      "lessons": STAGE_D},
+    {"id": "E", "title_ar": "العَرَبِيَّةُ فِي حَيَاتِي", "title_en": "Everyday Arabic",
+     "summary_en": "Greetings, introducing yourself, family, body, colours, the classroom, food, days and months.",
+     "lessons": STAGE_E},
 ]
+
+# The vowel grid's sounds for a letter L: one pattern per mark (the frontend and the recording
+# script both build the syllables from here, so recorded audio matches what is played).
+VOWEL_MARKS = [
+    {"id": "fatha", "label_en": "Fatha (a)", "pattern": "{L}َ"},
+    {"id": "kasra", "label_en": "Kasra (i)", "pattern": "{L}ِ"},
+    {"id": "damma", "label_en": "Damma (u)", "pattern": "{L}ُ"},
+    {"id": "sukun", "label_en": "Sukun (no vowel)", "pattern": "أَ{L}ْ"},
+    {"id": "long_a", "label_en": "Long aa", "pattern": "{L}َا"},
+    {"id": "long_i", "label_en": "Long ii", "pattern": "{L}ِي"},
+    {"id": "long_u", "label_en": "Long uu", "pattern": "{L}ُو"},
+    {"id": "tanween_fath", "label_en": "Tanween fath (an)", "pattern": "{L}ًا"},
+    {"id": "tanween_kasr", "label_en": "Tanween kasr (in)", "pattern": "{L}ٍ"},
+    {"id": "tanween_damm", "label_en": "Tanween damm (un)", "pattern": "{L}ٌ"},
+    {"id": "shadda_fatha", "label_en": "Shadda + fatha", "pattern": "أَ{L}َّ"},
+    {"id": "shadda_kasra", "label_en": "Shadda + kasra", "pattern": "أَ{L}ِّ"},
+    {"id": "shadda_damma", "label_en": "Shadda + damma", "pattern": "أَ{L}ُّ"},
+]
+# Letters shown in the vowel grid (not ا or ء, which don't carry these marks on their own).
+GRID_LETTERS = [l for l, _, _ in ALPHABET if l not in ("ا", "ء")]
+
+# Words in a chapter's grammar rule (rule_name_en / rule_name_ar) or title that show it teaches this
+# lesson's topic: used for the "In your textbook" links. Lower-case English, no tashkeel.
+TEXTBOOK_KEYWORDS: Dict[str, List[str]] = {
+    "a1_alphabet": ["alphabet"], "a2_letter_shapes": ["letter forms", "letter shapes", "letter positions"],
+    "a3_king_letters": ["non-connect", "connecting letters"], "a4_letter_families": ["dots"],
+    "a5_sound_pairs": ["pronunciation", "similar sounds"], "a6_heavy_light": ["emphatic", "heavy letters"],
+    "b1_short_vowels": ["short vowel", "harakat"], "b2_long_vowels": ["long vowel", "madd"],
+    "b13_vowel_length": ["long vowel", "madd"], "b3_tanween": ["tanween", "nunation"], "b4_shadda": ["shadda"],
+    "b5_sun_moon": ["sun letter", "moon letter", "solar", "lunar"], "b6_hamza": ["hamza", "hamzat"],
+    "b14_hamza_seats": ["hamza"], "b7_alif_maqsura": ["alif maqsura", "maqsura"], "b11_hidden_alif": ["dagger alif"],
+    "b12_silent_letters": ["plural waw", "five verbs"], "b8_stopping": ["pause", "waqf"],
+    "b9_stop_test": ["taa marbuta", "ta marbuta", "marbutah"], "b10_syllables": ["syllable"], "b15_fluency": ["fluency", "reading aloud"],
+    "c1_gender": ["gender", "masculine", "feminine"], "c14_definite": ["definite", "al- prefix"],
+    "c2_number": ["dual", "singular", "broken plural", "sound plural", "plural noun"], "c16_adjectives": ["adjective", "concord", "agreement"],
+    "c3_demonstratives": ["demonstrative"], "c4_pronouns": ["personal pronoun", "separate pronoun"],
+    "c15_attached_pronouns": ["attached", "possessive"], "c5_relative": ["relative pronoun"],
+    "c6_prepositions": ["preposition"], "c17_idafa": ["idafa", "construct", "genitive construct"],
+    "c7_time_place": ["adverb", "time and place"], "c12_parts_of_speech": ["parts of speech", "past tense"],
+    "c18_present_tense": ["present tense"], "c19_roots": ["root", "derivation", "derived"],
+    "c13_sentences": ["nominal sentence", "verbal sentence"], "c21_kaana": ["kana"],
+    "c20_linking_words": ["conjunction", "connector", "sequence"], "c8_questions": ["interrogative", "question"],
+    "c9_emphasis": ["inna", "emphasis"], "c10_negation": ["negation", "prohibit"], "c11_exception": ["exception", "istithna"],
+    "c22_comparing": ["comparative", "superlative"], "c23_numbers": ["numbers", "numeral", "counting"],
+    "d1_punctuation": ["punctuation", "colon", "comma", "question mark", "exclamat"],
+    "d2_build_sentences": ["word order", "sentence order"], "d3_paragraph": ["main idea", "paragraph"],
+    "e1_greetings": ["greeting"], "e2_introduce": ["introduc"], "e3_family_body": ["family", "body"],
+    "e4_colours_classroom": ["colour", "color", "school"], "e5_food": ["food"], "e6_days_months": ["days", "week", "month"],
+}
+
+
+def all_lessons():
+    for stage in STAGES:
+        yield from stage["lessons"]
 
 
 def foundation_course() -> Dict[str, Any]:
     return {
         "title_ar": "أَسَاسِيَّاتُ اللُّغَةِ العَرَبِيَّةِ",
         "title_en": "Basic Foundation of Arabic",
-        "summary_en": "Four stages, from the alphabet to writing your first paragraph, taken before Class 1.",
+        "summary_en": "Five stages, from the alphabet to everyday Arabic, taken before Class 1.",
         "alphabet": [{"letter": l, "name": n, "sound_en": s, "king": l in KING_LETTERS} for l, n, s in ALPHABET],
+        "vowel_marks": VOWEL_MARKS,
+        "grid_letters": GRID_LETTERS,
         "stages": STAGES,
     }
+
+
+def get_lesson(lesson_id: str) -> Optional[Dict[str, Any]]:
+    return next((l for l in all_lessons() if l["id"] == lesson_id), None)
+
+
+def recording_script() -> List[Dict[str, str]]:
+    """Every Arabic text the Foundation course plays, grouped, for a native speaker to record.
+
+    Letters and syllables first (the sounds learners copy most), then words and sentences.
+    """
+    seen, out = set(), []
+
+    def add(text: str, group: str, hint: str = "") -> None:
+        text = " ".join(text.split())
+        if text and text not in seen:
+            seen.add(text)
+            out.append({"text": text, "group": group, "hint": hint})
+
+    for l, name, sound in ALPHABET:
+        add(name, "1 Letter names", f"{l}: {sound}")
+    for letter in GRID_LETTERS:
+        for mark in VOWEL_MARKS:
+            add(mark["pattern"].replace("{L}", letter), "2 Syllables", f"{letter} · {mark['label_en']}")
+    for lesson in all_lessons():
+        activity = lesson.get("activity") or {}
+        for part in (activity.get("items") or []):
+            if isinstance(part, dict) and part.get("parts"):
+                for syllable in part["parts"]:
+                    add(syllable, "2 Syllables", f"from {part['word']}")
+    for lesson in all_lessons():
+        activity = lesson.get("activity") or {}
+        for ex_ in lesson["examples"]:
+            add(ex_["ar"], "3 Words and sentences", ex_["en"])
+        for item in activity.get("items") or []:
+            if isinstance(item, str):
+                add(item, "3 Words and sentences", "fluency")
+            elif isinstance(item, dict):
+                if item.get("ar"):
+                    add(item["ar"], "3 Words and sentences", item.get("en", ""))
+                elif item.get("text"):
+                    add(item["text"], "3 Words and sentences", lesson["title_en"])
+                elif item.get("word"):
+                    add(item["word"], "3 Words and sentences", "syllables")
+                elif item.get("words"):
+                    add(" ".join(item["words"]), "3 Words and sentences", item.get("en", ""))
+        for family in activity.get("families") or []:
+            for word in family["words"]:
+                add(word["ar"], "3 Words and sentences", word["en"])
+    return out

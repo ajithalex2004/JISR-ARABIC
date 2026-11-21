@@ -56,6 +56,20 @@ def foundation_course():
     from backend.foundation_data import foundation_course as course
     return {"success": True, **course()}
 
+@router.get('/foundation/textbook-links')
+def foundation_textbook_links(grade: int = Query(5, ge=1, le=12), db: Session = Depends(get_db),
+                              actor: Optional[Principal] = Depends(get_optional_user)):
+    """For each Foundation lesson, the chapters of this class that teach the same rule."""
+    from backend.modules.curriculum.foundation import textbook_links
+    return {"success": True, "grade": grade, "links": textbook_links(db, grade)}
+
+@router.get('/foundation/lessons/{lesson_id}/explain')
+def foundation_parent_explanation(lesson_id: str, lang: str = Query(..., max_length=5), db: Session = Depends(get_db),
+                                  actor: Principal = Depends(get_current_user)):
+    """A Foundation lesson explained in a parent's language (hi, ml, ur): AI-translated once, then saved."""
+    from backend.modules.curriculum.foundation import parent_explanation
+    return {"success": True, **parent_explanation(db, lesson_id, lang)}
+
 @router.get('/mindmaps')
 def list_mindmaps(grade: int = Query(5, ge=1, le=12), term: int = Query(1, ge=1, le=3)):
     """Concept-map chapters for the requested grade/term, built from the official syllabus."""

@@ -927,3 +927,36 @@ def review_booklet_draft(draft_id: str, action: str, req: BookletReviewRequest |
     draft = review_draft(db, draft_id, action, actor_id=actor.id, note=(req.note if req else ""))
     audit_event(f"admin.booklet_{action}", user_id=actor.id, lesson_id=draft.lesson_id, draft_id=draft.id)
     return draft_detail(db, draft_id)
+
+
+# ---------------------------------------------------------------------------------------------
+# Native-speaker audio: record or upload clips for the Foundation recording script
+# ---------------------------------------------------------------------------------------------
+
+@router.get('/audio-recordings')
+def list_audio_recordings(db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """The Foundation recording script with what is recorded so far."""
+    require_roles(actor, ('admin',))
+    from backend.modules.curriculum.recordings import script_status
+    return script_status(db)
+
+
+@router.post('/audio-recordings')
+async def save_audio_recording(text: str = Form(...), speaker: str = Form(""), file: UploadFile = File(...),
+                               db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    """Save (or replace) the native recording of one exact text."""
+    require_roles(actor, ('admin',))
+    from backend.modules.curriculum.recordings import MAX_BYTES, recording_url, save_recording
+    data = await file.read(MAX_BYTES + 1)
+    row = save_recording(db, text, data, file.content_type or "", speaker=speaker, actor_id=actor.id)
+    from backend.observability import audit_event
+    audit_event("admin.audio_recorded", user_id=actor.id, recording_id=row.id)
+    return {"success": True, "recording_id": row.id, "text": row.text, "url": recording_url(row)}
+
+
+@router.delete('/audio-recordings/{recording_id}')
+def delete_audio_recording(recording_id: str, db: Session = Depends(get_db), actor: Principal = Depends(get_current_user)):
+    require_roles(actor, ('admin',))
+    from backend.modules.curriculum.recordings import delete_recording
+    delete_recording(db, recording_id)
+    return {"success": True}

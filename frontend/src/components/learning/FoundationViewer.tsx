@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Blocks, CheckCircle2, Circle, Crown, RotateCcw, Volume2, ArrowRight } from 'lucide-react';
+import { Blocks, CheckCircle2, Circle, Crown, RotateCcw, Volume2, ArrowRight, BookOpen, Languages, Lock, Sparkles, Timer } from 'lucide-react';
 import { api } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
@@ -17,14 +17,33 @@ type Activity =
   | { type: 'vowel_grid'; marks: string[] }
   | { type: 'sort'; prompt_en: string; buckets: { id: string; label: string }[]; items: { text: string; bucket: string }[] }
   | { type: 'syllables'; items: { word: string; parts: string[] }[] }
-  | { type: 'builder'; items: { words: string[]; en: string }[] };
+  | { type: 'builder'; items: { words: string[]; en: string }[] }
+  | { type: 'cards'; prompt_en: string; items: { ar: string; en: string }[] }
+  | { type: 'fluency'; items: string[] }
+  | { type: 'roots'; families: { root: string; meaning_en: string; words: { ar: string; en: string }[] }[] };
 type Lesson = {
   id: string; title_ar: string; title_en: string; summary_en: string; points: string[]; examples: Example[];
   quiz: QuizItem[]; table?: { headers: string[]; rows: string[][] }; activity?: Activity;
 };
-type Stage = { id: 'A' | 'B' | 'C' | 'D'; title_ar: string; title_en: string; summary_en: string; lessons: Lesson[] };
+type Stage = { id: 'A' | 'B' | 'C' | 'D' | 'E'; title_ar: string; title_en: string; summary_en: string; lessons: Lesson[] };
 type Letter = { letter: string; name: string; sound_en: string; king: boolean };
-type Course = { title_ar: string; title_en: string; summary_en: string; alphabet: Letter[]; stages: Stage[] };
+type VowelMark = { id: string; label_en: string; pattern: string };
+type Course = {
+  title_ar: string; title_en: string; summary_en: string; alphabet: Letter[]; stages: Stage[];
+  vowel_marks: VowelMark[]; grid_letters: string[];
+};
+type TextbookLink = { lesson_id: string; grade: number; term: number; lesson_order: number; title_ar: string; title_en: string; rule: string };
+type Explanation = {
+  lang: string; language: string; native_name: string; dir: 'ltr' | 'rtl'; title: string; summary: string;
+  points: string[]; examples: string[]; example_arabic: string[];
+};
+
+// Parent languages offered for the "explain for parents" panel (translated by the server).
+const PARENT_LANGUAGES = [
+  { code: 'hi', label: 'हिन्दी', name: 'Hindi' },
+  { code: 'ml', label: 'മലയാളം', name: 'Malayalam' },
+  { code: 'ur', label: 'اردو', name: 'Urdu' },
+];
 
 const ARABIC = /[؀-ۿ]/;
 const play = (text: string) => audioManager.playArabic(text);
@@ -124,41 +143,101 @@ const LetterShapes: React.FC<{ alphabet: Letter[] }> = ({ alphabet }) => {
   );
 };
 
-const MARKS: Record<string, { label: string; make: (l: string) => string }> = {
-  fatha: { label: 'Fatha (a)', make: (l) => `${l}َ` },
-  kasra: { label: 'Kasra (i)', make: (l) => `${l}ِ` },
-  damma: { label: 'Damma (u)', make: (l) => `${l}ُ` },
-  // A letter with sukun can't be said alone: it closes a syllable (أَبْ).
-  sukun: { label: 'Sukun (no vowel)', make: (l) => `أَ${l}ْ` },
-  long_a: { label: 'Long aa', make: (l) => `${l}َا` },
-  long_i: { label: 'Long ii', make: (l) => `${l}ِي` },
-  long_u: { label: 'Long uu', make: (l) => `${l}ُو` },
-  tanween_fath: { label: 'Tanween fath (an)', make: (l) => `${l}ًا` },
-  tanween_kasr: { label: 'Tanween kasr (in)', make: (l) => `${l}ٍ` },
-  tanween_damm: { label: 'Tanween damm (un)', make: (l) => `${l}ٌ` },
-  shadda_fatha: { label: 'Shadda + fatha', make: (l) => `أَ${l}َّ` },
-  shadda_kasra: { label: 'Shadda + kasra', make: (l) => `أَ${l}ِّ` },
-  shadda_damma: { label: 'Shadda + damma', make: (l) => `أَ${l}ُّ` },
-};
-
-const VowelGrid: React.FC<{ alphabet: Letter[]; marks: string[] }> = ({ alphabet, marks }) => {
-  const letters = alphabet.map((l) => l.letter).filter((l) => l !== 'ء' && l !== 'ا');
+const VowelGrid: React.FC<{ course: Course; marks: string[] }> = ({ course, marks }) => {
   const [letter, setLetter] = useState('ب');
+  const shown = course.vowel_marks.filter((m) => marks.includes(m.id));
   return (
     <div>
       <p className="text-xs text-slate-600 mb-2">Choose a letter, then tap a sound to hear it.</p>
-      <LetterPicker letters={letters} value={letter} onChange={setLetter} />
+      <LetterPicker letters={course.grid_letters} value={letter} onChange={setLetter} />
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-        {marks.filter((m) => MARKS[m]).map((m) => {
-          const text = MARKS[m].make(letter);
+        {shown.map((m) => {
+          const text = m.pattern.split('{L}').join(letter);
           return (
-            <button key={m} type="button" onClick={() => play(text)}
+            <button key={m.id} type="button" onClick={() => play(text)}
               className="border-2 border-slate-200 hover:border-emerald-700 bg-white p-3 text-center">
               <span className="block text-3xl font-arabic font-black text-emerald-950" dir="rtl">{text}</span>
-              <span className="block text-[11px] text-slate-600">{MARKS[m].label}</span>
+              <span className="block text-[11px] text-slate-600">{m.label_en}</span>
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+};
+
+const WordCards: React.FC<{ activity: Extract<Activity, { type: 'cards' }> }> = ({ activity }) => (
+  <div>
+    <p className="text-xs text-slate-600 mb-2">{activity.prompt_en}</p>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+      {activity.items.map((c, i) => (
+        <button key={i} type="button" onClick={() => play(c.ar)}
+          className="border-2 border-slate-200 hover:border-emerald-700 bg-white p-3 text-center">
+          <span className="block text-2xl font-arabic font-black text-emerald-950" dir="rtl">{c.ar}</span>
+          <span className="block text-[11px] text-slate-600">{c.en}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+/** Read a sentence aloud and time it: words per minute, best time kept for this session. */
+const Fluency: React.FC<{ activity: Extract<Activity, { type: 'fluency' }> }> = ({ activity }) => {
+  const [index, setIndex] = useState(0);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [seconds, setSeconds] = useState<Record<number, number>>({});
+  const sentence = activity.items[index];
+  const words = sentence.split(/\s+/).filter(Boolean).length;
+  const time = seconds[index];
+  return (
+    <div>
+      <p className="text-xs text-slate-600 mb-2">1. Listen. 2. Press Start and read the sentence aloud. 3. Press Done. ({index + 1} of {activity.items.length})</p>
+      <div className="flex items-start gap-3 bg-white border-2 border-slate-200 p-3">
+        <SpeakButton text={sentence} label="Listen to the model" />
+        <p className="flex-1 text-2xl font-arabic font-bold text-slate-900 leading-loose" dir="rtl">{sentence}</p>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
+        {startedAt === null ? (
+          <button type="button" onClick={() => setStartedAt(Date.now())} className="px-3 py-1.5 bg-emerald-900 text-white text-xs font-bold inline-flex items-center gap-1"><Timer className="w-3.5 h-3.5" /> Start</button>
+        ) : (
+          <button type="button" onClick={() => {
+            const took = Math.max(1, (Date.now() - startedAt) / 1000);
+            setSeconds((prev) => ({ ...prev, [index]: prev[index] ? Math.min(prev[index], took) : took }));
+            setStartedAt(null);
+          }} className="px-3 py-1.5 bg-amber-500 text-slate-950 text-xs font-bold">Done</button>
+        )}
+        {time !== undefined && (
+          <span className="font-bold text-emerald-900">Best: {time.toFixed(1)} s · {Math.round((words / time) * 60)} words a minute</span>
+        )}
+        {index < activity.items.length - 1 && time !== undefined && (
+          <button type="button" onClick={() => setIndex(index + 1)} className="px-3 py-1.5 border border-slate-300 text-xs font-bold">Next sentence</button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const RootFamilies: React.FC<{ activity: Extract<Activity, { type: 'roots' }> }> = ({ activity }) => {
+  const [open, setOpen] = useState(0);
+  const family = activity.families[open];
+  return (
+    <div>
+      <p className="text-xs text-slate-600 mb-2">Choose a root to see its word family. Tap a word to hear it.</p>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {activity.families.map((f, i) => (
+          <button key={f.root} type="button" aria-pressed={open === i} onClick={() => setOpen(i)}
+            className={`px-3 py-1.5 border-2 text-sm ${open === i ? 'bg-emerald-900 text-white border-emerald-950' : 'bg-white border-slate-300 hover:border-emerald-700'}`}>
+            <bdi className="font-arabic text-lg font-black">{f.root}</bdi> <span className="text-xs">({f.meaning_en})</span>
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {family.words.map((w) => (
+          <button key={w.ar} type="button" onClick={() => play(w.ar)} className="border-2 border-slate-200 hover:border-emerald-700 bg-white p-3 text-center">
+            <span className="block text-2xl font-arabic font-black text-emerald-950" dir="rtl">{w.ar}</span>
+            <span className="block text-[11px] text-slate-600">{w.en}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -261,11 +340,15 @@ const SentenceBuilder: React.FC<{ activity: Extract<Activity, { type: 'builder' 
   );
 };
 
-const ActivityView: React.FC<{ activity: Activity; alphabet: Letter[] }> = ({ activity, alphabet }) => {
+const ActivityView: React.FC<{ activity: Activity; course: Course }> = ({ activity, course }) => {
+  const alphabet = course.alphabet;
   switch (activity.type) {
     case 'alphabet': return <AlphabetBoard alphabet={alphabet} />;
     case 'letter_shapes': return <LetterShapes alphabet={alphabet} />;
-    case 'vowel_grid': return <VowelGrid alphabet={alphabet} marks={activity.marks} />;
+    case 'vowel_grid': return <VowelGrid course={course} marks={activity.marks} />;
+    case 'cards': return <WordCards activity={activity} />;
+    case 'fluency': return <Fluency activity={activity} />;
+    case 'roots': return <RootFamilies activity={activity} />;
     case 'sort': return <SortGame activity={activity} />;
     case 'syllables': return <Syllables activity={activity} />;
     case 'builder': return <SentenceBuilder activity={activity} />;
@@ -317,14 +400,30 @@ const Quiz: React.FC<{ items: QuizItem[]; onAllCorrect: () => void }> = ({ items
 
 interface FoundationViewerProps {
   activeChild?: ChildProfile | null;
+  /** The class whose textbook chapters are linked (the learner's grade). */
+  grade?: number;
+  /** Open a textbook chapter in Curriculum & Lessons. */
+  onOpenChapter?: (lessonId: string) => void;
+  /** Open Ask Fahim with this question (locked on the free plan: the app shows the plans instead). */
+  onAskFahim?: (question: string) => void;
+  askFahimLocked?: boolean;
+  /** Whether a user is signed in (parent-language explanations need an account). */
+  signedIn?: boolean;
 }
 
-export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild }) => {
+export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild, grade = 5, onOpenChapter, onAskFahim, askFahimLocked = false, signedIn = true }) => {
   const [course, setCourse] = useState<Course | null>(null);
   const [error, setError] = useState('');
   const [stageId, setStageId] = useState<Stage['id']>('A');
   const [lessonId, setLessonId] = useState<string>('');
   const [done, setDone] = useState<string[]>(() => loadProgress(activeChild?.id));
+  const [links, setLinks] = useState<Record<string, TextbookLink[]>>({});
+  const [parentLang, setParentLang] = useState<string>(() => {
+    try { return localStorage.getItem('jisr.foundation.parentLang') || ''; } catch { return ''; }
+  });
+  const [explanation, setExplanation] = useState<Explanation | null>(null);
+  const [explaining, setExplaining] = useState(false);
+  const [explainError, setExplainError] = useState('');
 
   useEffect(() => { setDone(loadProgress(activeChild?.id)); }, [activeChild?.id]);
   useEffect(() => {
@@ -337,6 +436,36 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild 
   const lessons = stage?.lessons || [];
   const lesson = lessons.find((l) => l.id === lessonId) || lessons[0];
   useEffect(() => { if (stage) setLessonId(stage.lessons[0]?.id || ''); }, [stageId, course]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getFoundationTextbookLinks(grade)
+      .then((res) => { if (!cancelled) setLinks(res.links || {}); })
+      .catch(() => { if (!cancelled) setLinks({}); });
+    return () => { cancelled = true; };
+  }, [grade]);
+
+  // The lesson in the parent's chosen language (translated once on the server, then saved).
+  const currentLessonId = lesson?.id;
+  useEffect(() => {
+    setExplanation(null);
+    setExplainError('');
+    if (!parentLang || !currentLessonId) return;
+    if (!signedIn) { setExplainError('Sign in to read the explanation in your language.'); return; }
+    let cancelled = false;
+    setExplaining(true);
+    api.getFoundationExplanation(currentLessonId, parentLang)
+      .then((res) => { if (!cancelled) setExplanation(res); })
+      .catch((err) => { if (!cancelled) setExplainError(err instanceof Error ? err.message : 'The translation could not be loaded.'); })
+      .finally(() => { if (!cancelled) setExplaining(false); });
+    return () => { cancelled = true; };
+  }, [parentLang, currentLessonId, signedIn]);
+
+  const chooseParentLang = (code: string) => {
+    const next = code === parentLang ? '' : code;
+    setParentLang(next);
+    try { localStorage.setItem('jisr.foundation.parentLang', next); } catch { /* private mode */ }
+  };
 
   const markDone = (id: string) => {
     setDone((prev) => {
@@ -375,7 +504,7 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild 
       </div>
 
       {/* Stages */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2" role="tablist" aria-label="Stages">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2" role="tablist" aria-label="Stages">
         {course.stages.map((s) => {
           const n = s.lessons.filter((l) => done.includes(l.id)).length;
           return (
@@ -417,7 +546,53 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild 
               {done.includes(lesson.id) && <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-1">✓ Completed</span>}
             </div>
             <p className="text-sm text-slate-700 mt-2"><Mixed text={lesson.summary_en} /></p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+              <span className="text-xs font-bold text-slate-700 inline-flex items-center gap-1"><Languages className="w-4 h-4" /> Explain for parents in:</span>
+              {PARENT_LANGUAGES.map((l) => (
+                <button key={l.code} type="button" aria-pressed={parentLang === l.code} onClick={() => chooseParentLang(l.code)} title={l.name}
+                  className={`px-2.5 py-1 text-sm border ${parentLang === l.code ? 'bg-emerald-900 text-white border-emerald-950' : 'bg-white border-slate-300 hover:border-emerald-700'}`}>
+                  {l.label}
+                </button>
+              ))}
+              {onAskFahim && (
+                <button type="button"
+                  onClick={() => onAskFahim(`Please explain this Arabic rule simply, with two easy examples and English under each Arabic sentence: "${lesson.title_en}" (${lesson.title_ar}). ${lesson.summary_en}`)}
+                  className="ml-auto px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-[#6C5CE7] to-[#8E44AD] text-white inline-flex items-center gap-1.5"
+                  title={askFahimLocked ? 'Ask Fahim is part of the paid plan' : 'Ask Fahim to explain this rule'}>
+                  {askFahimLocked ? <Lock className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5 text-amber-300" />}
+                  Ask Fahim to explain this rule{askFahimLocked ? ' (paid plan)' : ''}
+                </button>
+              )}
+            </div>
           </header>
+
+          {parentLang && (
+            <section className="bg-sky-50 border-2 border-sky-300 p-4" aria-live="polite">
+              {explaining && <p className="text-sm text-slate-600">Translating… (the first time can take a few seconds)</p>}
+              {explainError && <p role="alert" className="text-sm text-red-800">{explainError}</p>}
+              {explanation && (
+                <div dir={explanation.dir} lang={explanation.lang}>
+                  <div className="text-[11px] font-black uppercase tracking-wider text-sky-900 mb-1" dir="ltr">For parents · {explanation.language} ({explanation.native_name})</div>
+                  {explanation.title && <h3 className="text-base font-bold text-slate-900">{explanation.title}</h3>}
+                  <p className="text-sm text-slate-800 mt-1"><Mixed text={explanation.summary} /></p>
+                  <ul className="mt-2 space-y-1 list-disc ps-5 text-sm text-slate-800">
+                    {explanation.points.map((p, i) => <li key={i}><Mixed text={p} /></li>)}
+                  </ul>
+                  {explanation.examples.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {explanation.examples.map((e, i) => (
+                        <div key={i} className="text-sm text-slate-800 flex flex-wrap items-baseline gap-2">
+                          <bdi className="font-arabic font-bold text-base text-slate-900">{explanation.example_arabic[i]}</bdi>
+                          <span>— {e}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="mt-3 text-[11px] text-slate-500" dir="ltr">Machine translation of the English explanation; the Arabic is unchanged. Please tell us if something reads wrongly.</p>
+                </div>
+              )}
+            </section>
+          )}
 
           <section className="bg-white border border-slate-200 p-4">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">The rule</h3>
@@ -459,7 +634,26 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild 
           {lesson.activity && (
             <section className="bg-amber-50/40 border-2 border-amber-300 p-4">
               <h3 className="text-xs font-black uppercase tracking-wider text-amber-900 mb-2">Practice</h3>
-              <ActivityView key={lesson.id} activity={lesson.activity} alphabet={course.alphabet} />
+              <ActivityView key={lesson.id} activity={lesson.activity} course={course} />
+            </section>
+          )}
+
+          {(links[lesson.id] || []).length > 0 && (
+            <section className="bg-white border border-slate-200 p-4">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5"><BookOpen className="w-4 h-4" /> In your textbook (Class {grade})</h3>
+              <ul className="space-y-1.5">
+                {links[lesson.id].map((l) => (
+                  <li key={l.lesson_id}>
+                    <button type="button" onClick={() => onOpenChapter?.(l.lesson_id)} disabled={!onOpenChapter}
+                      className="w-full text-left flex flex-wrap items-baseline gap-x-2 px-2 py-1.5 border border-slate-200 hover:border-emerald-700 hover:bg-emerald-50">
+                      <span className="text-xs font-bold text-emerald-900">Term {l.term} · Chapter {l.lesson_order}</span>
+                      <bdi className="font-arabic font-bold text-slate-900">{l.title_ar}</bdi>
+                      <span className="text-xs text-slate-600">{l.title_en}</span>
+                      {l.rule && <span className="text-[11px] text-slate-500 w-full"><Mixed text={`Rule: ${l.rule}`} /></span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 

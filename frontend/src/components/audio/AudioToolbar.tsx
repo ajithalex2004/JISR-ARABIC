@@ -6,6 +6,7 @@ export const AudioToolbar: React.FC = () => {
   const preferredArabicVoices = ['Microsoft Hoda', 'Microsoft Hamed', 'Google Arabic', 'Microsoft Fatima', 'Microsoft Salma', 'Microsoft Naayf'];
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentText, setCurrentText] = useState<string>('');
+  const [isRecorded, setIsRecorded] = useState<boolean>(false);
   const [speed, setSpeed] = useState<PlaybackSpeed>(1.0);
   const [repeats, setRepeats] = useState<RepeatCount>(1);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -16,6 +17,7 @@ export const AudioToolbar: React.FC = () => {
     const unsubscribe = audioManager.subscribe((state) => {
       setIsPlaying(state.isPlaying);
       setCurrentText(state.text);
+      setIsRecorded(state.isRecorded);
     });
 
     const vList = audioManager.getVoices().filter(v => /^ar([_-]|$)/i.test(v.lang) || /arabic|hoda|hamed|fatima|salma|naayf/i.test(v.name));
@@ -64,9 +66,15 @@ export const AudioToolbar: React.FC = () => {
         <div>
           <div className="flex items-center gap-1.5 font-semibold">
             <span>{isPlaying ? 'Speaking Arabic...' : 'Audio Ready'}</span>
-            <span className="bg-amber-800/80 text-amber-200 px-1 py-0.2 text-[10px] uppercase tracking-wider font-bold">
-              Synthetic Speech (نطق آلي)
-            </span>
+            {isRecorded ? (
+              <span className="bg-emerald-700 text-emerald-50 px-1 py-0.2 text-[10px] uppercase tracking-wider font-bold">
+                Native speaker (نطق بشري)
+              </span>
+            ) : (
+              <span className="bg-amber-800/80 text-amber-200 px-1 py-0.2 text-[10px] uppercase tracking-wider font-bold">
+                Synthetic Speech (نطق آلي)
+              </span>
+            )}
           </div>
           <div className="text-white truncate max-w-xs font-arabic font-semibold">
             {currentText || 'Click any Arabic word or sentence to listen'}

@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, DateTime, ForeignKey, Text, UniqueConstraint, Index, Numeric
+    Column, String, Integer, Float, Boolean, DateTime, ForeignKey, Text, UniqueConstraint, Index, Numeric, LargeBinary
 )
 from sqlalchemy.orm import relationship
 from backend.database import Base
@@ -720,3 +720,39 @@ class BookletDraft(Base):
     reviewed_by = Column(String(36), nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
     review_note = Column(Text, nullable=True)
+
+
+class RecordedAudio(Base):
+    """A native speaker's recording of one exact Arabic text (with its vowel marks).
+
+    Whenever the app plays that text, /api/audio/synthesize serves this recording instead of the
+    synthetic voice. The clip itself is kept here (clips are small) so it survives redeploys.
+    """
+    __tablename__ = "recorded_audio"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    text = Column(String(500), nullable=False, unique=True, index=True)  # whitespace-normalised
+    audio = Column(LargeBinary, nullable=False)
+    mime_type = Column(String(50), nullable=False, default="audio/webm")
+    size_bytes = Column(Integer, nullable=False, default=0)
+    speaker = Column(String(120), nullable=True)
+    created_by = Column(String(36), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class FoundationTranslation(Base):
+    """A Basic Foundation lesson explained in a parent's language (AI-translated, saved once).
+
+    source_hash ties the translation to the English text it came from, so editing a lesson makes
+    a new translation instead of serving a stale one.
+    """
+    __tablename__ = "foundation_translations"
+    __table_args__ = (UniqueConstraint("lesson_id", "lang", "source_hash", name="uq_foundation_translation"),)
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    lesson_id = Column(String(60), nullable=False, index=True)
+    lang = Column(String(10), nullable=False)
+    source_hash = Column(String(64), nullable=False)
+    content_json = Column(Text, nullable=False)
+    model = Column(String(80), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

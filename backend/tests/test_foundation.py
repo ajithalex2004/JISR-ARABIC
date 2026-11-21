@@ -2,11 +2,12 @@
 import re
 import unittest
 
-from backend.foundation_data import ALPHABET, KING_LETTERS, MOON_LETTERS, SUN_LETTERS, foundation_course
+from backend.foundation_data import (ALPHABET, KING_LETTERS, MOON_LETTERS, SUN_LETTERS, TEXTBOOK_KEYWORDS,
+                                     VOWEL_MARKS, foundation_course, recording_script)
 
 WORD = re.compile(r"[ء-ي][ء-يً-ْٰـ]*")
 VOWELLED = re.compile(r"[ً-ْ]")
-ACTIVITIES = {"alphabet", "letter_shapes", "vowel_grid", "sort", "syllables", "builder"}
+ACTIVITIES = {"alphabet", "letter_shapes", "vowel_grid", "sort", "syllables", "builder", "cards", "fluency", "roots"}
 
 
 def lessons():
@@ -18,7 +19,7 @@ def lessons():
 class TestFoundationCourse(unittest.TestCase):
     def test_four_stages_in_order(self):
         stages = foundation_course()["stages"]
-        self.assertEqual([s["id"] for s in stages], ["A", "B", "C", "D"])
+        self.assertEqual([s["id"] for s in stages], ["A", "B", "C", "D", "E"])
         for stage in stages:
             self.assertTrue(stage["lessons"], stage["id"])
 
@@ -74,6 +75,16 @@ class TestFoundationCourse(unittest.TestCase):
                         return re.sub("(.)ّ", r"\1\1", bare)
                     for item in activity["items"]:
                         self.assertEqual(letters("".join(item["parts"])), letters(item["word"]), item["word"])
+                if activity["type"] == "vowel_grid":
+                    self.assertTrue(set(activity["marks"]) <= {m["id"] for m in VOWEL_MARKS})
+                if activity["type"] in ("cards", "fluency", "roots"):
+                    texts = ([c["ar"] for c in activity["items"]] if activity["type"] == "cards" else
+                             activity["items"] if activity["type"] == "fluency" else
+                             [w["ar"] for f in activity["families"] for w in f["words"]])
+                    self.assertTrue(texts)
+                    for text in texts:
+                        missing = [w for w in WORD.findall(text) if len(w) > 1 and not VOWELLED.search(w)]
+                        self.assertEqual(missing, [], text)
                 if activity["type"] == "builder":
                     for item in activity["items"]:
                         self.assertGreaterEqual(len(item["words"]), 2)
@@ -92,6 +103,21 @@ class TestFoundationCourse(unittest.TestCase):
         for _, name, _ in ALPHABET:
             self.assertTrue(VOWELLED.search(name), name)
 
+    def test_every_lesson_has_textbook_keywords(self):
+        ids = {lesson["id"] for _, lesson in lessons()}
+        self.assertEqual(ids, set(TEXTBOOK_KEYWORDS))
+
+    def test_recording_script_covers_the_letters_and_syllables(self):
+        script = recording_script()
+        texts = [item["text"] for item in script]
+        self.assertEqual(len(texts), len(set(texts)))
+        self.assertIn("بَاء", texts)        # a letter name
+        self.assertIn("بَ", texts)          # a vowel-grid syllable
+        self.assertIn("أَبْ", texts)        # sukun syllable
+        self.assertIn("حَمْ", texts)        # a syllable from the syllable splitter
+        self.assertIn("كِتَابٌ", texts)     # a word
+        self.assertEqual(sum(1 for item in script if item["group"] == "1 Letter names"), 29)
+
     def test_api(self):
         from fastapi.testclient import TestClient
         from backend.main import app
@@ -100,7 +126,8 @@ class TestFoundationCourse(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         body = res.json()
         self.assertTrue(body["success"])
-        self.assertEqual(len(body["stages"]), 4)
+        self.assertEqual(len(body["stages"]), 5)
+        self.assertEqual(len(body["vowel_marks"]), len(VOWEL_MARKS))
         self.assertEqual(len(body["alphabet"]), 29)
 
 

@@ -8,6 +8,8 @@ export interface PlaybackState {
   activeWord: string;
   /** Position of the spoken word among the whitespace-separated words of `text`; -1 when unknown. */
   activeWordIndex: number;
+  /** True while a native speaker's recording is playing (not the synthetic voice). */
+  isRecorded: boolean;
 }
 
 export type PlaybackSpeed = 1.0 | 0.6 | 0.3;
@@ -26,6 +28,7 @@ class AudioManager {
   private isPlaying: boolean = false;
   private pendingRepeats: number = 0;
   private currentText: string = "";
+  private isRecorded: boolean = false;
   // Normal (1.0x) is the default playback speed
   private speed: PlaybackSpeed = 1.0;
   private targetRepeats: RepeatCount = 1;
@@ -121,7 +124,8 @@ class AudioManager {
         isPlaying: this.isPlaying,
         text: this.currentText,
         activeWord: this.activeWord,
-        activeWordIndex: this.isPlaying ? this.activeWordIndex : -1
+        activeWordIndex: this.isPlaying ? this.activeWordIndex : -1,
+        isRecorded: this.isPlaying && this.isRecorded
       });
     }
   }
@@ -208,6 +212,7 @@ class AudioManager {
     const repeats = options?.repeats ?? this.targetRepeats;
 
     this.currentText = text;
+    this.isRecorded = false;
     this.pendingRepeats = repeats;
     this.isPlaying = true;
     this.activeWord = text.split(/\s+/)[0] || text;
@@ -233,6 +238,7 @@ class AudioManager {
         }
 
         if (metadata.audio_url) {
+          this.isRecorded = metadata.is_synthetic === false;
           const fullAudioUrl = metadata.audio_url.startsWith('http')
             ? metadata.audio_url
             : `${API_BASE}${metadata.audio_url}`;

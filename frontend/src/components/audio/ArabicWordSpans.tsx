@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { audioManager } from '../../services/audio';
 import { getWordTranslation, fetchWordGloss, isGlossRequested, prefetchWordGlosses, WordDefinition } from '../../services/arabicDictionary';
@@ -16,7 +16,17 @@ interface ArabicWordSpansProps {
   highlightedWords?: number[];
   /** Called with a word's position when it is hovered, focused or tapped, and null when it is left. */
   onWordHover?: (wordIndex: number | null) => void;
+  /** Light pronunciation text for a dark background. Detected from the text colour when not given. */
+  onDark?: boolean;
 }
+
+/** True when a CSS colour is light (so the text sits on a dark background). */
+const isLightColour = (css: string) => {
+  const m = css.match(/rgba?\(([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/);
+  if (!m) return false;
+  const [r, g, b] = m.slice(1, 4).map(Number);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
+};
 
 interface TooltipState {
   index: number;
@@ -42,7 +52,8 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
   tooltipPlacement = 'top',
   showAudioPrompt = true,
   highlightedWords,
-  onWordHover
+  onWordHover,
+  onDark
 }) => {
   const [arabEnglishEnabled] = useArabEnglish();
   const [tashkeelMode] = useTashkeel();
@@ -55,6 +66,13 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null);
   const lastSpokenRef = useRef<{ word: string; time: number }>({ word: '', time: 0 });
   const rootRef = useRef<HTMLSpanElement>(null);
+  // Light text means a dark background: the purple pronunciation line would be unreadable there.
+  const [darkBackground, setDarkBackground] = useState(!!onDark);
+  useLayoutEffect(() => {
+    if (onDark !== undefined) { setDarkBackground(onDark); return; }
+    const node = rootRef.current;
+    if (node) setDarkBackground(isLightColour(getComputedStyle(node).color));
+  }, [onDark, className]);
 
   // Fetch the meanings of words the local dictionary lacks once the passage is (nearly) on screen,
   // so tapping a word shows its meaning at once instead of waiting about two seconds for the AI.
@@ -207,7 +225,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
 
   return (
     <>
-      <span ref={rootRef} className={`inline font-arabic text-right ${className}`} dir="rtl">
+      <span ref={rootRef} className={`inline font-arabic text-right ${className}`} dir="rtl" data-on-dark={darkBackground ? 'true' : undefined}>
         {tokens.map((token, idx) => {
           const wordIndex = wordIndexes[idx];
           // If whitespace token, render as is
@@ -255,7 +273,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
                     handleSpeakWord(token, idx, e);
                   }
                 }}
-                className={`arabic-word-target select-text inline-flex flex-col items-center justify-center px-1.5 py-0.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                className={`arabic-word-target group select-text inline-flex flex-col items-center justify-center px-1.5 py-0.5 rounded-lg transition-all duration-150 cursor-pointer ${
                   isPlaying
                     ? 'bg-amber-300 text-slate-950 font-bold ring-2 ring-amber-500 scale-105 shadow-md'
                     : isMatched
@@ -268,7 +286,11 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
                 <span className="leading-tight">{hideTashkeel ? stripTashkeel(token) : token}</span>
                 {arabEnglishEnabled && arabEn && (
                   <span
-                    className="block text-[11px] font-sans font-bold tracking-tight text-[#4338CA] leading-none select-none text-center mt-0.5 whitespace-nowrap"
+                    className={`block text-[11px] font-sans font-bold tracking-tight leading-none select-none text-center mt-0.5 whitespace-nowrap ${
+                      darkBackground && !isPlaying && !isMatched && !isHighlighted
+                        ? 'text-amber-200 group-hover:text-[#4338CA] group-focus:text-[#4338CA]'
+                        : 'text-[#4338CA]'
+                    }`}
                     dir="ltr"
                   >
                     {arabEn}

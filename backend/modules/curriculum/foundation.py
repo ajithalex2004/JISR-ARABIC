@@ -218,3 +218,30 @@ def parent_explanation(db: Session, lesson_id: str, lang: str, translator=None) 
     return {"lesson_id": lesson_id, "lang": lang, "language": meta["name"], "native_name": meta["native"],
             "dir": meta["dir"], "machine_translated": True, **content,
             "example_arabic": [e["ar"] for e in lesson["examples"]]}
+
+
+# ---------------------------------------------------------------------------------------------
+# Progress: the lessons each learner has finished, kept on the account
+# ---------------------------------------------------------------------------------------------
+
+def completed_lessons(db: Session, child_id: str) -> List[str]:
+    from backend.models import FoundationProgress
+    rows = (db.query(FoundationProgress.lesson_id).filter(FoundationProgress.child_id == child_id)
+            .order_by(FoundationProgress.completed_at).all())
+    return [r[0] for r in rows]
+
+
+def mark_completed(db: Session, child_id: str, lesson_ids: List[str]) -> List[str]:
+    """Record finished lessons (unknown ids are ignored, repeats are harmless); returns all finished."""
+    from backend.models import FoundationProgress
+    known = {lesson["id"] for lesson in all_lessons()}
+    already = set(completed_lessons(db, child_id))
+    for lesson_id in dict.fromkeys(lesson_ids or []):
+        if lesson_id in known and lesson_id not in already:
+            db.add(FoundationProgress(child_id=child_id, lesson_id=lesson_id))
+            already.add(lesson_id)
+    try:
+        db.commit()
+    except Exception:  # the same lesson saved twice at once (two tabs): keep the first
+        db.rollback()
+    return completed_lessons(db, child_id)

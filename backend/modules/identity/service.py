@@ -655,6 +655,7 @@ def purge_children(child_ids, *, db: Session, anonymized_parent_id: Optional[str
         ClassMembership, LearnerAttempt, LearnerMistake, TutorSubmission, CapsuleProgress,
         AssessmentSession, ExamSimulationResult, GamificationProfile, LearnerBadge, ConceptMastery,
         SpacedReviewLog, TutorAssignment, WeeklyDigestNotification, PaymentTransaction, UserFeedback,
+        FoundationProgress,
     )
     child_ids = list(child_ids)
     if not child_ids:
@@ -662,7 +663,7 @@ def purge_children(child_ids, *, db: Session, anonymized_parent_id: Optional[str
     for model in (
         ClassMembership, TermAccess, LearnerAttempt, LearnerMistake, TutorSubmission, CapsuleProgress,
         AssessmentSession, ExamSimulationResult, GamificationProfile, LearnerBadge, ConceptMastery,
-        SpacedReviewLog, TutorAssignment, WeeklyDigestNotification,
+        SpacedReviewLog, TutorAssignment, WeeklyDigestNotification, FoundationProgress,
     ):
         db.query(model).filter(model.child_id.in_(child_ids)).delete(synchronize_session=False)
     db.query(UserFeedback).filter(UserFeedback.child_id.in_(child_ids)).update(

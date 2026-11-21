@@ -48,7 +48,9 @@ const PARENT_LANGUAGES = [
 const ARABIC = /[؀-ۿ]/;
 const play = (text: string) => audioManager.playArabic(text);
 
-// Lessons finished on this device, per learner (a convenience: the course itself is on the server).
+// Lessons finished, as cached on this device per learner. Signed-in learners' progress lives on the
+// account (the server); this copy serves signed-out visitors and keeps lessons finished offline until
+// they reach the account.
 const progressKey = (childId?: string) => `jisr.foundation.v1.${childId || 'guest'}`;
 function loadProgress(childId?: string): string[] {
   try {
@@ -61,6 +63,9 @@ function loadProgress(childId?: string): string[] {
 }
 function saveProgress(childId: string | undefined, done: string[]) {
   try { localStorage.setItem(progressKey(childId), JSON.stringify(done)); } catch { /* private mode */ }
+}
+function clearProgress(childId: string | undefined) {
+  try { localStorage.removeItem(progressKey(childId)); } catch { /* private mode */ }
 }
 
 /** Text that may mix Arabic and English: Arabic runs are shown right-to-left in the Arabic font. */
@@ -409,14 +414,19 @@ interface FoundationViewerProps {
   askFahimLocked?: boolean;
   /** Whether a user is signed in (parent-language explanations need an account). */
   signedIn?: boolean;
+  /** The learner whose progress is kept on the account (unset for signed-out visitors: device only). */
+  progressChildId?: string;
 }
 
-export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild, grade = 5, onOpenChapter, onAskFahim, askFahimLocked = false, signedIn = true }) => {
+export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild, grade = 5, onOpenChapter, onAskFahim, askFahimLocked = false, signedIn = true, progressChildId }) => {
   const [course, setCourse] = useState<Course | null>(null);
   const [error, setError] = useState('');
   const [stageId, setStageId] = useState<Stage['id']>('A');
   const [lessonId, setLessonId] = useState<string>('');
-  const [done, setDone] = useState<string[]>(() => loadProgress(activeChild?.id));
+  const deviceKey = progressChildId || activeChild?.id;
+  const [done, setDone] = useState<string[]>(() => loadProgress(deviceKey));
+  // Where progress is kept: on the account, on this device only, or not yet saved (offline).
+  const [saveState, setSaveState] = useState<'account' | 'device' | 'pending' | 'retry'>(progressChildId ? 'pending' : 'device');
   const [links, setLinks] = useState<Record<string, TextbookLink[]>>({});
   const [parentLang, setParentLang] = useState<string>(() => {
     try { return localStorage.getItem('jisr.foundation.parentLang') || ''; } catch { return ''; }
@@ -425,7 +435,29 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
   const [explaining, setExplaining] = useState(false);
   const [explainError, setExplainError] = useState('');
 
-  useEffect(() => { setDone(loadProgress(activeChild?.id)); }, [activeChild?.id]);
+  // Signed in: the account's progress, plus anything finished on this device (including as a
+  // signed-out visitor) that the account doesn't have yet, which is uploaded once.
+  useEffect(() => {
+    const local = loadProgress(deviceKey);
+    setDone(local);
+    if (!progressChildId) { setSaveState('device'); return; }
+    let cancelled = false;
+    setSaveState('pending');
+    const guest = loadProgress(undefined);
+    api.getFoundationProgress(progressChildId)
+      .then(async (res) => {
+        const account: string[] = Array.isArray(res.completed) ? res.completed : [];
+        const missing = Array.from(new Set([...local, ...guest])).filter((id) => !account.includes(id));
+        const merged = missing.length ? (await api.saveFoundationProgress(progressChildId, missing)).completed : account;
+        if (cancelled) return;
+        setDone(merged);
+        saveProgress(deviceKey, merged);
+        if (guest.length) clearProgress(undefined);  // a visitor's progress belongs to this learner now
+        setSaveState('account');
+      })
+      .catch(() => { if (!cancelled) setSaveState('retry'); });
+    return () => { cancelled = true; };
+  }, [progressChildId, deviceKey]);
   useEffect(() => {
     api.getFoundation()
       .then((res) => setCourse(res))
@@ -469,12 +501,15 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
   };
 
   const markDone = (id: string) => {
-    setDone((prev) => {
-      if (prev.includes(id)) return prev;
-      const next = [...prev, id];
-      saveProgress(activeChild?.id, next);
-      return next;
-    });
+    if (done.includes(id)) return;
+    const next = [...done, id];
+    setDone(next);
+    saveProgress(deviceKey, next);  // kept on the device too, so it is not lost if the save fails
+    if (progressChildId) {
+      api.saveFoundationProgress(progressChildId, [id])
+        .then(() => setSaveState('account'))
+        .catch(() => setSaveState('retry'));
+    }
   };
 
   if (error) return <div className="max-w-5xl mx-auto px-4 py-8"><p role="alert" className="text-red-700">{error}</p></div>;
@@ -501,6 +536,12 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
           <div className="text-[11px] text-emerald-200">Your progress</div>
           <div className="font-black">{doneTotal} / {total} lessons</div>
           <div className="w-40 h-1.5 bg-emerald-900 mt-1"><div className="h-1.5 bg-amber-400" style={{ width: `${(doneTotal / total) * 100}%` }} /></div>
+          <div className="text-[10px] text-emerald-200 mt-1" role="status">
+            {saveState === 'account' ? '✓ Saved to your account'
+              : saveState === 'pending' ? 'Saving to your account…'
+              : saveState === 'retry' ? 'Not saved to your account yet: kept on this device, retried next visit'
+              : 'Saved on this device · sign in to keep it'}
+          </div>
         </div>
       </div>
 

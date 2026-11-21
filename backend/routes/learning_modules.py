@@ -5,6 +5,8 @@ from backend.api.dependencies import get_current_user, get_optional_user
 from backend.modules.identity.access import Principal, require_child, optional_child, FAMILY_ROLES
 """HTTP adapter: request parsing, dependency injection, and service delegation."""
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
+from typing import List
 from backend.schemas import CapsuleCompleteRequest, SubmitExamSimulationRequest
 from backend.modules.curriculum import learning as service
 from backend.modules.assessment import exams
@@ -72,6 +74,31 @@ def foundation_parent_explanation(lesson_id: str, lang: str = Query(..., max_len
     and language (53 lessons x 3 languages), after which the saved translation is served."""
     from backend.modules.curriculum.foundation import parent_explanation
     return {"success": True, **parent_explanation(db, lesson_id, lang)}
+
+class FoundationProgressRequest(BaseModel):
+    child_id: str = Field(..., max_length=36)
+    lesson_ids: List[str] = Field(default_factory=list, max_length=200)
+
+
+@router.get('/foundation/progress')
+def foundation_progress(child_id: str = Query(..., max_length=36), db: Session = Depends(get_db),
+                        actor: Principal = Depends(get_current_user)):
+    """The Foundation lessons this learner has finished (kept on the account, on every device)."""
+    require_child(db, actor, child_id, FAMILY_ROLES)
+    from backend.modules.curriculum.foundation import completed_lessons
+    return {"success": True, "child_id": child_id, "completed": completed_lessons(db, child_id)}
+
+@router.post('/foundation/progress')
+def save_foundation_progress(req: FoundationProgressRequest, db: Session = Depends(get_db),
+                             actor: Principal = Depends(get_current_user)):
+    """Record finished Foundation lessons (also used to move progress saved on a device to the account)."""
+    require_child(db, actor, req.child_id, FAMILY_ROLES)
+    from backend.models import ChildProfile
+    if db.get(ChildProfile, req.child_id) is None:
+        from backend.errors import ApplicationError
+        raise ApplicationError(404, "Learner not found")
+    from backend.modules.curriculum.foundation import mark_completed
+    return {"success": True, "child_id": req.child_id, "completed": mark_completed(db, req.child_id, req.lesson_ids)}
 
 @router.get('/mindmaps')
 def list_mindmaps(grade: int = Query(5, ge=1, le=12), term: int = Query(1, ge=1, le=3)):

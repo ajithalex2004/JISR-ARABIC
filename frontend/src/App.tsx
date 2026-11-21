@@ -506,6 +506,7 @@ export function App() {
             onAskFahim={askFahimAbout}
             askFahimLocked={askFahimLocked || isGuest}
             signedIn
+            progressChildId={user && activeChild?.id && activeChild.id !== 'admin_supervisor' ? activeChild.id : undefined}
           />
         )}
 

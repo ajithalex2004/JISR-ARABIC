@@ -252,6 +252,10 @@ body {
   outline: none;
   border-bottom-color: #6c5ce7;
 }
+/* On a dark banner the grey underline glares: use a soft light one. */
+[data-on-dark] .arabic-word-target {
+  border-bottom-color: rgba(255, 255, 255, 0.35);
+}
 .arabic-word-target.playing {
   background-color: #fef08a;
   border-bottom-color: #eab308;

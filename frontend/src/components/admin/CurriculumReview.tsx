@@ -4,11 +4,28 @@ import { TextbookPdfUploader } from './TextbookPdfUploader';
 import { AiDraftPanel } from './AiDraftPanel';
 import { BookOpen, CheckCircle2, Clock, Layers, Sparkles } from 'lucide-react';
 
+// Lesson statuses: staged chapters wait for their whole term; retired ones were replaced by the book's chapters.
+const STATUS_BADGE: Record<string, string> = {
+  published: 'bg-emerald-100 text-emerald-800',
+  staged: 'bg-sky-100 text-sky-900',
+  retired: 'bg-slate-200 text-slate-600',
+};
+
+// What the chapter's own version still needs before it counts (Publish lives in the AI Draft panel).
+const VERSION_STEP: Record<string, { label: string; style: string }> = {
+  published: { label: 'Version published', style: 'text-emerald-800' },
+  approved: { label: 'Approved: press Publish below', style: 'text-amber-800' },
+  content_pending: { label: 'Draft waiting: approve, then publish below', style: 'text-amber-800' },
+  none: { label: 'No draft yet: draft it from the book below', style: 'text-rose-800' },
+};
+
 export const CurriculumReview: React.FC = () => {
   const [lessons, setLessons] = useState<any[]>([]);
   const [grade, setGrade] = useState<number>(5);
   const [term, setTerm] = useState<number>(1);
   const [selected, setSelected] = useState<any>(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const load = async () => {
     try {
@@ -25,8 +42,12 @@ export const CurriculumReview: React.FC = () => {
   };
 
   useEffect(() => {
+    setError('');
     load();
   }, [grade, term]);
+
+  // One staged chapter carries its term's switch progress (all staged chapters of a term share it).
+  const termSwitch = lessons.find((l) => l.status === 'staged')?.term_switch;
 
   return (
     <div className="space-y-6">
@@ -64,14 +85,33 @@ export const CurriculumReview: React.FC = () => {
             </div>
           </div>
 
+          {termSwitch && (
+            <div className="p-3 border-2 border-sky-300 bg-sky-50 text-[11px] text-sky-950 space-y-1" role="status">
+              <div className="font-bold">
+                New book chapters: {termSwitch.published} of {termSwitch.total} published
+              </div>
+              <p>
+                This term is being re-cut to match the textbook. Its new chapters stay <b>staged</b> (hidden from
+                students) until every one has a published version; then the whole term switches over at once and the
+                old chapters are retired.
+              </p>
+              {termSwitch.waiting.length > 0 && (
+                <p>
+                  Still to publish:{' '}
+                  {termSwitch.waiting.map((w: any) => `${w.lesson_order}. ${w.title_en}`).join(' · ')}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
             {lessons.map((l) => {
               const isSelected = selected?.id === l.id;
-              const isPublished = l.status === 'published';
+              const step = VERSION_STEP[l.version_state] || VERSION_STEP.none;
               return (
                 <button
                   key={l.id}
-                  onClick={() => setSelected(l)}
+                  onClick={() => { setSelected(l); setError(''); }}
                   className={`w-full text-left p-3.5 border transition-all text-xs ${
                     isSelected
                       ? 'border-purple-800 bg-purple-50/50 shadow-xs'
@@ -81,17 +121,21 @@ export const CurriculumReview: React.FC = () => {
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] font-mono text-slate-500">Page {l.start_page}</span>
                     <span
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                        isPublished ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                      }`}
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${STATUS_BADGE[l.status] || 'bg-amber-100 text-amber-800'}`}
+                      title={l.status === 'staged' ? 'Goes live when every new chapter of this term has a published version' : undefined}
                     >
-                      {l.status}
+                      {l.status === 'staged' && l.term_switch
+                        ? `staged · ${l.term_switch.published}/${l.term_switch.total} ready`
+                        : l.status || 'draft'}
                     </span>
                   </div>
                   <div className="font-bold text-sm text-slate-900 font-arabic text-right" dir="rtl">
                     {l.title_ar}
                   </div>
                   <div className="text-[11px] text-slate-600 mt-0.5">{l.title_en}</div>
+                  {l.status !== 'retired' && (
+                    <div className={`text-[10px] font-semibold mt-1 ${step.style}`}>{step.label}</div>
+                  )}
                 </button>
               );
             })}
@@ -112,22 +156,49 @@ export const CurriculumReview: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  onClick={async () => {
-                    const newStatus = selected.status === 'published' ? 'content_pending' : 'published';
-                    await api.updateCurriculumStatus(selected.id, newStatus);
-                    await load();
-                    setSelected({ ...selected, status: newStatus });
-                  }}
-                  className={`px-4 py-2 text-xs font-bold transition-all ${
-                    selected.status === 'published'
-                      ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300'
-                      : 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                  }`}
-                >
-                  {selected.status === 'published' ? 'Unpublish (Return to Review)' : 'Approve & Publish Lesson'}
-                </button>
+                {selected.status === 'staged' ? (
+                  <div className="max-w-xs text-[11px] p-2.5 border-2 border-sky-300 bg-sky-50 text-sky-950">
+                    <b>Staged chapter.</b> Approve and Publish its version in the AI Draft panel below. It goes live
+                    with the rest of its term once all {selected.term_switch?.total ?? 10} new chapters are published
+                    {selected.term_switch ? ` (${selected.term_switch.published} so far)` : ''}.
+                  </div>
+                ) : selected.status === 'retired' ? (
+                  <div className="max-w-xs text-[11px] p-2.5 border-2 border-slate-300 bg-slate-50 text-slate-700">
+                    <b>Retired chapter.</b> Replaced by the textbook's own chapters; kept for its history only.
+                  </div>
+                ) : (
+                  <button
+                    disabled={busy}
+                    onClick={async () => {
+                      const newStatus = selected.status === 'published' ? 'content_pending' : 'published';
+                      setError('');
+                      setBusy(true);
+                      try {
+                        await api.updateCurriculumStatus(selected.id, newStatus);
+                        setSelected({ ...selected, status: newStatus });
+                        await load();
+                      } catch (err: any) {
+                        setError(err?.message || 'The status could not be changed.');
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                    className={`px-4 py-2 text-xs font-bold transition-all disabled:opacity-60 ${
+                      selected.status === 'published'
+                        ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300'
+                        : 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                    }`}
+                  >
+                    {selected.status === 'published' ? 'Unpublish (Return to Review)' : 'Approve & Publish Lesson'}
+                  </button>
+                )}
               </div>
+
+              {error && (
+                <div role="alert" className="p-3 border-2 border-rose-300 bg-rose-50 text-xs font-semibold text-rose-900">
+                  {error}
+                </div>
+              )}
 
               <AiDraftPanel grade={grade} term={term} lesson={selected} onChanged={() => load()} />
 

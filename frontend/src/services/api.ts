@@ -730,7 +730,7 @@ export const api = {
 
   async updateCurriculumStatus(lessonId: string, status: 'content_pending' | 'published') {
     const res = await authenticatedFetch(`${API_BASE}/api/admin/curriculum-review/${lessonId}/status?status=${status}`, { method: 'PUT' });
-    return res.json();
+    return jsonOrThrow(res);
   },
 
   async uploadCurriculumPdf(file: File, grade?: number, term?: number, startPage: number = 1, pageCount?: number) {

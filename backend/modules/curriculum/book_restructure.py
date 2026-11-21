@@ -144,5 +144,32 @@ def promote_ready_terms(conn, grade: Optional[int] = None, term: Optional[int] =
     return switched
 
 
+def version_states(db, lesson_ids: List[str]) -> Dict[str, str]:
+    """Each lesson's furthest version: 'published' (active), else 'approved', else 'content_pending'."""
+    from backend.models import LessonVersion
+    if not lesson_ids:
+        return {}
+    rank = {"content_pending": 1, "approved": 2, "published": 3}
+    out: Dict[str, str] = {}
+    for lesson_id, status, active in db.query(LessonVersion.lesson_id, LessonVersion.status, LessonVersion.is_active).filter(
+            LessonVersion.lesson_id.in_(lesson_ids), LessonVersion.status.in_(tuple(rank))):
+        if status == "published" and not active:
+            continue
+        if rank[status] > rank.get(out.get(lesson_id, ""), 0):
+            out[lesson_id] = status
+    return out
+
+
+def staged_progress(db, grade: int, term: int) -> Dict:
+    """How close a re-cut term is to switching: its staged chapters and which still need a published version."""
+    from backend.models import Lesson
+    staged = (db.query(Lesson.id, Lesson.lesson_order, Lesson.title_en).filter(
+        Lesson.grade == grade, Lesson.term == term, Lesson.status == STAGED).order_by(Lesson.lesson_order).all())
+    states = version_states(db, [s.id for s in staged])
+    waiting = [{"id": s.id, "lesson_order": s.lesson_order, "title_en": s.title_en, "version_state": states.get(s.id, "none")}
+               for s in staged if states.get(s.id) != "published"]
+    return {"total": len(staged), "published": len(staged) - len(waiting), "waiting": waiting}
+
+
 def is_hidden(lesson) -> bool:
     return getattr(lesson, "status", None) in HIDDEN_STATUSES

@@ -248,8 +248,26 @@ def curriculum_review(term: int | None = None, grade: int | None = None, db: Ses
     if term in (1, 2, 3):
         query = query.filter(Lesson.term == term)
     lessons = query.order_by(Lesson.grade, Lesson.term, Lesson.lesson_order).all()
+    from backend.modules.curriculum.book_restructure import STAGED, promote_ready_terms, staged_progress, version_states
+    # A term whose new chapters are all published but didn't switch (e.g. published by a rollback): switch it now.
+    switched = []
+    for g, t in {(l.grade, l.term) for l in lessons if l.status == STAGED}:
+        switched += promote_ready_terms(db.connection(), grade=g, term=t)
+    if switched:
+        db.commit()
+        for l in lessons:
+            if (l.grade, l.term) in switched:
+                invalidate_lesson_cache(l.id, grade=l.grade, term=l.term)
+        db.expire_all()
+        lessons = query.order_by(Lesson.grade, Lesson.term, Lesson.lesson_order).all()
+    states = version_states(db, [l.id for l in lessons])
+    progress = {key: staged_progress(db, *key) for key in {(l.grade, l.term) for l in lessons if l.status == STAGED}}
     return [{"id": l.id, "grade": l.grade, "term": l.term, "title_ar": l.title_ar, "title_en": l.title_en,
              "start_page": l.start_page, "status": l.status,
+             # The chapter's best version: published, approved (needs Publish), content_pending (needs approval) or none.
+             "version_state": states.get(l.id, "none"),
+             # For a staged chapter: how many of its term's new chapters have a published version.
+             "term_switch": progress.get((l.grade, l.term)) if l.status == STAGED else None,
              "pages": [{"pdf_page": p.pdf_page, "ocr_text_ar": p.ocr_text_ar, "review_status": p.review_status}
                        for p in db.query(ScannedPage).filter(ScannedPage.book_edition_id.in_([f"moe_gr{l.grade}_vol{l.term}_2023", f"moe_gr{l.grade}_vol{l.term}"]), ScannedPage.pdf_page >= l.start_page, ScannedPage.pdf_page < l.start_page + 10).order_by(ScannedPage.pdf_page).all()]}
             for l in lessons]

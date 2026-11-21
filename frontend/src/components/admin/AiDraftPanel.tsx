@@ -84,7 +84,11 @@ export const AiDraftPanel: React.FC<Props> = ({ grade, term, lesson, onChanged }
     setError('');
     try {
       await api.reviewLessonVersion(lesson.id, versionId, action);
-      setMessage(action === 'approve' ? 'Draft approved. Publish it to make it live for learners.' : 'Lesson published to learners.');
+      setMessage(action === 'approve'
+        ? 'Draft approved. Publish it to make it live for learners.'
+        : lesson.status === 'staged'
+          ? 'Version published. This staged chapter goes live when every new chapter of its term is published.'
+          : 'Lesson published to learners.');
       await loadVersions();
       onChanged();
     } catch (err: any) {

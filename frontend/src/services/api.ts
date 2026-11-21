@@ -1051,6 +1051,22 @@ export const api = {
     return jsonOrThrow(res);
   },
 
+  /** The Foundation lessons a learner has finished (kept on the account). */
+  async getFoundationProgress(childId: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/modules/foundation/progress?child_id=${encodeURIComponent(childId)}`);
+    return jsonOrThrow(res);
+  },
+
+  /** Record finished Foundation lessons on the account; returns every finished lesson. */
+  async saveFoundationProgress(childId: string, lessonIds: string[]) {
+    const res = await authenticatedFetch(`${API_BASE}/api/modules/foundation/progress`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ child_id: childId, lesson_ids: lessonIds }),
+    });
+    return jsonOrThrow(res);
+  },
+
   /** For each Foundation lesson, the chapters of this class that teach the same rule. */
   async getFoundationTextbookLinks(grade: number) {
     const res = await authenticatedFetch(`${API_BASE}/api/modules/foundation/textbook-links?grade=${grade}`);

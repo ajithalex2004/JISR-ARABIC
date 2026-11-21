@@ -190,3 +190,60 @@ class TestParentExplanations(FeatureTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestFoundationProgress(FeatureTestCase):
+    def setUp(self):
+        super().setUp()
+        from backend.models import ChildProfile, User
+        for uid in ("pa", "pb"):
+            self.db.add(User(id=uid, email=f"{uid}@test.local", full_name=uid, role="parent", password_hash="x", is_verified=True))
+        self.db.commit()
+        for cid, parent in (("a1", "pa"), ("b1", "pb")):
+            self.db.add(ChildProfile(id=cid, parent_id=parent, name=cid, default_grade=5))
+        self.db.commit()
+
+    def client_as(self, principal):
+        from fastapi.testclient import TestClient
+        from backend.api.dependencies import get_current_user
+        from backend.database import get_db
+        from backend.main import app
+        app.dependency_overrides[get_db] = lambda: self.db
+        app.dependency_overrides[get_current_user] = lambda: principal
+        self.addCleanup(app.dependency_overrides.pop, get_db, None)
+        self.addCleanup(app.dependency_overrides.pop, get_current_user, None)
+        return TestClient(app)
+
+    def test_progress_is_kept_on_the_account(self):
+        from backend.modules.identity.access import Principal
+        parent = Principal(id="pa", email="pa@test.local", role="parent", is_verified=True)
+        with self.client_as(parent) as client:
+            self.assertEqual(client.get("/api/modules/foundation/progress", params={"child_id": "a1"}).json()["completed"], [])
+            saved = client.post("/api/modules/foundation/progress",
+                                json={"child_id": "a1", "lesson_ids": ["a1_alphabet", "a2_letter_shapes", "a1_alphabet", "zz_unknown"]})
+            self.assertEqual(saved.status_code, 200, saved.text)
+            self.assertEqual(saved.json()["completed"], ["a1_alphabet", "a2_letter_shapes"])
+            # Merging progress from a device adds only what is new.
+            again = client.post("/api/modules/foundation/progress", json={"child_id": "a1", "lesson_ids": ["a2_letter_shapes", "b1_short_vowels"]})
+            self.assertEqual(sorted(again.json()["completed"]), ["a1_alphabet", "a2_letter_shapes", "b1_short_vowels"])
+            # Another family's child is off limits, in both directions.
+            self.assertEqual(client.get("/api/modules/foundation/progress", params={"child_id": "b1"}).status_code, 403)
+            self.assertEqual(client.post("/api/modules/foundation/progress", json={"child_id": "b1", "lesson_ids": ["a1_alphabet"]}).status_code, 403)
+        # The learner's own session sees the same progress (another device, same account).
+        learner = Principal(id="pa", email="pa@test.local", role="learner", is_verified=True, child_id="a1")
+        with self.client_as(learner) as client:
+            self.assertEqual(len(client.get("/api/modules/foundation/progress", params={"child_id": "a1"}).json()["completed"]), 3)
+
+    def test_signed_out_visitors_have_no_account_progress(self):
+        from fastapi.testclient import TestClient
+        from backend.main import app
+        with TestClient(app) as client:
+            self.assertEqual(client.get("/api/modules/foundation/progress", params={"child_id": "a1"}).status_code, 401)
+
+    def test_deleting_a_child_deletes_their_progress(self):
+        from backend.models import FoundationProgress
+        from backend.modules.identity.service import purge_children
+        foundation.mark_completed(self.db, "a1", ["a1_alphabet"])
+        purge_children(["a1"], db=self.db)
+        self.db.commit()
+        self.assertEqual(self.db.query(FoundationProgress).count(), 0)

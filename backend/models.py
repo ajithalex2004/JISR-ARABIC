@@ -756,3 +756,14 @@ class FoundationTranslation(Base):
     content_json = Column(Text, nullable=False)
     model = Column(String(80), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class FoundationProgress(Base):
+    """A Basic Foundation lesson a learner has finished (all quiz answers right)."""
+    __tablename__ = "foundation_progress"
+    __table_args__ = (UniqueConstraint("child_id", "lesson_id", name="uq_foundation_progress"),)
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    child_id = Column(String(36), ForeignKey("child_profiles.id"), nullable=False, index=True)
+    lesson_id = Column(String(60), nullable=False)
+    completed_at = Column(DateTime, default=datetime.datetime.utcnow)

@@ -8,6 +8,7 @@ import { TextbookReader } from './components/reader/TextbookReader';
 import { ParentDashboard } from './components/dashboard/ParentDashboard';
 import { TutorDashboard } from './components/dashboard/TutorDashboard';
 import { FoundationViewer } from './components/learning/FoundationViewer';
+import { useWidgetTint } from './components/common/useWidgetTint';
 import { AdminWorkflow } from './components/admin/AdminWorkflow';
 import { WordMatchReview } from './components/admin/WordMatchReview';
 import { AuthModal } from './components/auth/AuthModal';
@@ -148,6 +149,9 @@ export function App() {
 
   // Opened from the landing page: closing it without signing in goes back there, not into the app.
   const authFromLanding = useRef(false);
+  // Alternating widget colours on the student and parent screens (not the admin and mentor tools).
+  const mainRef = useRef<HTMLElement>(null);
+  useWidgetTint(mainRef, !['admin', 'tutor', 'word-matches'].includes(currentView));
   const closeAuth = () => {
     setIsAuthOpen(false);
     if (authFromLanding.current) {
@@ -407,7 +411,7 @@ export function App() {
         />
 
       {/* Main Viewport */}
-      <main className="flex-1 pb-16">
+      <main ref={mainRef} className="flex-1 pb-16">
         {paymentNotice && <div role="status" className={`m-4 border p-3 flex justify-between gap-3 ${paymentNotice.ok ? 'border-emerald-500 bg-emerald-50 text-emerald-950' : 'border-amber-500 bg-amber-50 text-amber-950'}`}><span>{paymentNotice.text}</span><button type="button" onClick={() => setPaymentNotice(null)}>Dismiss</button></div>}
         {accessNotice && <div role="alert" className="m-4 border border-amber-500 bg-amber-50 p-3 text-amber-950 flex justify-between gap-3"><span>{accessNotice}</span><button type="button" onClick={() => setAccessNotice('')}>Dismiss</button></div>}
         {currentView === 'admin' && user?.role !== 'admin' && (
@@ -506,6 +510,7 @@ export function App() {
             onAskFahim={askFahimAbout}
             askFahimLocked={askFahimLocked || isGuest}
             signedIn
+            progressChildId={user && activeChild?.id && activeChild.id !== 'admin_supervisor' ? activeChild.id : undefined}
           />
         )}
 

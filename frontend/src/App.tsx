@@ -219,7 +219,8 @@ export function App() {
     return () => { alive = false; };
   }, [isGuest, guestGrade]);
   useEffect(() => {
-    if (isGuest && guestLessonId && (currentView !== 'lesson' || selectedLessonId !== guestLessonId)) {
+    // Guests stay on their free chapter, except in the Basic Foundation course (free for everyone).
+    if (isGuest && guestLessonId && currentView !== 'foundation' && (currentView !== 'lesson' || selectedLessonId !== guestLessonId)) {
       setSelectedLessonId(guestLessonId);
       setCurrentView('lesson');
     }
@@ -229,7 +230,7 @@ export function App() {
     setIsAuthOpen(true);
   };
   const selectView = (view: string) => {
-    if (isGuest && view !== 'lesson') return promptSignup();
+    if (isGuest && view !== 'lesson' && view !== 'foundation') return promptSignup();
     setCurrentView(view);
   };
   // Ask Fahim is part of the paid plan: free-tier students and parents see it locked and get the
@@ -432,7 +433,7 @@ export function App() {
           </div>
         )}
         {currentView !== 'admin' && (((currentView === 'tutor' || currentView === 'word-matches') && !['tutor', 'admin'].includes(user?.role || '')) || (currentView === 'parent' && !['parent', 'admin'].includes(user?.role || ''))) && <div role="alert" className="m-4 border border-amber-500 bg-amber-50 p-4">This page is not available for your account. Please sign in with the appropriate role.</div>}
-        {isGuest && currentView !== 'lesson' && (
+        {isGuest && currentView !== 'lesson' && currentView !== 'foundation' && (
           <div role="status" className="m-8 text-center text-slate-600">Opening your free chapter…</div>
         )}
         {currentView === 'catalogue' && !isGuest && (
@@ -501,10 +502,10 @@ export function App() {
           <FoundationViewer
             activeChild={activeChild}
             grade={activeChild?.default_grade || appGrade}
-            onOpenChapter={handleSelectLesson}
+            onOpenChapter={(lessonId) => (isGuest ? promptSignup() : handleSelectLesson(lessonId))}
             onAskFahim={askFahimAbout}
             askFahimLocked={askFahimLocked || isGuest}
-            signedIn={!!user}
+            signedIn
           />
         )}
 

@@ -127,11 +127,13 @@ class FakeTranslator:
 
 
 class TestParentExplanations(FeatureTestCase):
-    def good(self, lesson_id="c3_demonstratives"):
+    def good(self, lesson_id="c3_demonstratives", lang="hi"):
         from backend.foundation_data import get_lesson
         lesson = get_lesson(lesson_id)
-        return {"title": "इशारा शब्द", "summary": "सारांश", "points": [f"बिंदु {i}" for i in range(len(lesson["points"]))],
-                "examples": [f"उदाहरण {i}" for i in range(len(lesson["examples"]))]}
+        word = {"hi": ("सारांश", "बिंदु", "उदाहरण"), "ml": ("സംഗ്രഹം", "പോയിന്റ്", "ഉദാഹരണം"),
+                "ur": ("خلاصہ", "نکتہ", "مثال ہے")}[lang]
+        return {"title": word[0], "summary": word[0], "points": [f"{word[1]} {i}" for i in range(len(lesson["points"]))],
+                "examples": [f"{word[2]} {i}" for i in range(len(lesson["examples"]))]}
 
     def test_translates_once_then_serves_the_saved_copy(self):
         translator = FakeTranslator(self.good())
@@ -146,11 +148,31 @@ class TestParentExplanations(FeatureTestCase):
 
     def test_retries_a_bad_reply_and_reports_a_failure(self):
         bad = {"summary": "x", "points": ["only one"], "examples": []}
-        translator = FakeTranslator(bad, self.good())
+        translator = FakeTranslator(bad, self.good(lang="ur"))
         self.assertEqual(foundation.parent_explanation(self.db, "c3_demonstratives", "ur", translator)["dir"], "rtl")
         with self.assertRaises(ApplicationError) as ctx:
             foundation.parent_explanation(self.db, "c4_pronouns", "ml", FakeTranslator(bad))
         self.assertEqual(ctx.exception.status_code, 502)
+
+    def test_a_reply_in_the_wrong_script_is_retried(self):
+        """Hindi asked, but the examples came back in Urdu script: not saved, asked again."""
+        wrong = self.good()
+        wrong["examples"] = ["ایک دروازہ" for _ in wrong["examples"]]
+        translator = FakeTranslator(wrong, self.good())
+        result = foundation.parent_explanation(self.db, "c3_demonstratives", "hi", translator)
+        self.assertEqual(translator.calls, 2)
+        self.assertTrue(all("उदाहरण" in e for e in result["examples"]))
+        self.assertIn("Devanagari", foundation._check(wrong, foundation._source(
+            __import__("backend.foundation_data", fromlist=["x"]).get_lesson("c3_demonstratives")), "hi"))
+
+    def test_urdu_must_be_urdu_not_only_the_kept_arabic(self):
+        from backend.foundation_data import get_lesson
+        source = foundation._source(get_lesson("b1_short_vowels"))
+        only_arabic = {"summary": "فَتْحَة", "points": ["كَسْرَة"] * len(source["points"]), "examples": ["مِنْ"] * len(source["examples"])}
+        self.assertIsNotNone(foundation._check(only_arabic, source, "ur"))
+        urdu = {"summary": "یہ ایک سبق ہے", "points": ["یہ نکتہ ہے"] * len(source["points"]),
+                "examples": ["یہ مثال ہے"] * len(source["examples"])}
+        self.assertIsNone(foundation._check(urdu, source, "ur"))
 
     def test_unknown_language_or_lesson(self):
         with self.assertRaises(ApplicationError):

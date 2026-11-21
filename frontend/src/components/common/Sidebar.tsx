@@ -48,6 +48,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const activeAvatar = AVATAR_ICONS[activeChild?.avatar_id || 'avatar_falcon'] || '🦅';
 
   const menuItems = [
+    // First in the menu, and free for everyone (signed-out visitors included).
+    {
+      id: 'foundation',
+      titleEn: 'Basic Foundation of Arabic',
+      titleAr: 'أساسيات اللغة العربية',
+      icon: Blocks,
+      badge: 'Free',
+      isView: (v: string) => v === 'foundation'
+    },
     {
       id: 'catalogue',
       titleEn: 'Curriculum & Lessons',
@@ -55,13 +64,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: BookOpen,
       badge: 'Ch. 1 Active',
       isView: (v: string) => v === 'catalogue' || v === 'lesson'
-    },
-    {
-      id: 'foundation',
-      titleEn: 'Basic Foundation of Arabic',
-      titleAr: 'أساسيات اللغة العربية',
-      icon: Blocks,
-      isView: (v: string) => v === 'foundation'
     },
     {
       id: 'reader',

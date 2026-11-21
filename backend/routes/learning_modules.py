@@ -65,8 +65,11 @@ def foundation_textbook_links(grade: int = Query(5, ge=1, le=12), db: Session = 
 
 @router.get('/foundation/lessons/{lesson_id}/explain')
 def foundation_parent_explanation(lesson_id: str, lang: str = Query(..., max_length=5), db: Session = Depends(get_db),
-                                  actor: Principal = Depends(get_current_user)):
-    """A Foundation lesson explained in a parent's language (hi, ml, ur): AI-translated once, then saved."""
+                                  actor: Optional[Principal] = Depends(get_optional_user)):
+    """A Foundation lesson explained in a parent's language (hi, ml, ur): AI-translated once, then saved.
+
+    Open to everyone like the rest of the Foundation course: the AI is used at most once per lesson
+    and language (53 lessons x 3 languages), after which the saved translation is served."""
     from backend.modules.curriculum.foundation import parent_explanation
     return {"success": True, **parent_explanation(db, lesson_id, lang)}
 

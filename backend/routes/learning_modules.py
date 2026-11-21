@@ -50,6 +50,12 @@ def list_capsules(
     optional_child(db, actor, child_id)
     return service.list_capsules(child_id=child_id, grade=grade, db=db)
 
+@router.get('/foundation')
+def foundation_course():
+    """Basic Foundation of Arabic: stages A-D (letters, reading mechanics, first grammar, writing)."""
+    from backend.foundation_data import foundation_course as course
+    return {"success": True, **course()}
+
 @router.get('/mindmaps')
 def list_mindmaps(grade: int = Query(5, ge=1, le=12), term: int = Query(1, ge=1, le=3)):
     """Concept-map chapters for the requested grade/term, built from the official syllabus."""

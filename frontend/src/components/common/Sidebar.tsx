@@ -2,7 +2,7 @@ import React from 'react';
 import {
   BookOpen, BookText, Clock, FlaskConical, Sparkles,
   Target, Trophy, User as UserIcon, LogOut,
-  ChevronRight, CheckCircle, ShieldCheck, Settings, GitFork, Link2, Lock
+  ChevronRight, CheckCircle, ShieldCheck, Settings, GitFork, Link2, Lock, Blocks
 } from 'lucide-react';
 import { User, ChildProfile } from '../../types';
 
@@ -55,6 +55,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: BookOpen,
       badge: 'Ch. 1 Active',
       isView: (v: string) => v === 'catalogue' || v === 'lesson'
+    },
+    {
+      id: 'foundation',
+      titleEn: 'Basic Foundation of Arabic',
+      titleAr: 'أساسيات اللغة العربية',
+      icon: Blocks,
+      isView: (v: string) => v === 'foundation'
     },
     {
       id: 'reader',

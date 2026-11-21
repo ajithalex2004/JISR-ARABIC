@@ -7,6 +7,7 @@ import { LessonViewer } from './components/lesson/LessonViewer';
 import { TextbookReader } from './components/reader/TextbookReader';
 import { ParentDashboard } from './components/dashboard/ParentDashboard';
 import { TutorDashboard } from './components/dashboard/TutorDashboard';
+import { FoundationViewer } from './components/learning/FoundationViewer';
 import { AdminWorkflow } from './components/admin/AdminWorkflow';
 import { WordMatchReview } from './components/admin/WordMatchReview';
 import { AuthModal } from './components/auth/AuthModal';
@@ -484,6 +485,10 @@ export function App() {
             initialGrade={appGrade}
             onSelectGrade={setAppGrade}
           />
+        )}
+
+        {currentView === 'foundation' && (
+          <FoundationViewer activeChild={activeChild} />
         )}
 
         {currentView === 'capsules' && (

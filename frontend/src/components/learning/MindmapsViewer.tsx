@@ -8,6 +8,7 @@ import {
 import { MINDMAP_CHAPTERS, CURRICULUM_RULES, MindmapChapter, GrammarRule, getFallbackMindmapChapters } from '../../data/mindmapData';
 import { audioManager } from '../../services/audio';
 import { api } from '../../services/api';
+import { tone } from '../common/cardTones';
 import { User, ChildProfile } from '../../types';
 import { ChapterPicker, useChapterPicker } from './ChapterPicker';
 
@@ -287,10 +288,9 @@ export const MindmapsViewer: React.FC<MindmapsViewerProps> = ({
                   setSelectedGrade(g);
                   onSelectGrade?.(g);
                 }}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                  selectedGrade === g
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                aria-pressed={selectedGrade === g}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border-2 ${
+                  selectedGrade === g ? tone(g - 1).active + ' shadow-xs' : tone(g - 1).idle
                 }`}
               >
                 Grade {g} (الصف {g})

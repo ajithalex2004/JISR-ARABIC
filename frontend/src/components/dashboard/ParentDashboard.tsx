@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { FoundationProgressCard } from './FoundationProgressCard';
+import { tone } from '../common/cardTones';
 import { ChildProfile, WeeklyDigestData, ActionableGuidanceData, TaxInvoiceData } from '../../types';
 
 interface ParentDashboardProps {
@@ -211,7 +212,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
 
       {/* Honest Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="sharp-card p-4 border border-slate-300 bg-white">
+        <div className={`sharp-card p-4 border-2 ${tone(0).card}`}>
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
             Completed Activities
           </span>
@@ -221,7 +222,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
           <span className="text-[10px] text-slate-400">Authentic submitted attempts</span>
         </div>
 
-        <div className="sharp-card p-4 border border-slate-300 bg-white">
+        <div className={`sharp-card p-4 border-2 ${tone(1).card}`}>
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
             Accuracy Rate
           </span>
@@ -231,7 +232,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
           <span className="text-[10px] text-slate-400">Objective first attempts</span>
         </div>
 
-        <div className="sharp-card p-4 border border-slate-300 bg-white">
+        <div className={`sharp-card p-4 border-2 ${tone(2).card}`}>
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
             Mistakes to Review
           </span>
@@ -241,7 +242,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
           <span className="text-[10px] text-slate-400">Pending in Mistake Notebook</span>
         </div>
 
-        <div className="sharp-card p-4 border border-slate-300 bg-white">
+        <div className={`sharp-card p-4 border-2 ${tone(3).card}`}>
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
             Current Practice Streak
           </span>
@@ -401,7 +402,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
               )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 border border-emerald-200 bg-emerald-50">
+              <div className={`p-3 border-2 ${tone(0).card}`}>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Lessons Practised</span>
                 <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">{weeklyDigest.lessons_practised ?? 0}</div>
                 <span className="text-[10px] text-slate-500">
@@ -409,19 +410,19 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
                   {weeklyDigest.accuracy_pct != null ? ` · ${weeklyDigest.accuracy_pct}% correct` : ''}
                 </span>
               </div>
-              <div className="p-3 border border-emerald-200 bg-emerald-50">
+              <div className={`p-3 border-2 ${tone(1).card}`}>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Words Learned</span>
                 <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">{weeklyDigest.words_learned ?? 0}</div>
                 <span className="text-[10px] text-slate-500">Vocabulary answered correctly</span>
               </div>
-              <div className="p-3 border border-emerald-200 bg-emerald-50">
+              <div className={`p-3 border-2 ${tone(2).card}`}>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Quizzes This Week</span>
                 <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">
                   {weeklyDigest.quiz_avg_this_week != null ? `${weeklyDigest.quiz_avg_this_week}%` : '—'}
                 </div>
                 <span className="text-[10px] text-slate-500">{weeklyDigest.quizzes_this_week?.length ?? 0} quiz{(weeklyDigest.quizzes_this_week?.length ?? 0) === 1 ? '' : 'zes'} · average score</span>
               </div>
-              <div className="p-3 border border-emerald-200 bg-emerald-50">
+              <div className={`p-3 border-2 ${tone(3).card}`}>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Capsules This Week</span>
                 <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">{weeklyDigest.capsules_this_week ?? 0}</div>
                 <span className="text-[10px] text-slate-500">
@@ -443,7 +444,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
           <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">Overall</span>
           {/* Digest KPI cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 border border-slate-200 bg-slate-50">
+            <div className={`p-3 border-2 ${tone(0).card}`}>
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Study Time</span>
               <div className="text-xl font-black text-slate-900 font-mono mt-0.5">
                 {weeklyDigest.study_minutes} mins
@@ -451,7 +452,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
               <span className="text-[10px] text-slate-500">Study time logged this week</span>
             </div>
 
-            <div className="p-3 border border-slate-200 bg-slate-50">
+            <div className={`p-3 border-2 ${tone(1).card}`}>
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Completed Capsules</span>
               <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">
                 {weeklyDigest.completed_capsules_count} Units
@@ -459,7 +460,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
               <span className="text-[10px] text-slate-500">3-min bite-sized lessons</span>
             </div>
 
-            <div className="p-3 border border-slate-200 bg-slate-50">
+            <div className={`p-3 border-2 ${tone(2).card}`}>
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Avg Quiz Score</span>
               <div className="text-xl font-black text-emerald-800 font-mono mt-0.5">
                 {weeklyDigest.avg_quiz_score}%
@@ -467,7 +468,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
               <span className="text-[10px] text-slate-500">{weeklyDigest.quizzes_taken} quizzes evaluated</span>
             </div>
 
-            <div className="p-3 border border-slate-200 bg-slate-50">
+            <div className={`p-3 border-2 ${tone(3).card}`}>
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Active Streak</span>
               <div className="text-xl font-black text-amber-700 font-mono mt-0.5">
                 🔥 {weeklyDigest.streak_days} Days

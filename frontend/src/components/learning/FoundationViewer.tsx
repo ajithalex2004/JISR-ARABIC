@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ChildProfile } from '../../types';
+import { tone } from '../common/cardTones';
 
 // ---------------------------------------------------------------------------------------------
 // Course shape (backend/foundation_data.py)
@@ -44,16 +45,6 @@ const PARENT_LANGUAGES = [
   { code: 'ml', label: 'മലയാളം', name: 'Malayalam' },
   { code: 'ur', label: 'اردو', name: 'Urdu' },
 ];
-
-// Each stage has its own colour (light when not selected, dark when selected), so the five stage
-// cards are easy to tell apart. Full class names, so Tailwind keeps them.
-const STAGE_COLOURS: Record<string, { idle: string; active: string; sub: string }> = {
-  A: { idle: 'bg-blue-50 border-blue-300 hover:border-blue-600 text-slate-900', active: 'bg-blue-800 border-blue-950 text-white', sub: 'text-blue-100' },
-  B: { idle: 'bg-amber-50 border-amber-300 hover:border-amber-600 text-slate-900', active: 'bg-amber-700 border-amber-900 text-white', sub: 'text-amber-100' },
-  C: { idle: 'bg-emerald-50 border-emerald-300 hover:border-emerald-600 text-slate-900', active: 'bg-emerald-800 border-emerald-950 text-white', sub: 'text-emerald-100' },
-  D: { idle: 'bg-rose-50 border-rose-300 hover:border-rose-600 text-slate-900', active: 'bg-rose-700 border-rose-900 text-white', sub: 'text-rose-100' },
-  E: { idle: 'bg-violet-50 border-violet-300 hover:border-violet-600 text-slate-900', active: 'bg-violet-700 border-violet-900 text-white', sub: 'text-violet-100' },
-};
 
 const ARABIC = /[؀-ۿ]/;
 const play = (text: string) => audioManager.playArabic(text);
@@ -557,14 +548,14 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
 
       {/* Stages */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2" role="tablist" aria-label="Stages">
-        {course.stages.map((s) => {
+        {course.stages.map((s, si) => {
           const n = s.lessons.filter((l) => done.includes(l.id)).length;
           return (
             <button key={s.id} type="button" role="tab" aria-selected={s.id === stageId} onClick={() => setStageId(s.id)}
-              className={`text-left p-3 border-2 ${s.id === stageId ? STAGE_COLOURS[s.id].active : STAGE_COLOURS[s.id].idle}`}>
+              className={`text-left p-3 border-2 ${s.id === stageId ? tone(si).active : tone(si).idle}`}>
               <div className="text-xs font-black">Stage {s.id} · {n}/{s.lessons.length}</div>
               <div className="font-arabic font-bold text-sm" dir="rtl">{s.title_ar}</div>
-              <div className={`text-[11px] ${s.id === stageId ? STAGE_COLOURS[s.id].sub : 'text-slate-600'}`}>{s.title_en}</div>
+              <div className={`text-[11px] ${s.id === stageId ? tone(si).sub : 'text-slate-600'}`}>{s.title_en}</div>
             </button>
           );
         })}
@@ -576,11 +567,13 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
           <p className="text-[11px] text-slate-600 px-1 pb-1">{stage.summary_en}</p>
           {lessons.map((l, i) => (
             <button key={l.id} type="button" onClick={() => setLessonId(l.id)} aria-current={l.id === lesson.id ? 'true' : undefined}
-              className={`w-full text-left px-2 py-1.5 flex items-start gap-2 ${l.id === lesson.id ? 'bg-emerald-50 border-l-4 border-emerald-800' : 'hover:bg-slate-50 border-l-4 border-transparent'}`}>
-              {done.includes(l.id) ? <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" aria-label="Done" /> : <Circle className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />}
+              className={`w-full text-left px-2 py-1.5 flex items-start gap-2 border-2 ${l.id === lesson.id ? tone(i).active : tone(i).idle}`}>
+              {done.includes(l.id)
+                ? <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${l.id === lesson.id ? 'text-white' : 'text-emerald-700'}`} aria-label="Done" />
+                : <Circle className={`w-4 h-4 shrink-0 mt-0.5 ${l.id === lesson.id ? 'text-white/70' : 'text-slate-400'}`} />}
               <span>
-                <span className="block text-xs font-bold text-slate-900">{stage.id}{i + 1}. {l.title_en}</span>
-                <span className="block text-xs font-arabic text-slate-600" dir="rtl">{l.title_ar}</span>
+                <span className="block text-xs font-bold">{stage.id}{i + 1}. {l.title_en}</span>
+                <span className={`block text-xs font-arabic ${l.id === lesson.id ? tone(i).sub : 'text-slate-600'}`} dir="rtl">{l.title_ar}</span>
               </span>
             </button>
           ))}

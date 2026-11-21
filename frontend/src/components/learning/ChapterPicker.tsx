@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Lock } from 'lucide-react';
 import { api } from '../../services/api';
 import { LessonSummary, TermSummary } from '../../types';
+import { LOCKED, tone } from '../common/cardTones';
 
 /** A grade's Chapter 1 lesson id (Grade 5 uses its own lesson ids). */
 export const firstChapterId = (grade: number) => (grade === 5 ? 'lesson_01_ball_games' : `lesson_g${grade}_t1_ch01`);
@@ -83,8 +84,8 @@ export const ChapterPicker: React.FC<ChapterPickerProps> = ({ picker, activeId, 
               type="button"
               aria-pressed={selectedTerm === t}
               onClick={() => setSelectedTerm(t)}
-              className={`px-3 py-1 rounded-sm text-xs font-bold transition-all flex items-center gap-1 ${
-                selectedTerm === t ? 'bg-emerald-800 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              className={`px-3 py-1 rounded-sm text-xs font-bold transition-all flex items-center gap-1 border-2 ${
+                selectedTerm === t ? tone(t - 1).active + ' shadow-xs' : tone(t - 1).idle
               }`}
             >
               {info && !info.is_unlocked && <Lock className="w-3 h-3" aria-label="locked" />}
@@ -111,11 +112,7 @@ export const ChapterPicker: React.FC<ChapterPickerProps> = ({ picker, activeId, 
                 title={!open ? (comingSoon ? 'Coming soon' : (c.lock_reason || 'Locked: unlock this term to open it')) : c.title_en}
                 onClick={() => open && setSelectedLessonId(c.id)}
                 className={`shrink-0 text-right px-3 py-2 border-2 rounded-sm transition-all min-w-[9rem] ${
-                  active
-                    ? 'bg-emerald-800 border-emerald-900 text-white'
-                    : open
-                      ? 'bg-emerald-50 border-emerald-200 text-slate-900 hover:bg-emerald-100'
-                      : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                  !open ? LOCKED : active ? tone(idx).active : tone(idx).idle
                 }`}
               >
                 <span className="flex items-center justify-between gap-2 text-[10px] font-bold">
@@ -123,7 +120,7 @@ export const ChapterPicker: React.FC<ChapterPickerProps> = ({ picker, activeId, 
                   {!open && (comingSoon ? <span>Coming soon</span> : <Lock className="w-3 h-3" aria-label="locked" />)}
                 </span>
                 <span className="block text-sm font-black font-arabic leading-snug" dir="rtl">{c.title_ar}</span>
-                <span className={`block text-[10px] ${active ? 'text-emerald-100' : 'text-slate-500'}`}>{c.title_en}</span>
+                <span className={`block text-[10px] ${active ? tone(idx).sub : open ? 'text-slate-600' : 'text-slate-400'}`}>{c.title_en}</span>
               </button>
             );
           })}

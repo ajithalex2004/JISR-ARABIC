@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   X, Sparkles, Send, UserCheck, MessageSquare, Volume2, Camera,
   FileText, Upload, CheckCircle2, AlertCircle, ShieldCheck, Loader2
@@ -41,6 +41,8 @@ interface AskFahimModalProps {
   childId?: string;
   // The grade being studied; sent with questions so answers fit the student's level.
   grade?: number;
+  /** Sent as the first question when the window opens (e.g. "explain this rule" from a lesson). */
+  initialQuestion?: string;
 }
 
 export const AskFahimModal: React.FC<AskFahimModalProps> = ({
@@ -48,7 +50,8 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
   onClose,
   contextLessonId,
   childId,
-  grade = 5
+  grade = 5,
+  initialQuestion
 }) => {
   const [activeTab, setActiveTab] = useState<ModeTab>('chat');
   const [question, setQuestion] = useState<string>('');
@@ -71,13 +74,7 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
   const [solvedPaper, setSolvedPaper] = useState<any | null>(null);
   const [paperError, setPaperError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!question.trim()) return;
-
-    const userText = question.trim();
+  const sendText = async (userText: string) => {
     setMessages((prev) => [...prev, { sender: 'user', text_ar: userText }]);
     setQuestion('');
     setIsSending(true);
@@ -106,6 +103,25 @@ export const AskFahimModal: React.FC<AskFahimModalProps> = ({
     } finally {
       setIsSending(false);
     }
+  };
+
+  // A ready-made question (e.g. "explain this rule") is asked once, as soon as the window opens.
+  const askedRef = useRef<string>('');
+  useEffect(() => {
+    if (!isOpen) { askedRef.current = ''; return; }
+    if (initialQuestion && askedRef.current !== initialQuestion) {
+      askedRef.current = initialQuestion;
+      setActiveTab('chat');
+      sendText(initialQuestion);
+    }
+  }, [isOpen, initialQuestion]);
+
+  if (!isOpen) return null;
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!question.trim()) return;
+    await sendText(question.trim());
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

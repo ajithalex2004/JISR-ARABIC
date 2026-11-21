@@ -34,6 +34,17 @@ def synthesize_audio(speed: float=1.0, lang: str='ar-SA', content_version: str='
     """
     normalized = re.sub(r"\s+", " ", text).strip()
     voice = lang or "ar-SA"
+    # A native speaker's recording of this exact text beats any synthetic voice.
+    from backend.modules.curriculum.recordings import lookup_url
+    recorded = lookup_url(normalized)
+    if recorded:
+        return {
+            "text": text, "normalized_text": normalized, "speed": speed, "lang": voice,
+            "status": "ready", "audio_url": recorded, "is_synthetic": False,
+            "attribution": "Native speaker recording (نطق بشري)",
+            "can_use_browser_speech": True,
+            "fallback_order": ["native_recording", "curriculum_cache", "server_tts", "browser_speech"],
+        }
     if not _is_voice_approved(voice):
         return {
             "text": text, "normalized_text": normalized, "speed": speed, "lang": voice,

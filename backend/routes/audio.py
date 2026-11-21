@@ -97,3 +97,15 @@ def get_cached_audio(filename: str, actor=Depends(get_optional_user)):
 
     from fastapi import HTTPException
     raise HTTPException(status_code=404, detail='Audio asset not found')
+
+
+@router.get('/recordings/{recording_id}')
+def get_recording(recording_id: str, db: Session = Depends(get_db)):
+    """A native speaker's recording (public, like the rest of the audio; cached by version)."""
+    from fastapi import HTTPException, Response
+    from backend.models import RecordedAudio
+    row = db.get(RecordedAudio, recording_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail='Recording not found')
+    return Response(content=row.audio, media_type=row.mime_type,
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"})

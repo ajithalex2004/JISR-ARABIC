@@ -118,6 +118,8 @@ export function App() {
   // What the plans screen was opened for: a locked chapter (default) or Ask Fahim.
   const [paywallFeature, setPaywallFeature] = useState<'content' | 'ask_fahim'>('content');
   const [isAskFahimOpen, setIsAskFahimOpen] = useState<boolean>(false);
+  // A question to send as soon as Ask Fahim opens (e.g. "explain this rule" from a lesson).
+  const [askFahimQuestion, setAskFahimQuestion] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [readerInitialPage, setReaderInitialPage] = useState<number>(7);
   const [appGrade, setAppGrade] = useState<number>(() => {
@@ -237,9 +239,17 @@ export function App() {
       ? !!activeChild?.is_unlocked
       : (user.children || []).some((c) => c.is_unlocked)
   );
+  /** Ask Fahim a ready-made question (the same paid-plan rules as the Ask Fahim button). */
+  const askFahimAbout = (question: string) => {
+    if (isGuest) return promptSignup();
+    if (askFahimLocked) return handleOpenPaywall(undefined, undefined, undefined, 'ask_fahim');
+    setAskFahimQuestion(question);
+    setIsAskFahimOpen(true);
+  };
   const openAskFahim = () => {
     if (isGuest) return promptSignup();
     if (askFahimLocked) return handleOpenPaywall(undefined, undefined, undefined, 'ask_fahim');
+    setAskFahimQuestion('');
     setIsAskFahimOpen(true);
   };
 
@@ -474,7 +484,7 @@ export function App() {
             activeChild={activeChild}
             initialGrade={appGrade}
             onSelectGrade={setAppGrade}
-            onOpenAskFahim={() => openAskFahim()}
+            onOpenAskFahim={(query) => (query ? askFahimAbout(query) : openAskFahim())}
           />
         )}
 
@@ -488,7 +498,14 @@ export function App() {
         )}
 
         {currentView === 'foundation' && (
-          <FoundationViewer activeChild={activeChild} />
+          <FoundationViewer
+            activeChild={activeChild}
+            grade={activeChild?.default_grade || appGrade}
+            onOpenChapter={handleSelectLesson}
+            onAskFahim={askFahimAbout}
+            askFahimLocked={askFahimLocked || isGuest}
+            signedIn={!!user}
+          />
         )}
 
         {currentView === 'capsules' && (
@@ -617,7 +634,8 @@ export function App() {
 
       <AskFahimModal
         isOpen={isAskFahimOpen}
-        onClose={() => setIsAskFahimOpen(false)}
+        onClose={() => { setIsAskFahimOpen(false); setAskFahimQuestion(''); }}
+        initialQuestion={askFahimQuestion || undefined}
         contextLessonId={selectedLessonId || undefined}
         childId={activeChild?.id}
         grade={appGrade}

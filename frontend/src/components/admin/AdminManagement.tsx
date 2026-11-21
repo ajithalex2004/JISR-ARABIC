@@ -8,6 +8,7 @@ import { ContentProgress } from './ContentProgress';
 import { TutorAssignments } from './TutorAssignments';
 import WordReviewQueue from './WordReviewQueue';
 import { BookletsAdmin } from './BookletsAdmin';
+import { NativeAudioAdmin } from './NativeAudioAdmin';
 
 type TabProps = { openParent: (email: string) => void; parentQuery: string };
 
@@ -19,6 +20,7 @@ const TABS = [
   { key: 'promos', label: 'Promo codes', render: () => <PromoCodesAdmin /> },
   { key: 'content', label: 'Content', render: () => <ContentProgress /> },
   { key: 'booklets', label: 'Study booklets', render: () => <BookletsAdmin /> },
+  { key: 'audio', label: 'Native audio', render: () => <NativeAudioAdmin /> },
   { key: 'words', label: 'Word meanings', render: () => <WordReviewQueue /> },
   { key: 'health', label: 'System health', render: () => <SystemHealth /> },
   { key: 'tutors', label: 'Mentors', render: () => <TutorAssignments /> },

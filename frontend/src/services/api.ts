@@ -1051,6 +1051,38 @@ export const api = {
     return jsonOrThrow(res);
   },
 
+  /** For each Foundation lesson, the chapters of this class that teach the same rule. */
+  async getFoundationTextbookLinks(grade: number) {
+    const res = await authenticatedFetch(`${API_BASE}/api/modules/foundation/textbook-links?grade=${grade}`);
+    return jsonOrThrow(res);
+  },
+
+  /** A Foundation lesson explained in a parent's language (hi, ml or ur); AI-translated once, then saved. */
+  async getFoundationExplanation(lessonId: string, lang: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/modules/foundation/lessons/${encodeURIComponent(lessonId)}/explain?lang=${encodeURIComponent(lang)}`);
+    return jsonOrThrow(res);
+  },
+
+  /** Admin: the Foundation recording script with what is recorded so far. */
+  async adminListRecordings() {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/audio-recordings`);
+    return jsonOrThrow(res);
+  },
+
+  async adminSaveRecording(text: string, file: Blob, fileName: string, speaker = '') {
+    const body = new FormData();
+    body.append('text', text);
+    body.append('speaker', speaker);
+    body.append('file', file, fileName);
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/audio-recordings`, { method: 'POST', body });
+    return jsonOrThrow(res);
+  },
+
+  async adminDeleteRecording(recordingId: string) {
+    const res = await authenticatedFetch(`${API_BASE}/api/admin/audio-recordings/${encodeURIComponent(recordingId)}`, { method: 'DELETE' });
+    return jsonOrThrow(res);
+  },
+
   async getMindmaps(grade: number, term: number = 1) {
     const res = await authenticatedFetch(`${API_BASE}/api/modules/mindmaps?grade=${grade}&term=${term}`);
     if (!res.ok) throw new Error('Failed to load mindmaps');

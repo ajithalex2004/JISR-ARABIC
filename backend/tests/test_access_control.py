@@ -208,6 +208,7 @@ class TestAccessControl(unittest.TestCase):
             # Public on purpose: guests use them on the welcome page and the free chapter.
             "/api/payments/prices", "/api/modules/mindmaps",
             "/api/modules/foundation",  # the Basic Foundation course: static content, no AI, no learner data
+            "/api/audio/recordings/{recording_id}",  # native-speaker clips, played like the rest of the audio
             "/api/curriculum/textbook-info/{edition_id}",
             "/api/curriculum/word-gloss",  # rate-limited and cached in main.py: it calls the AI model
             "/api/curriculum/word-glosses",  # rate-limited like word-gloss: one AI call per sentence, cached

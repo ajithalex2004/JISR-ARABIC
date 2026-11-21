@@ -273,3 +273,15 @@ body {
   background: #94a3b8;
 }
 
+
+/* Alternating widget colours on the student and parent screens (see useWidgetTint.ts):
+   each top-level white card gets a soft background and matching border, in a repeating order. */
+[data-widget-tint] {
+  border-width: 2px !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+[data-widget-tint="0"] { background-color: #eff6ff !important; border-color: #93c5fd !important; } /* blue */
+[data-widget-tint="1"] { background-color: #fffbeb !important; border-color: #fcd34d !important; } /* amber */
+[data-widget-tint="2"] { background-color: #ecfdf5 !important; border-color: #6ee7b7 !important; } /* green */
+[data-widget-tint="3"] { background-color: #fff1f2 !important; border-color: #fda4af !important; } /* rose */
+[data-widget-tint="4"] { background-color: #f5f3ff !important; border-color: #c4b5fd !important; } /* violet */

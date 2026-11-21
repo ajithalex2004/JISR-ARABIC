@@ -45,6 +45,16 @@ const PARENT_LANGUAGES = [
   { code: 'ur', label: 'اردو', name: 'Urdu' },
 ];
 
+// Each stage has its own colour (light when not selected, dark when selected), so the five stage
+// cards are easy to tell apart. Full class names, so Tailwind keeps them.
+const STAGE_COLOURS: Record<string, { idle: string; active: string; sub: string }> = {
+  A: { idle: 'bg-blue-50 border-blue-300 hover:border-blue-600 text-slate-900', active: 'bg-blue-800 border-blue-950 text-white', sub: 'text-blue-100' },
+  B: { idle: 'bg-amber-50 border-amber-300 hover:border-amber-600 text-slate-900', active: 'bg-amber-700 border-amber-900 text-white', sub: 'text-amber-100' },
+  C: { idle: 'bg-emerald-50 border-emerald-300 hover:border-emerald-600 text-slate-900', active: 'bg-emerald-800 border-emerald-950 text-white', sub: 'text-emerald-100' },
+  D: { idle: 'bg-rose-50 border-rose-300 hover:border-rose-600 text-slate-900', active: 'bg-rose-700 border-rose-900 text-white', sub: 'text-rose-100' },
+  E: { idle: 'bg-violet-50 border-violet-300 hover:border-violet-600 text-slate-900', active: 'bg-violet-700 border-violet-900 text-white', sub: 'text-violet-100' },
+};
+
 const ARABIC = /[؀-ۿ]/;
 const play = (text: string) => audioManager.playArabic(text);
 
@@ -551,10 +561,10 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
           const n = s.lessons.filter((l) => done.includes(l.id)).length;
           return (
             <button key={s.id} type="button" role="tab" aria-selected={s.id === stageId} onClick={() => setStageId(s.id)}
-              className={`text-left p-3 border-2 ${s.id === stageId ? 'bg-emerald-900 text-white border-emerald-950' : 'bg-white border-slate-200 hover:border-emerald-700 text-slate-900'}`}>
+              className={`text-left p-3 border-2 ${s.id === stageId ? STAGE_COLOURS[s.id].active : STAGE_COLOURS[s.id].idle}`}>
               <div className="text-xs font-black">Stage {s.id} · {n}/{s.lessons.length}</div>
               <div className="font-arabic font-bold text-sm" dir="rtl">{s.title_ar}</div>
-              <div className={`text-[11px] ${s.id === stageId ? 'text-emerald-100' : 'text-slate-500'}`}>{s.title_en}</div>
+              <div className={`text-[11px] ${s.id === stageId ? STAGE_COLOURS[s.id].sub : 'text-slate-600'}`}>{s.title_en}</div>
             </button>
           );
         })}

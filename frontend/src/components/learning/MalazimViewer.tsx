@@ -4,6 +4,7 @@ import {
   Volume2, ArrowRight, Sparkles, Layers, Bookmark, GraduationCap, AlertTriangle, Lock
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { tone } from '../common/cardTones';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { User, ChildProfile } from '../../types';
@@ -181,10 +182,9 @@ export const MalazimViewer: React.FC<MalazimViewerProps> = ({
                   setSelectedGrade(g);
                   onSelectGrade?.(g);
                 }}
-                className={`px-3 py-1 rounded-sm text-xs font-bold transition-all ${
-                  selectedGrade === g
-                    ? 'bg-emerald-800 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                aria-pressed={selectedGrade === g}
+                className={`px-3 py-1 rounded-sm text-xs font-bold transition-all border-2 ${
+                  selectedGrade === g ? tone(g - 1).active + ' shadow-xs' : tone(g - 1).idle
                 }`}
               >
                 الصف {g} (Grade {g})

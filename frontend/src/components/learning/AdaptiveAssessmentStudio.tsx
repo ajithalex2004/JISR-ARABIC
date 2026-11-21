@@ -4,6 +4,7 @@ import {
   Layers, ArrowRight, ArrowLeft, RefreshCw, Sparkles, BookOpen, Lock
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { tone } from '../common/cardTones';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ChildProfile, TermSummary } from '../../types';
 
@@ -175,8 +176,8 @@ export const AdaptiveAssessmentStudio: React.FC<AdaptiveAssessmentStudioProps> =
                     type="button"
                     aria-pressed={examTerm === t}
                     onClick={() => setExamTerm(t)}
-                    className={`px-3 py-1 text-xs font-bold flex items-center gap-1 ${
-                      examTerm === t ? 'bg-emerald-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    className={`px-3 py-1 text-xs font-bold flex items-center gap-1 border-2 ${
+                      examTerm === t ? tone(t - 1).active : tone(t - 1).idle
                     }`}
                   >
                     {info && !info.is_unlocked && <Lock className="w-3 h-3" aria-label="locked" />}
@@ -423,8 +424,8 @@ export const AdaptiveAssessmentStudio: React.FC<AdaptiveAssessmentStudioProps> =
                   <span>تحليل الأداء حسب هرم بلوم المعرفي (Bloom's Taxonomy)</span>
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  {examResult?.bloom_breakdown && Object.entries(examResult.bloom_breakdown).map(([key, b]: any) => (
-                    <div key={key} className="p-3.5 bg-slate-50 border border-slate-300">
+                  {examResult?.bloom_breakdown && Object.entries(examResult.bloom_breakdown).map(([key, b]: any, i: number) => (
+                    <div key={key} className={`p-3.5 border-2 ${tone(i).card}`}>
                       <div className="flex justify-between items-center mb-1.5">
                         <span className="font-bold text-xs text-slate-900 font-arabic">{b.name_ar}</span>
                         <span className="text-[10px] text-slate-500 font-mono">{b.percentage}%</span>

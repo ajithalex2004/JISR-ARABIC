@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, Blocks, CheckCircle2 } from 'lucide-react';
 import { api } from '../../services/api';
+import { tone } from '../common/cardTones';
 
 type CourseLesson = { id: string; title_en: string; title_ar: string };
 type CourseStage = { id: string; title_en: string; title_ar: string; lessons: CourseLesson[] };
@@ -85,11 +86,11 @@ export const FoundationProgressCard: React.FC<Props> = ({ childId, childName, on
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-        {stages.map((s) => {
+        {stages.map((s, si) => {
           const n = s.lessons.filter((l) => done.has(l.id)).length;
           const sp = s.lessons.length ? Math.round((n / s.lessons.length) * 100) : 0;
           return (
-            <div key={s.id} className="p-2 border border-slate-200 bg-slate-50">
+            <div key={s.id} className={`p-2 border-2 ${tone(si).card}`}>
               <div className="flex justify-between items-baseline">
                 <span className="text-xs font-black text-slate-900">Stage {s.id}</span>
                 <span className="text-[11px] font-bold text-slate-600">{n}/{s.lessons.length}</span>

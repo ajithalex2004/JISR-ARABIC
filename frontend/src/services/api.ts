@@ -1045,6 +1045,12 @@ export const api = {
     return res.json();
   },
 
+  /** Basic Foundation of Arabic: stages A-D with their lessons, activities and quizzes. */
+  async getFoundation() {
+    const res = await authenticatedFetch(`${API_BASE}/api/modules/foundation`);
+    return jsonOrThrow(res);
+  },
+
   async getMindmaps(grade: number, term: number = 1) {
     const res = await authenticatedFetch(`${API_BASE}/api/modules/mindmaps?grade=${grade}&term=${term}`);
     if (!res.ok) throw new Error('Failed to load mindmaps');

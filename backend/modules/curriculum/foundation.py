@@ -22,10 +22,20 @@ from backend.models import FoundationTranslation, Lesson, LessonVersion
 logger = logging.getLogger("fahim.foundation")
 
 PARENT_LANGUAGES = {
-    "hi": {"name": "Hindi", "native": "हिन्दी", "dir": "ltr"},
-    "ml": {"name": "Malayalam", "native": "മലയാളം", "dir": "ltr"},
-    "ur": {"name": "Urdu", "native": "اردو", "dir": "rtl"},
+    "hi": {"name": "Hindi", "native": "हिन्दी", "dir": "ltr", "script": "Devanagari"},
+    "ml": {"name": "Malayalam", "native": "മലയാളം", "dir": "ltr", "script": "Malayalam"},
+    "ur": {"name": "Urdu", "native": "اردو", "dir": "rtl", "script": "Urdu (Nastaliq / Arabic-script)"},
 }
+# Every translated text must be written in its language's own script: the AI has answered Hindi
+# requests in Urdu script (the two languages are close), which a Hindi reader can't read.
+_SCRIPT = {
+    "hi": re.compile("[\u0900-\u097F]"),
+    "ml": re.compile("[\u0D00-\u0D7F]"),
+    # Urdu-only letters (ٹ ڈ ڑ ں ھ ہ ی ے ۓ پ چ ژ گ ک) tell Urdu apart from the Arabic words kept as they are.
+    "ur": re.compile("[\u0679\u0688\u0691\u06BA\u06BE\u06C1\u06CC\u06D2\u06D3\u067E\u0686\u0698\u06AF\u06A9]"),
+}
+# Bumped when the translation rules change, so translations saved under the old rules are made again.
+TRANSLATION_VERSION = "2"
 LINKS_PER_LESSON = 6
 _TASHKEEL = re.compile("[ً-ْٰـ]")
 
@@ -102,16 +112,19 @@ def _source(lesson: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _hash(source: Dict[str, Any], lang: str) -> str:
-    return hashlib.sha256(json.dumps([lang, source], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    return hashlib.sha256(json.dumps([TRANSLATION_VERSION, lang, source], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
 
 def _prompt(lesson: Dict[str, Any], source: Dict[str, Any], lang: str) -> str:
     language = PARENT_LANGUAGES[lang]["name"]
+    script = PARENT_LANGUAGES[lang]["script"]
     return f"""Translate this beginner Arabic-grammar lesson for a parent who reads {language} but no Arabic,
 so they can help their child. Lesson: "{lesson['title_en']}".
 
 Rules:
-- Translate the English into simple, natural {language}.
+- Translate the English into simple, natural {language}, written in {script} script only.
+  Every field (title, summary, each point and each example) must be in {language} ({script}); never use another
+  language or script for any of them.
 - Keep every Arabic word, letter and mark exactly as written (do not translate or transliterate it).
 - Keep Latin transliterations in brackets, e.g. (haadhaa), as they are.
 - Return JSON only: {{"title": "...", "summary": "...", "points": ["..."], "examples": ["..."]}},
@@ -122,7 +135,7 @@ Lesson (JSON):
 {json.dumps({"title": lesson["title_en"], **source}, ensure_ascii=False)}"""
 
 
-def _check(result: Any, source: Dict[str, Any]) -> Optional[str]:
+def _check(result: Any, source: Dict[str, Any], lang: str = "") -> Optional[str]:
     if not isinstance(result, dict):
         return "not a JSON object"
     if not isinstance(result.get("summary"), str) or not result["summary"].strip():
@@ -131,6 +144,12 @@ def _check(result: Any, source: Dict[str, Any]) -> Optional[str]:
         return f"expected {len(source['points'])} points"
     if not isinstance(result.get("examples"), list) or len(result["examples"]) != len(source["examples"]):
         return f"expected {len(source['examples'])} examples"
+    pattern = _SCRIPT.get(lang)
+    if pattern:
+        texts = [result["summary"], *result["points"], *result["examples"]]
+        wrong = [t for t in texts if isinstance(t, str) and t.strip() and not pattern.search(t)]
+        if wrong:
+            return f"{len(wrong)} text(s) not written in {PARENT_LANGUAGES[lang]['script']} script, e.g. {wrong[0][:60]!r}"
     return None
 
 
@@ -168,13 +187,13 @@ def parent_explanation(db: Session, lesson_id: str, lang: str, translator=None) 
     if row is None:
         translator = translator or ai_translator()
         prompt, problem, result = _prompt(lesson, source, lang), None, None
-        for _ in range(2):
+        for _ in range(3):
             try:
                 result = translator(prompt)
             except ValueError as exc:
                 problem = f"unreadable reply ({exc})"
                 continue
-            problem = _check(result, source)
+            problem = _check(result, source, lang)
             if not problem:
                 break
         if problem:

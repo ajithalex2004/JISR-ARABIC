@@ -461,8 +461,9 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
     return () => { cancelled = true; };
   }, [parentLang, currentLessonId, signedIn]);
 
+  // '' is English (the lesson as written); the other codes show the parent-language panel.
   const chooseParentLang = (code: string) => {
-    const next = code === parentLang ? '' : code;
+    const next = code;
     setParentLang(next);
     try { localStorage.setItem('jisr.foundation.parentLang', next); } catch { /* private mode */ }
   };
@@ -548,6 +549,10 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
             <p className="text-sm text-slate-700 mt-2"><Mixed text={lesson.summary_en} /></p>
             <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
               <span className="text-xs font-bold text-slate-700 inline-flex items-center gap-1"><Languages className="w-4 h-4" /> Explain for parents in:</span>
+              <button type="button" aria-pressed={!parentLang} onClick={() => chooseParentLang('')} title="English (the lesson as written)"
+                className={`px-2.5 py-1 text-sm border ${!parentLang ? 'bg-emerald-900 text-white border-emerald-950' : 'bg-white border-slate-300 hover:border-emerald-700'}`}>
+                English
+              </button>
               {PARENT_LANGUAGES.map((l) => (
                 <button key={l.code} type="button" aria-pressed={parentLang === l.code} onClick={() => chooseParentLang(l.code)} title={l.name}
                   className={`px-2.5 py-1 text-sm border ${parentLang === l.code ? 'bg-emerald-900 text-white border-emerald-950' : 'bg-white border-slate-300 hover:border-emerald-700'}`}>

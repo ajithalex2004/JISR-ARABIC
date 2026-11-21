@@ -231,6 +231,14 @@ def completed_lessons(db: Session, child_id: str) -> List[str]:
     return [r[0] for r in rows]
 
 
+def completion_items(db: Session, child_id: str) -> List[Dict[str, Any]]:
+    """Finished lessons with when they were finished (oldest first), for the Parent Dashboard."""
+    from backend.models import FoundationProgress
+    rows = (db.query(FoundationProgress.lesson_id, FoundationProgress.completed_at)
+            .filter(FoundationProgress.child_id == child_id).order_by(FoundationProgress.completed_at).all())
+    return [{"lesson_id": r[0], "completed_at": r[1].isoformat() if r[1] else None} for r in rows]
+
+
 def mark_completed(db: Session, child_id: str, lesson_ids: List[str]) -> List[str]:
     """Record finished lessons (unknown ids are ignored, repeats are harmless); returns all finished."""
     from backend.models import FoundationProgress

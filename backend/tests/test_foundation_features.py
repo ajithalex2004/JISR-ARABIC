@@ -232,7 +232,11 @@ class TestFoundationProgress(FeatureTestCase):
         # The learner's own session sees the same progress (another device, same account).
         learner = Principal(id="pa", email="pa@test.local", role="learner", is_verified=True, child_id="a1")
         with self.client_as(learner) as client:
-            self.assertEqual(len(client.get("/api/modules/foundation/progress", params={"child_id": "a1"}).json()["completed"]), 3)
+            body = client.get("/api/modules/foundation/progress", params={"child_id": "a1"}).json()
+            self.assertEqual(len(body["completed"]), 3)
+            # With dates, for the Parent Dashboard.
+            self.assertEqual([i["lesson_id"] for i in body["items"]], body["completed"])
+            self.assertTrue(all(i["completed_at"] for i in body["items"]))
 
     def test_signed_out_visitors_have_no_account_progress(self):
         from fastapi.testclient import TestClient

@@ -123,6 +123,51 @@ class BookRestructureTest(unittest.TestCase):
             self.assertEqual(promote_ready_terms(conn), [])  # already switched
         self.assertEqual(self.stage(), 0)  # and no second set is staged
 
+    def review(self):
+        from backend.modules.identity.access import Principal
+        from backend.routes.admin import curriculum_review
+        admin = Principal(id="admin1", email="a@test.local", role="admin", is_verified=True)
+        self.db.expire_all()
+        return {row["id"]: row for row in curriculum_review(term=2, grade=1, db=self.db, actor=admin)}
+
+    def test_review_shows_what_each_staged_chapter_still_needs(self):
+        self.stage()
+        for order in range(1, 8):  # seven published
+            lid = staged_id(1, 2, order)
+            self.version(lid, f"draft_{lid}")
+            publish_lesson_version(lid, f"draft_{lid}", db=self.db, actor=ADMIN)
+        self.version(staged_id(1, 2, 8), "approved_8")                      # approved, not published
+        self.version(staged_id(1, 2, 9), "pending_9", status="content_pending")  # draft waiting
+        rows = self.review()                                                # chapter 10: nothing yet
+        first = rows[staged_id(1, 2, 1)]
+        self.assertEqual(first["status"], STAGED)
+        self.assertEqual(first["version_state"], "published")
+        self.assertEqual(rows[staged_id(1, 2, 8)]["version_state"], "approved")
+        self.assertEqual(rows[staged_id(1, 2, 9)]["version_state"], "content_pending")
+        self.assertEqual(rows[staged_id(1, 2, 10)]["version_state"], "none")
+        switch = first["term_switch"]
+        self.assertEqual((switch["published"], switch["total"]), (7, 10))
+        self.assertEqual([w["lesson_order"] for w in switch["waiting"]], [8, 9, 10])
+        self.assertIsNone(rows["lesson_g1_t2_ch01"]["term_switch"])
+        # The lesson-level Publish button is refused for a staged chapter, with a reason.
+        from fastapi import HTTPException
+        from backend.modules.identity.access import Principal
+        from backend.routes.admin import update_curriculum_status
+        admin = Principal(id="admin1", email="a@test.local", role="admin", is_verified=True)
+        with self.assertRaises(HTTPException) as ctx:
+            update_curriculum_status(staged_id(1, 2, 1), "published", db=self.db, actor=admin)
+        self.assertEqual(ctx.exception.status_code, 409)
+        self.assertIn("goes live when every new chapter", ctx.exception.detail)
+
+    def test_review_switches_a_term_whose_chapters_were_all_published_another_way(self):
+        self.stage()
+        for order in range(1, 11):  # published versions that bypassed the publish step (e.g. a rollback)
+            self.version(staged_id(1, 2, order), f"live_{order}", status="published", active=True)
+        rows = self.review()
+        self.assertEqual(rows[staged_id(1, 2, 1)]["status"], "published")
+        self.assertEqual(rows["lesson_g1_t2_ch01"]["status"], RETIRED)
+        self.assertEqual(len(self.listed()), 10)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -569,6 +569,7 @@ export function App() {
             activeChild={activeChild}
             onOpenPaywall={() => handleOpenPaywall()}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
+            onOpenFoundation={() => selectView('foundation')}
           />
         )}
 

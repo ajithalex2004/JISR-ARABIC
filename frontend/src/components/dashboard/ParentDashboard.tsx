@@ -5,15 +5,18 @@ import {
   HelpCircle, Volume2, Receipt, X, Building
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { FoundationProgressCard } from './FoundationProgressCard';
 import { ChildProfile, WeeklyDigestData, ActionableGuidanceData, TaxInvoiceData } from '../../types';
 
 interface ParentDashboardProps {
   activeChild: ChildProfile | null;
   onOpenPaywall: () => void;
   onOpenOnboarding?: () => void;
+  /** Open the Basic Foundation of Arabic course. */
+  onOpenFoundation?: () => void;
 }
 
-export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, onOpenPaywall, onOpenOnboarding }) => {
+export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, onOpenPaywall, onOpenOnboarding, onOpenFoundation }) => {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [receipts, setReceipts] = useState<any[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<TaxInvoiceData | null>(null);
@@ -248,6 +251,9 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
           <span className="text-[10px] text-slate-400">Consecutive learning days</span>
         </div>
       </div>
+
+      {/* Basic Foundation of Arabic: progress kept on the child's account */}
+      {activeChild && <FoundationProgressCard childId={activeChild.id} childName={activeChild.name} onOpenFoundation={onOpenFoundation} />}
 
       {/* Skill Breakdown (Honest Evidence-Based Assessment) */}
       <div className="sharp-card p-5 border border-slate-300 bg-white space-y-4">

@@ -85,8 +85,9 @@ def foundation_progress(child_id: str = Query(..., max_length=36), db: Session =
                         actor: Principal = Depends(get_current_user)):
     """The Foundation lessons this learner has finished (kept on the account, on every device)."""
     require_child(db, actor, child_id, FAMILY_ROLES)
-    from backend.modules.curriculum.foundation import completed_lessons
-    return {"success": True, "child_id": child_id, "completed": completed_lessons(db, child_id)}
+    from backend.modules.curriculum.foundation import completion_items
+    items = completion_items(db, child_id)
+    return {"success": True, "child_id": child_id, "completed": [i["lesson_id"] for i in items], "items": items}
 
 @router.post('/foundation/progress')
 def save_foundation_progress(req: FoundationProgressRequest, db: Session = Depends(get_db),

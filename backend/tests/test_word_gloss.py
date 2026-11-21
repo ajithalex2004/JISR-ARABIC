@@ -60,6 +60,21 @@ class TestWordGloss(unittest.TestCase):
             res = TestClient(app).get("/api/curriculum/word-gloss", params={"word": "توفير"})
         self.assertIsNone(res.json()["translation"])
 
+    def test_list_shaped_ai_replies_are_understood_not_reported_as_failures(self):
+        # The model sometimes returns a bare list instead of the JSON object asked for.
+        with patch("backend.alerts.record_failure") as failure:
+            p, _ = self._gemini('[{"translation": "a means", "part_of_speech": "noun"}]')
+            with p:
+                self.assertEqual(glossary.gloss_word("وَسِيلَةٌ", "المال وسيلة")["translation"], "a means")
+            p, _ = self._gemini('[{"n": 1, "translation": "quickly", "part_of_speech": "adverb"}]')
+            with p, patch.object(glossary, "_google_word_translation", return_value=None):
+                result = glossary.gloss_words(["بِسُرْعَةٍ"], "ذهب الطلاب بسرعة")
+            self.assertEqual(result["بِسُرْعَةٍ"]["translation"], "quickly")
+            p, _ = self._gemini('["quickly"]')  # a list with no usable entry: no meaning, but no crash
+            with p, patch.object(glossary, "_google_word_translation", return_value=None):
+                self.assertIsNone(glossary.gloss_word("سَرِيعًا", "سار سريعا"))
+        failure.assert_not_called()
+
     def test_batch_glosses_a_sentence_with_one_ai_call(self):
         sentence = "ذهب الطلاب بسرعة إلى حديقتنا"
         p, client = self._gemini('{"glosses": [{"n": 1, "translation": "quickly", "part_of_speech": "adverb"},'

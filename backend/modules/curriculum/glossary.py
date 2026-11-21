@@ -75,7 +75,16 @@ def _remember(key: tuple, result: dict, shared: bool = True) -> None:
         cache_set(_shared_key(key), result, _SHARED_TTL)
 
 
+def _as_object(data) -> dict:
+    """The model sometimes wraps its JSON object in a list ([{...}]): unwrap it."""
+    if isinstance(data, list):
+        data = next((item for item in data if isinstance(item, dict)), {})
+    return data if isinstance(data, dict) else {}
+
+
 def _checked(data: dict, source: str) -> Optional[dict]:
+    if not isinstance(data, dict):
+        return None
     translation = _clean(str(data.get("translation", "")), 80)
     if not translation or _ARABIC.search(translation):
         return None
@@ -94,7 +103,7 @@ def _gemini_gloss(word: str, context: str) -> Optional[dict]:
         response = gateway.generate(gateway.AIRequest(
             feature="word_meaning", prompt=prompt, system=_SYSTEM_PROMPT, temperature=0.0, json=True,
         ))
-        return _checked(json.loads(response.text or "{}"), response.provider)
+        return _checked(_as_object(json.loads(response.text or "{}")), response.provider)
     except AIUnavailable as exc:
         logger.warning("AI word gloss unavailable for %r: %s", word, exc)  # already recorded by the gateway
         return None
@@ -193,8 +202,10 @@ def _gemini_gloss_many(words: List[str], context: str) -> Dict[str, dict]:
             feature="word_meaning", prompt=prompt, system=_BATCH_PROMPT, temperature=0.0, json=True,
         ))
         data = json.loads(response.text or "{}")
+        # Expected {"glosses": [...]}; the model sometimes returns the list itself.
+        items = data if isinstance(data, list) else (data.get("glosses") or [] if isinstance(data, dict) else [])
         found: Dict[str, dict] = {}
-        for item in data.get("glosses") or []:
+        for item in items:
             if not isinstance(item, dict):
                 continue
             try:

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { tone } from '../common/cardTones';
+import { UpgradeCard } from '../payment/UpgradeCard';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ChildProfile, TermSummary } from '../../types';
 
@@ -30,6 +31,9 @@ export const AdaptiveAssessmentStudio: React.FC<AdaptiveAssessmentStudioProps> =
   const [examTerm, setExamTerm] = useState<number>(activeChild?.selected_term || 1);
   const [terms, setTerms] = useState<TermSummary[]>([]);
   const [examError, setExamError] = useState('');
+  // The chosen term is on sale but not bought: show the upgrade card instead of the exam.
+  const examTermInfo = terms.find((t) => t.term === examTerm);
+  const examTermLocked = !!examTermInfo && !examTermInfo.is_unlocked && !examTermInfo.coming_soon && examTermInfo.status !== 'coming_soon';
   const [examLoadCount, setExamLoadCount] = useState(0);  // bumped by Retake: a new exam session
 
   useEffect(() => {
@@ -188,7 +192,9 @@ export const AdaptiveAssessmentStudio: React.FC<AdaptiveAssessmentStudioProps> =
               {loading && <span className="text-[11px] text-slate-500">جَارٍ التَّحْمِيلُ… · Loading…</span>}
             </div>
           )}
-          {examError && !isExamActive ? (
+          {examTermLocked && !isExamActive ? (
+            <UpgradeCard reason="term" grade={grade} term={examTerm} className="max-w-2xl mx-auto" />
+          ) : examError && !isExamActive ? (
             <div role="alert" className="bg-white border-2 border-slate-300 p-8 text-center max-w-2xl mx-auto space-y-2">
               <Lock className="w-6 h-6 text-slate-400 mx-auto" />
               <p className="text-sm font-bold text-slate-800">{examError}</p>

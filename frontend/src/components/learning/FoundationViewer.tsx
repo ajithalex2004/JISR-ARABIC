@@ -5,6 +5,7 @@ import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ChildProfile } from '../../types';
 import { tone } from '../common/cardTones';
+import { UpgradeCard } from '../payment/UpgradeCard';
 
 // ---------------------------------------------------------------------------------------------
 // Course shape (backend/foundation_data.py)
@@ -710,6 +711,11 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
             <h3 className="text-xs font-black uppercase tracking-wider text-emerald-900 mb-2">Check yourself: answer every question correctly to finish the lesson</h3>
             <Quiz key={lesson.id} items={lesson.quiz} onAllCorrect={() => markDone(lesson.id)} />
           </section>
+
+          {/* A finished stage is the moment to show what the paid curriculum adds (free learners only). */}
+          {!next && stage.lessons.every((l) => done.includes(l.id)) && (
+            <UpgradeCard reason="foundation" grade={grade} />
+          )}
 
           <div className="flex justify-end">
             {next ? (

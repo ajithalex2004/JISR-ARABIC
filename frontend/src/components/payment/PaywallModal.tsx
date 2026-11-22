@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { ChildProfile, PriceQuote, TaxInvoiceData } from '../../types';
+import { ANNUAL_LIST_USD, ANNUAL_USD, TERM_USD, aed, usd } from './pricing';
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -21,13 +22,6 @@ interface PaywallModalProps {
   onLogin?: () => void;
 }
 
-// Prices (USD, 5% UAE VAT included). The server is the source of truth; these only label the plan cards.
-const TERM_USD = 10;
-const ANNUAL_LIST_USD = 30;
-const ANNUAL_USD = 25.5;
-const AED = 3.6725;
-const usd = (n: number) => `USD ${n.toFixed(2)}`;
-const aed = (n: number) => `AED ${(n * AED).toFixed(2)}`;
 
 export const PaywallModal: React.FC<PaywallModalProps> = ({
   isOpen,

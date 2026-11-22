@@ -3,6 +3,7 @@ import { Lock } from 'lucide-react';
 import { api } from '../../services/api';
 import { LessonSummary, TermSummary } from '../../types';
 import { LOCKED, tone } from '../common/cardTones';
+import { UpgradeCard, useUpgrade } from '../payment/UpgradeCard';
 
 /** A grade's Chapter 1 lesson id (Grade 5 uses its own lesson ids). */
 export const firstChapterId = (grade: number) => (grade === 5 ? 'lesson_01_ball_games' : `lesson_g${grade}_t1_ch01`);
@@ -10,6 +11,7 @@ export const firstChapterId = (grade: number) => (grade === 5 ? 'lesson_01_ball_
 export const isOpenableChapter = (c: LessonSummary) => c.is_accessible && !c.coming_soon && c.status !== 'coming_soon';
 
 export interface ChapterPickerState {
+  grade: number;
   terms: TermSummary[];
   selectedTerm: number;
   setSelectedTerm: (term: number) => void;
@@ -57,7 +59,7 @@ export function useChapterPicker(grade: number, childId?: string, enabled = true
     return () => { cancelled = true; };
   }, [grade, selectedTerm, childId, enabled]);
 
-  return { terms, selectedTerm, setSelectedTerm, chapters, selectedLessonId, setSelectedLessonId };
+  return { grade, terms, selectedTerm, setSelectedTerm, chapters, selectedLessonId, setSelectedLessonId };
 }
 
 interface ChapterPickerProps {
@@ -70,8 +72,12 @@ interface ChapterPickerProps {
 
 /** The term bar and the scrollable row of chapter cards (locked and coming-soon ones disabled). */
 export const ChapterPicker: React.FC<ChapterPickerProps> = ({ picker, activeId, loading, className = '' }) => {
-  const { terms, selectedTerm, setSelectedTerm, chapters, setSelectedLessonId } = picker;
+  const { grade, terms, selectedTerm, setSelectedTerm, chapters, setSelectedLessonId } = picker;
   const current = activeId ?? picker.selectedLessonId;
+  const upgrade = useUpgrade();
+  const termInfo = terms.find((x) => x.term === selectedTerm);
+  // A term on sale but not bought (not one that is still coming soon).
+  const termLocked = !!termInfo && !termInfo.is_unlocked && !termInfo.coming_soon && termInfo.status !== 'coming_soon';
   return (
     <div className={`bg-white border border-slate-200 p-3 rounded-sm shadow-2xs space-y-2.5 ${className}`}>
       <div className="flex flex-wrap items-center gap-2">
@@ -107,12 +113,17 @@ export const ChapterPicker: React.FC<ChapterPickerProps> = ({ picker, activeId, 
                 key={c.id}
                 type="button"
                 role="listitem"
-                disabled={!open}
+                // A locked chapter stays tappable: it opens the plans. One that is coming soon can't be opened.
+                disabled={comingSoon}
+                aria-disabled={!open || undefined}
                 aria-current={active ? 'true' : undefined}
                 title={!open ? (comingSoon ? 'Coming soon' : (c.lock_reason || 'Locked: unlock this term to open it')) : c.title_en}
-                onClick={() => open && setSelectedLessonId(c.id)}
+                onClick={() => {
+                  if (open) setSelectedLessonId(c.id);
+                  else if (!comingSoon) upgrade.open({ reason: 'chapter', grade, term: selectedTerm, chapterName: c.title_en });
+                }}
                 className={`shrink-0 text-right px-3 py-2 border-2 rounded-sm transition-all min-w-[9rem] ${
-                  !open ? LOCKED : active ? tone(idx).active : tone(idx).idle
+                  !open ? `${LOCKED} ${comingSoon ? '' : '!cursor-pointer hover:!border-amber-500'}` : active ? tone(idx).active : tone(idx).idle
                 }`}
               >
                 <span className="flex items-center justify-between gap-2 text-[10px] font-bold">
@@ -126,6 +137,7 @@ export const ChapterPicker: React.FC<ChapterPickerProps> = ({ picker, activeId, 
           })}
         </div>
       </div>
+      {termLocked && <UpgradeCard compact reason="term" grade={grade} term={selectedTerm} />}
     </div>
   );
 };

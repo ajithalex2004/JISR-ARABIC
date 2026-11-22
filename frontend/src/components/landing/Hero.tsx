@@ -69,13 +69,13 @@ export function Hero({ onEnter }: { onEnter: EnterApp }) {
   const ref = useRef<HTMLElement>(null);
   // undefined while checking for a login; null for visitors.
   const [session, setSession] = useState<Session | null | undefined>(undefined);
-  const [grade, setGrade] = useState(5);
+  // Opens on Basics (Foundation in Basic Arabic, Stage A free); a class is one tap away.
+  const [grade, setGrade] = useState(BASICS);
 
   useEffect(() => {
     const ctl = new AbortController();
     loadSession(ctl.signal).then((s) => {
       setSession(s);
-      if (s && CLASSES.includes(s.grade)) setGrade(s.grade);
     });
     return () => ctl.abort();
   }, []);

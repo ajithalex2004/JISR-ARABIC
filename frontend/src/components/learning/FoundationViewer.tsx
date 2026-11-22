@@ -557,6 +557,13 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
   const index = lessons.findIndex((l) => l.id === lesson.id);
   const next = lessons[index + 1];
   const nextStage = course.stages[course.stages.findIndex((s) => s.id === stageId) + 1];
+  const practiceFirst = stage.id === 'A';
+  const practiceSection = lesson.activity && (
+    <section className="bg-amber-50/40 border-2 border-amber-300 p-4">
+      <h3 className="text-xs font-black uppercase tracking-wider text-amber-900 mb-2">Practice</h3>
+      <ActivityView key={lesson.id} activity={lesson.activity} course={course} />
+    </section>
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-4">
@@ -704,6 +711,9 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
             </ul>
           </section>
 
+          {/* Stage A (A1 to A6): practise the letters straight after the rule. */}
+          {practiceFirst && practiceSection}
+
           <section className="bg-white border border-slate-200 p-4">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Examples: tap a word to hear it, or split it into its letters</h3>
             <ExampleList key={lesson.id} examples={lesson.examples} alphabet={course.alphabet}
@@ -733,12 +743,7 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
             </section>
           )}
 
-          {lesson.activity && (
-            <section className="bg-amber-50/40 border-2 border-amber-300 p-4">
-              <h3 className="text-xs font-black uppercase tracking-wider text-amber-900 mb-2">Practice</h3>
-              <ActivityView key={lesson.id} activity={lesson.activity} course={course} />
-            </section>
-          )}
+          {!practiceFirst && practiceSection}
 
           {(links[lesson.id] || []).length > 0 && (
             <section className="bg-white border border-slate-200 p-4">

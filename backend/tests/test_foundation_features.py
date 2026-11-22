@@ -232,6 +232,21 @@ class TestFoundationAccess(FeatureTestCase):
                 self.assertEqual(set(lesson), {"id", "title_ar", "title_en"})  # titles only: no rules, examples or quiz
             self.assertEqual(explain.status_code, 401 if who is None else 402)
 
+    def test_any_class_and_any_term_opens_every_stage(self):
+        # A value-added part of every plan: a Class 8, Term 3 plan opens Stages B-E just like Class 5, Term 1.
+        from backend.models import ChildProfile, TermAccess, User
+        from backend.modules.identity.access import Principal
+        self.db.add(User(id="p8", email="p8@test.local", full_name="p8", role="parent", password_hash="x", is_verified=True))
+        self.db.commit()
+        self.db.add(ChildProfile(id="c8", parent_id="p8", name="E", default_grade=8))
+        self.db.commit()
+        self.db.add(TermAccess(child_id="c8", grade=8, term=3, is_unlocked=True))
+        self.db.commit()
+        for who in (Principal(id="p8", email="p8@test.local", role="parent", is_verified=True),
+                    Principal(id="c8", email="p8@test.local", role="learner", child_id="c8", is_verified=True)):
+            stages, _ = self.course_as(who)
+            self.assertTrue(all("locked" not in s for s in stages.values()), who.role)
+
     def test_paid_and_staff_accounts_get_every_stage(self):
         from backend.modules.identity.access import Principal
         for who in (Principal(id="paid", email="paid@test.local", role="parent", is_verified=True),

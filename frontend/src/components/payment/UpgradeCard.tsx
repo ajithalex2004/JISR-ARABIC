@@ -73,7 +73,7 @@ export const UpgradeCard: React.FC<UpgradeCardProps> = ({ className = '', compac
   if (hasPlan && (request.reason === 'ask_fahim' || request.reason === 'foundation')) return null;
   const copy = COPY[request.reason];
   const priceLine = `${usd(TERM_USD)} per term (~${aed(TERM_USD)}) · Full year ${usd(ANNUAL_USD)} (save 15%)`;
-  const cta = viewer === 'guest' ? 'Create a free account' : viewer === 'student' ? 'How to unlock' : 'See plans & unlock';
+  const cta = viewer === 'guest' ? 'Create a JISR Account' : viewer === 'student' ? 'How to unlock' : 'See plans & unlock';
 
   if (compact) {
     return (

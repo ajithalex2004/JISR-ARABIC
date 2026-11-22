@@ -103,15 +103,6 @@ export const AudioToolbar: React.FC = () => {
         >
           Slow 0.6x
         </button>
-        <button
-          onClick={() => handleSpeedChange(0.3)}
-          className={`px-2 py-1 border font-bold transition-all ${
-            speed === 0.3 ? 'bg-emerald-700 text-white border-emerald-600' : 'bg-slate-800 text-slate-300 border-slate-700'
-          }`}
-          title="Very slow speed (0.3x)"
-        >
-          Very slow 0.3x
-        </button>
       </div>
 
       {/* Repeat Controls */}

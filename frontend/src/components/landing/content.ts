@@ -37,7 +37,7 @@ export const STORY_STEPS = [
   {
     kicker: '02 · The bridge',
     title: 'Each line, crossed into English.',
-    body: 'Tap any line and its meaning appears right beneath it, in the same order. Tap any word to hear it from a native voice, slowed down to 0.6× or 0.3× and repeated until it sounds right.',
+    body: 'Tap any line and its meaning appears right beneath it, in the same order. Tap any word to hear it from a native voice, slowed down to 0.6× and repeated until it sounds right.',
   },
   {
     kicker: '03 · The habit',
@@ -53,7 +53,7 @@ export const STORY_LINES = [
 ];
 
 export const FEATURES = [
-  { id: 'audio', title: 'Native audio for every word', body: 'Normal, 0.6× and 0.3× speeds, with 1–3× repeat. Pronunciation stops being guesswork.', ar: 'اِسْتَمِعْ' },
+  { id: 'audio', title: 'Native audio for every word', body: 'Normal and slow (0.6×) speeds, with 1–3× repeat. Pronunciation stops being guesswork.', ar: 'اِسْتَمِعْ' },
   { id: 'fahim', title: 'Ask Fahim, the AI mentor', body: 'Stuck on homework? Fahim explains in English, answers in Arabic and reads it aloud.', ar: 'اِسْأَلْ' },
   { id: 'maps', title: 'Mind maps & flowcharts', body: 'Each chapter as one picture: vocabulary, grammar and ideas, connected.', ar: 'اِفْهَمْ' },
   { id: 'booklets', title: 'Smart study booklets', body: 'Printable, exam-ready summaries for revision night.', ar: 'رَاجِعْ' },

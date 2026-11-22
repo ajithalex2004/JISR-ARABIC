@@ -905,7 +905,27 @@ def all_lessons():
         yield from stage["lessons"]
 
 
-def foundation_course() -> Dict[str, Any]:
+# Stage A (letters and writing) is free for everyone; the other stages are part of the paid plan.
+FREE_STAGES = {"A"}
+
+
+def stage_of(lesson_id: str) -> Optional[str]:
+    return next((stage["id"] for stage in STAGES if any(l["id"] == lesson_id for l in stage["lessons"])), None)
+
+
+def is_free_lesson(lesson_id: str) -> bool:
+    return stage_of(lesson_id) in FREE_STAGES
+
+
+def _locked_stage(stage: Dict[str, Any]) -> Dict[str, Any]:
+    """A paid stage as a free learner sees it: what it teaches, without the lessons themselves."""
+    return {**stage, "locked": True,
+            "lessons": [{"id": l["id"], "title_ar": l["title_ar"], "title_en": l["title_en"]} for l in stage["lessons"]]}
+
+
+def foundation_course(paid: bool = True) -> Dict[str, Any]:
+    """The course; without a paid plan, only the free stages carry their lessons."""
+    stages = STAGES if paid else [s if s["id"] in FREE_STAGES else _locked_stage(s) for s in STAGES]
     return {
         "title_ar": "أَسَاسِيَّاتُ اللُّغَةِ العَرَبِيَّةِ",
         "title_en": "Foundation in Basic Arabic",
@@ -913,7 +933,8 @@ def foundation_course() -> Dict[str, Any]:
         "alphabet": [{"letter": l, "name": n, "sound_en": s, "king": l in KING_LETTERS} for l, n, s in ALPHABET],
         "vowel_marks": VOWEL_MARKS,
         "grid_letters": GRID_LETTERS,
-        "stages": STAGES,
+        "free_stages": sorted(FREE_STAGES),
+        "stages": stages,
     }
 
 

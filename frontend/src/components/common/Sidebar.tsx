@@ -48,13 +48,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const activeAvatar = AVATAR_ICONS[activeChild?.avatar_id || 'avatar_falcon'] || '🦅';
 
   const menuItems = [
-    // First in the menu, and free for everyone (signed-out visitors included).
+    // First in the menu; Stage A is free for everyone (signed-out visitors included).
     {
       id: 'foundation',
       titleEn: 'Foundation in Basic Arabic',
       titleAr: 'أساسيات اللغة العربية',
       icon: Blocks,
-      badge: 'Free',
+      badge: 'Stage A free',
       isView: (v: string) => v === 'foundation'
     },
     {

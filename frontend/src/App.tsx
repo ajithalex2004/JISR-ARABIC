@@ -225,7 +225,7 @@ export function App() {
     return () => { alive = false; };
   }, [isGuest, guestGrade]);
   useEffect(() => {
-    // Guests stay on their free chapter, except in the Foundation in Basic Arabic course (free for everyone).
+    // Guests stay on their free chapter, except in Foundation in Basic Arabic (Stage A is free for everyone).
     if (isGuest && guestLessonId && currentView !== 'foundation' && (currentView !== 'lesson' || selectedLessonId !== guestLessonId)) {
       setSelectedLessonId(guestLessonId);
       setCurrentView('lesson');

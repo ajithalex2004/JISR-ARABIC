@@ -64,7 +64,7 @@ export const FoundationProgressCard: React.FC<Props> = ({ childId, childName, on
           </h2>
           <p className="text-xs text-slate-500">
             {doneCount === 0
-              ? `${who} hasn't started the free Foundation course yet: letters, reading rules, first grammar and everyday Arabic.`
+              ? `${who} hasn't started Foundation in Basic Arabic yet: letters, reading rules, first grammar and everyday Arabic (Stage A is free).`
               : `${who} has finished ${doneCount} of ${lessons.length} lessons. Saved to the account, on every device.`}
           </p>
         </div>

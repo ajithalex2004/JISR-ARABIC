@@ -49,7 +49,7 @@ export const WordSplitModal: React.FC<{ onOpenFoundation?: () => void }> = ({ on
         {onOpenFoundation && (
           <button type="button" onClick={() => { setWord(''); onOpenFoundation(); }}
             className="w-full text-xs font-bold text-emerald-900 border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 py-2 inline-flex items-center justify-center gap-1.5">
-            <Blocks className="w-4 h-4" /> Learn how letters join in the Basic Foundation of Arabic (free)
+            <Blocks className="w-4 h-4" /> Learn how letters join: Foundation in Basic Arabic (free course)
           </button>
         )}
       </div>

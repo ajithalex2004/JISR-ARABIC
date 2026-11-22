@@ -1,4 +1,4 @@
-"""Basic Foundation extras: native recordings, textbook links and parent-language explanations."""
+"""Foundation in Basic Arabic extras: native recordings, textbook links and parent-language explanations."""
 import json
 import unittest
 from unittest.mock import patch

@@ -19,7 +19,7 @@ const formatDate = (iso: string | null) => {
   return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 };
 
-/** The child's Basic Foundation of Arabic progress (kept on their account), for the Parent Dashboard. */
+/** The child's Foundation in Basic Arabic progress (kept on their account), for the Parent Dashboard. */
 export const FoundationProgressCard: React.FC<Props> = ({ childId, childName, onOpenFoundation }) => {
   const [stages, setStages] = useState<CourseStage[] | null>(null);
   const [items, setItems] = useState<Item[]>([]);
@@ -41,7 +41,7 @@ export const FoundationProgressCard: React.FC<Props> = ({ childId, childName, on
 
   const who = childName || 'Your child';
   if (error) {
-    return <div className="sharp-card p-5 border border-slate-300 bg-white text-sm text-slate-600">Basic Foundation of Arabic: {error}</div>;
+    return <div className="sharp-card p-5 border border-slate-300 bg-white text-sm text-slate-600">Foundation in Basic Arabic: {error}</div>;
   }
   if (!stages) {
     return <div className="sharp-card p-5 border border-slate-300 bg-white text-sm text-slate-500">Loading Foundation progress…</div>;
@@ -60,7 +60,7 @@ export const FoundationProgressCard: React.FC<Props> = ({ childId, childName, on
       <div className="border-b border-slate-200 pb-2 flex flex-wrap justify-between items-start gap-3">
         <div>
           <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-1.5">
-            <Blocks className="w-4 h-4 text-emerald-800" /> Basic Foundation of Arabic
+            <Blocks className="w-4 h-4 text-emerald-800" /> Foundation in Basic Arabic
           </h2>
           <p className="text-xs text-slate-500">
             {doneCount === 0

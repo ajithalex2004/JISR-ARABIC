@@ -207,7 +207,7 @@ class TestAccessControl(unittest.TestCase):
             "/api/payments/webhook", "/api/payments/provider-webhook",
             # Public on purpose: guests use them on the welcome page and the free chapter.
             "/api/payments/prices", "/api/modules/mindmaps",
-            "/api/modules/foundation",  # the Basic Foundation course: static content, no AI, no learner data
+            "/api/modules/foundation",  # the Foundation in Basic Arabic course: static content, no AI, no learner data
             "/api/audio/recordings/{recording_id}",  # native-speaker clips, played like the rest of the audio
             "/api/curriculum/textbook-info/{edition_id}",
             "/api/curriculum/word-gloss",  # rate-limited and cached in main.py: it calls the AI model

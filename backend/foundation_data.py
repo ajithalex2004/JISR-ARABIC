@@ -1,4 +1,4 @@
-"""Basic Foundation of Arabic: four stages (A to D) taught before Class 1.
+"""Foundation in Basic Arabic: four stages (A to D) taught before Class 1.
 
 A  Letters and writing      B  Reading mechanics
 C  First grammar            D  Writing and punctuation
@@ -908,7 +908,7 @@ def all_lessons():
 def foundation_course() -> Dict[str, Any]:
     return {
         "title_ar": "أَسَاسِيَّاتُ اللُّغَةِ العَرَبِيَّةِ",
-        "title_en": "Basic Foundation of Arabic",
+        "title_en": "Foundation in Basic Arabic",
         "summary_en": "Five stages, from the alphabet to everyday Arabic, taken before Class 1.",
         "alphabet": [{"letter": l, "name": n, "sound_en": s, "king": l in KING_LETTERS} for l, n, s in ALPHABET],
         "vowel_marks": VOWEL_MARKS,

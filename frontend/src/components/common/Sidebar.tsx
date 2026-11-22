@@ -51,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // First in the menu, and free for everyone (signed-out visitors included).
     {
       id: 'foundation',
-      titleEn: 'Basic Foundation of Arabic',
+      titleEn: 'Foundation in Basic Arabic',
       titleAr: 'أساسيات اللغة العربية',
       icon: Blocks,
       badge: 'Free',

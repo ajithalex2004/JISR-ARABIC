@@ -13,7 +13,7 @@ interface ParentDashboardProps {
   activeChild: ChildProfile | null;
   onOpenPaywall: () => void;
   onOpenOnboarding?: () => void;
-  /** Open the Basic Foundation of Arabic course. */
+  /** Open the Foundation in Basic Arabic course. */
   onOpenFoundation?: () => void;
 }
 
@@ -253,7 +253,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ activeChild, o
         </div>
       </div>
 
-      {/* Basic Foundation of Arabic: progress kept on the child's account */}
+      {/* Foundation in Basic Arabic: progress kept on the child's account */}
       {activeChild && <FoundationProgressCard childId={activeChild.id} childName={activeChild.name} onOpenFoundation={onOpenFoundation} />}
 
       {/* Skill Breakdown (Honest Evidence-Based Assessment) */}

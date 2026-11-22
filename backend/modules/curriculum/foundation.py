@@ -1,4 +1,4 @@
-"""Basic Foundation of Arabic: textbook links and explanations in a parent's language.
+"""Foundation in Basic Arabic: textbook links and explanations in a parent's language.
 
 Textbook links: each Foundation lesson lists the chapters of a class that teach the same rule,
 found by matching the lesson's keywords (foundation_data.TEXTBOOK_KEYWORDS) against each published

@@ -1045,7 +1045,7 @@ export const api = {
     return res.json();
   },
 
-  /** Basic Foundation of Arabic: stages A-D with their lessons, activities and quizzes. */
+  /** Foundation in Basic Arabic: stages A-D with their lessons, activities and quizzes. */
   async getFoundation() {
     const res = await authenticatedFetch(`${API_BASE}/api/modules/foundation`);
     return jsonOrThrow(res);

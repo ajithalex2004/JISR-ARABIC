@@ -1,4 +1,4 @@
-"""Basic Foundation of Arabic: structure, answer keys and tashkeel of the course content."""
+"""Foundation in Basic Arabic: structure, answer keys and tashkeel of the course content."""
 import re
 import unittest
 

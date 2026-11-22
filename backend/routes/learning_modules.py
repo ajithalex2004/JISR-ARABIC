@@ -54,7 +54,7 @@ def list_capsules(
 
 @router.get('/foundation')
 def foundation_course():
-    """Basic Foundation of Arabic: stages A-D (letters, reading mechanics, first grammar, writing)."""
+    """Foundation in Basic Arabic: stages A-D (letters, reading mechanics, first grammar, writing)."""
     from backend.foundation_data import foundation_course as course
     return {"success": True, **course()}
 

@@ -13,6 +13,7 @@ import { AdminWorkflow } from './components/admin/AdminWorkflow';
 import { WordMatchReview } from './components/admin/WordMatchReview';
 import { AuthModal } from './components/auth/AuthModal';
 import { PaywallModal } from './components/payment/PaywallModal';
+import { UpgradeCard, UpgradeProvider, UpgradeRequest } from './components/payment/UpgradeCard';
 import { AskFahimModal } from './components/ai/AskFahimModal';
 import { ArabicSetupModal } from './components/onboarding/ArabicSetupModal';
 import { OPEN_ARABIC_SETUP_EVENT, shouldOfferArabicSetup } from './services/arabicSetup';
@@ -462,7 +463,6 @@ export function App() {
             onBack={() => (isGuest ? goToWelcome() : setCurrentView('catalogue'))}
             backLabel={isGuest ? 'Back to home' : undefined}
             showContentVersion={user?.role === 'admin'}
-            onOpenPaywall={() => (isGuest ? promptSignup() : handleOpenPaywall(appGrade))}
             onOpenReader={(page) => {
               if (isGuest) return promptSignup();
               if (page) setReaderInitialPage(page);
@@ -473,10 +473,9 @@ export function App() {
 
         {currentView === 'learn' && (
           askFahimLocked || isGuest ? (
-            <div className="max-w-xl mx-auto my-12 bg-white border-2 border-slate-900 p-8 text-center space-y-3" role="status">
+            <div className="max-w-2xl mx-auto my-12 space-y-3" role="status">
               <p className="text-base font-black text-slate-900">تَعَلَّمْ مَعَ فَهِيم · Learn with Fahim</p>
-              <p className="text-sm text-slate-700">Fahim, the AI mentor, is part of the paid plan. Unlock a term or the full year to use it.</p>
-              <button type="button" onClick={openAskFahim} className="bg-emerald-900 text-white text-sm font-bold px-6 py-2.5">See plans</button>
+              <UpgradeCard reason="ask_fahim" grade={appGrade} />
             </div>
           ) : (
             <SocraticLearnStudio activeChild={activeChild} />
@@ -650,7 +649,20 @@ export function App() {
     </div>
   );
 
-  return appContent;
+  // Upgrade prompts across the app (locked chapters and terms, Ask Fahim, Foundation): who is viewing, and the plans screen.
+  const upgrade = {
+    viewer: (isGuest ? 'guest'
+      : user && ['admin', 'tutor', 'school_admin'].includes(user.role) ? 'staff'
+      : user?.role === 'learner' ? 'student' : 'parent') as 'guest' | 'student' | 'parent' | 'staff',
+    hasPlan: !askFahimLocked && !isGuest,
+    open: (r: UpgradeRequest) => {
+      if (isGuest) return promptSignup();
+      if (r.reason === 'ask_fahim') return handleOpenPaywall(undefined, undefined, undefined, 'ask_fahim');
+      handleOpenPaywall(r.grade, r.term, r.chapterName);
+    },
+  };
+
+  return <UpgradeProvider value={upgrade}>{appContent}</UpgradeProvider>;
 }
 
 export default App;

@@ -14,12 +14,12 @@ import { PronunciationSandbox } from '../audio/PronunciationSandbox';
 import { RootTreeExplorer } from '../learning/RootTreeExplorer';
 import { AlignedSentence } from '../audio/AlignedSentence';
 import { useAlignments } from '../../services/alignment';
+import { UpgradeCard } from '../payment/UpgradeCard';
 
 interface LessonViewerProps {
   lessonId: string;
   activeChild: ChildProfile | null;
   onBack: () => void;
-  onOpenPaywall: () => void;
   onOpenReader?: (page?: number) => void;
   backLabel?: string;
   /** Show the content version tag (admins reviewing drafts). */
@@ -86,7 +86,6 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   lessonId,
   activeChild,
   onBack,
-  onOpenPaywall,
   onOpenReader,
   backLabel = 'Back to Catalogue',
   showContentVersion = false
@@ -97,6 +96,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   const [selectedPath, setSelectedPath] = useState<'foundation' | 'guided' | 'independent'>('guided');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [paymentRequired, setPaymentRequired] = useState(false);
 
   // Chapter 1 Complete 10 Pages State
   const [selectedChapterPdfPage, setSelectedChapterPdfPage] = useState<number>(14); // Default PDF page 14 = printed page 12 (Main Reading)
@@ -133,13 +133,14 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   const loadLesson = async () => {
     setIsLoading(true);
     setErrorMsg('');
+    setPaymentRequired(false);
     try {
       const res = await api.getLessonContent(lessonId, activeChild?.id);
       setData(res);
     } catch (err: any) {
       if (err.message === 'PAYMENT_REQUIRED') {
         setErrorMsg('Payment required to access this term. Chapter 1 is available as Free Demo.');
-        onOpenPaywall();
+        setPaymentRequired(true);  // shown as an upgrade card with the price
       } else {
         setErrorMsg(err.message || 'Failed to load lesson package.');
       }
@@ -224,9 +225,13 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   if (errorMsg || !data) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-12 text-center space-y-4">
-        <div className="p-4 bg-amber-50 border border-amber-300 text-amber-900 text-sm font-bold">
-          {errorMsg || 'Lesson not accessible.'}
-        </div>
+        {paymentRequired ? (
+          <UpgradeCard reason="chapter" grade={activeChild?.default_grade} className="text-left" />
+        ) : (
+          <div className="p-4 bg-amber-50 border border-amber-300 text-amber-900 text-sm font-bold">
+            {errorMsg || 'Lesson not accessible.'}
+          </div>
+        )}
         <button onClick={onBack} className="btn-secondary text-xs">
           ← Back to Curriculum Catalogue
         </button>

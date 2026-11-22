@@ -7,6 +7,7 @@ import {
 import { LessonSummary, TermSummary, ChildProfile, User } from '../../types';
 import { api } from '../../services/api';
 import { tone } from '../common/cardTones';
+import { UpgradeCard } from '../payment/UpgradeCard';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 
 interface CatalogueViewProps {
@@ -613,6 +614,10 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
             </button>
           )}
         </div>
+
+        {!isTermUnlocked && !termComingSoon && (
+          <UpgradeCard reason="term" grade={selectedGrade} term={selectedTerm} />
+        )}
 
         {/* DYNAMIC UNITS */}
         {unitsList.map((unitGroup, uIdx) => (

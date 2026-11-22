@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Blocks, CheckCircle2, Circle, Crown, RotateCcw, Volume2, ArrowRight, BookOpen, Languages, Lock, Sparkles, Timer } from 'lucide-react';
+import { Blocks, CheckCircle2, Circle, Crown, RotateCcw, Volume2, ArrowRight, BookOpen, Languages, Lock, Scissors, Sparkles, Timer } from 'lucide-react';
 import { api } from '../../services/api';
 import { audioManager } from '../../services/audio';
 import { ArabicWordSpans } from '../audio/ArabicWordSpans';
 import { ChildProfile } from '../../types';
 import { tone } from '../common/cardTones';
 import { UpgradeCard } from '../payment/UpgradeCard';
+import { WordSplitter } from './WordSplitter';
 
 // ---------------------------------------------------------------------------------------------
 // Course shape (backend/foundation_data.py)
@@ -420,6 +421,35 @@ interface FoundationViewerProps {
   progressChildId?: string;
 }
 
+/** A lesson's examples; each can open the word splitter (how its letters join). */
+const ExampleList: React.FC<{ examples: Example[]; alphabet: Letter[]; openFirst?: boolean }> = ({ examples, alphabet, openFirst = false }) => {
+  const [open, setOpen] = useState<number[]>(openFirst && examples.length ? [0] : []);
+  const toggle = (i: number) => setOpen((o) => (o.includes(i) ? o.filter((x) => x !== i) : [...o, i]));
+  return (
+    <div className="space-y-2">
+      {examples.map((e, i) => {
+        const isOpen = open.includes(i);
+        return (
+          <div key={i} className="border-b border-slate-100 pb-2 last:border-0 space-y-2">
+            <div className="flex items-start gap-3">
+              <SpeakButton text={e.ar} />
+              <div className="flex-1">
+                <div className="text-xl font-arabic font-bold text-slate-900" dir="rtl"><ArabicWordSpans text={e.ar} /></div>
+                <div className="text-xs text-slate-600"><Mixed text={e.en} /></div>
+              </div>
+              <button type="button" onClick={() => toggle(i)} aria-expanded={isOpen}
+                className={`shrink-0 px-2 py-1 text-[11px] font-bold border inline-flex items-center gap-1 ${isOpen ? 'bg-sky-800 text-white border-sky-900' : 'bg-white border-sky-300 text-sky-900 hover:border-sky-700'}`}>
+                <Scissors className="w-3.5 h-3.5" /> {isOpen ? 'Hide letters' : 'Split into letters'}
+              </button>
+            </div>
+            {isOpen && <WordSplitter text={e.ar} alphabet={alphabet} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild, grade = 5, onOpenChapter, onAskFahim, askFahimLocked = false, signedIn = true, progressChildId }) => {
   const [course, setCourse] = useState<Course | null>(null);
   const [error, setError] = useState('');
@@ -652,18 +682,9 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
           </section>
 
           <section className="bg-white border border-slate-200 p-4">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Examples: tap a word to hear it</h3>
-            <div className="space-y-2">
-              {lesson.examples.map((e, i) => (
-                <div key={i} className="flex items-start gap-3 border-b border-slate-100 pb-2 last:border-0">
-                  <SpeakButton text={e.ar} />
-                  <div className="flex-1">
-                    <div className="text-xl font-arabic font-bold text-slate-900" dir="rtl"><ArabicWordSpans text={e.ar} /></div>
-                    <div className="text-xs text-slate-600"><Mixed text={e.en} /></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Examples: tap a word to hear it, or split it into its letters</h3>
+            <ExampleList key={lesson.id} examples={lesson.examples} alphabet={course.alphabet}
+              openFirst={stage.id === 'A'} />
           </section>
 
           {lesson.table && (

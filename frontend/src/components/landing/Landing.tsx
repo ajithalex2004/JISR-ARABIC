@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { EnterIntent } from '../../entry/Root';
+import type { EnterApp } from '../../entry/Root';
 import { Hero } from './Hero';
 import { Marquee, WordDemo } from './WordDemo';
 import { ScrollStory } from './ScrollStory';
 import { Curriculum, Faq, Features, FinalCta, Parents, Pricing } from './Sections';
-import { useReveal, useScrolled } from './useReveal';
+import { prefersReducedMotion, useReveal, useScrolled } from './useReveal';
 import './landing.css';
 
 const NAV = [['#how', 'How it works'], ['#features', 'Features'], ['#pricing', 'Pricing'], ['#faq', 'FAQ']];
 
-function Nav({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+function Nav({ onEnter }: { onEnter: EnterApp }) {
   const scrolled = useScrolled();
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -29,7 +29,9 @@ function Nav({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
           <ul>{NAV.map(([href, label]) => <li key={href}><a href={href} onClick={() => setOpen(false)}>{label}</a></li>)}</ul>
           <div className="jl-nav__cta">
             <button type="button" className="jl-btn jl-btn--text jl-nav__signin" onClick={() => onEnter('login')}>Sign in</button>
-            <button type="button" className="jl-btn jl-btn--primary jl-btn--sm" onClick={() => onEnter('signup')}>Start free</button>
+            {/* Start free: down to "Open a class", where each class's first chapter (and Basics) is free. */}
+            <button type="button" className="jl-btn jl-btn--primary jl-btn--sm"
+              onClick={() => { setOpen(false); document.getElementById('curriculum')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); }}>Start free</button>
           </div>
         </nav>
         {/* Phones: Sign in stays on screen next to the menu button instead of hiding inside the menu. */}
@@ -42,7 +44,7 @@ function Nav({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
   );
 }
 
-function Footer({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+function Footer({ onEnter }: { onEnter: EnterApp }) {
   return (
     <footer className="jl-footer">
       <div className="jl-wrap jl-footer__grid">
@@ -67,7 +69,7 @@ function Footer({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
   );
 }
 
-export default function Landing({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+export default function Landing({ onEnter }: { onEnter: EnterApp }) {
   const root = useRef<HTMLDivElement>(null);
   useReveal(root);
   useEffect(() => {

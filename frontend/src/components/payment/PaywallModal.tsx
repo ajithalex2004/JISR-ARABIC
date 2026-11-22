@@ -182,7 +182,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           </div>
           <p className="leading-relaxed">
             Chapter 1{chapterName ? <> (<strong>{chapterName}</strong>)</> : null} of your enrolled grade is 100% free.
-            Unlock a term for {usd(TERM_USD)}, or the full year for {usd(ANNUAL_USD)} (save 15%), to open every chapter, the study booklets and the exam practice.
+            Unlock a term for {usd(TERM_USD)}, or the full year for {usd(ANNUAL_USD)} (save 15%), to open every chapter, the study booklets, the exam practice and Stages B to E of Foundation in Basic Arabic.
           </p>
         </div>
 

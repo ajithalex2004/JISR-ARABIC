@@ -3,13 +3,16 @@ import { CheckCircle2, Lock, Sparkles } from 'lucide-react';
 import { ANNUAL_USD, TERM_USD, aed, usd } from './pricing';
 
 /** Why the learner is being asked to upgrade: shapes the headline and what the plan opens. */
-export type UpgradeReason = 'chapter' | 'term' | 'ask_fahim' | 'foundation';
+export type UpgradeReason = 'chapter' | 'term' | 'ask_fahim' | 'foundation' | 'foundation_stage';
 
 export interface UpgradeRequest {
   reason: UpgradeReason;
   grade?: number;
   term?: number;
   chapterName?: string;
+  /** For a locked Foundation stage: its letter and English title. */
+  stage?: string;
+  stageTitle?: string;
 }
 
 interface UpgradeContextValue {
@@ -42,9 +45,14 @@ const COPY: Record<UpgradeReason, { title: (r: UpgradeRequest) => string; lead: 
     benefits: ['Unlimited questions to Fahim, the AI mentor', 'Step-by-step explanations of grammar rules', 'Plus every chapter, booklet and exam of the term'],
   },
   foundation: {
-    title: (r) => `Ready for the${r.grade ? ` Class ${r.grade}` : ''} CBSE curriculum?`,
-    lead: () => 'Great work finishing this stage! Put what you have learned to work on the official textbook chapters.',
-    benefits: ['Every textbook chapter, with audio and word meanings', 'Booklets, mindmaps and CBSE exam practice', 'Ask Fahim to explain any rule'],
+    title: () => 'Unlock Stages B to E of Foundation in Basic Arabic',
+    lead: () => 'Great work finishing Stage A! A plan opens the other four stages and the whole CBSE curriculum.',
+    benefits: ['Stages B to E: reading rules, first grammar, writing and everyday Arabic', 'Every textbook chapter, booklets and CBSE exam practice', 'Ask Fahim to explain any rule'],
+  },
+  foundation_stage: {
+    title: (r) => `Unlock Stage ${r.stage ?? ''}${r.stageTitle ? `: ${r.stageTitle}` : ''}`,
+    lead: () => 'Stage A of Foundation in Basic Arabic is free. A plan opens Stages B to E and the whole CBSE curriculum.',
+    benefits: ['Stages B to E: reading rules, first grammar, writing and everyday Arabic', 'Practice, quizzes and explanations for parents in every lesson', 'Every textbook chapter, booklets, CBSE exam practice and Ask Fahim'],
   },
 };
 
@@ -85,7 +93,7 @@ export const UpgradeCard: React.FC<UpgradeCardProps> = ({ className = '', compac
     <section aria-label="Upgrade" className={`border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-white p-4 sm:p-5 ${className}`}>
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 bg-amber-500 text-white flex items-center justify-center shrink-0">
-          {request.reason === 'foundation' ? <Sparkles className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+          {request.reason === 'foundation' || request.reason === 'foundation_stage' ? <Sparkles className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
         </div>
         <div className="flex-1 min-w-0 space-y-2">
           <div>

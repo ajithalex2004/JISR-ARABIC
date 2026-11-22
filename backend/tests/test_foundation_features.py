@@ -1,4 +1,4 @@
-"""Basic Foundation extras: native recordings, textbook links and parent-language explanations."""
+"""Foundation in Basic Arabic extras: native recordings, textbook links and parent-language explanations."""
 import json
 import unittest
 from unittest.mock import patch
@@ -186,6 +186,59 @@ class TestParentExplanations(FeatureTestCase):
         prompt = foundation._prompt(lesson, foundation._source(lesson), "ml")
         self.assertIn("Malayalam", prompt)
         self.assertIn("هَذَا", prompt)
+
+
+class TestFoundationAccess(FeatureTestCase):
+    """Stage A is free for everyone; stages B-E need a paid plan (on the server, not just in the app)."""
+
+    def setUp(self):
+        super().setUp()
+        from backend.models import ChildProfile, TermAccess, User
+        for uid in ("free", "paid"):
+            self.db.add(User(id=uid, email=f"{uid}@test.local", full_name=uid, role="parent", password_hash="x", is_verified=True))
+        self.db.commit()
+        self.db.add_all([ChildProfile(id="cf", parent_id="free", name="F", default_grade=5),
+                         ChildProfile(id="cp", parent_id="paid", name="P", default_grade=5)])
+        self.db.commit()
+        self.db.add(TermAccess(child_id="cp", grade=5, term=1, is_unlocked=True))
+        self.db.commit()
+
+    def course_as(self, principal):
+        from fastapi.testclient import TestClient
+        from backend.api.dependencies import get_optional_user
+        from backend.database import get_db
+        from backend.main import app
+        app.dependency_overrides[get_db] = lambda: self.db
+        app.dependency_overrides[get_optional_user] = lambda: principal
+        try:
+            with TestClient(app) as client:
+                res = client.get("/api/modules/foundation")
+                explain = client.get("/api/modules/foundation/lessons/b1_short_vowels/explain", params={"lang": "hi"})
+        finally:
+            app.dependency_overrides.pop(get_db, None)
+            app.dependency_overrides.pop(get_optional_user, None)
+        self.assertEqual(res.status_code, 200)
+        return {s["id"]: s for s in res.json()["stages"]}, explain
+
+    def test_signed_out_and_free_accounts_get_stage_a_only(self):
+        from backend.modules.identity.access import Principal
+        for who in (None, Principal(id="free", email="free@test.local", role="parent", is_verified=True)):
+            stages, explain = self.course_as(who)
+            self.assertNotIn("locked", stages["A"])
+            self.assertTrue(stages["A"]["lessons"][0]["quiz"])          # Stage A: the full lessons
+            for sid in "BCDE":
+                self.assertTrue(stages[sid]["locked"])
+                lesson = stages[sid]["lessons"][0]
+                self.assertEqual(set(lesson), {"id", "title_ar", "title_en"})  # titles only: no rules, examples or quiz
+            self.assertEqual(explain.status_code, 401 if who is None else 402)
+
+    def test_paid_and_staff_accounts_get_every_stage(self):
+        from backend.modules.identity.access import Principal
+        for who in (Principal(id="paid", email="paid@test.local", role="parent", is_verified=True),
+                    Principal(id="a1", email="a@test.local", role="admin", is_verified=True)):
+            stages, _ = self.course_as(who)
+            self.assertTrue(all("locked" not in s for s in stages.values()))
+            self.assertTrue(stages["C"]["lessons"][0]["quiz"])
 
 
 if __name__ == "__main__":

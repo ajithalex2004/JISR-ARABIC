@@ -167,3 +167,18 @@
   .jp-listen.is-playing .jp-wave i, .jp-typing i { animation: none; }
 }
 
+
+/* Basics (Foundation Stage A) phone: the letter board and the word split into letters. */
+.jp-letters { display: grid; grid-template-columns: repeat(4, 1fr); gap: .35rem; margin-top: .5rem; }
+.jp-letters button { display: flex; flex-direction: column; align-items: center; padding: .3rem 0; border: 1px solid #e5e0d8; border-radius: .6rem; background: #fff; cursor: pointer; }
+.jp-letters button span { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 1.5rem; line-height: 1.2; color: #14532d; }
+.jp-letters button small { font-size: .6rem; color: #64748b; }
+.jp-split { display: flex; justify-content: center; align-items: flex-start; gap: 0; margin: 1.25rem 0 .75rem; transition: gap .7s ease; }
+.jp-split.is-split { gap: .6rem; }
+.jp-split__l { display: flex; flex-direction: column; align-items: center; transition: all .7s ease; }
+.jp-split__l span { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 2.75rem; line-height: 1.5; }
+.jp-split__l small { font-size: .6rem; text-transform: uppercase; letter-spacing: .04em; color: #64748b; opacity: 0; transition: opacity .5s ease .3s; }
+.jp-split.is-split .jp-split__l { background: #fff; border: 1px solid #e5e0d8; border-radius: .6rem; padding: 0 .35rem .3rem; }
+.jp-split.is-split .jp-split__l small { opacity: 1; }
+.jp-next--inline { flex-wrap: wrap; justify-content: center; }
+@media (prefers-reduced-motion: reduce) { .jp-split, .jp-split__l, .jp-split__l small { transition: none; } }

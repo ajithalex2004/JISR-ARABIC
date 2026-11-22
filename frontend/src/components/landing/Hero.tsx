@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { EnterIntent } from '../../entry/Root';
+import type { EnterApp } from '../../entry/Root';
 import { prefersReducedMotion } from './useReveal';
 import { JourneyPhone } from './journey/JourneyPhone';
+import { FoundationPhone } from './journey/FoundationPhone';
 import { loadSession, type Session } from './journey/journeyApi';
 
 const CLASSES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+// "Basics" in the class picker: Stage A of Foundation in Basic Arabic (free for everyone).
+const BASICS = 0;
 
 // Hangers of the bridge: x positions between the two feet of the arch.
 const HANGERS = [120, 170, 220, 270, 330, 380, 430, 480];
@@ -62,7 +65,7 @@ export function BridgeArt() {
   );
 }
 
-export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+export function Hero({ onEnter }: { onEnter: EnterApp }) {
   const ref = useRef<HTMLElement>(null);
   // undefined while checking for a login; null for visitors.
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -100,6 +103,8 @@ export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
     return () => { el.removeEventListener('pointermove', onMove); if (frame) cancelAnimationFrame(frame); };
   }, []);
 
+  const startFree = () => (grade === BASICS ? onEnter('explore', { view: 'foundation' }) : onEnter('explore', { grade }));
+
   return (
     <section ref={ref} className="jl-hero" aria-labelledby="jl-hero-title">
       <div className="jl-wrap jl-hero__grid">
@@ -118,6 +123,9 @@ export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
           <div className="jl-classpick jl-rise" style={{ ['--d' as string]: 3 }}>
             <span className="jl-classpick__label" id="jl-classpick">{session ? 'Your child’s class' : 'Pick your child’s class'}</span>
             <div className="jl-classpick__row" role="group" aria-labelledby="jl-classpick">
+              <button type="button" aria-pressed={grade === BASICS} aria-label="Basics: Foundation in Basic Arabic" onClick={() => setGrade(BASICS)}>
+                Basics
+              </button>
               {CLASSES.map((c) => (
                 <button key={c} type="button" aria-pressed={grade === c} aria-label={`Class ${c}`} onClick={() => setGrade(c)}>
                   {grade === c ? `Class ${c}` : c}
@@ -125,11 +133,14 @@ export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
               ))}
             </div>
             <p className="jl-classpick__hint">
-              {session ? `Signed in: the phone shows ${session.childName}’s real chapters and progress.` : 'The phone shows that class’s real chapters, live from the app.'}
+              {grade === BASICS
+                ? 'Basics: Stage A of Foundation in Basic Arabic, the letters and how they join. Free for everyone.'
+                : session ? `Signed in: the phone shows ${session.childName}’s real chapters and progress.` : 'The phone shows that class’s real chapters, live from the app.'}
             </p>
           </div>
           <div className="jl-actions jl-rise" style={{ ['--d' as string]: 4 }}>
-            <button type="button" className="jl-btn jl-btn--primary" onClick={() => onEnter('signup')}>
+            {/* Opens the picked class's free first chapter (Basics: Foundation Stage A), no account needed. */}
+            <button type="button" className="jl-btn jl-btn--primary" onClick={startFree}>
               Start free <span aria-hidden="true" className="jl-btn__arrow">→</span>
             </button>
             <a href="#curriculum" className="jl-btn jl-btn--ghost">
@@ -142,7 +153,9 @@ export function Hero({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
           </ul>
         </div>
         <div className="jl-hero__art">
-          <JourneyPhone grade={grade} session={session} onOpenApp={() => onEnter(session ? 'explore' : 'login')} onSignup={() => onEnter('signup')} />
+          {grade === BASICS
+            ? <FoundationPhone onStart={startFree} />
+            : <JourneyPhone grade={grade} session={session} onOpenApp={() => onEnter(session ? 'explore' : 'login')} onSignup={() => onEnter('signup')} />}
         </div>
       </div>
       <a href="#demo" className="jl-scrollcue" aria-label="Scroll down to the live demo"><span /><em className="jl-scrollcue__label">Scroll down</em></a>

@@ -691,3 +691,9 @@
   .jl-section { padding-block: 48px; }
   .jl-final > .jl-wrap { border-radius: 18px; }
 }
+
+/* Basics (Foundation in Basic Arabic) spans the class grid's first row. */
+.jl-grades__basics { grid-column: 1 / -1; }
+.jl-grade--basics { min-height: 0; }
+.jl-grade--basics strong { font-size: 1.35rem; letter-spacing: -0.02em; }
+.jl-grade--basics .jl-grade__ar { font-size: .9rem; }

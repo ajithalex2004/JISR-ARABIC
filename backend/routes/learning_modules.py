@@ -53,10 +53,12 @@ def list_capsules(
     return service.list_capsules(child_id=child_id, grade=grade, db=db)
 
 @router.get('/foundation')
-def foundation_course():
-    """Basic Foundation of Arabic: stages A-D (letters, reading mechanics, first grammar, writing)."""
+def foundation_course(db: Session = Depends(get_db), actor: Optional[Principal] = Depends(get_optional_user)):
+    """Foundation in Basic Arabic: stages A-E. Stage A is free for everyone (signed-out visitors too);
+    the other stages' lessons come with a paid plan, and are listed by title only without one."""
     from backend.foundation_data import foundation_course as course
-    return {"success": True, **course()}
+    from backend.modules.curriculum.entitlements import has_paid_plan
+    return {"success": True, **course(paid=has_paid_plan(db, actor))}
 
 @router.get('/foundation/textbook-links')
 def foundation_textbook_links(grade: int = Query(5, ge=1, le=12), db: Session = Depends(get_db),
@@ -70,9 +72,17 @@ def foundation_parent_explanation(lesson_id: str, lang: str = Query(..., max_len
                                   actor: Optional[Principal] = Depends(get_optional_user)):
     """A Foundation lesson explained in a parent's language (hi, ml, ur): AI-translated once, then saved.
 
-    Open to everyone like the rest of the Foundation course: the AI is used at most once per lesson
-    and language (53 lessons x 3 languages), after which the saved translation is served."""
+    Free for Stage A lessons (like the lessons themselves); the paid stages' lessons need a paid plan.
+    The AI is used at most once per lesson and language, after which the saved translation is served."""
+    from backend.foundation_data import is_free_lesson
     from backend.modules.curriculum.foundation import parent_explanation
+    if not is_free_lesson(lesson_id):
+        from backend.errors import ApplicationError
+        from backend.modules.curriculum.entitlements import has_paid_plan
+        if actor is None:
+            raise ApplicationError(401, "Sign in to open this Foundation stage.")
+        if not has_paid_plan(db, actor):
+            raise ApplicationError(402, "This Foundation stage is part of the paid plan. Stage A is free.")
     return {"success": True, **parent_explanation(db, lesson_id, lang)}
 
 class FoundationProgressRequest(BaseModel):

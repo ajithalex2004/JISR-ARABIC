@@ -23,7 +23,7 @@ function extensionFor(mime: string): string {
 }
 
 /**
- * Native-speaker recordings for the Basic Foundation course. Each clip is recorded for one exact
+ * Native-speaker recordings for the Foundation in Basic Arabic course. Each clip is recorded for one exact
  * text (letter name, syllable, word or sentence); wherever the app plays that text, the recording is
  * used instead of the synthetic voice.
  */
@@ -125,7 +125,7 @@ export function NativeAudioAdmin() {
         <div>
           <h2 className="text-base font-black text-emerald-950 flex items-center gap-1.5"><Mic className="w-4 h-4" /> Native audio</h2>
           <p className="text-xs text-slate-600 max-w-3xl">
-            Record a native speaker for each letter, syllable, word and sentence of the Basic Foundation course. Wherever the app plays that
+            Record a native speaker for each letter, syllable, word and sentence of the Foundation in Basic Arabic course. Wherever the app plays that
             exact text, learners hear the recording instead of the synthetic voice, and the audio bar shows "Native speaker".
           </p>
         </div>

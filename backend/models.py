@@ -741,7 +741,7 @@ class RecordedAudio(Base):
 
 
 class FoundationTranslation(Base):
-    """A Basic Foundation lesson explained in a parent's language (AI-translated, saved once).
+    """A Foundation in Basic Arabic lesson explained in a parent's language (AI-translated, saved once).
 
     source_hash ties the translation to the English text it came from, so editing a lesson makes
     a new translation instead of serving a stale one.
@@ -759,7 +759,7 @@ class FoundationTranslation(Base):
 
 
 class FoundationProgress(Base):
-    """A Basic Foundation lesson a learner has finished (all quiz answers right)."""
+    """A Foundation in Basic Arabic lesson a learner has finished (all quiz answers right)."""
     __tablename__ = "foundation_progress"
     __table_args__ = (UniqueConstraint("child_id", "lesson_id", name="uq_foundation_progress"),)
 

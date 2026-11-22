@@ -29,7 +29,8 @@ type Lesson = {
   id: string; title_ar: string; title_en: string; summary_en: string; points: string[]; examples: Example[];
   quiz: QuizItem[]; table?: { headers: string[]; rows: string[][] }; activity?: Activity;
 };
-type Stage = { id: 'A' | 'B' | 'C' | 'D' | 'E'; title_ar: string; title_en: string; summary_en: string; lessons: Lesson[] };
+// A stage on the paid plan comes with only its lessons' titles (locked) for learners without a plan.
+type Stage = { id: 'A' | 'B' | 'C' | 'D' | 'E'; title_ar: string; title_en: string; summary_en: string; lessons: Lesson[]; locked?: boolean };
 type Letter = { letter: string; name: string; sound_en: string; king: boolean };
 type VowelMark = { id: string; label_en: string; pattern: string };
 type Course = {
@@ -491,11 +492,12 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
       .catch(() => { if (!cancelled) setSaveState('retry'); });
     return () => { cancelled = true; };
   }, [progressChildId, deviceKey]);
+  // Reloaded when the plan changes (signing in, or a payment): Stages B-E come with a paid plan.
   useEffect(() => {
     api.getFoundation()
       .then((res) => setCourse(res))
       .catch((err) => setError(err instanceof Error ? err.message : 'The Foundation course could not be loaded.'));
-  }, []);
+  }, [askFahimLocked, signedIn]);
 
   const stage = course?.stages.find((s) => s.id === stageId);
   const lessons = stage?.lessons || [];
@@ -515,7 +517,7 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
   useEffect(() => {
     setExplanation(null);
     setExplainError('');
-    if (!parentLang || !currentLessonId) return;
+    if (!parentLang || !currentLessonId || stage?.locked) return;  // a locked stage has no lesson to explain
     if (!signedIn) { setExplainError('Sign in to read the explanation in your language.'); return; }
     let cancelled = false;
     setExplaining(true);
@@ -524,7 +526,7 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
       .catch((err) => { if (!cancelled) setExplainError(err instanceof Error ? err.message : 'The translation could not be loaded.'); })
       .finally(() => { if (!cancelled) setExplaining(false); });
     return () => { cancelled = true; };
-  }, [parentLang, currentLessonId, signedIn]);
+  }, [parentLang, currentLessonId, signedIn, stage?.locked]);
 
   // '' is English (the lesson as written); the other codes show the parent-language panel.
   const chooseParentLang = (code: string) => {
@@ -585,7 +587,10 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
           return (
             <button key={s.id} type="button" role="tab" aria-selected={s.id === stageId} onClick={() => setStageId(s.id)}
               className={`text-left p-3 border-2 ${s.id === stageId ? tone(si).active : tone(si).idle}`}>
-              <div className="text-xs font-black">Stage {s.id} · {n}/{s.lessons.length}</div>
+              <div className="text-xs font-black flex items-center gap-1">
+                {s.locked && <Lock className="w-3 h-3" aria-label="locked" />}
+                Stage {s.id} · {s.locked ? 'Paid' : `${n}/${s.lessons.length}`}
+              </div>
               <div className="font-arabic font-bold text-sm" dir="rtl">{s.title_ar}</div>
               <div className={`text-[11px] ${s.id === stageId ? tone(si).sub : 'text-slate-600'}`}>{s.title_en}</div>
             </button>
@@ -593,6 +598,23 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
         })}
       </div>
 
+      {stage.locked ? (
+        <div className="grid grid-cols-1 lg:grid-cols-[17rem_1fr] gap-4">
+          <nav aria-label={`Stage ${stage.id} lessons (locked)`} className="bg-white border border-slate-200 p-2 space-y-1 self-start">
+            <p className="text-[11px] text-slate-600 px-1 pb-1">{stage.summary_en}</p>
+            {stage.lessons.map((l, i) => (
+              <div key={l.id} className="px-2 py-1.5 flex items-start gap-2 border-2 bg-slate-50 border-slate-200 text-slate-500">
+                <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-label="locked" />
+                <span>
+                  <span className="block text-xs font-bold">{stage.id}{i + 1}. {l.title_en}</span>
+                  <span className="block text-xs font-arabic" dir="rtl">{l.title_ar}</span>
+                </span>
+              </div>
+            ))}
+          </nav>
+          <UpgradeCard reason="foundation_stage" stage={stage.id} stageTitle={stage.title_en} grade={grade} className="self-start" />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[17rem_1fr] gap-4">
         {/* Lesson list */}
         <nav aria-label={`Stage ${stage.id} lessons`} className="bg-white border border-slate-200 p-2 space-y-1 self-start">
@@ -762,6 +784,7 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
           </div>
         </article>
       </div>
+      )}
     </div>
   );
 };

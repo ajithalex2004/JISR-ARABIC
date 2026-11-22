@@ -1,4 +1,4 @@
-"""In-process scheduler for periodic jobs: the Gemini health check and the weekly parent emails.
+"""In-process scheduler for periodic jobs: the Gemini health checks and the weekly parent emails.
 
 Runs in production (or when FAHIM_ENABLE_SCHEDULER=1). Each job takes a short-lived cache
 lock before running, so several API replicas don't duplicate work; the weekly email job is
@@ -18,6 +18,8 @@ GEMINI_PROBE_EVERY_SECONDS = 20 * 60
 # Scheduled checks failing this many times in a row means Gemini is down, not a blip: alert at once.
 # (The usual "3 failures in 10 minutes" rule can't be met by a check that runs every 20 minutes.)
 GEMINI_PROBE_FAILURES_TO_ALERT = 2
+# The daily AI feature check runs from 02:00 UTC (06:00 UAE time), before the school day.
+AI_FEATURE_CHECK_HOUR_UTC = 2
 # Weekly report goes out on Sunday from 04:00 UTC (08:00 UAE time).
 WEEKLY_REPORT_WEEKDAY = 6
 WEEKLY_REPORT_HOUR_UTC = 4
@@ -80,6 +82,16 @@ def demo_cleanup_enabled() -> bool:
     return os.getenv("KEEP_DEMO_ACCOUNTS", "").lower() not in ("1", "true", "yes")
 
 
+def run_ai_feature_check():
+    """Run each AI feature on a known question (backend/ai/feature_check.py); alerts on a wrong answer."""
+    from backend.ai.feature_check import run_feature_check
+    return run_feature_check()
+
+
+def ai_feature_check_due(now: datetime.datetime) -> bool:
+    return now.hour >= AI_FEATURE_CHECK_HOUR_UTC
+
+
 def weekly_reports_due(now: datetime.datetime) -> bool:
     return now.weekday() == WEEKLY_REPORT_WEEKDAY and now.hour >= WEEKLY_REPORT_HOUR_UTC
 
@@ -112,6 +124,12 @@ def tick(now=None):
             run_demo_cleanup()
         except Exception as exc:
             logger.warning("Demo cleanup job failed: %s", exc)
+    # Once a day (the lock outlives the day, so a restart doesn't repeat it).
+    if ai_feature_check_due(now) and _claim(f"ai_feature_check:{now.date().isoformat()}", 26 * 3600):
+        try:
+            run_ai_feature_check()
+        except Exception as exc:
+            logger.warning("AI feature check job failed: %s", exc)
     if weekly_reports_due(now) and _claim(f"weekly_reports:{now.date().isoformat()}:{now.hour}", 3600):
         try:
             run_weekly_reports(now)

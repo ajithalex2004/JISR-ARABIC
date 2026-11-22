@@ -289,3 +289,13 @@ body {
 [data-widget-tint="2"] { background-color: #ecfdf5 !important; border-color: #6ee7b7 !important; } /* green */
 [data-widget-tint="3"] { background-color: #fff1f2 !important; border-color: #fda4af !important; } /* rose */
 [data-widget-tint="4"] { background-color: #f5f3ff !important; border-color: #c4b5fd !important; } /* violet */
+
+/* Letter games: a tile that is not the right one gives a short shake. */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[shake_0\.3s\] { animation: none !important; }
+}

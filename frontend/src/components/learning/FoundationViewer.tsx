@@ -7,6 +7,7 @@ import { ChildProfile } from '../../types';
 import { tone } from '../common/cardTones';
 import { UpgradeCard } from '../payment/UpgradeCard';
 import { WordSplitter } from './WordSplitter';
+import { LetterGamesRound, gameWords } from './LetterGames';
 
 // ---------------------------------------------------------------------------------------------
 // Course shape (backend/foundation_data.py)
@@ -686,6 +687,14 @@ export const FoundationViewer: React.FC<FoundationViewerProps> = ({ activeChild,
             <ExampleList key={lesson.id} examples={lesson.examples} alphabet={course.alphabet}
               openFirst={stage.id === 'A'} />
           </section>
+
+          {/* Letters and reading stages: build each example word and spot letters in it. */}
+          {(stage.id === 'A' || stage.id === 'B') && gameWords(lesson.examples.map((e) => e.ar)).length > 0 && (
+            <section className="bg-sky-50/50 border-2 border-sky-300 p-4">
+              <h3 className="text-xs font-black uppercase tracking-wider text-sky-900 mb-2">Letter games: build the words and find the letters</h3>
+              <LetterGamesRound key={lesson.id} texts={lesson.examples.map((e) => e.ar)} alphabet={course.alphabet} />
+            </section>
+          )}
 
           {lesson.table && (
             <section className="bg-white border border-slate-200 p-4 overflow-x-auto">

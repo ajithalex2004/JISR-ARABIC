@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Combine, Info, Scissors, Volume2 } from 'lucide-react';
 import { audioManager } from '../../services/audio';
 import { stripTashkeel, useTashkeel } from '../../services/tashkeel';
+import { BuildWord, FindLetter } from './LetterGames';
 import { LETTER_FORM_NAMES, POSITION_LABEL, SplitLetter, shapedLetter, splitWord, wordsOf } from '../../services/wordSplit';
 
 type AlphabetLetter = { letter: string; name: string; sound_en: string };
@@ -37,6 +38,7 @@ export const WordSplitter: React.FC<Props> = ({ text, alphabet, startSplit = tru
   const words = useMemo(() => wordsOf(text), [text]);
   const [wordIndex, setWordIndex] = useState(() => Math.max(0, words.findIndex((w) => splitWord(w).letters.length > 1)));
   const [split, setSplit] = useState(startSplit);
+  const [mode, setMode] = useState<'split' | 'build' | 'find'>('split');
   const [tashkeelMode] = useTashkeel();
   const hideTashkeel = tashkeelMode === 'plain';
   useEffect(() => { setWordIndex(Math.max(0, words.findIndex((w) => splitWord(w).letters.length > 1))); }, [words]);
@@ -71,6 +73,19 @@ export const WordSplitter: React.FC<Props> = ({ text, alphabet, startSplit = tru
         </div>
       )}
 
+      <div className="flex justify-center gap-1" role="tablist" aria-label="What to do with this word">
+        {([['split', 'Split & join'], ['build', 'Build it'], ['find', 'Find the letter']] as const).map(([m, label]) => (
+          <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => setMode(m)}
+            className={`px-3 py-1 text-xs font-bold border ${mode === m ? 'bg-sky-800 text-white border-sky-900' : 'bg-white border-sky-300 text-sky-900 hover:border-sky-700'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'build' && <BuildWord key={`b-${word}`} word={word} alphabet={alphabet} />}
+      {mode === 'find' && <FindLetter key={`f-${word}`} word={word} alphabet={alphabet} />}
+
+      {mode === 'split' && <>
       {/* The word: letters slide apart when split and back together when joined. */}
       <div className="flex justify-center py-2" dir="rtl">
         <div role="list" aria-label={`${result.letters.length} letters`}
@@ -132,6 +147,7 @@ export const WordSplitter: React.FC<Props> = ({ text, alphabet, startSplit = tru
         </p>
         {result.notes.map((n) => <p key={n} className="ps-5" dir="ltr"><NoteText text={n} /></p>)}
       </div>
+      </>}
     </div>
   );
 };

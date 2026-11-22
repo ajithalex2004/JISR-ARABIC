@@ -13,6 +13,7 @@ import { AdminWorkflow } from './components/admin/AdminWorkflow';
 import { WordMatchReview } from './components/admin/WordMatchReview';
 import { AuthModal } from './components/auth/AuthModal';
 import { PaywallModal } from './components/payment/PaywallModal';
+import { WordSplitModal } from './components/learning/WordSplitModal';
 import { UpgradeCard, UpgradeProvider, UpgradeRequest } from './components/payment/UpgradeCard';
 import { AskFahimModal } from './components/ai/AskFahimModal';
 import { ArabicSetupModal } from './components/onboarding/ArabicSetupModal';
@@ -635,6 +636,8 @@ export function App() {
           setCurrentView('catalogue');
         }}
       />
+
+      <WordSplitModal onOpenFoundation={() => selectView('foundation')} />
 
       <ArabicSetupModal isOpen={isArabicSetupOpen && !isAuthOpen && !isOnboardingOpen} onClose={() => setIsArabicSetupOpen(false)} />
 

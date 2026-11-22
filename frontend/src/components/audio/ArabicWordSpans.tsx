@@ -5,6 +5,8 @@ import { getWordTranslation, fetchWordGloss, isGlossRequested, prefetchWordGloss
 import { ArabEnglishHelper, useArabEnglish } from '../../services/arabEnglishService';
 import { stripTashkeel, useTashkeel } from '../../services/tashkeel';
 import { localWordIndex, playbackWords } from '../../services/playbackWords';
+import { openWordSplit } from '../../services/wordSplitBus';
+import { splitWord } from '../../services/wordSplit';
 
 interface ArabicWordSpansProps {
   text: string;
@@ -18,6 +20,8 @@ interface ArabicWordSpansProps {
   onWordHover?: (wordIndex: number | null) => void;
   /** Light pronunciation text for a dark background. Detected from the text colour when not given. */
   onDark?: boolean;
+  /** A tapped word's pop-up offers "Split into letters" (default on). */
+  splittable?: boolean;
 }
 
 /** True when a CSS colour is light (so the text sits on a dark background). */
@@ -53,7 +57,8 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
   showAudioPrompt = true,
   highlightedWords,
   onWordHover,
-  onDark
+  onDark,
+  splittable = true
 }) => {
   const [arabEnglishEnabled] = useArabEnglish();
   const [tashkeelMode] = useTashkeel();
@@ -66,6 +71,7 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null);
   const lastSpokenRef = useRef<{ word: string; time: number }>({ word: '', time: 0 });
   const rootRef = useRef<HTMLSpanElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   // Light text means a dark background: the purple pronunciation line would be unreadable there.
   const [darkBackground, setDarkBackground] = useState(!!onDark);
   useLayoutEffect(() => {
@@ -103,6 +109,20 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
     });
     return unsubscribe;
   }, [text]);
+
+  // A tapped word's pop-up stays open (so its buttons can be used) until a tap anywhere else.
+  const pinned = activeTouchedIndex !== null;
+  useEffect(() => {
+    if (!pinned) return;
+    const close = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (tooltipRef.current?.contains(target) || rootRef.current?.contains(target)) return;
+      setActiveTouchedIndex(null);
+      setTooltipState(null);
+    };
+    document.addEventListener('pointerdown', close, true);
+    return () => document.removeEventListener('pointerdown', close, true);
+  }, [pinned]);
 
   // Close floating portal tooltip when user scrolls any scrollable ancestor
   useEffect(() => {
@@ -149,6 +169,8 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
   const wordIndexes = tokens.map((t) => (t && !/^\s+$/.test(t) ? ++wordCount : -1));
 
   const handleMouseEnter = (token: string, idx: number, e: React.MouseEvent<HTMLSpanElement>) => {
+    // While a tapped word's pop-up is open, passing over other words doesn't replace it.
+    if (activeTouchedIndex !== null && activeTouchedIndex !== idx) return;
     setHoveredIdx(idx);
     const target = e.currentTarget;
     const domRect = target.getBoundingClientRect();
@@ -313,8 +335,9 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
             left: `${Math.max(120, Math.min(window.innerWidth - 120, tooltipState.rect.left + tooltipState.rect.width / 2))}px`,
             transform: tooltipState.showBelow ? 'translateX(-50%)' : 'translate(-50%, -100%)',
             zIndex: 999999,
-            pointerEvents: 'none',
+            pointerEvents: pinned ? 'auto' : 'none',
           }}
+          ref={tooltipRef}
           className="transition-opacity duration-150 ease-out drop-shadow-2xl"
           dir="ltr"
         >
@@ -366,13 +389,27 @@ export const ArabicWordSpans: React.FC<ArabicWordSpansProps> = ({
               </div>
             )}
 
-            {/* Audio prompt cue */}
-            {showAudioPrompt && (
-              <div className="mt-2 pt-1.5 border-t border-purple-400/20 text-[9px] text-purple-300/90 flex items-center gap-1 font-medium">
-                <span>🔊</span>
-                <span>Click to Pronounce</span>
-              </div>
-            )}
+            {/* Split the word into its letters (a tapped word); a hovered word says how to get there. */}
+            {(() => {
+              const clean = tooltipState.token.replace(/[؟!\.,،؛:\'\"()\[\]\-—]/g, '').trim();
+              const canSplit = splittable && splitWord(clean).letters.length > 1;
+              if (canSplit && pinned) {
+                return (
+                  <button type="button"
+                    onClick={(e) => { e.stopPropagation(); setActiveTouchedIndex(null); setTooltipState(null); openWordSplit(clean); }}
+                    className="mt-2 px-3 py-1 rounded-full bg-sky-300 hover:bg-sky-200 text-slate-950 text-[11px] font-black inline-flex items-center gap-1">
+                    ✂️ Split into letters
+                  </button>
+                );
+              }
+              if (!showAudioPrompt && !canSplit) return null;
+              return (
+                <div className="mt-2 pt-1.5 border-t border-purple-400/20 text-[9px] text-purple-300/90 flex items-center gap-1 font-medium">
+                  <span>🔊</span>
+                  <span>{canSplit ? 'Tap to hear it and split it into letters' : 'Click to Pronounce'}</span>
+                </div>
+              );
+            })()}
           </div>
         </div>,
         document.body

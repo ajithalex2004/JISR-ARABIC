@@ -109,9 +109,9 @@ export const WordSplitter: React.FC<Props> = ({ text, alphabet, startSplit = tru
                   <span className="flex flex-col items-center text-center">
                     <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{POSITION_LABEL[l.position]}</span>
                     <span className="text-lg font-arabic text-slate-800 leading-tight" title="The letter on its own">{l.base}</span>
-                    <span className="text-[10px] text-slate-600 leading-tight" dir="auto">
-                      {names.get(l.base)?.name || LETTER_FORM_NAMES[l.base] || ''}
-                    </span>
+                    {names.get(l.base)?.name
+                      ? <span className="text-sm font-arabic text-slate-700 leading-snug" dir="rtl">{names.get(l.base)!.name}</span>
+                      : <span className="text-[10px] text-slate-600 leading-tight max-w-[5.5rem]">{LETTER_FORM_NAMES[l.base] || ''}</span>}
                     {l.doubled && <span className="mt-0.5 text-[9px] font-bold bg-amber-200 text-amber-950 px-1">said twice</span>}
                     {l.silent && <span className="mt-0.5 text-[9px] font-bold bg-slate-200 text-slate-700 px-1">silent</span>}
                   </span>

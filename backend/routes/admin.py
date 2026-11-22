@@ -549,6 +549,7 @@ def system_health(actor: Principal = Depends(get_current_user)):
         "schema": schema,
         "models": _ai_models(),
         "last_gemini_check": cache_get("scheduler:last:gemini_probe"),
+        "last_ai_feature_check": cache_get("scheduler:last:ai_feature_check"),
         "last_weekly_reports": cache_get("scheduler:last:weekly_reports"),
         "last_demo_cleanup": cache_get("scheduler:last:demo_cleanup"),
         "ai": _ai_section(),
@@ -568,6 +569,14 @@ def check_gemini(actor: Principal = Depends(get_current_user)):
     require_roles(actor, ('admin',))
     from backend import scheduler
     return scheduler.run_gemini_probe()
+
+
+@router.post('/system-health/check-ai-features')
+def check_ai_features(actor: Principal = Depends(get_current_user)):
+    """Run the daily AI feature check now (no alert email: the admin sees the result on screen)."""
+    require_roles(actor, ('admin',))
+    from backend.ai.feature_check import run_feature_check
+    return run_feature_check(alert=False)
 
 
 @router.post('/system-health/test-alert')

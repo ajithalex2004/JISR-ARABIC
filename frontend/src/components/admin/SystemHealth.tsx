@@ -12,6 +12,13 @@ type Component = {
   recent_failures: Failure[];
   last_alert?: { at: string; subject: string; delivered_to: string[]; errors: string[] } | null;
 };
+type AIFeatureCheck = {
+  at: string;
+  ok: boolean;
+  skipped?: boolean;
+  summary: string;
+  checks: { key: string; label: string; ok: boolean; detail: string; ms: number }[];
+};
 type Health = {
   threshold: number;
   window_minutes: number;
@@ -22,6 +29,7 @@ type Health = {
   gemini_configured: boolean;
   components: Component[];
   last_gemini_check?: { ok: boolean; model: string; error?: string | null; latency_ms?: number; at: string } | null;
+  last_ai_feature_check?: AIFeatureCheck | null;
   schema?: { missing_columns: string[]; stricter_columns?: string[]; error?: string };
   models?: { assistant: string; drafting: string };
   last_weekly_reports?: { week: string; sent: number; skipped: number; failed: number; error?: string; at: string } | null;
@@ -41,13 +49,15 @@ export function SystemHealth() {
   };
   useEffect(() => { load(); }, []);
 
-  const act = async (action: 'check-gemini' | 'test-alert' | 'send-weekly-reports' | 'remove-demo-accounts') => {
+  const act = async (action: 'check-gemini' | 'check-ai-features' | 'test-alert' | 'send-weekly-reports' | 'remove-demo-accounts') => {
     setBusy(action);
     setError('');
     setNotice('');
     try {
       const res = await api.adminSystemAction(action);
-      if (action === 'check-gemini') {
+      if (action === 'check-ai-features') {
+        setNotice(res.summary);
+      } else if (action === 'check-gemini') {
         setNotice(res.ok ? `Gemini (${res.model}) is working · ${res.latency_ms} ms` : `Gemini (${res.model}) failed: ${res.error}`);
       } else if (action === 'test-alert') {
         setNotice(res.delivered_to.length ? `Test alert sent to ${res.delivered_to.join(', ')}` : `Test alert could not be delivered: ${res.errors.join('; ')}`);
@@ -70,6 +80,7 @@ export function SystemHealth() {
     {health && <p className="text-sm text-slate-600">
       An alert is emailed when a service fails {health.threshold} times within {health.window_minutes} minutes, at most once every {health.cooldown_minutes} minutes per service.
       Gemini is checked automatically every 20 minutes, and two failed checks in a row send an alert straight away.
+      Every morning at 06:00 UAE time, each AI feature is also run on a known question and its answer checked; a wrong or missing answer sends an alert.
     </p>}
     {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
     {notice && <p role="status" className="text-emerald-800 text-sm font-semibold">{notice}</p>}
@@ -95,6 +106,7 @@ export function SystemHealth() {
             : <div>Sent every Sunday at 08:00 UAE time</div>}
         </div>
       </div>
+      <AIFeatureCheckCard check={health.last_ai_feature_check} />
       {health.schema && <div className={`border p-3 text-sm ${health.schema.missing_columns.length || health.schema.stricter_columns?.length || health.schema.error ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
         <span className="text-xs text-slate-500 block">Database</span>
         {health.schema.error ? <span className="text-red-700">Could not check: {health.schema.error}</span>
@@ -113,6 +125,7 @@ export function SystemHealth() {
       </div>}
       <div className="flex flex-wrap gap-2">
         <button type="button" disabled={!!busy} onClick={() => act('check-gemini')} className="bg-emerald-900 text-white px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'check-gemini' ? 'Checking…' : 'Check Gemini now'}</button>
+        <button type="button" disabled={!!busy} onClick={() => act('check-ai-features')} className="bg-emerald-900 text-white px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'check-ai-features' ? 'Checking features… (about a minute)' : 'Check AI features now'}</button>
         <button type="button" disabled={!!busy} onClick={() => act('test-alert')} className="border border-slate-400 px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'test-alert' ? 'Sending…' : 'Send test alert'}</button>
         <button type="button" disabled={!!busy} onClick={() => { if (window.confirm('Email this week\'s progress report now to every parent who opted in and has not received it yet this week?')) act('send-weekly-reports'); }} className="border border-slate-400 px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'send-weekly-reports' ? 'Sending…' : 'Send weekly reports now'}</button>
         <button type="button" disabled={!!busy} onClick={() => { if (window.confirm('Permanently delete the demo accounts (parent@fahim.ae, tutor@fahim.ae, cohort.parents@sunrise.ae) and sign-up test families (student_test_…) with their students? Payments are kept anonymised. Admin accounts are never removed.')) act('remove-demo-accounts'); }} className="border border-red-300 text-red-800 px-3 py-1.5 text-sm disabled:opacity-50">{busy === 'remove-demo-accounts' ? 'Removing…' : 'Remove demo accounts'}</button>
@@ -133,4 +146,27 @@ export function SystemHealth() {
       </div>
     </>}
   </section>;
+}
+
+/** The daily AI feature check: each feature run on a known question, with its result. */
+function AIFeatureCheckCard({ check }: { check?: AIFeatureCheck | null }) {
+  if (!check) {
+    return <div className="border border-slate-200 bg-slate-50 p-3 text-sm">
+      <span className="text-xs text-slate-500 block">Daily AI feature check</span>
+      Not run yet: it runs every morning at 06:00 UAE time, or press “Check AI features now”.
+    </div>;
+  }
+  const bad = !check.ok && !check.skipped;
+  return <div className={`border p-3 text-sm ${bad ? 'border-red-300 bg-red-50' : check.skipped ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-slate-50'}`}>
+    <span className="text-xs text-slate-500 block">Daily AI feature check · {formatDate(check.at)}</span>
+    <div className={`font-semibold ${bad ? 'text-red-700' : check.skipped ? 'text-amber-900' : 'text-emerald-800'}`}>{check.summary}</div>
+    {check.checks.length > 0 && <ul className="mt-2 space-y-1 text-xs">
+      {check.checks.map((c) => <li key={c.key} className="flex gap-1.5">
+        <span aria-label={c.ok ? 'passed' : 'failed'} className={c.ok ? 'text-emerald-700' : 'text-red-700'}>{c.ok ? '✓' : '✗'}</span>
+        <span><span className="font-semibold text-slate-900">{c.label}</span>
+          <span className="text-slate-500"> · {(c.ms / 1000).toFixed(1)} s</span>
+          {c.detail && <span className={`block break-words ${c.ok ? 'text-slate-600' : 'text-red-800'}`}>{c.detail}</span>}</span>
+      </li>)}
+    </ul>}
+  </div>;
 }

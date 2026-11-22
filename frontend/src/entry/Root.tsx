@@ -11,6 +11,7 @@ const LEGAL_PATHS: Record<string, 'privacy' | 'delete-account'> = { '/privacy': 
 const legalKind = () => LEGAL_PATHS[window.location.pathname.replace(/\/+$/, '')];
 
 export type EnterIntent = 'signup' | 'login' | 'explore';
+export type EnterApp = (intent: EnterIntent, where?: { grade?: number; view?: string }) => void;
 
 // Set when a visitor goes from the welcome page into the app ("Sign in", "My dashboard"…).
 // Session-scoped on purpose: every new visit starts on the welcome page.
@@ -56,9 +57,14 @@ export function Root() {
     try { window.localStorage.removeItem('jisr_entered_app'); } catch { /* old "skip the landing" flag */ }
   }, []);
 
-  const enterApp = useCallback((intent: EnterIntent) => {
+  // "explore" can carry where to open: a class's free chapter (?grade=N) or a view (?view=foundation).
+  const enterApp = useCallback((intent: EnterIntent, where?: { grade?: number; view?: string }) => {
     try { window.sessionStorage.setItem(IN_APP_KEY, '1'); } catch { /* private mode: fine */ }
-    const url = intent === 'explore' ? '/' : `/?auth=${intent}`;
+    const params = new URLSearchParams();
+    if (intent !== 'explore') params.set('auth', intent);
+    if (where?.grade) params.set('grade', String(where.grade));
+    if (where?.view) params.set('view', where.view);
+    const url = params.toString() ? `/?${params}` : '/';
     window.history.pushState(null, '', url);
     window.scrollTo(0, 0);
     setLanding(false);

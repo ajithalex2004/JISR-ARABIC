@@ -113,3 +113,25 @@ const MARKS = /[ً-ٰٟـ]/g;
 export function bareArabic(s: string): string {
   return s.replace(MARKS, '').replace(/[^ء-ي]/g, '').replace(/^(وال|بال|فال|كال|لل|ال)/, '');
 }
+
+/** Stage A of Foundation in Basic Arabic (free for everyone): what the "Basics" phone shows. */
+export interface FoundationStageA {
+  titleEn: string;
+  stage: { id: string; title_ar: string; title_en: string; summary_en: string };
+  lessons: { id: string; title_ar: string; title_en: string; quiz?: { question_en: string; options: string[]; correct_index: number; explain_en: string }[] }[];
+  paidStages: { id: string; title_en: string }[];
+  alphabet: { letter: string; name: string; sound_en: string }[];
+}
+
+export async function loadFoundationStageA(signal?: AbortSignal): Promise<FoundationStageA> {
+  const course = await getJson<any>('/api/modules/foundation', null, signal);
+  const stages: any[] = Array.isArray(course.stages) ? course.stages : [];
+  const a = stages.find((s) => s.id === 'A') || stages[0];
+  return {
+    titleEn: course.title_en,
+    stage: { id: a.id, title_ar: a.title_ar, title_en: a.title_en, summary_en: a.summary_en },
+    lessons: a.lessons || [],
+    paidStages: stages.filter((s) => s.id !== a.id).map((s) => ({ id: s.id, title_en: s.title_en })),
+    alphabet: Array.isArray(course.alphabet) ? course.alphabet : [],
+  };
+}

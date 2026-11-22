@@ -1,5 +1,5 @@
 import React from 'react';
-import type { EnterIntent } from '../../entry/Root';
+import type { EnterApp } from '../../entry/Root';
 import { FAQS, FEATURES, GRADES, PLANS } from './content';
 
 /* Small CSS/SVG illustrations for each feature tile: no image requests. */
@@ -63,6 +63,12 @@ export function Curriculum() {
         <nav className="jl-grades" aria-label="Open a class" data-reveal>
           <p className="jl-label">Open a class. The first chapter is free.</p>
           <ul>
+            <li className="jl-grades__basics">
+              <a href="/?view=foundation" className="jl-grade jl-grade--basics">
+                <span>Basics · before Class 1</span><strong>Foundation in Basic Arabic</strong>
+                <span className="jl-grade__ar">Stage A free: the letters and how they join</span>
+              </a>
+            </li>
             {GRADES.map((g) => (
               <li key={g}><a href={`/?grade=${g}`} className="jl-grade"><span>Class</span><strong>{g}</strong><span lang="ar" className="jl-grade__ar">الصَّفُّ {g.toLocaleString('ar-EG')}</span></a></li>
             ))}
@@ -73,7 +79,7 @@ export function Curriculum() {
   );
 }
 
-export function Pricing({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+export function Pricing({ onEnter }: { onEnter: EnterApp }) {
   return (
     <section id="pricing" className="jl-section jl-pricing" aria-labelledby="jl-pricing-title">
       <div className="jl-wrap">
@@ -166,7 +172,7 @@ export function Faq() {
   );
 }
 
-export function FinalCta({ onEnter }: { onEnter: (i: EnterIntent) => void }) {
+export function FinalCta({ onEnter }: { onEnter: EnterApp }) {
   return (
     <section className="jl-final" aria-labelledby="jl-final-title">
       <div className="jl-wrap" data-reveal>
